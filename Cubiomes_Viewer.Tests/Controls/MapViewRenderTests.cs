@@ -1,0 +1,75 @@
+using System.Runtime.InteropServices;
+
+using Avalonia.Controls;
+using Avalonia.Headless;
+using Avalonia.Headless.XUnit;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
+using Avalonia.Threading;
+
+using Cubiomes_Viewer.Controls;
+using Cubiomes_Viewer.Controls.Map;
+using Cubiomes_Viewer.Engine.Data.Biomes;
+using Cubiomes_Viewer.Engine.Data.Maps;
+using Cubiomes_Viewer.Engine.Data.Worlds;
+using Cubiomes_Viewer.Engine.Service.TileServ;
+using Cubiomes_Viewer.Engine.Service.WorldGenServ;
+
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Cubiomes_Viewer.Tests.Controls;
+
+public sealed class MapViewRenderTests
+{
+    private const int MushroomFieldsBiomeId = 14;
+    private const int SampleHeight = 63;
+    private const int ViewSize = 256;
+    private const int BytesPerPixel = 4;
+    private static readonly TimeSpan _timeout = TimeSpan.FromSeconds(30);
+
+    [AvaloniaFact]
+    public async Task Render_SeedWithMushroomFieldsAtOrigin_DrawsThatBiomeColourAtTheCentre()
+    {
+        var world = new WorldKey(262, McVersion.V1_18_2, Dimension.Overworld, GeneratorFlags.None);
+        var map = new MapView { World = world, SampleHeight = SampleHeight, Camera = new MapCamera(0, 0, 1), SmoothMotion = false };
+        map.AddLayer(App.Services.GetRequiredService<TileLayer>());
+        map.AddLayer(App.Services.GetRequiredService<GridLayer>());
+        var window = new Window { Width = ViewSize, Height = ViewSize, Content = map };
+        window.Show();
+
+        await WaitForTileAsync(new TileRequest(world, LayerMode.Biomes, SampleHeight, new TileKey(1, 0, 0)));
+        Dispatcher.UIThread.RunJobs();
+        AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+
+        using var frame = window.CaptureRenderedFrame();
+        window.Close();
+
+        Assert.NotNull(frame);
+        var expected = App.Services.GetRequiredService<IBiomeCatalog>().DefaultPalette[MushroomFieldsBiomeId];
+        Assert.Equal(expected, ReadPixel(frame, ViewSize / 2 + 8, ViewSize / 2 + 8));
+    }
+
+    private static async Task WaitForTileAsync(TileRequest request)
+    {
+        var tileService = App.Services.GetRequiredService<IMapTileService>();
+        var deadline = DateTime.UtcNow + _timeout;
+        while (!tileService.TryGetTile(request, out _) || tileService.PendingCount > 0)
+        {
+            Assert.True(DateTime.UtcNow < deadline, "The map did not generate its tiles in time.");
+            await Task.Delay(10, TestContext.Current.CancellationToken);
+        }
+    }
+
+    private static BiomeColor ReadPixel(WriteableBitmap bitmap, int x, int y)
+    {
+        using var buffer = bitmap.Lock();
+        var offset = y * buffer.RowBytes + x * BytesPerPixel;
+        var first = Marshal.ReadByte(buffer.Address, offset);
+        var green = Marshal.ReadByte(buffer.Address, offset + 1);
+        var third = Marshal.ReadByte(buffer.Address, offset + 2);
+
+        return buffer.Format == PixelFormat.Bgra8888
+            ? new BiomeColor(third, green, first)
+            : new BiomeColor(first, green, third);
+    }
+}

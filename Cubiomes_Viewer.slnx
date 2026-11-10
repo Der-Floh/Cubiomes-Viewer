@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="Cubiomes_Viewer.Browser.Worker/Cubiomes_Viewer.Browser.Worker.csproj" />
+  <Project Path="Cubiomes_Viewer.Browser/Cubiomes_Viewer.Browser.csproj" />
+  <Project Path="Cubiomes_Viewer.Desktop/Cubiomes_Viewer.Desktop.csproj" />
+  <Project Path="Cubiomes_Viewer.Engine.Tests/Cubiomes_Viewer.Engine.Tests.csproj" />
+  <Project Path="Cubiomes_Viewer.Engine/Cubiomes_Viewer.Engine.csproj" />
+  <Project Path="Cubiomes_Viewer.Tests/Cubiomes_Viewer.Tests.csproj" />
+  <Project Path="Cubiomes_Viewer/Cubiomes_Viewer.csproj" />
+</Solution>

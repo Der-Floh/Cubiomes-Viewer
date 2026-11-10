@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk.WebAssembly">
+  <PropertyGroup>
+    <TargetFramework>net10.0-browser</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PublishTrimmed>false</PublishTrimmed>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <AssemblyTitle>Cubiomes Viewer Web</AssemblyTitle>
+    <Description>Browser host for Cubiomes Viewer.</Description>
+  </PropertyGroup>
+
+  <Import Project="..\native\CvNative.Browser.targets" />
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Browser" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Cubiomes_Viewer\Cubiomes_Viewer.csproj" />
+  </ItemGroup>
+
+  <!-- Dev builds serve the worker under /worker/ through this reference. On publish the WASM SDK would merge
+       the worker's assemblies into this app's boot manifest, so the worker is published separately and copied instead. -->
+  <PropertyGroup>
+    <WorkerProject>..\Cubiomes_Viewer.Browser.Worker\Cubiomes_Viewer.Browser.Worker.csproj</WorkerProject>
+    <WorkerPublishDir>$(MSBuildProjectDirectory)\$(BaseIntermediateOutputPath)worker-publish\$(Configuration)\</WorkerPublishDir>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(_IsPublishing)' != 'true'">
+    <ProjectReference Include="$(WorkerProject)" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <Target Name="PublishWorkerBundle" AfterTargets="Publish" Condition="'$(_IsPublishing)' == 'true'">
+    <MSBuild Projects="$(WorkerProject)" Targets="Publish" Properties="Configuration=$(Configuration);PublishDir=$(WorkerPublishDir);_IsPublishing=true" />
+    <ItemGroup>
+      <WorkerBundleFile Include="$(WorkerPublishDir)wwwroot\**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(WorkerBundleFile)" DestinationFolder="$(PublishDir)wwwroot\%(RecursiveDir)" SkipUnchangedFiles="true" />
+  </Target>
+</Project>

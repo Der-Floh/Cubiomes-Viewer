@@ -1,0 +1,28 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Cubiomes_Viewer.ViewModels"
+             xmlns:selftests="using:Cubiomes_Viewer.Engine.Data.SelfTests"
+             mc:Ignorable="d" d:DesignWidth="320" d:DesignHeight="500"
+             x:Class="Cubiomes_Viewer.Views.SelfTestView"
+             x:DataType="vm:SelfTestViewModel">
+
+    <StackPanel Classes="form">
+        <Button Content="{Binding RunLabel}" Command="{Binding RunCommand}"/>
+        <TextBlock Classes="damp" Text="{Binding RunningLabel}" IsVisible="{Binding IsRunning}"/>
+        <TextBlock Classes="success" Classes.error="{Binding HasFailures}" Text="{Binding Summary}" IsVisible="{Binding !IsRunning}" TextWrapping="Wrap"/>
+
+        <TextBlock Classes="damp" Text="{Binding SampleTileLabel}" IsVisible="{Binding SampleTile, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+        <Image Classes="tile-preview" Source="{Binding SampleTile}" RenderOptions.BitmapInterpolationMode="None"/>
+
+        <ItemsControl ItemsSource="{Binding Checks}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="selftests:SelfTestCheck">
+                    <TextBlock Classes="check" Classes.error="{Binding !Passed}" Text="{Binding}" TextWrapping="Wrap"/>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </StackPanel>
+
+</UserControl>

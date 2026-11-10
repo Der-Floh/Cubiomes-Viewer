@@ -1,0 +1,127 @@
+using System.ComponentModel;
+using System.Globalization;
+
+using Avalonia.Threading;
+
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+
+using Cubiomes_Viewer.Data;
+using Cubiomes_Viewer.Engine.Data.Maps;
+using Cubiomes_Viewer.Engine.Data.Worlds;
+using Cubiomes_Viewer.Engine.Service.TileServ;
+using Cubiomes_Viewer.Engine.Service.WorldGenServ;
+using Cubiomes_Viewer.Service.NotificationServ;
+
+using EngineConstants = Cubiomes_Viewer.Engine.Data.Constants;
+
+namespace Cubiomes_Viewer.ViewModels;
+
+public sealed partial class MapViewModel : ViewModelBase
+{
+    private const double ButtonZoomStep = 2;
+    private const int ChunkShift = 4;
+
+    public string GeneratingLabel { get; } = "Generating...";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ScaleText))]
+    public partial MapCamera Camera { get; set; } = MapCamera.Default;
+
+    [ObservableProperty]
+    public partial WorldKey World { get; set; }
+
+    [ObservableProperty]
+    public partial int SampleHeight { get; set; }
+
+    [ObservableProperty]
+    public partial bool ShowGrid { get; set; } = true;
+
+    [ObservableProperty]
+    public partial bool SmoothMotion { get; set; } = true;
+
+    [ObservableProperty]
+    public partial string HoverText { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial bool IsGenerating { get; set; }
+
+    public string ScaleText => Camera.BlocksPerPixel >= 1
+        ? string.Create(CultureInfo.InvariantCulture, $"1 px = {Camera.BlocksPerPixel:0.##} blocks")
+        : string.Create(CultureInfo.InvariantCulture, $"1 block = {1 / Camera.BlocksPerPixel:0.##} px");
+
+    /// <summary>Raised when the map should travel to a camera; the view animates the move.</summary>
+    public event Action<MapCamera>? NavigationRequested;
+
+    private readonly WorldSession _session;
+    private readonly IMapTileService _tileService;
+    private readonly IBiomeCatalog _biomeCatalog;
+    private int _stateUpdateQueued;
+
+    public MapViewModel(WorldSession session, IMapTileService tileService, IBiomeCatalog biomeCatalog, INotificationService notificationService) : base(notificationService)
+    {
+        _session = session;
+        _tileService = tileService;
+        _biomeCatalog = biomeCatalog;
+
+        World = session.Key;
+        SampleHeight = session.SampleHeight;
+        session.PropertyChanged += OnSessionChanged;
+        tileService.StateChanged += OnTileStateChanged;
+    }
+
+    [RelayCommand]
+    public void GoToOrigin() => GoTo(0, 0);
+
+    [RelayCommand]
+    public void ZoomIn() => Navigate(Camera with { BlocksPerPixel = Camera.BlocksPerPixel / ButtonZoomStep });
+
+    [RelayCommand]
+    public void ZoomOut() => Navigate(Camera with { BlocksPerPixel = Camera.BlocksPerPixel * ButtonZoomStep });
+
+    public void GoTo(double blockX, double blockZ) => Navigate(Camera with { CenterX = blockX, CenterZ = blockZ });
+
+    public void SetHover(BlockPos? position)
+    {
+        if (position is not { } block)
+        {
+            HoverText = string.Empty;
+            return;
+        }
+
+        var location = string.Create(CultureInfo.InvariantCulture,
+            $"X {block.X}, Z {block.Z}  ·  Chunk {block.X >> ChunkShift}, {block.Z >> ChunkShift}");
+        HoverText = GetBiomeName(block) is { } biome ? $"{biome}  ·  {location}" : location;
+    }
+
+    private string? GetBiomeName(BlockPos block)
+        => _tileService.TryGetCachedBiome(World, LayerMode.Biomes, SampleHeight, block.X, block.Z, out var biome) && biome != EngineConstants.NoBiomeId
+            ? _biomeCatalog.GetDisplayName(World.Version, biome)
+            : null;
+
+    private void Navigate(MapCamera target)
+    {
+        if (NavigationRequested is { } handler)
+            handler(target);
+        else
+            Camera = target;
+    }
+
+    private void OnSessionChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        World = _session.Key;
+        SampleHeight = _session.SampleHeight;
+    }
+
+    private void OnTileStateChanged()
+    {
+        if (Interlocked.Exchange(ref _stateUpdateQueued, 1) != 0)
+            return;
+
+        Dispatcher.UIThread.Post(() =>
+        {
+            Interlocked.Exchange(ref _stateUpdateQueued, 0);
+            IsGenerating = _tileService.PendingCount > 0;
+        });
+    }
+}

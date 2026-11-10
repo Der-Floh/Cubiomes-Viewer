@@ -1,0 +1,34 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Cubiomes_Viewer.ViewModels"
+             xmlns:views="using:Cubiomes_Viewer.Views"
+             mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="800"
+             x:Class="Cubiomes_Viewer.Views.DesktopShellView"
+             x:DataType="vm:MainViewModel">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <views:WorldBarView DataContext="{Binding WorldBar}"/>
+
+        <Grid Grid.Row="1" ColumnDefinitions="Auto,Auto,*">
+            <ListBox Classes="rail" SelectedIndex="{Binding SelectedPanelIndex}" SelectionMode="Single,Toggle">
+                <ListBoxItem ToolTip.Tip="{Binding LayersLabel}">
+                    <PathIcon Data="{StaticResource LayersIcon}"/>
+                </ListBoxItem>
+                <ListBoxItem ToolTip.Tip="{Binding SettingsLabel}">
+                    <PathIcon Data="{StaticResource SettingsIcon}"/>
+                </ListBoxItem>
+            </ListBox>
+
+            <Border Grid.Column="1" Classes="side-panel" IsVisible="{Binding IsPanelOpen}">
+                <ContentControl Content="{Binding CurrentPanel}"/>
+            </Border>
+
+            <Panel Grid.Column="2" Name="MapSlot"/>
+        </Grid>
+
+        <views:StatusBarView Grid.Row="2" DataContext="{Binding Map}"/>
+    </Grid>
+
+</UserControl>

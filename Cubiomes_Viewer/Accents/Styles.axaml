@@ -1,0 +1,150 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:Cubiomes_Viewer.Controls">
+
+    <Style Selector="Button">
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Padding" Value="10"/>
+    </Style>
+
+    <Style Selector="ComboBox">
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+
+    <Style Selector="PathIcon">
+        <Setter Property="Width" Value="16"/>
+        <Setter Property="Height" Value="16"/>
+    </Style>
+
+    <Style Selector="controls|MapView">
+        <Setter Property="Background" Value="{DynamicResource MapBackgroundColor}"/>
+    </Style>
+
+    <Style Selector="TextBlock.title">
+        <Setter Property="FontSize" Value="20"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+    <Style Selector="TextBlock.section">
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Margin" Value="0,8,0,0"/>
+    </Style>
+    <Style Selector="TextBlock.damp">
+        <Setter Property="Foreground" Value="{DynamicResource FontColorDamp}"/>
+    </Style>
+    <Style Selector="TextBlock.success">
+        <Setter Property="Foreground" Value="{DynamicResource SuccessColor}"/>
+    </Style>
+    <Style Selector="TextBlock.error">
+        <Setter Property="Foreground" Value="{DynamicResource ErrorColor}"/>
+    </Style>
+    <Style Selector="TextBlock.check">
+        <Setter Property="Margin" Value="0,2"/>
+        <Setter Property="FontSize" Value="12"/>
+    </Style>
+    <Style Selector="TextBlock.field-label">
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Foreground" Value="{DynamicResource FontColorDamp}"/>
+    </Style>
+    <Style Selector="TextBlock.status">
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="0,0,16,0"/>
+    </Style>
+
+    <Style Selector=":is(Control).section-content">
+        <Setter Property="Margin" Value="0,12,0,0"/>
+    </Style>
+
+    <Style Selector="Image.tile-preview">
+        <Setter Property="MaxWidth" Value="192"/>
+        <Setter Property="HorizontalAlignment" Value="Left"/>
+        <Setter Property="Margin" Value="0,4,0,0"/>
+    </Style>
+
+    <Style Selector="Border.world-bar">
+        <Setter Property="Background" Value="{DynamicResource RegionColor}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
+        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+        <Setter Property="Padding" Value="8,4"/>
+    </Style>
+    <Style Selector="StackPanel.toolbar-group">
+        <Setter Property="Orientation" Value="Horizontal"/>
+        <Setter Property="Spacing" Value="6"/>
+        <Setter Property="Margin" Value="0,2,18,2"/>
+    </Style>
+    <Style Selector="TextBox.seed">
+        <Setter Property="MinWidth" Value="210"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="NumericUpDown.compact">
+        <Setter Property="MinWidth" Value="110"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="Button.icon">
+        <Setter Property="Padding" Value="8"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="StackPanel.form">
+        <Setter Property="Spacing" Value="8"/>
+    </Style>
+    <Style Selector="StackPanel.flyout-form">
+        <Setter Property="Spacing" Value="8"/>
+        <Setter Property="MinWidth" Value="200"/>
+    </Style>
+
+    <Style Selector="ListBox.rail">
+        <Setter Property="Background" Value="{DynamicResource RegionColor}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
+        <Setter Property="BorderThickness" Value="0,0,1,0"/>
+        <Setter Property="Padding" Value="0"/>
+    </Style>
+    <Style Selector="ListBox.rail ListBoxItem">
+        <Setter Property="Padding" Value="16,14"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="ListBox.rail PathIcon">
+        <Setter Property="Width" Value="20"/>
+        <Setter Property="Height" Value="20"/>
+    </Style>
+    <Style Selector="ListBox.bottom-nav">
+        <Setter Property="BorderThickness" Value="0,1,0,0"/>
+    </Style>
+
+    <Style Selector="Border.side-panel">
+        <Setter Property="Width" Value="320"/>
+        <Setter Property="Background" Value="{DynamicResource RegionColor}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
+        <Setter Property="BorderThickness" Value="0,0,1,0"/>
+    </Style>
+    <Style Selector="Border.sheet">
+        <Setter Property="Background" Value="{DynamicResource RegionColor}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
+        <Setter Property="BorderThickness" Value="0,1,0,0"/>
+        <Setter Property="CornerRadius" Value="12,12,0,0"/>
+        <Setter Property="MaxHeight" Value="380"/>
+        <Setter Property="VerticalAlignment" Value="Bottom"/>
+    </Style>
+    <Style Selector="StackPanel.panel">
+        <Setter Property="Margin" Value="16"/>
+        <Setter Property="Spacing" Value="8"/>
+    </Style>
+
+    <Style Selector="Border.status-bar">
+        <Setter Property="Background" Value="{DynamicResource RegionColor}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
+        <Setter Property="BorderThickness" Value="0,1,0,0"/>
+        <Setter Property="Padding" Value="12,4"/>
+        <Setter Property="MinHeight" Value="26"/>
+    </Style>
+    <Style Selector="Border.hover-chip">
+        <Setter Property="Background" Value="{DynamicResource RegionColor}"/>
+        <Setter Property="CornerRadius" Value="6"/>
+        <Setter Property="Padding" Value="10,4"/>
+        <Setter Property="Margin" Value="8"/>
+        <Setter Property="HorizontalAlignment" Value="Left"/>
+        <Setter Property="VerticalAlignment" Value="Top"/>
+        <Setter Property="IsHitTestVisible" Value="False"/>
+    </Style>
+
+</Styles>

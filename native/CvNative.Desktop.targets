@@ -1,0 +1,32 @@
+<Project>
+  <PropertyGroup>
+    <CvNativeRoot>$(MSBuildThisFileDirectory)</CvNativeRoot>
+    <CvNativeRid>$(RuntimeIdentifier)</CvNativeRid>
+    <CvNativeRid Condition="'$(CvNativeRid)' == ''">$(NETCoreSdkRuntimeIdentifier)</CvNativeRid>
+    <CvNativeLibraryFile Condition="$(CvNativeRid.StartsWith('win-'))">cvnative.dll</CvNativeLibraryFile>
+    <CvNativeLibraryFile Condition="$(CvNativeRid.StartsWith('linux-'))">libcvnative.so</CvNativeLibraryFile>
+    <CvNativeLibraryFile Condition="$(CvNativeRid.StartsWith('osx-'))">libcvnative.dylib</CvNativeLibraryFile>
+    <CvNativeLibraryPath>$(CvNativeRoot)bin\$(CvNativeRid)\$(CvNativeLibraryFile)</CvNativeLibraryPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <CvNativeSource Include="$(CvNativeRoot)shim\**\*" />
+    <CvNativeSource Include="$(CvNativeRoot)cubiomes\**\*.c;$(CvNativeRoot)cubiomes\**\*.h" />
+  </ItemGroup>
+
+  <Target Name="RestoreCubiomesSources" Condition="'$(DesignTimeBuild)' != 'true' And !Exists('$(CvNativeRoot)cubiomes\generator.c')">
+    <Exec Command="git submodule update --init" WorkingDirectory="$(CvNativeRoot).." />
+  </Target>
+
+  <Target Name="BuildCvNative" DependsOnTargets="RestoreCubiomesSources" Condition="'$(DesignTimeBuild)' != 'true'" Inputs="@(CvNativeSource)" Outputs="$(CvNativeLibraryPath)">
+    <Exec Condition="$([MSBuild]::IsOSPlatform('Windows'))" Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(CvNativeRoot)build.ps1&quot; -Rid $(CvNativeRid)" />
+    <Exec Condition="!$([MSBuild]::IsOSPlatform('Windows'))" Command="bash &quot;$(CvNativeRoot)build.sh&quot; $(CvNativeRid)" />
+  </Target>
+
+  <Target Name="IncludeCvNative" BeforeTargets="AssignTargetPaths" DependsOnTargets="BuildCvNative">
+    <Error Condition="'$(DesignTimeBuild)' != 'true' And !Exists('$(CvNativeLibraryPath)')" Text="The native library '$(CvNativeLibraryPath)' is missing. Build it with native/build.ps1 (Windows) or native/build.sh, or fetch a prebuilt binary." />
+    <ItemGroup Condition="Exists('$(CvNativeLibraryPath)')">
+      <None Include="$(CvNativeLibraryPath)" Link="$(CvNativeLibraryFile)" Visible="false" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+    </ItemGroup>
+  </Target>
+</Project>

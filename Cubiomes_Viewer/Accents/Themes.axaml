@@ -1,0 +1,40 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Color x:Key="Palette.RegionColor.Light">#f3f3f3</Color>
+    <Color x:Key="Palette.RegionColorDamp.Light">#e2e2e2</Color>
+    <Color x:Key="Palette.AccentColor.Light">#2f8f5b</Color>
+    <Color x:Key="Palette.MapBackgroundColor.Light">#c9d2d6</Color>
+    <Color x:Key="Palette.RegionColor.Dark">#1f2123</Color>
+    <Color x:Key="Palette.RegionColorDamp.Dark">#2d3033</Color>
+    <Color x:Key="Palette.AccentColor.Dark">#3aa56b</Color>
+    <Color x:Key="Palette.MapBackgroundColor.Dark">#121416</Color>
+
+    <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+            <SolidColorBrush x:Key="FontColor">#000000</SolidColorBrush>
+            <SolidColorBrush x:Key="FontColorDamp">#5a5a5a</SolidColorBrush>
+            <SolidColorBrush x:Key="AccentColor" Color="{StaticResource Palette.AccentColor.Light}"/>
+            <SolidColorBrush x:Key="RegionColor" Color="{StaticResource Palette.RegionColor.Light}"/>
+            <SolidColorBrush x:Key="RegionColorDamp" Color="{StaticResource Palette.RegionColorDamp.Light}"/>
+            <SolidColorBrush x:Key="MapBackgroundColor" Color="{StaticResource Palette.MapBackgroundColor.Light}"/>
+            <SolidColorBrush x:Key="BorderColor">#c4c4c4</SolidColorBrush>
+            <SolidColorBrush x:Key="SuccessColor">#1e7d45</SolidColorBrush>
+            <SolidColorBrush x:Key="WarningColor">#bb8e23</SolidColorBrush>
+            <SolidColorBrush x:Key="ErrorColor">#c50500</SolidColorBrush>
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+            <SolidColorBrush x:Key="FontColor">#ffffff</SolidColorBrush>
+            <SolidColorBrush x:Key="FontColorDamp">#a8a8a8</SolidColorBrush>
+            <SolidColorBrush x:Key="AccentColor" Color="{StaticResource Palette.AccentColor.Dark}"/>
+            <SolidColorBrush x:Key="RegionColor" Color="{StaticResource Palette.RegionColor.Dark}"/>
+            <SolidColorBrush x:Key="RegionColorDamp" Color="{StaticResource Palette.RegionColorDamp.Dark}"/>
+            <SolidColorBrush x:Key="MapBackgroundColor" Color="{StaticResource Palette.MapBackgroundColor.Dark}"/>
+            <SolidColorBrush x:Key="BorderColor">#3d4145</SolidColorBrush>
+            <SolidColorBrush x:Key="SuccessColor">#5fce8c</SolidColorBrush>
+            <SolidColorBrush x:Key="WarningColor">#fff000</SolidColorBrush>
+            <SolidColorBrush x:Key="ErrorColor">#ff6b66</SolidColorBrush>
+        </ResourceDictionary>
+    </ResourceDictionary.ThemeDictionaries>
+
+</ResourceDictionary>

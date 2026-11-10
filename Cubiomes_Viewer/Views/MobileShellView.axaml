@@ -1,0 +1,41 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Cubiomes_Viewer.ViewModels"
+             xmlns:views="using:Cubiomes_Viewer.Views"
+             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="800"
+             x:Class="Cubiomes_Viewer.Views.MobileShellView"
+             x:DataType="vm:MainViewModel">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <views:WorldBarView DataContext="{Binding WorldBar}"/>
+
+        <Panel Grid.Row="1">
+            <Panel Name="MapSlot"/>
+
+            <Border Classes="hover-chip" IsVisible="{Binding Map.HoverText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                <TextBlock Classes="status" Text="{Binding Map.HoverText}"/>
+            </Border>
+
+            <Border Classes="sheet" IsVisible="{Binding IsPanelOpen}">
+                <ContentControl Content="{Binding CurrentPanel}"/>
+            </Border>
+        </Panel>
+
+        <ListBox Grid.Row="2" Classes="rail bottom-nav" SelectedIndex="{Binding SelectedPanelIndex}" SelectionMode="Single,Toggle">
+            <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <UniformGrid Rows="1"/>
+                </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
+            <ListBoxItem ToolTip.Tip="{Binding LayersLabel}">
+                <PathIcon Data="{StaticResource LayersIcon}"/>
+            </ListBoxItem>
+            <ListBoxItem ToolTip.Tip="{Binding SettingsLabel}">
+                <PathIcon Data="{StaticResource SettingsIcon}"/>
+            </ListBoxItem>
+        </ListBox>
+    </Grid>
+
+</UserControl>

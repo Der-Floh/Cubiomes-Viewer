@@ -1,0 +1,44 @@
+/* HTML styles for the splash screen */
+.avalonia-splash {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    background: white;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    pointer-events: none;
+}
+
+.avalonia-splash h2 {
+    font-weight: 600;
+    font-size: 2rem;
+    margin: 0;
+}
+
+.avalonia-splash p {
+    font-size: 1rem;
+    margin: 0.5rem 0 0 0;
+}
+
+@media (prefers-color-scheme: light) {
+    .avalonia-splash {
+        background: #f3f3f3;
+        color: #1f2123;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    .avalonia-splash {
+        background: #1f2123;
+        color: white;
+    }
+}
+
+.avalonia-splash.splash-close {
+    transition: opacity 200ms, display 200ms;
+    display: none;
+    opacity: 0;
+}

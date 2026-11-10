@@ -1,0 +1,30 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Cubiomes_Viewer.ViewModels"
+             xmlns:views="using:Cubiomes_Viewer.Views"
+             mc:Ignorable="d" d:DesignWidth="320" d:DesignHeight="600"
+             x:Class="Cubiomes_Viewer.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+
+    <ScrollViewer>
+        <StackPanel Classes="panel">
+            <TextBlock Classes="title" Text="{Binding Title}"/>
+
+            <TextBlock Classes="section" Text="{Binding AppearanceLabel}"/>
+            <TextBlock Classes="field-label" Text="{Binding ThemeLabel}"/>
+            <ComboBox ItemsSource="{Binding Themes}" SelectedItem="{Binding SelectedTheme}" HorizontalAlignment="Stretch"/>
+
+            <TextBlock Classes="section" Text="{Binding MapLabel}"/>
+            <CheckBox Content="{Binding SmoothMotionLabel}" IsChecked="{Binding SmoothMotion}"/>
+            <TextBlock Classes="field-label" Text="{Binding CacheLabel}"/>
+            <NumericUpDown Value="{Binding CacheMegabytes}" Minimum="{Binding MinCacheMegabytes}" Maximum="{Binding MaxCacheMegabytes}" Increment="64" FormatString="0"/>
+
+            <Expander Classes="section-content" Header="{Binding DiagnosticsLabel}" HorizontalAlignment="Stretch">
+                <views:SelfTestView DataContext="{Binding SelfTest}"/>
+            </Expander>
+        </StackPanel>
+    </ScrollViewer>
+
+</UserControl>

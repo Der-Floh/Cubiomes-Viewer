@@ -1,0 +1,12 @@
+<Project>
+  <PropertyGroup>
+    <WasmBuildNative>true</WasmBuildNative>
+    <!-- The WASM SDK compiles .c NativeFileReference items in its emcc link command, so compiler flags go through the link flags. -->
+    <EmccExtraLDFlags>$(EmccExtraLDFlags) -fwrapv -ffp-contract=off</EmccExtraLDFlags>
+    <EmccLinkOptimizationFlag>-O2</EmccLinkOptimizationFlag>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <NativeFileReference Include="$(MSBuildThisFileDirectory)shim\cvnative.c" />
+  </ItemGroup>
+</Project>

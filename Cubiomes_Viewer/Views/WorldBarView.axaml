@@ -1,0 +1,64 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Cubiomes_Viewer.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="60"
+             x:Class="Cubiomes_Viewer.Views.WorldBarView"
+             x:DataType="vm:WorldBarViewModel">
+
+    <Border Classes="world-bar">
+        <WrapPanel>
+            <StackPanel Classes="toolbar-group">
+                <TextBox Classes="seed" Text="{Binding SeedText}" PlaceholderText="{Binding SeedPlaceholder}">
+                    <TextBox.KeyBindings>
+                        <KeyBinding Gesture="Enter" Command="{Binding ApplySeedCommand}"/>
+                    </TextBox.KeyBindings>
+                </TextBox>
+                <Button Classes="icon" Command="{Binding RandomSeedCommand}" ToolTip.Tip="{Binding RandomSeedLabel}">
+                    <PathIcon Data="{StaticResource DiceIcon}"/>
+                </Button>
+                <ComboBox ItemsSource="{Binding RecentSeeds}" SelectedItem="{Binding SelectedRecentSeed}" PlaceholderText="{Binding RecentSeedsPlaceholder}" VerticalAlignment="Center"/>
+                <TextBlock Classes="field-label" Text="{Binding SeedHint}"/>
+            </StackPanel>
+
+            <StackPanel Classes="toolbar-group">
+                <ComboBox ItemsSource="{Binding Versions}" SelectedItem="{Binding SelectedVersion}" VerticalAlignment="Center"/>
+                <CheckBox Content="{Binding LargeBiomesLabel}" IsChecked="{Binding LargeBiomes}" IsEnabled="{Binding IsLargeBiomesAvailable}"/>
+            </StackPanel>
+
+            <StackPanel Classes="toolbar-group">
+                <ComboBox ItemsSource="{Binding Dimensions}" SelectedItem="{Binding SelectedDimension}" VerticalAlignment="Center"/>
+                <TextBlock Classes="field-label" Text="{Binding SampleHeightLabel}"/>
+                <NumericUpDown Classes="compact" Value="{Binding SampleHeight}" Minimum="{Binding MinSampleHeight}" Maximum="{Binding MaxSampleHeight}" Increment="1" FormatString="0"/>
+            </StackPanel>
+
+            <StackPanel Classes="toolbar-group">
+                <Button Classes="icon" ToolTip.Tip="{Binding GoToLabel}">
+                    <PathIcon Data="{StaticResource GoToIcon}"/>
+                    <Button.Flyout>
+                        <Flyout>
+                            <StackPanel Classes="flyout-form">
+                                <TextBlock Classes="field-label" Text="{Binding GoToXLabel}"/>
+                                <NumericUpDown Value="{Binding GoToX}" Increment="16" FormatString="0"/>
+                                <TextBlock Classes="field-label" Text="{Binding GoToZLabel}"/>
+                                <NumericUpDown Value="{Binding GoToZ}" Increment="16" FormatString="0"/>
+                                <Button Content="{Binding GoLabel}" Command="{Binding GoToCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                            </StackPanel>
+                        </Flyout>
+                    </Button.Flyout>
+                </Button>
+                <Button Classes="icon" Command="{Binding Map.GoToOriginCommand}" ToolTip.Tip="{Binding OriginLabel}">
+                    <PathIcon Data="{StaticResource HomeIcon}"/>
+                </Button>
+                <Button Classes="icon" Command="{Binding Map.ZoomOutCommand}" ToolTip.Tip="{Binding ZoomOutLabel}">
+                    <PathIcon Data="{StaticResource MinusIcon}"/>
+                </Button>
+                <Button Classes="icon" Command="{Binding Map.ZoomInCommand}" ToolTip.Tip="{Binding ZoomInLabel}">
+                    <PathIcon Data="{StaticResource PlusIcon}"/>
+                </Button>
+            </StackPanel>
+        </WrapPanel>
+    </Border>
+
+</UserControl>
