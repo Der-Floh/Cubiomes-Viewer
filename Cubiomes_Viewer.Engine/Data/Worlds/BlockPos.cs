@@ -7,4 +7,8 @@ namespace Cubiomes_Viewer.Engine.Data.Worlds;
 /// so the native generator can fill spans of positions directly.
 /// </summary>
 [StructLayout(LayoutKind.Sequential)]
-public readonly record struct BlockPos(int X, int Z);
+public readonly record struct BlockPos(int X, int Z)
+{
+    /// <summary>The straight-line distance to another block, in blocks.</summary>
+    public double DistanceTo(BlockPos other) => double.Hypot((double)other.X - X, (double)other.Z - Z);
+}

@@ -14,6 +14,8 @@ public interface IMapStyleService
     MapMarker Spawn { get; }
     MapMarker Stronghold { get; }
     Color SlimeChunkColor { get; }
+    Color MeasureColor { get; }
+    Color OutlineColor { get; }
 
     MapMarker GetStructureMarker(StructureType type);
 

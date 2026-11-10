@@ -6,6 +6,7 @@ using Cubiomes_Viewer.Controls.Map;
 using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Extensions;
 using Cubiomes_Viewer.Engine.Service.SettingsServ;
+using Cubiomes_Viewer.Service.ClipboardServ;
 using Cubiomes_Viewer.Service.MapStyleServ;
 using Cubiomes_Viewer.Service.NotificationServ;
 using Cubiomes_Viewer.Service.StorageServ;
@@ -108,6 +109,7 @@ public sealed partial class App : Application
         services.AddSingleton<IThemeService, ThemeService>();
         services.AddSingleton<ITileBitmapService, TileBitmapService>();
         services.AddSingleton<IMapStyleService, MapStyleService>();
+        services.AddSingleton<IClipboardService, ClipboardService>();
         services.AddSingleton<WorldSession>();
 
         // map layers
@@ -116,6 +118,7 @@ public sealed partial class App : Application
         services.AddTransient<GridLayer>();
         services.AddTransient<StructureLayer>();
         services.AddTransient<LandmarkLayer>();
+        services.AddTransient<MeasureLayer>();
 
         // views
         services.AddTransient<MainWindow>();
@@ -130,6 +133,8 @@ public sealed partial class App : Application
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<WorldBarViewModel>();
         services.AddSingleton<MapViewModel>();
+        services.AddSingleton<MapMenuViewModel>();
+        services.AddSingleton<MapHostViewModel>();
         services.AddSingleton<LayersPanelViewModel>();
         services.AddSingleton<SettingsViewModel>();
         services.AddTransient<SelfTestViewModel>();

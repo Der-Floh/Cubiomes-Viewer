@@ -38,6 +38,7 @@
     <Color x:Key="Marker.Glyph">#ffffff</Color>
     <Color x:Key="Marker.Outline">#cc000000</Color>
     <Color x:Key="SlimeChunkColor">#7034c759</Color>
+    <Color x:Key="MeasureColor">#ffe14d</Color>
     <SolidColorBrush x:Key="MarkerGlyphColor" Color="{StaticResource Marker.Glyph}"/>
     <SolidColorBrush x:Key="MarkerOutlineColor" Color="{StaticResource Marker.Outline}"/>
 

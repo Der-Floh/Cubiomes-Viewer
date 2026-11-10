@@ -117,6 +117,13 @@ public sealed class MapView : Control
         RequestFrame();
     }
 
+    /// <summary>Returns the block shown at a position inside the control.</summary>
+    public BlockPos GetBlockAt(Point position)
+    {
+        var (blockX, blockZ) = Viewport.ToWorld(position.X, position.Y);
+        return new BlockPos((int)Math.Floor(blockX), (int)Math.Floor(blockZ));
+    }
+
     public override void Render(DrawingContext context)
     {
         if (Background is { } background)
@@ -312,8 +319,7 @@ public sealed class MapView : Control
     private void RaiseHover(Point position)
     {
         _hoverPosition = position;
-        var (blockX, blockZ) = Viewport.ToWorld(position.X, position.Y);
-        HoverChanged?.Invoke(this, new MapHoverEventArgs(new BlockPos((int)Math.Floor(blockX), (int)Math.Floor(blockZ))));
+        HoverChanged?.Invoke(this, new MapHoverEventArgs(GetBlockAt(position)));
     }
 
     private void BeginPinch()

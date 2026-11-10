@@ -57,6 +57,17 @@ public sealed partial class MapViewModel : ViewModelBase
     [ObservableProperty]
     public partial string HoverText { get; set; } = string.Empty;
 
+    /// <summary>The block under the pointer, or <see langword="null"/> while the pointer is outside the map.</summary>
+    [ObservableProperty]
+    public partial BlockPos? HoverPosition { get; set; }
+
+    /// <summary>The block a distance is measured from, or <see langword="null"/> when nothing is measured.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsMeasuring))]
+    public partial BlockPos? MeasureStart { get; set; }
+
+    public bool IsMeasuring => MeasureStart is not null;
+
     [ObservableProperty]
     public partial bool IsGenerating { get; set; }
 
@@ -97,6 +108,7 @@ public sealed partial class MapViewModel : ViewModelBase
 
     public void SetHover(BlockPos? position)
     {
+        HoverPosition = position;
         if (position is not { } block)
         {
             HoverText = string.Empty;
@@ -105,8 +117,12 @@ public sealed partial class MapViewModel : ViewModelBase
 
         var location = string.Create(CultureInfo.InvariantCulture,
             $"X {block.X}, Z {block.Z}  ·  Chunk {block.X >> ChunkShift}, {block.Z >> ChunkShift}");
-        HoverText = GetBiomeName(block) is { } biome ? $"{biome}  ·  {location}" : location;
+        var text = GetBiomeName(block) is { } biome ? $"{biome}  ·  {location}" : location;
+        HoverText = MeasureStart is { } start ? $"{text}  ·  {DescribeDistance(start, block)}" : text;
     }
+
+    private static string DescribeDistance(BlockPos start, BlockPos end)
+        => string.Create(CultureInfo.InvariantCulture, $"{start.DistanceTo(end):0.#} blocks from {start.X}, {start.Z}");
 
     private string? GetBiomeName(BlockPos block)
         => _tileService.TryGetCachedBiome(World, LayerMode.Biomes, SampleHeight, block.X, block.Z, out var biome) && biome != EngineConstants.NoBiomeId

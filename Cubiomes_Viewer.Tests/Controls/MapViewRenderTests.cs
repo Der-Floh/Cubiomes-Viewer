@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
@@ -17,6 +18,7 @@ using Cubiomes_Viewer.Engine.Service.StructureServ;
 using Cubiomes_Viewer.Engine.Service.TileServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
 using Cubiomes_Viewer.Service.MapStyleServ;
+using Cubiomes_Viewer.Views;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -74,6 +76,21 @@ public sealed class MapViewRenderTests
         Assert.NotNull(frame);
         var fill = Assert.IsAssignableFrom<ISolidColorBrush>(App.Services.GetRequiredService<IMapStyleService>().Spawn.Fill).Color;
         Assert.Equal(new BiomeColor(fill.R, fill.G, fill.B), ReadPixel(frame, ViewSize / 2 - MarkerFillOffset, ViewSize / 2));
+    }
+
+    [AvaloniaFact]
+    public void CapturePng_MapShown_ReturnsAnImageOfTheMapSize()
+    {
+        var host = App.Services.GetRequiredService<MapHostView>();
+        var window = new Window { Width = ViewSize, Height = ViewSize, Content = host };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        var png = host.CapturePng();
+        window.Close();
+
+        using var image = new Bitmap(new MemoryStream(png));
+        Assert.Equal(new PixelSize(ViewSize, ViewSize), image.PixelSize);
     }
 
     private static async Task<BlockPos> WaitForSpawnAsync(IWorldLandmarkService landmarkService, WorldKey world)

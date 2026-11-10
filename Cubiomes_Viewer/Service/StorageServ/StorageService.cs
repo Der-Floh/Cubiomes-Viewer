@@ -11,6 +11,7 @@ public sealed class StorageService : IStorageService
     public IStorageProvider StorageProvider => field ??= _topLevelProvider.GetTopLevel().StorageProvider;
     public bool CanOpenFiles => StorageProvider.CanOpen;
     public bool CanOpenFolders => StorageProvider.CanPickFolder;
+    public bool CanSaveFiles => StorageProvider.CanSave;
 
     private readonly ITopLevelProvider _topLevelProvider;
     private readonly ILogger<StorageService> _logger;
@@ -34,6 +35,14 @@ public sealed class StorageService : IStorageService
         _logger.LogDebug("Opening folder picker: title={Title}", options.Title);
         var result = await StorageProvider.OpenFolderPickerAsync(options);
         _logger.LogDebug("Folder picker returned {Count} folder(s)", result.Count);
+        return result;
+    }
+
+    public async Task<IStorageFile?> SaveFilePickerAsync(FilePickerSaveOptions options)
+    {
+        _logger.LogDebug("Opening save picker: title={Title}", options.Title);
+        var result = await StorageProvider.SaveFilePickerAsync(options);
+        _logger.LogDebug("Save picker returned a file: {HasFile}", result is not null);
         return result;
     }
 
