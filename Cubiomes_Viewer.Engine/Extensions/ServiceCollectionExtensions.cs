@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using Cubiomes_Viewer.Engine.Data.Compute;
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.SelfTests;
+using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Repository.AppDataRepo;
 using Cubiomes_Viewer.Engine.Repository.SettingsRepo;
 using Cubiomes_Viewer.Engine.Service.ComputeServ;
@@ -42,6 +43,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<JobHandlerRegistry>();
         services.AddSingleton<ComputeWorkerHost>();
         services.AddJobHandler<BiomeTileJob, TileData, BiomeTileJobHandler>();
+        services.AddJobHandler<StructureAreaJob, StructureAreaData, StructureAreaJobHandler>();
+        services.AddJobHandler<LandmarksJob, WorldLandmarks, LandmarksJobHandler>();
+        services.AddJobHandler<SlimeAreaJob, SlimeAreaData, SlimeAreaJobHandler>();
         services.AddJobHandler<SelfTestJob, SelfTestReport, SelfTestJobHandler>();
         if (OperatingSystem.IsBrowser())
             services.AddSingleton<IComputeService, InlineComputeService>();
@@ -51,6 +55,10 @@ public static class ServiceCollectionExtensions
         // services
         services.AddSingleton<ITileColorizer, BiomeTileColorizer>();
         services.AddSingleton<IMapTileService, MapTileService>();
+        services.AddSingleton<IStructureCatalog, StructureCatalog>();
+        services.AddSingleton<IStructureAreaService, StructureAreaService>();
+        services.AddSingleton<IWorldLandmarkService, WorldLandmarkService>();
+        services.AddSingleton<ISlimeAreaService, SlimeAreaService>();
         services.AddSingleton<ISeedParser, SeedParser>();
         services.AddSingleton<ISeedHistoryService, SeedHistoryService>();
         services.AddSingleton<ISettingsService, SettingsService>();

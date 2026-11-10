@@ -9,6 +9,9 @@ namespace Cubiomes_Viewer.Engine.Data.Compute;
 /// </summary>
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "$job")]
 [JsonDerivedType(typeof(BiomeTileJob), "biomeTile")]
+[JsonDerivedType(typeof(StructureAreaJob), "structureArea")]
+[JsonDerivedType(typeof(LandmarksJob), "landmarks")]
+[JsonDerivedType(typeof(SlimeAreaJob), "slimeArea")]
 [JsonDerivedType(typeof(SelfTestJob), "selfTest")]
 public abstract record ComputeJob;
 
