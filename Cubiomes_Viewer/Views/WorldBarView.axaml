@@ -9,7 +9,7 @@
 
     <Border Classes="world-bar">
         <WrapPanel>
-            <StackPanel Classes="toolbar-group">
+            <WrapPanel Classes="toolbar-group">
                 <TextBox Classes="seed" Text="{Binding SeedText}" PlaceholderText="{Binding SeedPlaceholder}">
                     <TextBox.KeyBindings>
                         <KeyBinding Gesture="Enter" Command="{Binding ApplySeedCommand}"/>
@@ -20,20 +20,20 @@
                 </Button>
                 <ComboBox ItemsSource="{Binding RecentSeeds}" SelectedItem="{Binding SelectedRecentSeed}" PlaceholderText="{Binding RecentSeedsPlaceholder}" VerticalAlignment="Center"/>
                 <TextBlock Classes="field-label" Text="{Binding SeedHint}"/>
-            </StackPanel>
+            </WrapPanel>
 
-            <StackPanel Classes="toolbar-group">
+            <WrapPanel Classes="toolbar-group">
                 <ComboBox ItemsSource="{Binding Versions}" SelectedItem="{Binding SelectedVersion}" VerticalAlignment="Center"/>
                 <CheckBox Content="{Binding LargeBiomesLabel}" IsChecked="{Binding LargeBiomes}" IsEnabled="{Binding IsLargeBiomesAvailable}"/>
-            </StackPanel>
+            </WrapPanel>
 
-            <StackPanel Classes="toolbar-group">
+            <WrapPanel Classes="toolbar-group">
                 <ComboBox ItemsSource="{Binding Dimensions}" SelectedItem="{Binding SelectedDimension}" VerticalAlignment="Center"/>
                 <TextBlock Classes="field-label" Text="{Binding SampleHeightLabel}"/>
                 <NumericUpDown Classes="compact" Value="{Binding SampleHeight}" Minimum="{Binding MinSampleHeight}" Maximum="{Binding MaxSampleHeight}" Increment="1" FormatString="0"/>
-            </StackPanel>
+            </WrapPanel>
 
-            <StackPanel Classes="toolbar-group">
+            <WrapPanel Classes="toolbar-group">
                 <Button Classes="icon" ToolTip.Tip="{Binding GoToLabel}">
                     <PathIcon Data="{StaticResource GoToIcon}"/>
                     <Button.Flyout>
@@ -57,7 +57,7 @@
                 <Button Classes="icon" Command="{Binding Map.ZoomInCommand}" ToolTip.Tip="{Binding ZoomInLabel}">
                     <PathIcon Data="{StaticResource PlusIcon}"/>
                 </Button>
-            </StackPanel>
+            </WrapPanel>
         </WrapPanel>
     </Border>
 
