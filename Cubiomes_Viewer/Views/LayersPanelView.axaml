@@ -7,11 +7,43 @@
              x:Class="Cubiomes_Viewer.Views.LayersPanelView"
              x:DataType="vm:LayersPanelViewModel">
 
+    <UserControl.DataTemplates>
+        <DataTemplate x:DataType="vm:MarkerToggleViewModel">
+            <CheckBox IsChecked="{Binding IsChecked}">
+                <StackPanel Classes="marker-label">
+                    <Border Classes="marker" Background="{Binding Marker.Fill}">
+                        <Viewbox Classes="marker-glyph">
+                            <Path Classes="marker-glyph" Data="{Binding Marker.Glyph}"/>
+                        </Viewbox>
+                    </Border>
+                    <TextBlock Text="{Binding Name}"/>
+                </StackPanel>
+            </CheckBox>
+        </DataTemplate>
+    </UserControl.DataTemplates>
+
     <ScrollViewer>
         <StackPanel Classes="panel">
             <TextBlock Classes="title" Text="{Binding Title}"/>
+
             <TextBlock Classes="section" Text="{Binding OverlaysLabel}"/>
             <CheckBox Content="{Binding ShowGridLabel}" IsChecked="{Binding ShowGrid}"/>
+            <CheckBox Content="{Binding ShowSlimeChunksLabel}" IsChecked="{Binding ShowSlimeChunks}" IsVisible="{Binding IsOverworld}"/>
+
+            <StackPanel IsVisible="{Binding IsOverworld}">
+                <TextBlock Classes="section" Text="{Binding LandmarksLabel}"/>
+                <ContentControl Content="{Binding Spawn}"/>
+                <ContentControl Content="{Binding Strongholds}"/>
+            </StackPanel>
+
+            <Grid ColumnDefinitions="*,Auto,Auto">
+                <TextBlock Classes="section" Text="{Binding StructuresLabel}"/>
+                <Button Grid.Column="1" Classes="compact" Content="{Binding ShowAllLabel}" Command="{Binding ShowAllStructuresCommand}" IsVisible="{Binding HasStructures}"/>
+                <Button Grid.Column="2" Classes="compact" Content="{Binding HideAllLabel}" Command="{Binding HideAllStructuresCommand}" IsVisible="{Binding HasStructures}"/>
+            </Grid>
+            <TextBlock Classes="damp" Text="{Binding ZoomHint}" TextWrapping="Wrap" IsVisible="{Binding HasStructures}"/>
+            <TextBlock Classes="damp" Text="{Binding NoStructuresLabel}" TextWrapping="Wrap" IsVisible="{Binding !HasStructures}"/>
+            <ItemsControl ItemsSource="{Binding Structures}"/>
         </StackPanel>
     </ScrollViewer>
 

@@ -10,6 +10,37 @@
     <Color x:Key="Palette.AccentColor.Dark">#3aa56b</Color>
     <Color x:Key="Palette.MapBackgroundColor.Dark">#121416</Color>
 
+    <Color x:Key="Marker.Village">#b5651d</Color>
+    <Color x:Key="Marker.Outpost">#9e3d2c</Color>
+    <Color x:Key="Marker.DesertPyramid">#b8860b</Color>
+    <Color x:Key="Marker.JungleTemple">#2e7d32</Color>
+    <Color x:Key="Marker.SwampHut">#556b2f</Color>
+    <Color x:Key="Marker.Igloo">#4f9fd0</Color>
+    <Color x:Key="Marker.Monument">#00838f</Color>
+    <Color x:Key="Marker.Mansion">#5d4037</Color>
+    <Color x:Key="Marker.OceanRuin">#3f6fb5</Color>
+    <Color x:Key="Marker.Shipwreck">#8d6e63</Color>
+    <Color x:Key="Marker.Treasure">#c08a00</Color>
+    <Color x:Key="Marker.RuinedPortal">#7b1fa2</Color>
+    <Color x:Key="Marker.AncientCity">#1c4a5a</Color>
+    <Color x:Key="Marker.TrailRuins">#b0704a</Color>
+    <Color x:Key="Marker.TrialChambers">#c2622d</Color>
+    <Color x:Key="Marker.Mineshaft">#616161</Color>
+    <Color x:Key="Marker.DesertWell">#a8893a</Color>
+    <Color x:Key="Marker.Geode">#9c5fd6</Color>
+    <Color x:Key="Marker.Fortress">#8b1a1a</Color>
+    <Color x:Key="Marker.Bastion">#37303b</Color>
+    <Color x:Key="Marker.RuinedPortalNether">#7b1fa2</Color>
+    <Color x:Key="Marker.EndCity">#a569bd</Color>
+    <Color x:Key="Marker.EndGateway">#0e7c86</Color>
+    <Color x:Key="Marker.Spawn">#d32f2f</Color>
+    <Color x:Key="Marker.Stronghold">#1b8f6a</Color>
+    <Color x:Key="Marker.Glyph">#ffffff</Color>
+    <Color x:Key="Marker.Outline">#cc000000</Color>
+    <Color x:Key="SlimeChunkColor">#7034c759</Color>
+    <SolidColorBrush x:Key="MarkerGlyphColor" Color="{StaticResource Marker.Glyph}"/>
+    <SolidColorBrush x:Key="MarkerOutlineColor" Color="{StaticResource Marker.Outline}"/>
+
     <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Light">
             <SolidColorBrush x:Key="FontColor">#000000</SolidColorBrush>

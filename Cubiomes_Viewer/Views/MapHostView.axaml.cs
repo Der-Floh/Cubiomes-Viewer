@@ -14,18 +14,27 @@ public sealed partial class MapHostView : UserControl
 {
     private readonly MapViewModel _viewModel;
     private readonly GridLayer _gridLayer;
+    private readonly SlimeChunkLayer _slimeChunkLayer;
+    private readonly StructureLayer _structureLayer;
+    private readonly LandmarkLayer _landmarkLayer;
 
-    public MapHostView(MapViewModel viewModel, TileLayer tileLayer, GridLayer gridLayer)
+    public MapHostView(MapViewModel viewModel, TileLayer tileLayer, SlimeChunkLayer slimeChunkLayer, GridLayer gridLayer, StructureLayer structureLayer, LandmarkLayer landmarkLayer)
     {
         InitializeComponent();
         DataContext = viewModel;
 
         _viewModel = viewModel;
         _gridLayer = gridLayer;
-        _gridLayer.IsVisible = viewModel.ShowGrid;
+        _slimeChunkLayer = slimeChunkLayer;
+        _structureLayer = structureLayer;
+        _landmarkLayer = landmarkLayer;
+        ShowOverlays();
 
         Map.AddLayer(tileLayer);
+        Map.AddLayer(slimeChunkLayer);
         Map.AddLayer(gridLayer);
+        Map.AddLayer(structureLayer);
+        Map.AddLayer(landmarkLayer);
     }
 
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
@@ -52,10 +61,22 @@ public sealed partial class MapHostView : UserControl
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName != nameof(MapViewModel.ShowGrid))
+        if (e.PropertyName is not (nameof(MapViewModel.ShowGrid) or nameof(MapViewModel.ShowSlimeChunks) or nameof(MapViewModel.ShowSpawn)
+            or nameof(MapViewModel.ShowStrongholds) or nameof(MapViewModel.VisibleStructures)))
+        {
             return;
+        }
 
-        _gridLayer.IsVisible = _viewModel.ShowGrid;
+        ShowOverlays();
         Map.Refresh();
+    }
+
+    private void ShowOverlays()
+    {
+        _gridLayer.IsVisible = _viewModel.ShowGrid;
+        _slimeChunkLayer.IsVisible = _viewModel.ShowSlimeChunks;
+        _landmarkLayer.ShowSpawn = _viewModel.ShowSpawn;
+        _landmarkLayer.ShowStrongholds = _viewModel.ShowStrongholds;
+        _structureLayer.VisibleTypes = _viewModel.VisibleStructures;
     }
 }

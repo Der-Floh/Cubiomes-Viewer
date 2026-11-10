@@ -1,7 +1,6 @@
 using Avalonia;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
-using Avalonia.Threading;
 
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Service.TileServ;
@@ -27,8 +26,8 @@ public sealed class TileLayer : IMapLayer
     private readonly ITileBitmapService _bitmapService;
     private readonly Dictionary<TileRequest, LinkedListNode<TileBitmap>> _bitmaps = [];
     private readonly LinkedList<TileBitmap> _recency = new();
+    private readonly UiThreadCoalescer _invalidation;
     private byte[] _pixels = [];
-    private int _invalidationQueued;
 
     public TileLayer(IMapTileService tileService, ITileColorizer colorizer, IBiomeCatalog biomeCatalog, ITileBitmapService bitmapService)
     {
@@ -36,13 +35,14 @@ public sealed class TileLayer : IMapLayer
         _colorizer = colorizer;
         _biomeCatalog = biomeCatalog;
         _bitmapService = bitmapService;
+        _invalidation = new UiThreadCoalescer(() => Invalidated?.Invoke(this, EventArgs.Empty));
     }
 
-    public void Attach() => _tileService.StateChanged += OnTileStateChanged;
+    public void Attach() => _tileService.StateChanged += _invalidation.Request;
 
     public void Detach()
     {
-        _tileService.StateChanged -= OnTileStateChanged;
+        _tileService.StateChanged -= _invalidation.Request;
         _tileService.SetVisibleTiles([]);
 
         foreach (var entry in _recency)
@@ -140,18 +140,6 @@ public sealed class TileLayer : IMapLayer
             _bitmaps.Remove(last.Value.Request);
             last.Value.Bitmap.Dispose();
         }
-    }
-
-    private void OnTileStateChanged()
-    {
-        if (Interlocked.Exchange(ref _invalidationQueued, 1) != 0)
-            return;
-
-        Dispatcher.UIThread.Post(() =>
-        {
-            Interlocked.Exchange(ref _invalidationQueued, 0);
-            Invalidated?.Invoke(this, EventArgs.Empty);
-        });
     }
 
     private readonly record struct TileBitmap(TileRequest Request, Bitmap Bitmap);

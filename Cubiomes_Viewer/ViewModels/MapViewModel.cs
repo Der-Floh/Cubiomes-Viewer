@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.ComponentModel;
 using System.Globalization;
 
@@ -36,6 +37,19 @@ public sealed partial class MapViewModel : ViewModelBase
 
     [ObservableProperty]
     public partial bool ShowGrid { get; set; } = true;
+
+    [ObservableProperty]
+    public partial bool ShowSlimeChunks { get; set; }
+
+    [ObservableProperty]
+    public partial bool ShowSpawn { get; set; } = true;
+
+    [ObservableProperty]
+    public partial bool ShowStrongholds { get; set; } = true;
+
+    /// <summary>The structure types marked on the map.</summary>
+    [ObservableProperty]
+    public partial IReadOnlySet<StructureType> VisibleStructures { get; set; } = FrozenSet<StructureType>.Empty;
 
     [ObservableProperty]
     public partial bool SmoothMotion { get; set; } = true;

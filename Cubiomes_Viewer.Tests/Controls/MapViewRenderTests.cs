@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Threading;
@@ -12,8 +13,10 @@ using Cubiomes_Viewer.Controls.Map;
 using Cubiomes_Viewer.Engine.Data.Biomes;
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Worlds;
+using Cubiomes_Viewer.Engine.Service.StructureServ;
 using Cubiomes_Viewer.Engine.Service.TileServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
+using Cubiomes_Viewer.Service.MapStyleServ;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -25,6 +28,7 @@ public sealed class MapViewRenderTests
     private const int SampleHeight = 63;
     private const int ViewSize = 256;
     private const int BytesPerPixel = 4;
+    private const int MarkerFillOffset = 9;
     private static readonly TimeSpan _timeout = TimeSpan.FromSeconds(30);
 
     [AvaloniaFact]
@@ -47,6 +51,42 @@ public sealed class MapViewRenderTests
         Assert.NotNull(frame);
         var expected = App.Services.GetRequiredService<IBiomeCatalog>().DefaultPalette[MushroomFieldsBiomeId];
         Assert.Equal(expected, ReadPixel(frame, ViewSize / 2 + 8, ViewSize / 2 + 8));
+    }
+
+    [AvaloniaFact]
+    public async Task Render_LandmarksShown_DrawsTheSpawnMarkerAtTheSpawnPoint()
+    {
+        var world = new WorldKey(262, McVersion.V1_21_3, Dimension.Overworld, GeneratorFlags.None);
+        var landmarkService = App.Services.GetRequiredService<IWorldLandmarkService>();
+        var map = new MapView { World = world, SampleHeight = SampleHeight, Camera = new MapCamera(0, 0, 1), SmoothMotion = false };
+        map.AddLayer(App.Services.GetRequiredService<LandmarkLayer>());
+        var window = new Window { Width = ViewSize, Height = ViewSize, Content = map };
+        window.Show();
+
+        var spawn = await WaitForSpawnAsync(landmarkService, world);
+        map.Camera = new MapCamera(spawn.X, spawn.Z, 1);
+        Dispatcher.UIThread.RunJobs();
+        AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+
+        using var frame = window.CaptureRenderedFrame();
+        window.Close();
+
+        Assert.NotNull(frame);
+        var fill = Assert.IsAssignableFrom<ISolidColorBrush>(App.Services.GetRequiredService<IMapStyleService>().Spawn.Fill).Color;
+        Assert.Equal(new BiomeColor(fill.R, fill.G, fill.B), ReadPixel(frame, ViewSize / 2 - MarkerFillOffset, ViewSize / 2));
+    }
+
+    private static async Task<BlockPos> WaitForSpawnAsync(IWorldLandmarkService landmarkService, WorldKey world)
+    {
+        var deadline = DateTime.UtcNow + _timeout;
+        while (true)
+        {
+            if (landmarkService.TryGetLandmarks(world, out var landmarks))
+                return Assert.NotNull(landmarks.Spawn);
+
+            Assert.True(DateTime.UtcNow < deadline, "The landmarks were not found in time.");
+            await Task.Delay(10, TestContext.Current.CancellationToken);
+        }
     }
 
     private static async Task WaitForTileAsync(TileRequest request)
