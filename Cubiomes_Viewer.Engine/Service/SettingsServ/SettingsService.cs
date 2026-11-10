@@ -14,6 +14,7 @@ public sealed class SettingsService : ISettingsService
     private readonly ISettingsRepository _repository;
     private readonly ILogger<SettingsService> _logger;
     private CancellationTokenSource? _pendingSave;
+    private bool _isLoaded;
 
     public SettingsService(ISettingsRepository repository, ILogger<SettingsService> logger)
     {
@@ -23,12 +24,23 @@ public sealed class SettingsService : ISettingsService
 
     public async Task LoadAsync(CancellationToken cancellationToken = default)
     {
-        Current = await _repository.LoadAsync(cancellationToken);
-        _logger.LogDebug("Settings loaded: schema={SchemaVersion}", Current.SchemaVersion);
+        try
+        {
+            Current = await _repository.LoadAsync(cancellationToken);
+            _isLoaded = true;
+            _logger.LogDebug("Settings loaded: schema={SchemaVersion}", Current.SchemaVersion);
+        }
+        catch (IOException ex)
+        {
+            _logger.LogWarning(ex, "Settings could not be loaded; the defaults are used and changes are not saved");
+        }
     }
 
     public void RequestSave()
     {
+        if (!_isLoaded)
+            return;
+
         _pendingSave?.Cancel();
         var pending = new CancellationTokenSource();
         _pendingSave = pending;
@@ -39,7 +51,7 @@ public sealed class SettingsService : ISettingsService
     {
         _pendingSave?.Cancel();
         _pendingSave = null;
-        return _repository.SaveAsync(Current, cancellationToken);
+        return _isLoaded ? _repository.SaveAsync(Current, cancellationToken) : Task.CompletedTask;
     }
 
     private async Task SaveAfterDelayAsync(CancellationTokenSource pending)

@@ -20,7 +20,7 @@ public sealed class InProcessComputeService : IComputeService, IDisposable
     private readonly JobHandlerRegistry _handlers;
     private readonly IWorldGeneratorFactory _generatorFactory;
     private readonly ILogger<InProcessComputeService> _logger;
-    private readonly ComputeQueue _queue = new();
+    private readonly ComputeQueue<IComputeWorkItem> _queue = new();
     private readonly Thread[] _workers;
     private bool _disposed;
 

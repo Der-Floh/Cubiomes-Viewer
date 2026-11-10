@@ -13,7 +13,7 @@ public sealed class InlineComputeService : IComputeService, IDisposable
 
     private readonly JobHandlerRegistry _handlers;
     private readonly WorkerContext _context;
-    private readonly ComputeQueue _queue = new();
+    private readonly ComputeQueue<IComputeWorkItem> _queue = new();
     private readonly object _gate = new();
     private bool _isPumping;
 

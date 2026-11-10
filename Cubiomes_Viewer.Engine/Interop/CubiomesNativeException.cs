@@ -5,10 +5,17 @@ public sealed class CubiomesNativeException : Exception
     public NativeStatus Status { get; }
 
     public CubiomesNativeException(NativeStatus status, string operation)
-        : base($"{operation} failed: {Describe(status)}")
+        : this($"{operation} failed: {Describe(status)}", status)
+    {
+    }
+
+    private CubiomesNativeException(string message, NativeStatus status) : base(message)
     {
         Status = status;
     }
+
+    /// <summary>Recreates a failure that was reported by a worker in another runtime.</summary>
+    public static CubiomesNativeException FromWorker(NativeStatus status, string message) => new(message, status);
 
     internal static int ThrowIfError(int result, string operation)
         => result < 0 ? throw new CubiomesNativeException((NativeStatus)result, operation) : result;

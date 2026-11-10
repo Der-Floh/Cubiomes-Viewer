@@ -1,5 +1,5 @@
 const workers = new Map();
-const pending = new Map();
+const pendingRequests = new Map();
 let nextRequestId = 1;
 
 export function createWorker(workerId, scriptUrl) {
@@ -7,44 +7,61 @@ export function createWorker(workerId, scriptUrl) {
         const worker = new Worker(new URL(scriptUrl, document.baseURI), { type: 'module' });
         workers.set(workerId, worker);
 
-        worker.onerror = event => reject(new Error(event.message || 'The worker failed to start.'));
+        const fail = message => {
+            terminate(workerId);
+            reject(new Error(message));
+        };
+
+        worker.onerror = event => fail(event.message || 'The worker script failed.');
         worker.onmessage = event => {
             const message = event.data;
-            if (message.ready) {
+            if (message.ready === true) {
                 resolve(message.bootMs);
-                return;
-            }
-
-            const request = pending.get(message.id);
-            pending.delete(message.id);
-            if (message.error) {
-                request.reject(new Error(message.error));
+            } else if (message.ready === false) {
+                fail(message.error);
             } else {
-                request.resolve(message);
+                settle(message);
             }
         };
     });
 }
 
-function send(workerId, command, args) {
-    const id = nextRequestId++;
+export function execute(workerId, request) {
     return new Promise((resolve, reject) => {
-        pending.set(id, { resolve, reject });
-        workers.get(workerId).postMessage({ id, command, args });
+        const worker = workers.get(workerId);
+        if (!worker) {
+            reject(new Error(`Worker ${workerId} is not running.`));
+            return;
+        }
+
+        const id = nextRequestId++;
+        pendingRequests.set(id, { workerId, resolve, reject });
+        worker.postMessage({ id, request });
     });
-}
-
-export async function runSelfTest(workerId) {
-    const message = await send(workerId, 'selfTest');
-    return `${message.result} (worker time ${message.elapsedMs.toFixed(0)} ms)`;
-}
-
-export async function measureBiomeTile(workerId, seed, scale, size) {
-    const message = await send(workerId, 'biomeTile', { seed, scale, size });
-    return `${message.result.length} samples in ${message.elapsedMs.toFixed(1)} ms`;
 }
 
 export function terminate(workerId) {
     workers.get(workerId)?.terminate();
     workers.delete(workerId);
+
+    for (const [id, request] of pendingRequests) {
+        if (request.workerId === workerId) {
+            pendingRequests.delete(id);
+            request.reject(new Error('The worker stopped before it answered.'));
+        }
+    }
+}
+
+function settle(message) {
+    const request = pendingRequests.get(message.id);
+    if (!request) {
+        return;
+    }
+
+    pendingRequests.delete(message.id);
+    if (message.error) {
+        request.reject(new Error(message.error));
+    } else {
+        request.resolve(message);
+    }
 }

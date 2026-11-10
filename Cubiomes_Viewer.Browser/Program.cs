@@ -4,13 +4,16 @@ using Avalonia.Logging;
 
 using Cubiomes_Viewer;
 using Cubiomes_Viewer.Browser.Service;
+using Cubiomes_Viewer.Engine.Repository.AppDataRepo;
+using Cubiomes_Viewer.Engine.Service.ComputeServ;
+
+using Microsoft.Extensions.DependencyInjection;
 
 internal sealed partial class Program
 {
     private static Task Main(string[] args)
     {
-        if (args.Any(arg => arg.Contains(WorkerDiagnostics.UrlSwitch, StringComparison.OrdinalIgnoreCase)))
-            _ = WorkerDiagnostics.RunAsync();
+        App.ConfigurePlatformServices = ConfigureBrowserServices;
 
         return BuildAvaloniaApp()
             .WithInterFont()
@@ -23,4 +26,11 @@ internal sealed partial class Program
 
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>();
+
+    private static void ConfigureBrowserServices(IServiceCollection services)
+    {
+        services.AddSingleton<IAppDataStore, BrowserAppDataStore>();
+        services.AddSingleton<IComputeWorkerFactory, WebWorkerFactory>();
+        services.AddSingleton<IComputeService, WorkerPoolComputeService>();
+    }
 }

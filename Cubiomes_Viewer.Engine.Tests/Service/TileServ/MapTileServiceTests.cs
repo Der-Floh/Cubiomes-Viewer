@@ -51,7 +51,7 @@ public sealed class MapTileServiceTests : IDisposable
         var request = new TileRequest(world, LayerMode.Biomes, SampleHeight, new TileKey(scale, -1, 0));
 
         _tileService.SetVisibleTiles([request]);
-        await WaitUntilIdleAsync();
+        await WaitUntilIdleAsync(_tileService);
 
         Assert.True(_tileService.TryGetTile(request, out var tile));
         Assert.Equal(metrics.TileSamples * metrics.TileSamples, tile.Biomes.Length);
@@ -74,7 +74,7 @@ public sealed class MapTileServiceTests : IDisposable
         Assert.False(_tileService.TryGetCachedBiome(world, LayerMode.Biomes, SampleHeight, 0, 0, out _));
 
         _tileService.SetVisibleTiles([request]);
-        await WaitUntilIdleAsync();
+        await WaitUntilIdleAsync(_tileService);
 
         Assert.True(_tileService.TryGetCachedBiome(world, LayerMode.Biomes, SampleHeight, 0, 0, out var biome));
         Assert.Equal(MushroomFieldsBiomeId, biome);
@@ -89,7 +89,7 @@ public sealed class MapTileServiceTests : IDisposable
 
         _tileService.SetVisibleTiles([dropped]);
         _tileService.SetVisibleTiles([kept]);
-        await WaitUntilIdleAsync();
+        await WaitUntilIdleAsync(_tileService);
 
         Assert.False(_tileService.TryGetTile(dropped, out _));
         Assert.True(_tileService.TryGetTile(kept, out _));
@@ -102,20 +102,49 @@ public sealed class MapTileServiceTests : IDisposable
         var request = new TileRequest(world, LayerMode.Biomes, SampleHeight, new TileKey(1024, 0, 0));
 
         _tileService.SetVisibleTiles([request]);
-        await WaitUntilIdleAsync();
+        await WaitUntilIdleAsync(_tileService);
         _tileService.SetVisibleTiles([request]);
 
         Assert.Equal(0, _tileService.PendingCount);
         Assert.False(_tileService.TryGetTile(request, out _));
     }
 
-    private async Task WaitUntilIdleAsync()
+    [Fact]
+    public async Task SetVisibleTiles_WorkerFailsDuringTheJob_SkipsTheTileWithoutRetrying()
+    {
+        var computeService = new FailingComputeService();
+        var tileService = new MapTileService(computeService, NullLogger<MapTileService>.Instance);
+        var world = new WorldKey(1, McVersion.V1_21_3, Dimension.Overworld, GeneratorFlags.None);
+        var request = new TileRequest(world, LayerMode.Biomes, SampleHeight, new TileKey(4, 0, 0));
+
+        tileService.SetVisibleTiles([request]);
+        await WaitUntilIdleAsync(tileService);
+        tileService.SetVisibleTiles([request]);
+
+        Assert.Equal(1, computeService.RunCount);
+        Assert.Equal(0, tileService.PendingCount);
+        Assert.False(tileService.TryGetTile(request, out _));
+    }
+
+    private static async Task WaitUntilIdleAsync(MapTileService tileService)
     {
         var deadline = DateTime.UtcNow + _timeout;
-        while (_tileService.PendingCount > 0)
+        while (tileService.PendingCount > 0)
         {
             Assert.True(DateTime.UtcNow < deadline, "Tiles were not generated in time.");
             await Task.Delay(5, TestContext.Current.CancellationToken);
+        }
+    }
+
+    private sealed class FailingComputeService : IComputeService
+    {
+        public int WorkerCount => 1;
+        public int RunCount { get; private set; }
+
+        public Task<TResult> RunAsync<TResult>(ComputeJob<TResult> job, JobPriority priority, CancellationToken cancellationToken = default)
+        {
+            RunCount++;
+            return Task.FromException<TResult>(new ComputeJobException("The compute worker failed."));
         }
     }
 }

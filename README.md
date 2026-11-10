@@ -33,11 +33,15 @@ dotnet run --project Cubiomes_Viewer.Desktop
 dotnet run --project Cubiomes_Viewer.Browser
 ```
 
-### Browser workers
+### Browser workers and storage
 
-Heavy work in the browser runs in Web Workers, each hosting its own small .NET runtime (`Cubiomes_Viewer.Browser.Worker`) with the engine and the natively linked generator. In development the Browser head references the worker project, which serves it under `/worker/`. On publish the worker is published separately and copied to `wwwroot/worker/`, because the WebAssembly SDK would otherwise merge the worker's assemblies into the main app's boot manifest. Always publish with `dotnet publish Cubiomes_Viewer.Browser -c Release`.
+Heavy work in the browser runs in a pool of Web Workers (one per logical processor minus one, at most six), each hosting its own small .NET runtime (`Cubiomes_Viewer.Browser.Worker`) with the engine and the natively linked generator. Jobs and results cross as serialized messages. A worker that fails is replaced and its job is given to another worker once; when the browser cannot start any worker, the same jobs run on the main thread instead. Settings are kept in IndexedDB.
 
-Opening the app with `?workertest` boots two workers and prints their start-up and generation times to the browser console. Reference numbers from a Release publish: a worker boots in 50–80 ms, the published worker bundle is 3.2 MB (1 MB with Brotli), and a 128×128 biome tile for 1.21 takes 35–60 ms.
+In development the Browser head references the worker project, which serves it under `/worker/`. On publish the worker is published separately and copied to `wwwroot/worker/`, because the WebAssembly SDK would otherwise merge the worker's assemblies into the main app's boot manifest. Always publish with `dotnet publish Cubiomes_Viewer.Browser -c Release`.
+
+### Diagnostics
+
+Settings → Diagnostics → Run self-test checks the native generator against reference values and measures tile throughput on the compute workers of the current platform. Reference numbers from Release builds, for 64 biome tiles of 128×128 samples at 1:4 in 1.21: about 200 tiles/s on 16 Desktop worker threads, about 105 tiles/s on 6 Web Workers, and about 20 tiles/s when the browser falls back to the main thread. The published worker bundle is 6.8 MB (2.1 MB with Brotli).
 
 ## License
 

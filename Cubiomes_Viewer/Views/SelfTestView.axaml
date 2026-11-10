@@ -12,6 +12,7 @@
         <Button Content="{Binding RunLabel}" Command="{Binding RunCommand}"/>
         <TextBlock Classes="damp" Text="{Binding RunningLabel}" IsVisible="{Binding IsRunning}"/>
         <TextBlock Classes="success" Classes.error="{Binding HasFailures}" Text="{Binding Summary}" IsVisible="{Binding !IsRunning}" TextWrapping="Wrap"/>
+        <TextBlock Classes="damp" Text="{Binding BenchmarkText}" IsVisible="{Binding !IsRunning}" TextWrapping="Wrap"/>
 
         <TextBlock Classes="damp" Text="{Binding SampleTileLabel}" IsVisible="{Binding SampleTile, Converter={x:Static ObjectConverters.IsNotNull}}"/>
         <Image Classes="tile-preview" Source="{Binding SampleTile}" RenderOptions.BitmapInterpolationMode="None"/>

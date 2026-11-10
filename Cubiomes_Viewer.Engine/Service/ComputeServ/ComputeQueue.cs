@@ -5,7 +5,8 @@ using Cubiomes_Viewer.Engine.Data.Compute;
 namespace Cubiomes_Viewer.Engine.Service.ComputeServ;
 
 /// <summary>A thread-safe priority queue of work items; equal priorities run in submission order.</summary>
-internal sealed class ComputeQueue
+internal sealed class ComputeQueue<TItem>
+    where TItem : class
 {
     private static readonly Comparer<(JobPriority Priority, long Sequence)> _order = Comparer<(JobPriority Priority, long Sequence)>.Create(
         static (left, right) =>
@@ -14,12 +15,12 @@ internal sealed class ComputeQueue
             return byPriority != 0 ? byPriority : left.Sequence.CompareTo(right.Sequence);
         });
 
-    private readonly PriorityQueue<IComputeWorkItem, (JobPriority Priority, long Sequence)> _items = new(_order);
+    private readonly PriorityQueue<TItem, (JobPriority Priority, long Sequence)> _items = new(_order);
     private readonly object _gate = new();
     private long _sequence;
     private bool _completed;
 
-    public void Enqueue(IComputeWorkItem item, JobPriority priority)
+    public void Enqueue(TItem item, JobPriority priority)
     {
         lock (_gate)
         {
@@ -28,14 +29,14 @@ internal sealed class ComputeQueue
         }
     }
 
-    public bool TryDequeue([NotNullWhen(true)] out IComputeWorkItem? item)
+    public bool TryDequeue([NotNullWhen(true)] out TItem? item)
     {
         lock (_gate)
             return _items.TryDequeue(out item, out _);
     }
 
     /// <summary>Blocks until an item is available. Returns <see langword="false"/> once the queue was completed.</summary>
-    public bool WaitDequeue([NotNullWhen(true)] out IComputeWorkItem? item)
+    public bool WaitDequeue([NotNullWhen(true)] out TItem? item)
     {
         lock (_gate)
         {

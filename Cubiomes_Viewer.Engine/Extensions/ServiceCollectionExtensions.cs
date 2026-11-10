@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 
 using Cubiomes_Viewer.Engine.Data.Compute;
 using Cubiomes_Viewer.Engine.Data.Maps;
+using Cubiomes_Viewer.Engine.Data.SelfTests;
 using Cubiomes_Viewer.Engine.Repository.AppDataRepo;
 using Cubiomes_Viewer.Engine.Repository.SettingsRepo;
 using Cubiomes_Viewer.Engine.Service.ComputeServ;
@@ -38,7 +39,9 @@ public static class ServiceCollectionExtensions
 
         // compute
         services.AddSingleton<JobHandlerRegistry>();
+        services.AddSingleton<ComputeWorkerHost>();
         services.AddJobHandler<BiomeTileJob, TileData, BiomeTileJobHandler>();
+        services.AddJobHandler<SelfTestJob, SelfTestReport, SelfTestJobHandler>();
         if (OperatingSystem.IsBrowser())
             services.AddSingleton<IComputeService, InlineComputeService>();
         else
@@ -51,12 +54,14 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISeedHistoryService, SeedHistoryService>();
         services.AddSingleton<ISettingsService, SettingsService>();
         services.AddSingleton<ISelfTestService, SelfTestService>();
+        services.AddSingleton<ITileBenchmarkService, TileBenchmarkService>();
 
         return services;
     }
 
     private static IServiceCollection AddJobHandler<TJob, TResult, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] THandler>(this IServiceCollection services)
         where TJob : ComputeJob<TResult>
+        where TResult : notnull
         where THandler : class, IJobHandler<TJob, TResult>
     {
         services.AddSingleton<THandler>();

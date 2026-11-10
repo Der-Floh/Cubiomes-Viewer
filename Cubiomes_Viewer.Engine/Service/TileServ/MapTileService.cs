@@ -112,7 +112,7 @@ public sealed class MapTileService : IMapTileService
         {
             // The tile left the visible set before it was generated.
         }
-        catch (CubiomesNativeException ex)
+        catch (Exception ex) when (ex is CubiomesNativeException or ComputeJobException)
         {
             _logger.LogWarning(ex, "Tile {Tile} could not be generated and is skipped", request.Tile);
             lock (_gate)
