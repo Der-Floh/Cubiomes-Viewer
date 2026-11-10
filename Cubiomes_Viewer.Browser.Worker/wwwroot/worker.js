@@ -1,6 +1,7 @@
 import { dotnet } from './_framework/dotnet.js';
 
 const bootStarted = performance.now();
+const describe = error => (typeof error?.message === 'string' && error.message) || String(error);
 
 try {
     const { getAssemblyExports, getConfig } = await dotnet.create();
@@ -12,11 +13,11 @@ try {
         try {
             self.postMessage({ id, response: host.Execute(request) });
         } catch (error) {
-            self.postMessage({ id, error: String(error) });
+            self.postMessage({ id, error: describe(error) });
         }
     };
 
     self.postMessage({ ready: true, bootMs: performance.now() - bootStarted });
 } catch (error) {
-    self.postMessage({ ready: false, error: String(error) });
+    self.postMessage({ ready: false, error: describe(error) });
 }

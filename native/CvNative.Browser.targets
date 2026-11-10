@@ -8,5 +8,19 @@
 
   <ItemGroup>
     <NativeFileReference Include="$(MSBuildThisFileDirectory)shim\cvnative.c" />
+    <CvNativeIncludedSource Include="$(MSBuildThisFileDirectory)shim\**\*" Exclude="$(MSBuildThisFileDirectory)shim\cvnative.c" />
+    <CvNativeIncludedSource Include="$(MSBuildThisFileDirectory)cubiomes\**\*.c;$(MSBuildThisFileDirectory)cubiomes\**\*.h" />
   </ItemGroup>
+
+  <!-- The WASM SDK relinks only when cvnative.c itself is newer, so a change to a file it includes is passed on to it. -->
+  <Target Name="RefreshCvNativeUnit" BeforeTargets="BeforeBuild" Inputs="@(CvNativeIncludedSource)" Outputs="$(MSBuildThisFileDirectory)shim\cvnative.c">
+    <Touch Files="$(MSBuildThisFileDirectory)shim\cvnative.c" />
+  </Target>
+
+  <!-- The WASM SDK does not recompile runtime.c when the generated interpreter-to-native call table it embeds changes,
+       so a P/Invoke with a new signature would abort the runtime ("CANNOT HANDLE INTERP ICALL SIG") in incremental builds. -->
+  <Target Name="RecompileWasmRuntimeForNewCallTable" AfterTargets="_GenerateManagedToNative" Condition="'$(_WasmInterpToNativeTablePath)' != ''"
+          Inputs="$(_WasmInterpToNativeTablePath)" Outputs="$(_WasmIntermediateOutputPath)runtime.o">
+    <Delete Files="$(_WasmIntermediateOutputPath)runtime.o" />
+  </Target>
 </Project>

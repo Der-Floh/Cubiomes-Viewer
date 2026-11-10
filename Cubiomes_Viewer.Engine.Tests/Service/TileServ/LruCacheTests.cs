@@ -4,9 +4,13 @@ using Cubiomes_Viewer.Engine.Service.TileServ;
 
 namespace Cubiomes_Viewer.Engine.Tests.Service.TileServ;
 
-public sealed class TileCacheTests
+public sealed class LruCacheTests
 {
     private const int TileBytes = 16;
+
+    private static LruCache<TileRequest, TileData> CreateCache(long budgetBytes) => new(budgetBytes, static tile => tile.ByteSize);
+
+    private static void Add(LruCache<TileRequest, TileData> cache, TileData tile) => cache.Add(tile.Request, tile);
 
     private static TileData CreateTile(int x)
     {
@@ -18,28 +22,28 @@ public sealed class TileCacheTests
     [Fact]
     public void Add_WithinBudget_KeepsEveryTile()
     {
-        var cache = new TileCache(TileBytes * 3);
+        var cache = CreateCache(TileBytes * 3);
         var tiles = Enumerable.Range(0, 3).Select(CreateTile).ToArray();
 
         foreach (var tile in tiles)
-            cache.Add(tile);
+            cache.Add(tile.Request, tile);
 
         Assert.Equal(3, cache.Count);
-        Assert.Equal(TileBytes * 3, cache.UsedBytes);
+        Assert.Equal(TileBytes * 3, cache.UsedSize);
         Assert.All(tiles, tile => Assert.True(cache.TryGet(tile.Request, out _)));
     }
 
     [Fact]
     public void Add_OverBudget_EvictsLeastRecentlyUsedTile()
     {
-        var cache = new TileCache(TileBytes * 2);
+        var cache = CreateCache(TileBytes * 2);
         var first = CreateTile(0);
         var second = CreateTile(1);
-        cache.Add(first);
-        cache.Add(second);
+        cache.Add(first.Request, first);
+        cache.Add(second.Request, second);
         Assert.True(cache.TryGet(first.Request, out _));
 
-        cache.Add(CreateTile(2));
+        Add(cache, CreateTile(2));
 
         Assert.True(cache.Contains(first.Request));
         Assert.False(cache.Contains(second.Request));
@@ -49,11 +53,11 @@ public sealed class TileCacheTests
     [Fact]
     public void Add_TileLargerThanBudget_KeepsOnlyThatTile()
     {
-        var cache = new TileCache(TileBytes / 2);
-        cache.Add(CreateTile(0));
+        var cache = CreateCache(TileBytes / 2);
+        Add(cache, CreateTile(0));
         var latest = CreateTile(1);
 
-        cache.Add(latest);
+        Add(cache, latest);
 
         Assert.Equal(1, cache.Count);
         Assert.True(cache.Contains(latest.Request));
@@ -62,23 +66,23 @@ public sealed class TileCacheTests
     [Fact]
     public void Add_SameRequestTwice_ReplacesWithoutDoubleCounting()
     {
-        var cache = new TileCache(TileBytes * 4);
+        var cache = CreateCache(TileBytes * 4);
 
-        cache.Add(CreateTile(0));
-        cache.Add(CreateTile(0));
+        Add(cache, CreateTile(0));
+        Add(cache, CreateTile(0));
 
         Assert.Equal(1, cache.Count);
-        Assert.Equal(TileBytes, cache.UsedBytes);
+        Assert.Equal(TileBytes, cache.UsedSize);
     }
 
     [Fact]
-    public void BudgetBytes_Lowered_EvictsDownToTheNewBudget()
+    public void Budget_Lowered_EvictsDownToTheNewBudget()
     {
-        var cache = new TileCache(TileBytes * 4);
+        var cache = CreateCache(TileBytes * 4);
         for (var x = 0; x < 4; x++)
-            cache.Add(CreateTile(x));
+            Add(cache, CreateTile(x));
 
-        cache.BudgetBytes = TileBytes;
+        cache.Budget = TileBytes;
 
         Assert.Equal(1, cache.Count);
     }

@@ -28,13 +28,15 @@ public sealed class SelfTestService : ISelfTestService
     private readonly IWorldGeneratorFactory _generatorFactory;
     private readonly IVersionCatalog _versionCatalog;
     private readonly IStructureFinder _structureFinder;
+    private readonly ISlimeChunkFinder _slimeChunkFinder;
     private readonly ILogger<SelfTestService> _logger;
 
-    public SelfTestService(IWorldGeneratorFactory generatorFactory, IVersionCatalog versionCatalog, IStructureFinder structureFinder, ILogger<SelfTestService> logger)
+    public SelfTestService(IWorldGeneratorFactory generatorFactory, IVersionCatalog versionCatalog, IStructureFinder structureFinder, ISlimeChunkFinder slimeChunkFinder, ILogger<SelfTestService> logger)
     {
         _generatorFactory = generatorFactory;
         _versionCatalog = versionCatalog;
         _structureFinder = structureFinder;
+        _slimeChunkFinder = slimeChunkFinder;
         _logger = logger;
     }
 
@@ -51,6 +53,13 @@ public sealed class SelfTestService : ISelfTestService
             RunCheck("Area generation matches point sampling (1.17 layers)", () => CheckAreaMatchesPoints(McVersion.V1_17_1)),
             RunCheck("Area generation matches point sampling (newest noise)", () => CheckAreaMatchesPoints(_versionCatalog.Newest)),
             RunCheck("Village positions stay inside their region", CheckVillageRegionPositions),
+            .. ReferenceStructureHash.StructureCases.Select(expected =>
+                RunCheck($"Structure regression hash {expected.Name}", () => CheckStructureHash(expected))),
+            .. ReferenceStructureHash.StrongholdHashes.Select(expected =>
+                RunCheck($"Stronghold regression hash {expected.Version}", () => CheckStrongholdHash(expected.Version, expected.Hash))),
+            .. ReferenceStructureHash.Spawns.Select(expected =>
+                RunCheck($"Spawn point {expected.Version}", () => CheckSpawn(expected.Version, expected.Spawn))),
+            RunCheck("Slime chunk regression hash", CheckSlimeChunkHash),
             RunCheck("Invalid input is rejected without terminating", CheckInvalidInputIsRejected),
         ];
 
@@ -145,6 +154,52 @@ public sealed class SelfTestService : ISelfTestService
         }
 
         return (found > 0 && outside == 0, $"{found} positions, {outside} outside their region");
+    }
+
+    private (bool, string) CheckStructureHash(ReferenceStructureHash.StructureCase expected)
+    {
+        using var generator = _generatorFactory.Create(expected.Version, GeneratorFlags.None);
+        generator.Apply(expected.Dimension, ReferenceStructureHash.Seed);
+
+        var count = 0;
+        var actual = ReferenceStructureHash.Hash([]);
+        foreach (var type in expected.Types)
+        {
+            var positions = generator.FindStructures(type, expected.Area);
+            actual = ReferenceStructureHash.Hash(positions, actual);
+            count += positions.Length;
+        }
+
+        return (actual == expected.Hash, $"expected {expected.Hash:x8}, got {actual:x8} from {count} structures");
+    }
+
+    private (bool, string) CheckStrongholdHash(McVersion version, uint expected)
+    {
+        using var generator = _generatorFactory.Create(version, GeneratorFlags.None);
+        generator.Apply(Dimension.Overworld, ReferenceStructureHash.Seed);
+
+        var strongholds = generator.FindStrongholds();
+        var actual = ReferenceStructureHash.Hash(strongholds);
+        return (actual == expected, $"expected {expected:x8}, got {actual:x8} from {strongholds.Length} strongholds");
+    }
+
+    private (bool, string) CheckSpawn(McVersion version, BlockPos expected)
+    {
+        using var generator = _generatorFactory.Create(version, GeneratorFlags.None);
+        generator.Apply(Dimension.Overworld, ReferenceStructureHash.Seed);
+
+        var actual = generator.FindSpawn();
+        return (actual == expected, $"expected {expected}, got {actual}");
+    }
+
+    private (bool, string) CheckSlimeChunkHash()
+    {
+        const int side = ReferenceStructureHash.SlimeChunkSide;
+        var chunks = new byte[side * side];
+        _slimeChunkFinder.FindSlimeChunks(ReferenceStructureHash.Seed, ReferenceStructureHash.SlimeChunkOrigin, ReferenceStructureHash.SlimeChunkOrigin, side, side, chunks);
+
+        var actual = ReferenceStructureHash.Hash(chunks);
+        return (actual == ReferenceStructureHash.SlimeChunkHash, $"expected {ReferenceStructureHash.SlimeChunkHash:x8}, got {actual:x8}");
     }
 
     private (bool, string) CheckInvalidInputIsRejected()

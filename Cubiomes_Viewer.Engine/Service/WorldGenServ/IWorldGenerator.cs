@@ -21,4 +21,25 @@ public interface IWorldGenerator : IDisposable
     /// samples without a biome are written as <c>255</c>.
     /// </summary>
     void GenerateBiomes(BiomeArea area, Span<byte> destination);
+
+    /// <summary>
+    /// Whether a structure can generate at a position its type attempts to generate at.
+    /// The dimension of the structure type must be applied.
+    /// </summary>
+    bool CanGenerateStructure(StructureType type, BlockPos position);
+
+    /// <summary>
+    /// Finds the structures of one type that generate inside an area, region by region.
+    /// The dimension of the structure type must be applied.
+    /// </summary>
+    BlockPos[] FindStructures(StructureType type, BlockArea area);
+
+    /// <summary>
+    /// Finds the world spawn point, or <see langword="null"/> for versions whose spawn cannot be predicted.
+    /// The Overworld must be applied.
+    /// </summary>
+    BlockPos? FindSpawn();
+
+    /// <summary>Finds all strongholds in generation order. The Overworld must be applied.</summary>
+    BlockPos[] FindStrongholds();
 }

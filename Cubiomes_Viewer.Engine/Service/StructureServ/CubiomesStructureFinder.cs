@@ -5,6 +5,16 @@ namespace Cubiomes_Viewer.Engine.Service.StructureServ;
 
 public sealed class CubiomesStructureFinder : IStructureFinder
 {
+    public unsafe bool TryGetPlacement(StructureType type, McVersion version, out StructurePlacement placement)
+    {
+        int dimension, regionBlocks;
+        var result = CubiomesNative.StructureConfig((int)type, (int)version, &dimension, &regionBlocks);
+        CubiomesNativeException.ThrowIfError(result, nameof(TryGetPlacement));
+
+        placement = new StructurePlacement((Dimension)dimension, regionBlocks);
+        return result > 0;
+    }
+
     public unsafe bool TryGetRegionPosition(StructureType type, McVersion version, long seed, int regionX, int regionZ, out BlockPos position)
     {
         int x, z;

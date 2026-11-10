@@ -4,6 +4,8 @@ struct cv_world
     int *cache;
     size_t cache_length;
     int is_seeded;
+    SurfaceNoise end_surface;
+    int has_end_surface;
 };
 
 static int cv_ensure_cache(cv_world *world, size_t length)
@@ -71,6 +73,7 @@ int32_t cv_world_apply(cv_world *world, int32_t dim, uint64_t seed)
         return CV_ERR_ARGUMENT;
     applySeed(&world->generator, dim, seed);
     world->is_seeded = 1;
+    world->has_end_surface = 0;
     return CV_OK;
 }
 

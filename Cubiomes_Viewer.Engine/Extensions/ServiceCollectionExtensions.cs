@@ -36,6 +36,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IVersionCatalog, VersionCatalog>();
         services.AddSingleton<IBiomeCatalog, BiomeCatalog>();
         services.AddSingleton<IStructureFinder, CubiomesStructureFinder>();
+        services.AddSingleton<ISlimeChunkFinder, CubiomesSlimeChunkFinder>();
 
         // compute
         services.AddSingleton<JobHandlerRegistry>();

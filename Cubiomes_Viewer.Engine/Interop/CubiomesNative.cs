@@ -53,7 +53,31 @@ internal static unsafe partial class CubiomesNative
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial int GenerateBiomes(nint world, int scale, int x, int z, int sizeX, int sizeZ, int y, byte* destination, int capacity);
 
+    [LibraryImport(LibraryName, EntryPoint = "cv_structure_config")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int StructureConfig(int structureType, int version, int* dimension, int* regionBlocks);
+
     [LibraryImport(LibraryName, EntryPoint = "cv_structure_pos")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial int StructurePosition(int structureType, int version, ulong seed, int regionX, int regionZ, int* x, int* z);
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_structure_viable")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int StructureViable(nint world, int structureType, int x, int z);
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_structures_in_area")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int StructuresInArea(nint world, int structureType, int x0, int z0, int x1, int z1, int* positions, int capacity);
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_spawn")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int Spawn(nint world, int* x, int* z);
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_strongholds")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int Strongholds(nint world, int* positions, int capacity);
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_slime_chunks")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int SlimeChunks(ulong seed, int chunkX, int chunkZ, int sizeX, int sizeZ, byte* destination, int capacity);
 }
