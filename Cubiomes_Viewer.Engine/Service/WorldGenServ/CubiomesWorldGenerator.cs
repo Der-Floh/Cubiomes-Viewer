@@ -1,5 +1,6 @@
 using System.Buffers;
 
+using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Interop;
 
@@ -8,6 +9,10 @@ namespace Cubiomes_Viewer.Engine.Service.WorldGenServ;
 public sealed class CubiomesWorldGenerator : IWorldGenerator
 {
     private const int MaxStrongholds = 128;
+    private const int MaxPieces = 421;
+    private const int EndGatewayCount = 20;
+    private const int ValuesPerGateway = 4;
+    private const int UnknownHeight = 320;
 
     public McVersion Version { get; }
     public GeneratorFlags Flags { get; }
@@ -80,6 +85,31 @@ public sealed class CubiomesWorldGenerator : IWorldGenerator
         }
     }
 
+    public StructureDetails DescribeStructure(StructureType type, BlockPos position)
+        => new()
+        {
+            Type = type,
+            Position = position,
+            Variant = FindVariant(type, position),
+            Pieces = FindPieces(type, position),
+        };
+
+    public unsafe EndGateway[] FindEndGateways()
+    {
+        var positions = stackalloc int[EndGatewayCount * ValuesPerGateway];
+        var count = CubiomesNative.EndGateways(World, positions, EndGatewayCount);
+        CubiomesNativeException.ThrowIfError(count, nameof(FindEndGateways));
+
+        var gateways = new EndGateway[count];
+        for (var index = 0; index < count; index++)
+        {
+            var values = positions + index * ValuesPerGateway;
+            gateways[index] = new EndGateway(new BlockPos(values[0], values[1]), new BlockPos(values[2], values[3]));
+        }
+
+        return gateways;
+    }
+
     public unsafe BlockPos? FindSpawn()
     {
         int x, z;
@@ -96,6 +126,63 @@ public sealed class CubiomesWorldGenerator : IWorldGenerator
     }
 
     public void Dispose() => _world.Dispose();
+
+    private unsafe StructureVariant? FindVariant(StructureType type, BlockPos position)
+    {
+        NativeVariant variant;
+        var found = CubiomesNative.StructureVariant(World, (int)type, position.X, position.Z, &variant);
+        if (CubiomesNativeException.ThrowIfError(found, nameof(DescribeStructure)) == 0)
+            return null;
+
+        return new StructureVariant
+        {
+            IsAbandoned = variant.Abandoned != 0,
+            IsGiant = variant.Giant != 0,
+            IsUnderground = variant.Underground != 0,
+            HasAirPocket = variant.AirPocket != 0,
+            HasBasement = variant.Basement != 0,
+            IsCracked = variant.Cracked != 0,
+            IsMirrored = variant.Mirror != 0,
+            Size = variant.Size,
+            Start = variant.Start,
+            Biome = variant.Biome,
+            Rotation = variant.Rotation,
+            Height = variant.Y == UnknownHeight ? null : variant.Y,
+            Box = GetFirstPieceBox(position, variant),
+        };
+    }
+
+    private static BlockBox? GetFirstPieceBox(BlockPos position, NativeVariant variant)
+    {
+        if (variant.SizeX <= 0 || variant.SizeZ <= 0)
+            return null;
+
+        var minX = position.X + variant.X;
+        var minZ = position.Z + variant.Z;
+        var minY = variant.Y == UnknownHeight ? 0 : variant.Y;
+        return new BlockBox(minX, minY, minZ, minX + variant.SizeX - 1, minY + Math.Max(variant.SizeY, 1) - 1, minZ + variant.SizeZ - 1);
+    }
+
+    private unsafe StructurePiece[] FindPieces(StructureType type, BlockPos position)
+    {
+        var buffer = ArrayPool<NativePiece>.Shared.Rent(MaxPieces);
+        try
+        {
+            int count;
+            fixed (NativePiece* pieces = buffer)
+                count = CubiomesNative.StructurePieces(World, (int)type, position.X, position.Z, pieces, buffer.Length);
+
+            CubiomesNativeException.ThrowIfError(count, nameof(DescribeStructure));
+            return Array.ConvertAll(buffer.AsSpan(0, count).ToArray(), ToPiece);
+        }
+        finally
+        {
+            ArrayPool<NativePiece>.Shared.Return(buffer);
+        }
+    }
+
+    private static StructurePiece ToPiece(NativePiece piece)
+        => new(piece.Type, piece.Rotation, piece.Depth, new BlockBox(piece.X0, piece.Y0, piece.Z0, piece.X1, piece.Y1, piece.Z1));
 
     /// <summary>Every region that touches the area holds at most one structure.</summary>
     private unsafe int GetMaxStructureCount(StructureType type, BlockArea area)

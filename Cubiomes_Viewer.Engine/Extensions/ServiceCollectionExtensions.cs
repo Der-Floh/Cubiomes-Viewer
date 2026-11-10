@@ -44,7 +44,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ComputeWorkerHost>();
         services.AddJobHandler<BiomeTileJob, TileData, BiomeTileJobHandler>();
         services.AddJobHandler<StructureAreaJob, StructureAreaData, StructureAreaJobHandler>();
+        services.AddJobHandler<StructureDetailsJob, StructureDetails, StructureDetailsJobHandler>();
         services.AddJobHandler<LandmarksJob, WorldLandmarks, LandmarksJobHandler>();
+        services.AddJobHandler<EndGatewaysJob, EndGatewayData, EndGatewaysJobHandler>();
         services.AddJobHandler<SlimeAreaJob, SlimeAreaData, SlimeAreaJobHandler>();
         services.AddJobHandler<SelfTestJob, SelfTestReport, SelfTestJobHandler>();
         if (OperatingSystem.IsBrowser())
@@ -58,6 +60,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IStructureCatalog, StructureCatalog>();
         services.AddSingleton<IStructureAreaService, StructureAreaService>();
         services.AddSingleton<IWorldLandmarkService, WorldLandmarkService>();
+        services.AddSingleton<IEndGatewayService, EndGatewayService>();
         services.AddSingleton<ISlimeAreaService, SlimeAreaService>();
         services.AddSingleton<ISeedParser, SeedParser>();
         services.AddSingleton<ISeedHistoryService, SeedHistoryService>();

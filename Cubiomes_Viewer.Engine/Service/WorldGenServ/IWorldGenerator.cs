@@ -1,3 +1,4 @@
+using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 
 namespace Cubiomes_Viewer.Engine.Service.WorldGenServ;
@@ -33,6 +34,18 @@ public interface IWorldGenerator : IDisposable
     /// The dimension of the structure type must be applied.
     /// </summary>
     BlockPos[] FindStructures(StructureType type, BlockArea area);
+
+    /// <summary>
+    /// Describes a structure found by <see cref="FindStructures"/>: its variant and, for end cities and fortresses, its pieces.
+    /// The dimension of the structure type must be applied.
+    /// </summary>
+    StructureDetails DescribeStructure(StructureType type, BlockPos position);
+
+    /// <summary>
+    /// Finds the gateways around the main End island and where they lead, in the order they appear.
+    /// Returns nothing for versions whose gateways cannot be followed. The End must be applied.
+    /// </summary>
+    EndGateway[] FindEndGateways();
 
     /// <summary>
     /// Finds the world spawn point, or <see langword="null"/> for versions whose spawn cannot be predicted.

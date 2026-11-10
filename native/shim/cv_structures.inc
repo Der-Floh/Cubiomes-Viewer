@@ -124,3 +124,107 @@ int32_t cv_structures_in_area(cv_world *world, int32_t stype, int32_t x0, int32_
     }
     return count;
 }
+
+/* The managed side names these piece kinds; a changed order in cubiomes must not go unnoticed. */
+typedef char cv_assert_end_ship[(END_SHIP == 12) ? 1 : -1];
+typedef char cv_assert_spawner[(BRIDGE_SPAWNER == 5) ? 1 : -1];
+typedef char cv_assert_nether_wart[(CORRIDOR_NETHER_WART == 13) ? 1 : -1];
+
+/* The biome that decides the variant: villages report it through their viability check, ruined portals use the chunk centre. */
+static int cv_variant_biome(cv_world *world, int32_t stype, Pos pos)
+{
+    Generator *generator = &world->generator;
+    if (stype == Village)
+    {
+        int biome = isViableStructurePos(Village, generator, pos.x, pos.z, 0);
+        return biome > 0 ? biome : -1;
+    }
+    if (stype == Ruined_Portal || stype == Ruined_Portal_N)
+    {
+        int y = generator->dim == DIM_OVERWORLD ? 64 >> 2 : 0;
+        return getBiomeAt(generator, 4, (pos.x >> 2) + 2, y, (pos.z >> 2) + 2);
+    }
+    return -1;
+}
+
+int32_t cv_structure_variant(cv_world *world, int32_t stype, int32_t x, int32_t z, cv_variant *variant)
+{
+    StructureConfig config;
+    int exists = 0;
+    int status = cv_check_structure_world(world, stype, &config, &exists);
+    if (status != CV_OK)
+        return status;
+    if (!variant)
+        return CV_ERR_ARGUMENT;
+
+    memset(variant, 0, sizeof(*variant));
+    if (!exists)
+        return 0;
+
+    Pos pos = {x, z};
+    StructureVariant found;
+    const Generator *generator = &world->generator;
+    if (!getVariant(&found, stype, generator->mc, generator->seed, x, z, cv_variant_biome(world, stype, pos)))
+        return 0;
+
+    variant->abandoned = found.abandoned;
+    variant->giant = found.giant;
+    variant->underground = found.underground;
+    variant->airpocket = found.airpocket;
+    variant->basement = found.basement;
+    variant->cracked = found.cracked;
+    variant->size = found.size;
+    variant->start = found.start == (uint8_t)-1 ? -1 : found.start;
+    variant->biome = found.biome;
+    variant->rotation = found.rotation;
+    variant->mirror = found.mirror;
+    variant->x = found.x;
+    variant->y = found.y;
+    variant->z = found.z;
+    variant->sx = found.sx;
+    variant->sy = found.sy;
+    variant->sz = found.sz;
+    return 1;
+}
+
+int32_t cv_structure_pieces(cv_world *world, int32_t stype, int32_t x, int32_t z, cv_piece *pieces, int32_t capacity)
+{
+    StructureConfig config;
+    int exists = 0;
+    int status = cv_check_structure_world(world, stype, &config, &exists);
+    if (status != CV_OK)
+        return status;
+    if (!pieces || capacity < 0)
+        return CV_ERR_ARGUMENT;
+    if (!exists || (stype != End_City && stype != Fortress))
+        return 0;
+
+    Piece *found = (Piece *)calloc(CV_MAX_PIECES, sizeof(Piece));
+    if (!found)
+        return CV_ERR_MEMORY;
+
+    const Generator *generator = &world->generator;
+    int count = stype == End_City
+        ? getEndCityPieces(found, generator->seed, x >> 4, z >> 4)
+        : getFortressPieces(found, CV_MAX_PIECES, generator->mc, generator->seed, x >> 4, z >> 4);
+    if (count > capacity)
+    {
+        free(found);
+        return CV_ERR_CAPACITY;
+    }
+
+    for (int i = 0; i < count; i++)
+    {
+        pieces[i].type = found[i].type;
+        pieces[i].rotation = found[i].rot;
+        pieces[i].depth = found[i].depth;
+        pieces[i].x0 = found[i].bb0.x;
+        pieces[i].y0 = found[i].bb0.y;
+        pieces[i].z0 = found[i].bb0.z;
+        pieces[i].x1 = found[i].bb1.x;
+        pieces[i].y1 = found[i].bb1.y;
+        pieces[i].z1 = found[i].bb1.z;
+    }
+    free(found);
+    return count;
+}

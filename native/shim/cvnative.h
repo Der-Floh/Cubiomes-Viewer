@@ -11,7 +11,7 @@
 #define CV_API
 #endif
 
-#define CV_ABI_VERSION 2
+#define CV_ABI_VERSION 3
 
 #define CV_BIOME_NONE 255
 #define CV_BIOME_COLOR_BYTES 768
@@ -19,6 +19,8 @@
 #define CV_MAX_LAYERED_SCALE 256
 #define CV_MAX_STRUCTURE_ATTEMPTS 65536
 #define CV_MAX_STRONGHOLDS 128
+#define CV_MAX_PIECES 421
+#define CV_END_GATEWAYS 20
 
 enum cv_status
 {
@@ -32,6 +34,23 @@ enum cv_status
 };
 
 typedef struct cv_world cv_world;
+
+/* How one structure generates. The box is the first piece, relative to the structure position; its size is 0 when unknown. */
+typedef struct cv_variant
+{
+    int32_t abandoned, giant, underground, airpocket, basement, cracked;
+    int32_t size, start, biome, rotation, mirror;
+    int32_t x, y, z;
+    int32_t sx, sy, sz;
+} cv_variant;
+
+/* One piece of a structure with its bounding box in blocks; both corners are part of the piece. */
+typedef struct cv_piece
+{
+    int32_t type, rotation, depth;
+    int32_t x0, y0, z0;
+    int32_t x1, y1, z1;
+} cv_piece;
 
 #ifdef __cplusplus
 extern "C"
@@ -59,6 +78,15 @@ CV_API int32_t cv_structure_viable(cv_world *world, int32_t stype, int32_t x, in
 
 /* Writes the (x, z) pairs of the structures that generate in [x0, x1) x [z0, z1) and returns their number. */
 CV_API int32_t cv_structures_in_area(cv_world *world, int32_t stype, int32_t x0, int32_t z0, int32_t x1, int32_t z1, int32_t *positions, int32_t capacity);
+
+/* Details of a structure found by cv_structures_in_area. cv_structure_variant returns 1 when a variant is known;
+   cv_structure_pieces returns the number of pieces, which is 0 for types other than end cities and fortresses. */
+CV_API int32_t cv_structure_variant(cv_world *world, int32_t stype, int32_t x, int32_t z, cv_variant *variant);
+CV_API int32_t cv_structure_pieces(cv_world *world, int32_t stype, int32_t x, int32_t z, cv_piece *pieces, int32_t capacity);
+
+/* The 20 gateways around the main End island in generation order, each followed by the gateway it leads to:
+   4 values (x, z, linked x, linked z) per gateway. The world must be applied to the End. */
+CV_API int32_t cv_end_gateways(cv_world *world, int32_t *positions, int32_t capacity);
 
 /* Overworld landmarks; the world must be applied to the Overworld. */
 CV_API int32_t cv_spawn(cv_world *world, int32_t *x, int32_t *z);

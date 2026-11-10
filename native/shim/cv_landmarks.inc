@@ -63,3 +63,34 @@ int32_t cv_slime_chunks(uint64_t seed, int32_t chunk_x, int32_t chunk_z, int32_t
     }
     return count;
 }
+
+int32_t cv_end_gateways(cv_world *world, int32_t *positions, int32_t capacity)
+{
+    if (!world)
+        return CV_ERR_ARGUMENT;
+    if (!world->is_seeded || world->generator.dim != DIM_END)
+        return CV_ERR_STATE;
+    if (!positions || capacity < 0)
+        return CV_ERR_ARGUMENT;
+
+    /* cubiomes can only follow gateways from 1.13 on. */
+    const Generator *generator = &world->generator;
+    if (generator->mc <= MC_1_12)
+        return 0;
+    if (capacity < CV_END_GATEWAYS)
+        return CV_ERR_CAPACITY;
+
+    Pos gateways[CV_END_GATEWAYS];
+    getFixedEndGateways(generator->mc, generator->seed, gateways);
+
+    const SurfaceNoise *surface = cv_end_surface(world);
+    for (int i = 0; i < CV_END_GATEWAYS; i++)
+    {
+        Pos linked = getLinkedGatewayPos(&generator->en, surface, generator->seed, gateways[i]);
+        positions[4 * i] = gateways[i].x;
+        positions[4 * i + 1] = gateways[i].z;
+        positions[4 * i + 2] = linked.x;
+        positions[4 * i + 3] = linked.z;
+    }
+    return CV_END_GATEWAYS;
+}

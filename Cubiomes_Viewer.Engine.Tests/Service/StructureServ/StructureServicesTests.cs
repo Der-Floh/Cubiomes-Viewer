@@ -132,6 +132,38 @@ public sealed class StructureServicesTests : IDisposable
         Assert.Equal(expectedSlime.Chunks, slime.Chunks);
     }
 
+    [Fact]
+    public void WorkerHost_DetailAndGatewayJobs_ReturnTheSameDataAsTheirHandlers()
+    {
+        var host = _services.GetRequiredService<ComputeWorkerHost>();
+        using var context = new WorkerContext(new CubiomesWorldGeneratorFactory());
+        var end = _overworld with { Dimension = Dimension.End };
+        var searchArea = new BlockArea(-4096, -4096, 8192, 8192);
+        var city = context.GetGenerator(end).FindStructures(StructureType.EndCity, searchArea)[0];
+        var village = context.GetGenerator(_overworld).FindStructures(StructureType.Village, searchArea)[0];
+        var cityJob = new StructureDetailsJob(end, StructureType.EndCity, city);
+        var villageJob = new StructureDetailsJob(_overworld, StructureType.Village, village);
+        var gatewaysJob = new EndGatewaysJob(_overworld);
+
+        var cityDetails = ComputeEnvelope.DeserializeResponse<StructureDetails>(host.Execute(ComputeEnvelope.SerializeJob(cityJob)));
+        var villageDetails = ComputeEnvelope.DeserializeResponse<StructureDetails>(host.Execute(ComputeEnvelope.SerializeJob(villageJob)));
+        var gateways = ComputeEnvelope.DeserializeResponse<EndGatewayData>(host.Execute(ComputeEnvelope.SerializeJob(gatewaysJob)));
+
+        var expectedCity = new StructureDetailsJobHandler().Handle(cityJob, context, CancellationToken.None);
+        var expectedVillage = new StructureDetailsJobHandler().Handle(villageJob, context, CancellationToken.None);
+        var expectedGateways = new EndGatewaysJobHandler().Handle(gatewaysJob, context, CancellationToken.None);
+        Assert.Equal(city, cityDetails.Position);
+        Assert.Null(cityDetails.Variant);
+        Assert.NotEmpty(cityDetails.Pieces);
+        Assert.Equal(expectedCity.Pieces, cityDetails.Pieces);
+        Assert.NotNull(villageDetails.Variant);
+        Assert.Equal(expectedVillage.Variant, villageDetails.Variant);
+        Assert.Empty(villageDetails.Pieces);
+        Assert.Equal(_overworld, gateways.World);
+        Assert.Equal(20, gateways.Gateways.Length);
+        Assert.Equal(expectedGateways.Gateways, gateways.Gateways);
+    }
+
     private static async Task WaitUntilAsync(Func<bool> condition)
     {
         var deadline = DateTime.UtcNow + _timeout;

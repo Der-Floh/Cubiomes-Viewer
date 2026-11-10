@@ -1,3 +1,4 @@
+using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 
 namespace Cubiomes_Viewer.Engine.Service.SelfTestServ;
@@ -13,6 +14,9 @@ internal static class ReferenceStructureHash
     public const int SlimeChunkSide = 128;
     public const uint SlimeChunkHash = 0x84463004;
 
+    /// <summary>The hash of nothing, from which combined hashes start.</summary>
+    public const uint EmptyHash = FnvOffsetBasis;
+
     private const uint FnvOffsetBasis = 2166136261;
     private const uint FnvPrime = 16777619;
     private const int WideSide = 8192;
@@ -21,6 +25,7 @@ internal static class ReferenceStructureHash
     private static readonly BlockArea _wideArea = new(-WideSide / 2, -WideSide / 2, WideSide, WideSide);
     private static readonly BlockArea _denseArea = new(-DenseSide / 2, -DenseSide / 2, DenseSide, DenseSide);
     private static readonly BlockArea _outerEndArea = new(2048, -DenseSide / 2, DenseSide, DenseSide);
+    private static readonly BlockArea _detailArea = new(-DenseSide, -DenseSide, 2 * DenseSide, 2 * DenseSide);
 
     public static IReadOnlyList<StructureCase> StructureCases { get; } =
     [
@@ -40,6 +45,22 @@ internal static class ReferenceStructureHash
         new("1.12 Overworld", McVersion.V1_12_2, Dimension.Overworld, _wideArea, 0x35be51d1,
             StructureType.Village, StructureType.DesertPyramid, StructureType.Igloo, StructureType.Monument, StructureType.Mansion),
         new("1.12 End", McVersion.V1_12_2, Dimension.End, _wideArea, 0xeda615cb, StructureType.EndCity),
+    ];
+
+    /// <summary>Variants and pieces of every structure of the listed types inside the area.</summary>
+    public static IReadOnlyList<StructureCase> DetailCases { get; } =
+    [
+        new("1.21 Overworld", McVersion.V1_21_3, Dimension.Overworld, _wideArea, 0xf46fab74,
+            StructureType.Village, StructureType.RuinedPortal, StructureType.Igloo, StructureType.AncientCity, StructureType.TrialChambers, StructureType.DesertPyramid),
+        new("1.21 Nether", McVersion.V1_21_3, Dimension.Nether, _detailArea, 0xbbb192c2, StructureType.Fortress, StructureType.Bastion),
+        new("1.21 End", McVersion.V1_21_3, Dimension.End, _wideArea, 0x88241018, StructureType.EndCity),
+        new("1.12 Nether", McVersion.V1_12_2, Dimension.Nether, _detailArea, 0xf0d409ac, StructureType.Fortress),
+    ];
+
+    public static IReadOnlyList<(McVersion Version, uint Hash)> GatewayHashes { get; } =
+    [
+        (McVersion.V1_21_3, 0x4d202886),
+        (McVersion.V1_16_5, 0x08eee367),
     ];
 
     public static IReadOnlyList<(McVersion Version, uint Hash)> StrongholdHashes { get; } =
@@ -69,6 +90,38 @@ internal static class ReferenceStructureHash
         return hash;
     }
 
+    public static uint Hash(StructureDetails details, uint hash)
+    {
+        hash = Hash([details.Position], hash);
+        if (details.Variant is { } variant)
+        {
+            int[] values =
+            [
+                Flag(variant.IsAbandoned), Flag(variant.IsGiant), Flag(variant.IsUnderground), Flag(variant.HasAirPocket), Flag(variant.HasBasement),
+                Flag(variant.IsCracked), Flag(variant.IsMirrored), variant.Size, variant.Start, variant.Biome, variant.Rotation, variant.Height ?? int.MinValue,
+            ];
+            hash = Hash(values, hash);
+            if (variant.Box is { } box)
+                hash = Hash(box, hash);
+        }
+
+        foreach (var piece in details.Pieces)
+        {
+            hash = Hash([piece.Type, piece.Rotation, piece.Depth], hash);
+            hash = Hash(piece.Box, hash);
+        }
+
+        return hash;
+    }
+
+    public static uint Hash(ReadOnlySpan<EndGateway> gateways)
+    {
+        var hash = FnvOffsetBasis;
+        foreach (var gateway in gateways)
+            hash = Hash([gateway.Position, gateway.Destination], hash);
+        return hash;
+    }
+
     public static uint Hash(ReadOnlySpan<byte> bytes)
     {
         var hash = FnvOffsetBasis;
@@ -76,6 +129,18 @@ internal static class ReferenceStructureHash
             hash = (hash ^ value) * FnvPrime;
         return hash;
     }
+
+    private static uint Hash(BlockBox box, uint hash)
+        => Hash([box.MinX, box.MinY, box.MinZ, box.MaxX, box.MaxY, box.MaxZ], hash);
+
+    private static uint Hash(ReadOnlySpan<int> values, uint hash)
+    {
+        foreach (var value in values)
+            hash = Hash(value, hash);
+        return hash;
+    }
+
+    private static int Flag(bool value) => value ? 1 : 0;
 
     private static uint Hash(int value, uint hash)
     {

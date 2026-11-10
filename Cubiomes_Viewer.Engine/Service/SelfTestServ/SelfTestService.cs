@@ -55,6 +55,10 @@ public sealed class SelfTestService : ISelfTestService
             RunCheck("Village positions stay inside their region", CheckVillageRegionPositions),
             .. ReferenceStructureHash.StructureCases.Select(expected =>
                 RunCheck($"Structure regression hash {expected.Name}", () => CheckStructureHash(expected))),
+            .. ReferenceStructureHash.DetailCases.Select(expected =>
+                RunCheck($"Structure detail regression hash {expected.Name}", () => CheckDetailHash(expected))),
+            .. ReferenceStructureHash.GatewayHashes.Select(expected =>
+                RunCheck($"End gateway regression hash {expected.Version}", () => CheckGatewayHash(expected.Version, expected.Hash))),
             .. ReferenceStructureHash.StrongholdHashes.Select(expected =>
                 RunCheck($"Stronghold regression hash {expected.Version}", () => CheckStrongholdHash(expected.Version, expected.Hash))),
             .. ReferenceStructureHash.Spawns.Select(expected =>
@@ -162,7 +166,7 @@ public sealed class SelfTestService : ISelfTestService
         generator.Apply(expected.Dimension, ReferenceStructureHash.Seed);
 
         var count = 0;
-        var actual = ReferenceStructureHash.Hash([]);
+        var actual = ReferenceStructureHash.EmptyHash;
         foreach (var type in expected.Types)
         {
             var positions = generator.FindStructures(type, expected.Area);
@@ -171,6 +175,36 @@ public sealed class SelfTestService : ISelfTestService
         }
 
         return (actual == expected.Hash, $"expected {expected.Hash:x8}, got {actual:x8} from {count} structures");
+    }
+
+    private (bool, string) CheckDetailHash(ReferenceStructureHash.StructureCase expected)
+    {
+        using var generator = _generatorFactory.Create(expected.Version, GeneratorFlags.None);
+        generator.Apply(expected.Dimension, ReferenceStructureHash.Seed);
+
+        var pieces = 0;
+        var actual = ReferenceStructureHash.EmptyHash;
+        foreach (var type in expected.Types)
+        {
+            foreach (var position in generator.FindStructures(type, expected.Area))
+            {
+                var details = generator.DescribeStructure(type, position);
+                actual = ReferenceStructureHash.Hash(details, actual);
+                pieces += details.Pieces.Length;
+            }
+        }
+
+        return (actual == expected.Hash, $"expected {expected.Hash:x8}, got {actual:x8} with {pieces} pieces");
+    }
+
+    private (bool, string) CheckGatewayHash(McVersion version, uint expected)
+    {
+        using var generator = _generatorFactory.Create(version, GeneratorFlags.None);
+        generator.Apply(Dimension.End, ReferenceStructureHash.Seed);
+
+        var gateways = generator.FindEndGateways();
+        var actual = ReferenceStructureHash.Hash(gateways);
+        return (actual == expected, $"expected {expected:x8}, got {actual:x8} from {gateways.Length} gateways");
     }
 
     private (bool, string) CheckStrongholdHash(McVersion version, uint expected)
