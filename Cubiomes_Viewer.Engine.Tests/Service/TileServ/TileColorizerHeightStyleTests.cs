@@ -1,9 +1,7 @@
 using Cubiomes_Viewer.Engine.Data;
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Worlds;
-using Cubiomes_Viewer.Engine.Service.LayerServ;
 using Cubiomes_Viewer.Engine.Service.TileServ;
-using Cubiomes_Viewer.Engine.Service.WorldGenServ;
 
 namespace Cubiomes_Viewer.Engine.Tests.Service.TileServ;
 
@@ -15,7 +13,7 @@ public sealed class TileColorizerHeightStyleTests
     private const double ContourBrightness = 0.55;
     private static readonly WorldKey _world = new(262, McVersion.V1_21_3, Dimension.Overworld, GeneratorFlags.None);
 
-    private readonly TileColorizer _colorizer = new(new BiomeCatalog(), new LayerCatalog());
+    private readonly TileColorizer _colorizer = TestEngine.CreateTileColorizer();
 
     [Fact]
     public void Colorize_ShadedFlatGround_KeepsTheTintedColours()

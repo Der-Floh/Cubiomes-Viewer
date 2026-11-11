@@ -35,6 +35,48 @@ static int cv_check_structure_world(const cv_world *world, int32_t stype, Struct
     return CV_OK;
 }
 
+/* The types isViableFeatureBiome knows; it ends the process for any other. */
+static int cv_has_biome_rule(int32_t stype)
+{
+    switch (stype)
+    {
+    case Desert_Pyramid:
+    case Jungle_Pyramid:
+    case Swamp_Hut:
+    case Igloo:
+    case Village:
+    case Ocean_Ruin:
+    case Shipwreck:
+    case Monument:
+    case Mansion:
+    case Outpost:
+    case Ruined_Portal:
+    case Ruined_Portal_N:
+    case Ancient_City:
+    case Treasure:
+    case Mineshaft:
+    case Desert_Well:
+    case Fortress:
+    case Bastion:
+    case End_City:
+    case End_Gateway:
+    case Trail_Ruins:
+    case Trial_Chambers:
+        return 1;
+    default:
+        return 0;
+    }
+}
+
+int32_t cv_structure_biome_viable(int32_t stype, int32_t mc, int32_t biome)
+{
+    if (!cv_is_valid_structure(stype) || !cv_is_valid_mc(mc) || biome < 0 || biome >= CV_BIOME_NONE)
+        return CV_ERR_ARGUMENT;
+    if (!cv_has_biome_rule(stype))
+        return CV_ERR_UNSUPPORTED;
+    return isViableFeatureBiome(mc, stype, biome) != 0;
+}
+
 int32_t cv_structure_config(int32_t stype, int32_t mc, int32_t *dimension, int32_t *region_blocks)
 {
     if (!cv_is_valid_structure(stype) || !cv_is_valid_mc(mc) || !dimension || !region_blocks)

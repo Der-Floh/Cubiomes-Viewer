@@ -52,4 +52,7 @@ public sealed class StructureCatalog : IStructureCatalog
 
     public IReadOnlyList<StructureInfo> GetAvailable(McVersion version, Dimension dimension)
         => [.. _structures.Where(structure => _structureFinder.TryGetPlacement(structure.Type, version, out var placement) && placement.Dimension == dimension)];
+
+    public IReadOnlyList<StructureInfo> GetWithBiomeRule(McVersion version, Dimension dimension)
+        => [.. GetAvailable(version, dimension).Where(structure => _structureFinder.TryGetViableBiomes(structure.Type, version, out _))];
 }

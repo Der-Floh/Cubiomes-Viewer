@@ -28,6 +28,8 @@
             <ComboBox Classes="fill" ItemsSource="{Binding OctaveChoices}" SelectedItem="{Binding SelectedOctaves}"
                       IsVisible="{Binding HasOctaves}" ToolTip.Tip="{Binding OctavesHint}"/>
             <ComboBox Classes="fill" ItemsSource="{Binding HeightStyles}" SelectedItem="{Binding SelectedHeightStyle}" IsVisible="{Binding IsHeightShown}"/>
+            <ComboBox Classes="fill" ItemsSource="{Binding PotentialStructures}" SelectedItem="{Binding SelectedPotentialStructure}"
+                      IsVisible="{Binding IsPotentialShown}" ToolTip.Tip="{Binding PotentialHint}"/>
 
             <TextBlock Classes="section" Text="{Binding OverlaysLabel}"/>
             <CheckBox Content="{Binding ShowGridLabel}" IsChecked="{Binding ShowGrid}"/>

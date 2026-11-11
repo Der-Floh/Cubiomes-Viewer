@@ -182,6 +182,26 @@ public sealed class MapHostViewTests : IDisposable
     }
 
     [AvaloniaFact]
+    public async Task StructurePotential_OverABiomeWithoutTheStructure_DimsItWithoutNewTiles()
+    {
+        _map.ShowGrid = false;
+        _map.Camera = new MapCamera(0, 0, 1);
+        Dispatcher.UIThread.RunJobs();
+        var tileService = _services.GetRequiredService<IMapTileService>();
+        var content = MapContent.For(_map.World, LayerMode.Biomes, _map.SampleHeight, octaves: 0);
+        await TestWait.UntilAsync(() => tileService.TryGetCachedBiome(content, 8, 8, out _) && tileService.PendingCount == 0, "The biome tiles were not generated in time.");
+        var coloured = CapturePixel(ViewSize / 2 + 8, ViewSize / 2 + 8);
+
+        _session.Layer = LayerMode.StructurePotential;
+        var dimmed = CapturePixel(ViewSize / 2 + 8, ViewSize / 2 + 8);
+
+        Assert.Equal(0, tileService.PendingCount);
+        Assert.False(coloured.Red == coloured.Green && coloured.Green == coloured.Blue, $"The mushroom fields are {coloured}.");
+        Assert.True(dimmed.Red == dimmed.Green && dimmed.Green == dimmed.Blue, $"The dimmed pixel is {dimmed}.");
+        Assert.StartsWith("Mushroom Fields", _map.HoverText.Length > 0 ? _map.HoverText : HoverAtTheCenter(), StringComparison.Ordinal);
+    }
+
+    [AvaloniaFact]
     public async Task Click_OnAnEndGateway_PicksItWhileGatewayLinksAreShown()
     {
         _session.Dimension = Dimension.End;
@@ -238,6 +258,12 @@ public sealed class MapHostViewTests : IDisposable
         AvaloniaHeadlessPlatform.ForceRenderTimerTick();
         using var frame = _window.CaptureRenderedFrame();
         return ReadPixel(Assert.IsType<WriteableBitmap>(frame, exactMatch: false), x, y);
+    }
+
+    private string HoverAtTheCenter()
+    {
+        _window.MouseMove(new Point(_center.X + 8, _center.Y + 8));
+        return _map.HoverText;
     }
 
     private TextBlock GetCardTitle()

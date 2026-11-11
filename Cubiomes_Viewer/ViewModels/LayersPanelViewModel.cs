@@ -23,6 +23,7 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
     public string MapLayerLabel { get; } = "Map layer";
     public string AllOctavesLabel { get; } = "All octaves";
     public string OctavesHint { get; } = "With fewer octaves only the widest features of the noise remain.";
+    public string PotentialHint { get; } = "Biomes in which this structure cannot generate are dimmed.";
     public string OverlaysLabel { get; } = "Overlays";
     public string ShowGridLabel { get; } = "Coordinate grid";
     public string ShowSlimeChunksLabel { get; } = "Slime chunks";
@@ -49,6 +50,12 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
 
     [ObservableProperty]
     public partial bool IsHeightShown { get; set; }
+
+    [ObservableProperty]
+    public partial ComboChoice<StructureType>? SelectedPotentialStructure { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsPotentialShown { get; set; }
 
     [ObservableProperty]
     public partial bool ShowGrid { get; set; } = true;
@@ -83,6 +90,9 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
         new() { Display = "Contour lines", Value = HeightStyle.Contours },
         new() { Display = "Grayscale", Value = HeightStyle.Grayscale },
     ];
+
+    /// <summary>The structure types of the current world whose biomes the generator can tell.</summary>
+    public ObservableCollection<ComboChoice<StructureType>> PotentialStructures { get; } = [];
 
     /// <summary>The structure types of the current version and dimension.</summary>
     public ObservableCollection<MarkerToggleViewModel> Structures { get; } = [];
@@ -122,6 +132,7 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
             ShowSlimeChunks = settings.ShowSlimeChunks;
             ShowGatewayLinks = settings.ShowGatewayLinks;
             SelectedHeightStyle = HeightStyles.FirstOrDefault(choice => choice.Value == settings.HeightStyle) ?? HeightStyles[0];
+            SelectedPotentialStructure = PotentialStructures.FirstOrDefault(choice => choice.Value == settings.PotentialStructure) ?? SelectedPotentialStructure;
             Spawn.IsChecked = settings.ShowSpawn;
             Strongholds.IsChecked = settings.ShowStrongholds;
 
@@ -151,6 +162,8 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
     }
 
     partial void OnSelectedHeightStyleChanged(ComboChoice<HeightStyle>? value) => ApplyOverlays();
+
+    partial void OnSelectedPotentialStructureChanged(ComboChoice<StructureType>? value) => ApplyOverlays();
 
     partial void OnShowGridChanged(bool value) => ApplyOverlays();
 
@@ -184,10 +197,21 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
             SelectedOctaves = OctaveChoices.First(choice => choice.Value == octaves);
             HasOctaves = layer.MaxOctaves > 0;
             IsHeightShown = layer.Mode == LayerMode.Height;
+            ShowPotentialStructures(layer.Mode);
         });
 
         _session.Layer = layer.Mode;
         _session.Octaves = octaves;
+        if (SelectedPotentialStructure is { } potential)
+            _map.PotentialStructure = potential.Value;
+    }
+
+    private void ShowPotentialStructures(LayerMode layer)
+    {
+        var structures = _structureCatalog.GetWithBiomeRule(_session.Version, _session.Dimension);
+        Replace(PotentialStructures, [.. structures.Select(structure => new ComboChoice<StructureType> { Display = structure.Name, Value = structure.Type })]);
+        SelectedPotentialStructure = PotentialStructures.FirstOrDefault(choice => choice.Value == _map.PotentialStructure) ?? PotentialStructures.FirstOrDefault();
+        IsPotentialShown = layer == LayerMode.StructurePotential;
     }
 
     private ComboChoice<int> CreateOctaveChoice(int octaves) => new()
@@ -273,6 +297,7 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
     private void ShowOverlaysOnMap()
     {
         _map.HeightStyle = SelectedHeightStyle?.Value ?? _map.HeightStyle;
+        _map.PotentialStructure = SelectedPotentialStructure?.Value ?? _map.PotentialStructure;
         _map.ShowGrid = ShowGrid;
         _map.ShowSlimeChunks = ShowSlimeChunks;
         _map.ShowGatewayLinks = ShowGatewayLinks;
@@ -285,6 +310,7 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
     {
         var settings = _settingsService.Current.Map;
         settings.HeightStyle = _map.HeightStyle;
+        settings.PotentialStructure = _map.PotentialStructure;
         settings.ShowGrid = ShowGrid;
         settings.ShowSlimeChunks = ShowSlimeChunks;
         settings.ShowGatewayLinks = ShowGatewayLinks;

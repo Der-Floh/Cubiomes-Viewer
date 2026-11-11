@@ -11,6 +11,7 @@ public sealed class MapContentTests
 
     [Theory]
     [InlineData(LayerMode.Biomes, SampleHeight, 0)]
+    [InlineData(LayerMode.StructurePotential, SampleHeight, 0)]
     [InlineData(LayerMode.Temperature, 0, Octaves)]
     [InlineData(LayerMode.Depth, SampleHeight, Octaves)]
     [InlineData(LayerMode.Rivers, 0, 0)]
@@ -19,7 +20,8 @@ public sealed class MapContentTests
     {
         var content = MapContent.For(_world, layer, SampleHeight, Octaves);
 
-        Assert.Equal(new MapContent(_world, layer, expectedY, expectedOctaves), content);
+        var contentLayer = layer == LayerMode.StructurePotential ? LayerMode.Biomes : layer;
+        Assert.Equal(new MapContent(_world, contentLayer, expectedY, expectedOctaves), content);
     }
 
     [Fact]

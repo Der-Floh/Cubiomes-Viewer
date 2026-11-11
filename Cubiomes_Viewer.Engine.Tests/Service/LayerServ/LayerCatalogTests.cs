@@ -12,7 +12,7 @@ public sealed class LayerCatalogTests
     private const int MoreOctavesThanAnyNoiseHas = 64;
     private static readonly BiomeArea _area = new(4, -32, -32, 64, 64, 16);
 
-    private readonly LayerCatalog _catalog = new();
+    private readonly LayerCatalog _catalog = TestEngine.CreateLayerCatalog();
 
     public static TheoryData<McVersion, Dimension, LayerMode[]> AvailableLayers() => new()
     {
@@ -36,10 +36,25 @@ public sealed class LayerCatalogTests
     public void GetAvailable_VersionAndDimension_ListsTheLayersOfItsGenerator(McVersion version, Dimension dimension, LayerMode[] expected)
     {
         var layers = _catalog.GetAvailable(version, dimension);
+        var ownLayers = layers.Select(layer => layer.Mode).Where(mode => mode != LayerMode.StructurePotential).ToArray();
 
-        Assert.Equal(expected, layers.Select(layer => layer.Mode));
-        Assert.All(Enum.GetValues<LayerMode>(), mode => Assert.Equal(expected.Contains(mode), _catalog.IsAvailable(mode, version, dimension)));
+        Assert.Equal(expected, ownLayers);
+        Assert.All(expected, mode => Assert.True(_catalog.IsAvailable(mode, version, dimension)));
+        Assert.All(Enum.GetValues<LayerMode>().Except(layers.Select(layer => layer.Mode)), mode => Assert.False(_catalog.IsAvailable(mode, version, dimension)));
         Assert.Same(layers, _catalog.GetAvailable(version, dimension));
+    }
+
+    [Theory]
+    [InlineData(McVersion.V1_21_3, Dimension.Overworld, true)]
+    [InlineData(McVersion.V1_21_3, Dimension.Nether, true)]
+    [InlineData(McVersion.V1_21_3, Dimension.End, true)]
+    [InlineData(McVersion.V1_8_9, Dimension.End, false)]
+    [InlineData(McVersion.Beta1_7, Dimension.Overworld, false)]
+    public void IsAvailable_StructurePotential_NeedsAStructureWhoseBiomesAreKnown(McVersion version, Dimension dimension, bool expected)
+    {
+        Assert.Equal(expected, _catalog.IsAvailable(LayerMode.StructurePotential, version, dimension));
+        Assert.Equal(expected, TestEngine.CreateStructureCatalog().GetWithBiomeRule(version, dimension).Count > 0);
+        Assert.Equal(expected, _catalog.GetAvailable(version, dimension).Any(layer => layer.Mode == LayerMode.StructurePotential));
     }
 
     [Fact]

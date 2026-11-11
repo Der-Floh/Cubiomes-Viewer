@@ -50,7 +50,7 @@ public sealed class LayersPanelViewModelTests : IDisposable
         await _main.Initialization;
 
         Assert.Equal(
-            ["Biomes", "Temperature", "Humidity", "Continentalness", "Erosion", "Depth", "Weirdness", "Surface height"],
+            ["Biomes", "Temperature", "Humidity", "Continentalness", "Erosion", "Depth", "Weirdness", "Surface height", "Structure potential"],
             _layers.Layers.Select(layer => layer.Display));
         Assert.Equal(LayerMode.Biomes, _layers.SelectedLayer?.Value);
         Assert.Equal(LayerMode.Biomes, _main.Map.Layer);
@@ -99,7 +99,7 @@ public sealed class LayersPanelViewModelTests : IDisposable
 
         session.Version = McVersion.V1_16_5;
 
-        Assert.Equal(["Biomes", "Rivers", "Ocean temperature", "Surface height"], _layers.Layers.Select(layer => layer.Display));
+        Assert.Equal(["Biomes", "Rivers", "Ocean temperature", "Surface height", "Structure potential"], _layers.Layers.Select(layer => layer.Display));
         Assert.Equal(LayerMode.Biomes, _layers.SelectedLayer?.Value);
         Assert.Equal(LayerMode.Biomes, session.Layer);
         Assert.Equal(LayerMode.Biomes, _main.Map.Layer);
@@ -118,7 +118,7 @@ public sealed class LayersPanelViewModelTests : IDisposable
 
         session.Dimension = Dimension.Nether;
         Assert.Equal(LayerMode.Biomes, _main.Map.Layer);
-        Assert.Equal(["Biomes"], _layers.Layers.Select(layer => layer.Display));
+        Assert.Equal(["Biomes", "Structure potential"], _layers.Layers.Select(layer => layer.Display));
     }
 
     [AvaloniaFact]
@@ -137,6 +137,39 @@ public sealed class LayersPanelViewModelTests : IDisposable
         Assert.Equal(HeightStyle.Contours, _main.Map.HeightStyle);
         Assert.Equal(HeightStyle.Contours, stored.Map.HeightStyle);
         Assert.Equal(["Shaded relief", "Height colours", "Contour lines", "Grayscale"], _layers.HeightStyles.Select(style => style.Display));
+    }
+
+    [AvaloniaFact]
+    public async Task SelectedPotentialStructure_Changed_IsOfferedForThePotentialLayerOnlyAndStored()
+    {
+        await _main.Initialization;
+        Assert.False(_layers.IsPotentialShown);
+        Assert.Equal(StructureType.Village, _layers.SelectedPotentialStructure?.Value);
+        Assert.DoesNotContain(_layers.PotentialStructures, structure => structure.Value == StructureType.Geode);
+
+        _layers.SelectedLayer = _layers.Layers.Single(layer => layer.Value == LayerMode.StructurePotential);
+        _layers.SelectedPotentialStructure = _layers.PotentialStructures.Single(structure => structure.Value == StructureType.Mansion);
+        await _services.GetRequiredService<ISettingsService>().FlushAsync(TestContext.Current.CancellationToken);
+
+        var stored = await _services.GetRequiredService<ISettingsRepository>().LoadAsync(TestContext.Current.CancellationToken);
+        Assert.True(_layers.IsPotentialShown);
+        Assert.Equal(LayerMode.StructurePotential, _main.Map.Layer);
+        Assert.Equal(StructureType.Mansion, _main.Map.PotentialStructure);
+        Assert.Equal(StructureType.Mansion, stored.Map.PotentialStructure);
+    }
+
+    [AvaloniaFact]
+    public async Task Dimension_ChangedWhileThePotentialIsShown_OffersTheStructuresOfThatDimension()
+    {
+        await _main.Initialization;
+        _layers.SelectedLayer = _layers.Layers.Single(layer => layer.Value == LayerMode.StructurePotential);
+
+        _services.GetRequiredService<WorldSession>().Dimension = Dimension.Nether;
+
+        Assert.Equal(LayerMode.StructurePotential, _main.Map.Layer);
+        Assert.Equal(["Nether fortress", "Bastion remnant", "Ruined portal"], _layers.PotentialStructures.Select(structure => structure.Display));
+        Assert.Equal(StructureType.Fortress, _layers.SelectedPotentialStructure?.Value);
+        Assert.Equal(StructureType.Fortress, _main.Map.PotentialStructure);
     }
 
     [AvaloniaFact]

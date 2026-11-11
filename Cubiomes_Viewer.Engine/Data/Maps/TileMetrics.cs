@@ -93,7 +93,7 @@ public sealed class TileMetrics
 
     public static TileMetrics For(WorldKey world, LayerMode layer) => layer switch
     {
-        LayerMode.Biomes => For(world),
+        LayerMode.Biomes or LayerMode.StructurePotential => For(world),
         LayerMode.Rivers => Rivers,
         LayerMode.OceanTemperature => OceanTemperatures,
         LayerMode.Height => ForHeights(world),

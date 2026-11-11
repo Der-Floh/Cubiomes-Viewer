@@ -4,6 +4,7 @@ using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Extensions;
 using Cubiomes_Viewer.Engine.Interop;
+using Cubiomes_Viewer.Engine.Service.StructureServ;
 
 namespace Cubiomes_Viewer.Engine.Service.LayerServ;
 
@@ -24,8 +25,14 @@ public sealed class LayerCatalog : ILayerCatalog
 
     private static readonly LayerMode[] _modes = Enum.GetValues<LayerMode>();
 
+    private readonly IStructureCatalog _structureCatalog;
     private readonly Lock _gate = new();
     private readonly Dictionary<(McVersion, Dimension), IReadOnlyList<LayerInfo>> _available = [];
+
+    public LayerCatalog(IStructureCatalog structureCatalog)
+    {
+        _structureCatalog = structureCatalog;
+    }
 
     public IReadOnlyList<LayerInfo> GetAvailable(McVersion version, Dimension dimension)
     {
@@ -45,6 +52,8 @@ public sealed class LayerCatalog : ILayerCatalog
     {
         if (mode == LayerMode.Biomes)
             return true;
+        if (mode == LayerMode.StructurePotential)
+            return _structureCatalog.GetWithBiomeRule(version, dimension).Count > 0;
         if (mode.ToClimateParameter() is { } parameter)
             return CubiomesNative.ClimateSupported((int)version, (int)dimension, (int)parameter) == Supported;
         if (mode.ToGeneratorLayer() is { } layer)
@@ -67,6 +76,7 @@ public sealed class LayerCatalog : ILayerCatalog
             LayerMode.Rivers => new LayerInfo { Mode = mode, Name = "Rivers" },
             LayerMode.OceanTemperature => new LayerInfo { Mode = mode, Name = "Ocean temperature" },
             LayerMode.Height => new LayerInfo { Mode = mode, Name = "Surface height", Values = GetHeightValues(dimension) },
+            LayerMode.StructurePotential => new LayerInfo { Mode = mode, Name = "Structure potential" },
             _ => throw new NotSupportedException($"Unsupported layer: {mode}"),
         };
     }

@@ -7,10 +7,10 @@ public static class LayerModeExtensions
     extension(LayerMode mode)
     {
         /// <summary>Whether the samples of the layer are biome ids rather than numbers.</summary>
-        public bool HasBiomeSamples => mode is LayerMode.Biomes or LayerMode.Rivers or LayerMode.OceanTemperature;
+        public bool HasBiomeSamples => mode is LayerMode.Biomes or LayerMode.StructurePotential or LayerMode.Rivers or LayerMode.OceanTemperature;
 
         /// <summary>Whether the layer changes with the height it is sampled at.</summary>
-        public bool DependsOnHeight => mode is LayerMode.Biomes or LayerMode.Depth;
+        public bool DependsOnHeight => mode is LayerMode.Biomes or LayerMode.StructurePotential or LayerMode.Depth;
 
         /// <summary>Returns the climate parameter the layer shows, or <see langword="null"/> when it shows something else.</summary>
         public ClimateParameter? ToClimateParameter() => mode switch

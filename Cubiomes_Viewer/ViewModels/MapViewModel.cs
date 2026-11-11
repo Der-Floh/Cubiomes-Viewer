@@ -45,6 +45,10 @@ public sealed partial class MapViewModel : ViewModelBase
     [ObservableProperty]
     public partial HeightStyle HeightStyle { get; set; } = HeightStyle.Shaded;
 
+    /// <summary>The structure type whose biomes the structure potential layer highlights.</summary>
+    [ObservableProperty]
+    public partial StructureType PotentialStructure { get; set; } = StructureType.Village;
+
     [ObservableProperty]
     public partial bool ShowGrid { get; set; } = true;
 

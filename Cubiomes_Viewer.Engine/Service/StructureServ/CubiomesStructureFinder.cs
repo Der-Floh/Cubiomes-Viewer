@@ -1,3 +1,7 @@
+using System.Collections.Frozen;
+using System.Diagnostics.CodeAnalysis;
+
+using Cubiomes_Viewer.Engine.Data;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Interop;
 
@@ -23,5 +27,25 @@ public sealed class CubiomesStructureFinder : IStructureFinder
 
         position = new BlockPos(x, z);
         return result > 0;
+    }
+
+    public bool TryGetViableBiomes(StructureType type, McVersion version, [NotNullWhen(true)] out IReadOnlySet<int>? biomes)
+    {
+        List<int> viable = [];
+        for (var biome = 0; biome < Constants.NoBiomeTileValue; biome++)
+        {
+            var result = CubiomesNative.StructureBiomeViable((int)type, (int)version, biome);
+            if (result == (int)NativeStatus.Unsupported)
+            {
+                biomes = null;
+                return false;
+            }
+
+            if (CubiomesNativeException.ThrowIfError(result, nameof(TryGetViableBiomes)) > 0)
+                viable.Add(biome);
+        }
+
+        biomes = viable.ToFrozenSet();
+        return true;
     }
 }

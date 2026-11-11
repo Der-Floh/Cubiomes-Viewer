@@ -18,6 +18,9 @@ public sealed class MapSettings
     public bool ShowGatewayLinks { get; set; } = true;
     public HeightStyle HeightStyle { get; set; } = HeightStyle.Shaded;
 
+    /// <summary>The structure type whose biomes the structure potential layer highlights.</summary>
+    public StructureType PotentialStructure { get; set; } = StructureType.Village;
+
     /// <summary>The structure types marked on the map, across all dimensions.</summary>
     public List<StructureType> VisibleStructures { get; set; } =
     [

@@ -13,4 +13,7 @@ public enum LayerMode
     Rivers = 7,
     OceanTemperature = 8,
     Height = 9,
+
+    /// <summary>The biomes, with those dimmed in which a chosen structure type cannot generate.</summary>
+    StructurePotential = 10,
 }

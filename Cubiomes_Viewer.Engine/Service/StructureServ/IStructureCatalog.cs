@@ -12,4 +12,7 @@ public interface IStructureCatalog
 
     /// <summary>Lists the structures that generate in one dimension of a version, in display order.</summary>
     IReadOnlyList<StructureInfo> GetAvailable(McVersion version, Dimension dimension);
+
+    /// <summary>Lists the structures of one dimension of a version whose biomes the generator can tell, in display order.</summary>
+    IReadOnlyList<StructureInfo> GetWithBiomeRule(McVersion version, Dimension dimension);
 }

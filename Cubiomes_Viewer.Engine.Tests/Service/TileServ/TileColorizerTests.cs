@@ -11,15 +11,16 @@ namespace Cubiomes_Viewer.Engine.Tests.Service.TileServ;
 public sealed class TileColorizerTests
 {
     private const int PlainsBiomeId = 1;
+    private const int ForestBiomeId = 4;
     private static readonly WorldKey _world = new(262, McVersion.V1_21_3, Dimension.Overworld, GeneratorFlags.None);
 
     private readonly BiomeCatalog _biomeCatalog = new();
-    private readonly LayerCatalog _layerCatalog = new();
+    private readonly LayerCatalog _layerCatalog = TestEngine.CreateLayerCatalog();
     private readonly TileColorizer _colorizer;
 
     public TileColorizerTests()
     {
-        _colorizer = new TileColorizer(_biomeCatalog, _layerCatalog);
+        _colorizer = TestEngine.CreateTileColorizer();
     }
 
     [Fact]
@@ -79,6 +80,32 @@ public sealed class TileColorizerTests
 
             Assert.Equal(stop.Color, ReadColor(pixels, 0));
         }
+    }
+
+    [Fact]
+    public void Colorize_StructurePotential_DimsTheBiomesTheStructureCannotGenerateIn()
+    {
+        var palette = _biomeCatalog.DefaultPalette;
+        var pixels = new byte[2 * TileColorizer.BytesPerPixel];
+
+        _colorizer.Colorize(CreateBiomeTile(PlainsBiomeId, ForestBiomeId), new TileStyle(PotentialOf: StructureType.Village), pixels);
+
+        var forest = ReadColor(pixels, 1);
+        Assert.Equal(palette[PlainsBiomeId], ReadColor(pixels, 0));
+        Assert.True(forest.Red == forest.Green && forest.Green == forest.Blue, $"The dimmed forest is {forest}.");
+        Assert.True(forest.Green < palette[ForestBiomeId].Green / 2);
+        Assert.Equal(byte.MaxValue, pixels[TileColorizer.BytesPerPixel + 3]);
+    }
+
+    [Fact]
+    public void Colorize_PotentialOfAStructureWithoutABiomeRule_KeepsThePalette()
+    {
+        var palette = _biomeCatalog.DefaultPalette;
+        var pixels = new byte[2 * TileColorizer.BytesPerPixel];
+
+        _colorizer.Colorize(CreateBiomeTile(PlainsBiomeId, ForestBiomeId), new TileStyle(PotentialOf: StructureType.Geode), pixels);
+
+        Assert.Equal([palette[PlainsBiomeId], palette[ForestBiomeId]], new[] { ReadColor(pixels, 0), ReadColor(pixels, 1) });
     }
 
     private ColorRamp GetRamp(LayerMode layer) => GetValues(layer).Ramp;

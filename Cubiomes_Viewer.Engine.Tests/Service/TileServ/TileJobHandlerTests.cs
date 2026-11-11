@@ -14,7 +14,7 @@ public sealed class TileJobHandlerTests
     private const int Samples = 3;
     private const int SampleHeight = 64;
 
-    private readonly LayerCatalog _catalog = new();
+    private readonly LayerCatalog _catalog = TestEngine.CreateLayerCatalog();
     private readonly TileJobHandler _handler = new();
 
     [Theory]

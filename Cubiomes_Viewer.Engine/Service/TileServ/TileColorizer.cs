@@ -1,10 +1,11 @@
 using System.Collections.Concurrent;
 
 using Cubiomes_Viewer.Engine.Data;
-using Cubiomes_Viewer.Engine.Data.Biomes;
 using Cubiomes_Viewer.Engine.Data.Colors;
 using Cubiomes_Viewer.Engine.Data.Maps;
+using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.LayerServ;
+using Cubiomes_Viewer.Engine.Service.StructureServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
 
 namespace Cubiomes_Viewer.Engine.Service.TileServ;
@@ -15,15 +16,23 @@ public sealed class TileColorizer : ITileColorizer
 
     private const byte Opaque = byte.MaxValue;
     private const int StoredNumberCount = ushort.MaxValue + 1;
+    private const double RedLuminance = 0.299;
+    private const double GreenLuminance = 0.587;
+    private const double BlueLuminance = 0.114;
+    private const double DimmedBrightness = 0.3;
 
     private readonly IBiomeCatalog _biomeCatalog;
     private readonly ILayerCatalog _layerCatalog;
+    private readonly IStructureFinder _structureFinder;
     private readonly ConcurrentDictionary<(ColorRamp Ramp, int Unit), RgbColor[]> _colorTables = new();
+    private readonly ConcurrentDictionary<(StructureType Type, McVersion Version), RgbColor[]> _potentialColors = new();
+    private RgbColor[]? _paletteColors;
 
-    public TileColorizer(IBiomeCatalog biomeCatalog, ILayerCatalog layerCatalog)
+    public TileColorizer(IBiomeCatalog biomeCatalog, ILayerCatalog layerCatalog, IStructureFinder structureFinder)
     {
         _biomeCatalog = biomeCatalog;
         _layerCatalog = layerCatalog;
+        _structureFinder = structureFinder;
     }
 
     public void Colorize(TileData tile, TileStyle style, Span<byte> bgra)
@@ -36,7 +45,7 @@ public sealed class TileColorizer : ITileColorizer
 
         if (!tile.HasValues)
         {
-            ColorizeBiomes(tile.Biomes, _biomeCatalog.DefaultPalette, bgra);
+            ColorizeBiomes(tile.Biomes, GetBiomeColors(style.PotentialOf, tile.Request.World.Version), bgra);
             return;
         }
 
@@ -58,7 +67,7 @@ public sealed class TileColorizer : ITileColorizer
         => _layerCatalog.GetInfo(request.Layer, request.World.Version, request.World.Dimension).Values
             ?? throw new InvalidOperationException($"The layer '{request.Layer}' has no colours for numbers.");
 
-    private static void ColorizeBiomes(ReadOnlySpan<byte> biomes, BiomePalette palette, Span<byte> bgra)
+    private static void ColorizeBiomes(ReadOnlySpan<byte> biomes, RgbColor[] colors, Span<byte> bgra)
     {
         for (var index = 0; index < biomes.Length; index++)
         {
@@ -66,8 +75,26 @@ public sealed class TileColorizer : ITileColorizer
             if (biomes[index] == Constants.NoBiomeTileValue)
                 pixel.Clear();
             else
-                Write(pixel, palette[biomes[index]]);
+                Write(pixel, colors[biomes[index]]);
         }
+    }
+
+    /// <summary>The palette, or the palette with every biome dimmed in which the structure type cannot generate.</summary>
+    private RgbColor[] GetBiomeColors(StructureType? potentialOf, McVersion version)
+    {
+        var palette = _biomeCatalog.DefaultPalette;
+        if (potentialOf is not { } type)
+            return _paletteColors ??= [.. Enumerable.Range(0, palette.Count).Select(biome => palette[biome])];
+
+        return _potentialColors.GetOrAdd((type, version), key => _structureFinder.TryGetViableBiomes(key.Type, key.Version, out var viable)
+            ? [.. Enumerable.Range(0, palette.Count).Select(biome => viable.Contains(biome) ? palette[biome] : Dim(palette[biome]))]
+            : GetBiomeColors(null, key.Version));
+    }
+
+    private static RgbColor Dim(RgbColor color)
+    {
+        var gray = (byte)Math.Round((color.Red * RedLuminance + color.Green * GreenLuminance + color.Blue * BlueLuminance) * DimmedBrightness);
+        return new RgbColor(gray, gray, gray);
     }
 
     private void ColorizeValues(ReadOnlySpan<short> values, ColorRamp ramp, int unit, Span<byte> bgra)

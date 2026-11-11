@@ -8,10 +8,14 @@ public readonly record struct MapContent(WorldKey World, LayerMode Layer, int Y,
 {
     /// <summary>
     /// Describes a layer as the user set it up. A height or an octave limit the layer does not react to is left out,
-    /// so that changing it does not generate the same tiles again.
+    /// so that changing it does not generate the same tiles again. The structure potential is painted on the tiles
+    /// of the biomes and has none of its own.
     /// </summary>
-    public static MapContent For(WorldKey world, LayerMode layer, int sampleHeight, int octaves)
-        => new(world, layer, layer.DependsOnHeight ? sampleHeight : 0, layer.ToClimateParameter() is null ? 0 : octaves);
+    public static MapContent For(WorldKey world, LayerMode layer, int sampleHeight, int octaves) => new(
+        world,
+        layer == LayerMode.StructurePotential ? LayerMode.Biomes : layer,
+        layer.DependsOnHeight ? sampleHeight : 0,
+        layer.ToClimateParameter() is null ? 0 : octaves);
 
     public TileRequest GetRequest(TileKey tile) => new(World, Layer, Y, tile, Octaves);
 }

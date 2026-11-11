@@ -11,7 +11,7 @@
 #define CV_API
 #endif
 
-#define CV_ABI_VERSION 4
+#define CV_ABI_VERSION 5
 
 #define CV_BIOME_NONE 255
 #define CV_BIOME_COLOR_BYTES 768
@@ -94,6 +94,9 @@ CV_API int32_t cv_gen_heights(cv_world *world, int32_t scale, int32_t x, int32_t
 CV_API int32_t cv_structure_config(int32_t stype, int32_t mc, int32_t *dimension, int32_t *region_blocks);
 CV_API int32_t cv_structure_pos(int32_t stype, int32_t mc, uint64_t seed, int32_t reg_x, int32_t reg_z, int32_t *x, int32_t *z);
 CV_API int32_t cv_structure_viable(cv_world *world, int32_t stype, int32_t x, int32_t z);
+
+/* Whether the biome rule of a structure type lets it generate in a biome; CV_ERR_UNSUPPORTED for a type without such a rule. */
+CV_API int32_t cv_structure_biome_viable(int32_t stype, int32_t mc, int32_t biome);
 
 /* Writes the (x, z) pairs of the structures that generate in [x0, x1) x [z0, z1) and returns their number. */
 CV_API int32_t cv_structures_in_area(cv_world *world, int32_t stype, int32_t x0, int32_t z0, int32_t x1, int32_t z1, int32_t *positions, int32_t capacity);
