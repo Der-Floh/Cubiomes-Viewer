@@ -3,8 +3,10 @@ using Avalonia.Headless.XUnit;
 using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.SeedServ;
+using Cubiomes_Viewer.Engine.Service.WorldGenServ;
 using Cubiomes_Viewer.Service.ClipboardServ;
 using Cubiomes_Viewer.Service.NotificationServ;
+using Cubiomes_Viewer.Service.StorageServ;
 using Cubiomes_Viewer.ViewModels;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -14,6 +16,7 @@ namespace Cubiomes_Viewer.Tests.ViewModels;
 public sealed class MapMenuViewModelTests : IDisposable
 {
     private static readonly BlockPos _position = new(-300, 1000);
+    private static readonly byte[] _image = [137, 80, 78, 71];
 
     private readonly ServiceProvider _services = TestServices.Create();
     private readonly MapMenuViewModel _menu;
@@ -83,6 +86,37 @@ public sealed class MapMenuViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
+    public async Task SaveImage_FileChosen_WritesTheMapImageToIt()
+    {
+        _session.Seed = 262;
+        _menu.ImageSource = new FixedImageSource(_image);
+
+        await _menu.SaveImageCommand.ExecuteAsync(null);
+
+        var storage = (MemoryStorageService)_services.GetRequiredService<IStorageService>();
+        var notifications = (RecordingNotificationService)_services.GetRequiredService<INotificationService>();
+        var version = _services.GetRequiredService<IVersionCatalog>().GetName(_session.Version);
+        var fileName = $"cubiomes-262-{version}-overworld.png".ToLowerInvariant();
+        Assert.Equal(_image, storage.SavedContent);
+        Assert.Equal(fileName, storage.LastSaveOptions?.SuggestedFileName);
+        Assert.Equal([fileName], notifications.Notifications.Select(notification => notification.Message));
+        Assert.Empty(notifications.Errors);
+    }
+
+    [AvaloniaFact]
+    public async Task SaveImage_PickerClosed_WritesNothing()
+    {
+        var storage = (MemoryStorageService)_services.GetRequiredService<IStorageService>();
+        storage.IsSaveCancelled = true;
+        _menu.ImageSource = new FixedImageSource(_image);
+
+        await _menu.SaveImageCommand.ExecuteAsync(null);
+
+        Assert.Null(storage.SavedContent);
+        Assert.Empty(((RecordingNotificationService)_services.GetRequiredService<INotificationService>()).Notifications);
+    }
+
+    [AvaloniaFact]
     public void OpenShadowSeed_LayeredVersion_OpensTheShadowAndRemembersIt()
     {
         _session.Version = McVersion.V1_16_5;
@@ -102,5 +136,10 @@ public sealed class MapMenuViewModelTests : IDisposable
         _session.Version = McVersion.V1_21_3;
 
         Assert.False(_menu.OpenShadowSeedCommand.CanExecute(null));
+    }
+
+    private sealed class FixedImageSource(byte[] image) : IMapImageSource
+    {
+        public byte[] CapturePng() => image;
     }
 }

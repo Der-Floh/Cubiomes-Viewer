@@ -11,8 +11,11 @@ public interface IStorageService
     Task<IReadOnlyList<IStorageFile>> OpenFilePickerAsync(FilePickerOpenOptions options);
     Task<IReadOnlyList<IStorageFolder>> OpenFolderPickerAsync(FolderPickerOpenOptions options);
 
-    /// <summary>Lets the user choose where to save a file; returns <see langword="null"/> when they cancel.</summary>
-    Task<IStorageFile?> SaveFilePickerAsync(FilePickerSaveOptions options);
+    /// <summary>
+    /// Lets the user choose where to save a file and writes the content there.
+    /// Returns the name of the saved file, or <see langword="null"/> when they cancel.
+    /// </summary>
+    Task<string?> SaveFileAsync(FilePickerSaveOptions options, ReadOnlyMemory<byte> content);
 
     Task<IStorageFile?> TryGetFileFromPathAsync(string absolutePath);
 }

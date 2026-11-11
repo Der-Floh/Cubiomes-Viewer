@@ -199,10 +199,10 @@ public sealed class MapView : Control
         base.OnPointerPressed(e);
 
         var point = e.GetCurrentPoint(this);
+        Focus();
         if (e.Pointer.Type == PointerType.Mouse && !point.Properties.IsLeftButtonPressed)
             return;
 
-        Focus();
         e.Pointer.Capture(this);
         _navigation = null;
         _pointers[e.Pointer.Id] = point.Position;

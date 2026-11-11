@@ -17,8 +17,9 @@ public sealed class MeasureLayer : IMapLayer
     private const double OutlineThickness = 4;
     private const double EndpointRadius = 4;
     private const double LabelFontSize = 13;
-    private static readonly Vector _labelOffset = new(10, -22);
-    private static readonly Vector _shadowOffset = new(1, 1);
+    private const double LabelGap = 8;
+    private const double LabelCornerRadius = 4;
+    private static readonly Vector _labelPadding = new(6, 2);
     private static readonly RenderOptions _renderOptions = new() { EdgeMode = EdgeMode.Antialias };
 
     public event EventHandler? Invalidated;
@@ -79,7 +80,7 @@ public sealed class MeasureLayer : IMapLayer
                 context.DrawLine(OutlinePen, from, to);
                 context.DrawLine(LinePen, from, to);
                 DrawEndpoint(context, to);
-                DrawLabel(context, start.DistanceTo(end).ToString("0.#", CultureInfo.InvariantCulture), to + _labelOffset);
+                DrawLabel(context, scene, start.DistanceTo(end).ToString("0.#", CultureInfo.InvariantCulture), to);
             }
 
             DrawEndpoint(context, from);
@@ -95,12 +96,21 @@ public sealed class MeasureLayer : IMapLayer
     private void DrawEndpoint(DrawingContext context, Point center)
         => context.DrawEllipse(LineBrush, EndpointPen, center, EndpointRadius, EndpointRadius);
 
-    private void DrawLabel(DrawingContext context, string text, Point position)
+    private void DrawLabel(DrawingContext context, MapScene scene, string text, Point endpoint)
     {
-        context.DrawText(CreateText(text, OutlineBrush), position + _shadowOffset);
-        context.DrawText(CreateText(text, LineBrush), position);
+        var label = new FormattedText(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
+            new Typeface(Typeface.Default.FontFamily, weight: FontWeight.SemiBold), LabelFontSize, LineBrush);
+        var backing = GetLabelBacking(scene, endpoint, new Size(label.Width + 2 * _labelPadding.X, label.Height + 2 * _labelPadding.Y));
+
+        context.DrawRectangle(OutlineBrush, null, backing, LabelCornerRadius, LabelCornerRadius);
+        context.DrawText(label, backing.TopLeft + _labelPadding);
     }
 
-    private static FormattedText CreateText(string text, IBrush brush)
-        => new(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, new Typeface(Typeface.Default.FontFamily, weight: FontWeight.SemiBold), LabelFontSize, brush);
+    /// <summary>Places the label above the end of the line, moved back inside the map where it would stick out.</summary>
+    private static Rect GetLabelBacking(MapScene scene, Point endpoint, Size size)
+    {
+        var x = Math.Clamp(endpoint.X - size.Width / 2, 0, Math.Max(0, scene.Viewport.Width - size.Width));
+        var y = Math.Clamp(endpoint.Y - EndpointRadius - LabelGap - size.Height, 0, Math.Max(0, scene.Viewport.Height - size.Height));
+        return new Rect(new Point(x, y), size);
+    }
 }

@@ -31,6 +31,10 @@ public sealed class MapViewRenderTests
     private const int ViewSize = 256;
     private const int BytesPerPixel = 4;
     private const int MarkerFillOffset = 9;
+    private const int MeasuredBlocks = 80;
+    private const int LabelBackingOffset = 13;
+    private const int BackingOnWhite = 51;
+    private const int ColourTolerance = 8;
     private static readonly TimeSpan _timeout = TimeSpan.FromSeconds(30);
 
     [AvaloniaFact]
@@ -76,6 +80,31 @@ public sealed class MapViewRenderTests
         Assert.NotNull(frame);
         var fill = Assert.IsAssignableFrom<ISolidColorBrush>(App.Services.GetRequiredService<IMapStyleService>().Spawn.Fill).Color;
         Assert.Equal(new BiomeColor(fill.R, fill.G, fill.B), ReadPixel(frame, ViewSize / 2 - MarkerFillOffset, ViewSize / 2));
+    }
+
+    [AvaloniaFact]
+    public void Render_MeasuredDistance_DrawsTheLineAndItsLengthOnADarkBacking()
+    {
+        var measure = App.Services.GetRequiredService<MeasureLayer>();
+        measure.Start = new BlockPos(-MeasuredBlocks / 2, 0);
+        measure.End = new BlockPos(MeasuredBlocks / 2, 0);
+        var map = new MapView { Background = Brushes.White, Camera = new MapCamera(0.5, 0.5, 1), SmoothMotion = false };
+        map.AddLayer(measure);
+        var window = new Window { Width = ViewSize, Height = ViewSize, Content = map };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+
+        using var frame = window.CaptureRenderedFrame();
+        window.Close();
+
+        Assert.NotNull(frame);
+        var line = App.Services.GetRequiredService<IMapStyleService>().MeasureColor;
+        Assert.Equal(new BiomeColor(line.R, line.G, line.B), ReadPixel(frame, ViewSize / 2, ViewSize / 2));
+        var backing = ReadPixel(frame, ViewSize / 2 + MeasuredBlocks / 2, ViewSize / 2 - LabelBackingOffset);
+        Assert.InRange(backing.Red, BackingOnWhite - ColourTolerance, BackingOnWhite + ColourTolerance);
+        Assert.InRange(backing.Green, BackingOnWhite - ColourTolerance, BackingOnWhite + ColourTolerance);
+        Assert.InRange(backing.Blue, BackingOnWhite - ColourTolerance, BackingOnWhite + ColourTolerance);
     }
 
     [AvaloniaFact]

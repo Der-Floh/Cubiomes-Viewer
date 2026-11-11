@@ -3,6 +3,7 @@ using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Media.Imaging;
 
 using Cubiomes_Viewer.Controls;
@@ -55,7 +56,8 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
 
         Map.HoverChanged += OnHoverChanged;
         Map.Clicked += OnMapClicked;
-        Map.ContextRequested += OnContextRequested;
+        // The context flyout handles the bubbling event before other handlers see it, so listen while it tunnels.
+        Map.AddHandler(ContextRequestedEvent, OnContextRequested, RoutingStrategies.Tunnel);
         _map.NavigationRequested += OnNavigationRequested;
         _map.PropertyChanged += OnMapPropertyChanged;
         _selection.PropertyChanged += OnSelectionPropertyChanged;
@@ -72,7 +74,7 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
 
         Map.HoverChanged -= OnHoverChanged;
         Map.Clicked -= OnMapClicked;
-        Map.ContextRequested -= OnContextRequested;
+        Map.RemoveHandler(ContextRequestedEvent, OnContextRequested);
         _map.NavigationRequested -= OnNavigationRequested;
         _map.PropertyChanged -= OnMapPropertyChanged;
         _selection.PropertyChanged -= OnSelectionPropertyChanged;

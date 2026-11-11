@@ -27,6 +27,7 @@ public sealed partial class MapMenuViewModel : ViewModelBase
     public string SaveImageLabel { get; } = "Save map image...";
     public string CopiedTitle { get; } = "Copied";
     public string SaveImageTitle { get; } = "Save map image";
+    public string SavedTitle { get; } = "Saved";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CopyCoordinatesLabel), nameof(CopyChunkLabel), nameof(CopyRegionFileLabel))]
@@ -105,18 +106,15 @@ public sealed partial class MapMenuViewModel : ViewModelBase
             return;
 
         var image = source.CapturePng();
-        var file = await _storageService.SaveFilePickerAsync(new FilePickerSaveOptions
+        var fileName = await _storageService.SaveFileAsync(new FilePickerSaveOptions
         {
             Title = SaveImageTitle,
             SuggestedFileName = GetImageFileName(),
             DefaultExtension = ImageExtension,
             FileTypeChoices = [FilePickerFileTypes.ImagePng],
-        });
-        if (file is null)
-            return;
-
-        await using var stream = await file.OpenWriteAsync();
-        await stream.WriteAsync(image);
+        }, image);
+        if (fileName is not null)
+            _notificationService.ShowSuccess(SavedTitle, fileName);
     }, browserFireAndForget: true);
 
     private Task CopyAsync(string text) => RunGuardedAsync(async () =>

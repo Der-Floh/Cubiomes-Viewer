@@ -10,6 +10,7 @@ using Avalonia.Platform;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 
+using Cubiomes_Viewer.Controls;
 using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Structures;
@@ -102,6 +103,43 @@ public sealed class MapHostViewTests : IDisposable
 
         Assert.Null(_map.Selection);
         Assert.Equal(spawn.X - DragDistance, _map.Camera.CenterX);
+    }
+
+    [AvaloniaFact]
+    public async Task RightClick_OnTheMap_PointsTheContextMenuAtTheClickedBlock()
+    {
+        var spawn = await ShowSpawnAtTheCenterAsync();
+        var position = new Point(_center.X + 10, _center.Y + 20);
+
+        _window.MouseDown(position, MouseButton.Right);
+        _window.MouseUp(position, MouseButton.Right);
+        Dispatcher.UIThread.RunJobs();
+
+        var menu = _services.GetRequiredService<MapMenuViewModel>();
+        Assert.Equal(new BlockPos(spawn.X + 10, spawn.Z + 20), menu.Position);
+        Assert.Null(_map.Selection);
+    }
+
+    [AvaloniaFact]
+    public void RightClick_OnTheMap_GivesItTheKeyboardFocus()
+    {
+        var map = _host.GetVisualDescendants().OfType<MapView>().Single();
+        Assert.False(map.IsFocused);
+
+        _window.MouseDown(_center, MouseButton.Right);
+
+        Assert.True(map.IsFocused);
+    }
+
+    [AvaloniaFact]
+    public void Escape_WhileMeasuring_EndsTheMeasurement()
+    {
+        Click(_center);
+        _map.MeasureStart = new BlockPos(0, 0);
+
+        _window.KeyPressQwerty(PhysicalKey.Escape, RawInputModifiers.None);
+
+        Assert.False(_map.IsMeasuring);
     }
 
     [AvaloniaFact]

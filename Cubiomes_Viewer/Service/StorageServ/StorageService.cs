@@ -38,12 +38,20 @@ public sealed class StorageService : IStorageService
         return result;
     }
 
-    public async Task<IStorageFile?> SaveFilePickerAsync(FilePickerSaveOptions options)
+    public async Task<string?> SaveFileAsync(FilePickerSaveOptions options, ReadOnlyMemory<byte> content)
     {
         _logger.LogDebug("Opening save picker: title={Title}", options.Title);
-        var result = await StorageProvider.SaveFilePickerAsync(options);
-        _logger.LogDebug("Save picker returned a file: {HasFile}", result is not null);
-        return result;
+        using var file = await StorageProvider.SaveFilePickerAsync(options);
+        if (file is null)
+        {
+            _logger.LogDebug("Save picker was closed without choosing a file");
+            return null;
+        }
+
+        await using var stream = await file.OpenWriteAsync();
+        await stream.WriteAsync(content);
+        _logger.LogDebug("Saved {Bytes} bytes to {File}", content.Length, file.Name);
+        return file.Name;
     }
 
     public Task<IStorageFile?> TryGetFileFromPathAsync(string absolutePath)
