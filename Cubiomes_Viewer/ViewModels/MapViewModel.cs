@@ -130,7 +130,7 @@ public sealed partial class MapViewModel : ViewModelBase
         => string.Create(CultureInfo.InvariantCulture, $"{start.DistanceTo(end):0.#} blocks from {start.X}, {start.Z}");
 
     private string? GetBiomeName(BlockPos block)
-        => _tileService.TryGetCachedBiome(World, LayerMode.Biomes, SampleHeight, block.X, block.Z, out var biome) && biome != EngineConstants.NoBiomeId
+        => _tileService.TryGetCachedBiome(new MapContent(World, LayerMode.Biomes, SampleHeight), block.X, block.Z, out var biome) && biome != EngineConstants.NoBiomeId
             ? _biomeCatalog.GetDisplayName(World.Version, biome)
             : null;
 

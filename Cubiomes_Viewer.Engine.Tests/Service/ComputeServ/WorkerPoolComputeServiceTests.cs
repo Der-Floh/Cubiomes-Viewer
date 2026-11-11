@@ -17,7 +17,7 @@ public sealed class WorkerPoolComputeServiceTests
     private const int TileScale = 256;
     private static readonly JobPriority _visible = new(JobPriorityClass.Visible);
 
-    private readonly JobHandlerRegistry _handlers = new([JobHandlerRegistration.Create<BiomeTileJob, TileData>(new BiomeTileJobHandler())]);
+    private readonly JobHandlerRegistry _handlers = new([JobHandlerRegistration.Create<TileJob, TileData>(new TileJobHandler())]);
     private readonly CubiomesWorldGeneratorFactory _generatorFactory = new();
 
     [Fact(Timeout = TimeoutMilliseconds)]
@@ -26,7 +26,7 @@ public sealed class WorkerPoolComputeServiceTests
         using var pool = CreatePool(new FakeWorkerFactory(2, _ => StartWorker()));
         var job = CreateTileJob(tileX: 3);
         using var context = new WorkerContext(_generatorFactory);
-        var expected = new BiomeTileJobHandler().Handle(job, context, CancellationToken.None);
+        var expected = new TileJobHandler().Handle(job, context, CancellationToken.None);
 
         var tile = await pool.RunAsync(job, _visible, TestContext.Current.CancellationToken);
 
@@ -160,7 +160,7 @@ public sealed class WorkerPoolComputeServiceTests
         var factory = new FakeWorkerFactory(1, _ => StartWorker());
         using var pool = CreatePool(factory);
         var layeredWorld = new WorldKey(1, McVersion.V1_12_2, Dimension.Overworld, GeneratorFlags.None);
-        var unsupported = new BiomeTileJob(new TileRequest(layeredWorld, LayerMode.Biomes, 64, new TileKey(1024, 0, 0)), TileSamples);
+        var unsupported = new TileJob(new TileRequest(layeredWorld, LayerMode.Biomes, 64, new TileKey(1024, 0, 0)), TileSamples);
 
         var exception = await Assert.ThrowsAsync<CubiomesNativeException>(
             () => pool.RunAsync(unsupported, _visible, TestContext.Current.CancellationToken));
@@ -193,10 +193,10 @@ public sealed class WorkerPoolComputeServiceTests
     private Task<HostWorker> StartWorker(bool crashes = false)
         => Task.FromResult(new HostWorker(CreateHost()) { Crashes = crashes });
 
-    private static BiomeTileJob CreateTileJob(int tileX)
+    private static TileJob CreateTileJob(int tileX)
     {
         var world = new WorldKey(262, McVersion.V1_21_3, Dimension.Overworld, GeneratorFlags.None);
-        return new BiomeTileJob(new TileRequest(world, LayerMode.Biomes, 64, new TileKey(TileScale, tileX, 0)), TileSamples);
+        return new TileJob(new TileRequest(world, LayerMode.Biomes, 64, new TileKey(TileScale, tileX, 0)), TileSamples);
     }
 
     private sealed class FakeWorkerFactory(int workerCount, Func<int, Task<HostWorker>> startWorker) : IComputeWorkerFactory
@@ -247,7 +247,7 @@ public sealed class WorkerPoolComputeServiceTests
                 if (Crashes)
                     throw new ComputeWorkerException("The worker crashed.");
 
-                Tiles.Add(((BiomeTileJob)ComputeEnvelope.DeserializeJob(request)).Request.Tile);
+                Tiles.Add(((TileJob)ComputeEnvelope.DeserializeJob(request)).Request.Tile);
                 return host.Execute(request);
             }
             finally

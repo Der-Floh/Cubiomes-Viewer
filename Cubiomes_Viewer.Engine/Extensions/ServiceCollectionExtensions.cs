@@ -7,6 +7,7 @@ using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Repository.AppDataRepo;
 using Cubiomes_Viewer.Engine.Repository.SettingsRepo;
 using Cubiomes_Viewer.Engine.Service.ComputeServ;
+using Cubiomes_Viewer.Engine.Service.LayerServ;
 using Cubiomes_Viewer.Engine.Service.SeedServ;
 using Cubiomes_Viewer.Engine.Service.SelfTestServ;
 using Cubiomes_Viewer.Engine.Service.SettingsServ;
@@ -36,13 +37,14 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IWorldGeneratorFactory, CubiomesWorldGeneratorFactory>();
         services.AddSingleton<IVersionCatalog, VersionCatalog>();
         services.AddSingleton<IBiomeCatalog, BiomeCatalog>();
+        services.AddSingleton<ILayerCatalog, LayerCatalog>();
         services.AddSingleton<IStructureFinder, CubiomesStructureFinder>();
         services.AddSingleton<ISlimeChunkFinder, CubiomesSlimeChunkFinder>();
 
         // compute
         services.AddSingleton<JobHandlerRegistry>();
         services.AddSingleton<ComputeWorkerHost>();
-        services.AddJobHandler<BiomeTileJob, TileData, BiomeTileJobHandler>();
+        services.AddJobHandler<TileJob, TileData, TileJobHandler>();
         services.AddJobHandler<StructureAreaJob, StructureAreaData, StructureAreaJobHandler>();
         services.AddJobHandler<StructureDetailsJob, StructureDetails, StructureDetailsJobHandler>();
         services.AddJobHandler<LandmarksJob, WorldLandmarks, LandmarksJobHandler>();
@@ -55,7 +57,7 @@ public static class ServiceCollectionExtensions
             services.AddSingleton<IComputeService, InProcessComputeService>();
 
         // services
-        services.AddSingleton<ITileColorizer, BiomeTileColorizer>();
+        services.AddSingleton<ITileColorizer, TileColorizer>();
         services.AddSingleton<IMapTileService, MapTileService>();
         services.AddSingleton<IStructureCatalog, StructureCatalog>();
         services.AddSingleton<IStructureAreaService, StructureAreaService>();

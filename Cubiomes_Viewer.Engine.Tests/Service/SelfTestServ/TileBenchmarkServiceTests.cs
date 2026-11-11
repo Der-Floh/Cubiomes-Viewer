@@ -13,7 +13,7 @@ public sealed class TileBenchmarkServiceTests
     [Fact]
     public async Task RunAsync_WorkingGenerator_MeasuresABlockOfTiles()
     {
-        var handlers = new JobHandlerRegistry([JobHandlerRegistration.Create<BiomeTileJob, TileData>(new BiomeTileJobHandler())]);
+        var handlers = new JobHandlerRegistry([JobHandlerRegistration.Create<TileJob, TileData>(new TileJobHandler())]);
         using var computeService = new InlineComputeService(handlers, new CubiomesWorldGeneratorFactory());
         var benchmark = new TileBenchmarkService(computeService, new VersionCatalog());
 

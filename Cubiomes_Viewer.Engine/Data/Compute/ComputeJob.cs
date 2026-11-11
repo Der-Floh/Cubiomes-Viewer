@@ -8,7 +8,7 @@ namespace Cubiomes_Viewer.Engine.Data.Compute;
 /// so it can be sent to a worker in another runtime.
 /// </summary>
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "$job")]
-[JsonDerivedType(typeof(BiomeTileJob), "biomeTile")]
+[JsonDerivedType(typeof(TileJob), "tile")]
 [JsonDerivedType(typeof(StructureAreaJob), "structureArea")]
 [JsonDerivedType(typeof(StructureDetailsJob), "structureDetails")]
 [JsonDerivedType(typeof(LandmarksJob), "landmarks")]

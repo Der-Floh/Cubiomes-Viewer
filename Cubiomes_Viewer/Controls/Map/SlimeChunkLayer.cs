@@ -95,13 +95,13 @@ public sealed class SlimeChunkLayer : IMapLayer
         byte[] slimePixel = [(byte)(color.B * opacity), (byte)(color.G * opacity), (byte)(color.R * opacity), color.A];
 
         var size = slimeChunks.Request.SizeChunks;
-        var pixels = new byte[size * size * BiomeTileColorizer.BytesPerPixel];
+        var pixels = new byte[size * size * TileColorizer.BytesPerPixel];
         for (var z = 0; z < size; z++)
         {
             for (var x = 0; x < size; x++)
             {
                 if (slimeChunks.IsSlimeChunk(x, z))
-                    slimePixel.CopyTo(pixels, (z * size + x) * BiomeTileColorizer.BytesPerPixel);
+                    slimePixel.CopyTo(pixels, (z * size + x) * TileColorizer.BytesPerPixel);
             }
         }
 

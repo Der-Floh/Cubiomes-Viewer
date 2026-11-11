@@ -16,7 +16,7 @@ public sealed class TileBitmapService : ITileBitmapService
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(width);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(height);
 
-        var stride = width * BiomeTileColorizer.BytesPerPixel;
+        var stride = width * TileColorizer.BytesPerPixel;
         if (bgra.Length < stride * height)
             throw new ArgumentException($"A {width}x{height} bitmap needs {stride * height} bytes but {bgra.Length} were given.", nameof(bgra));
 

@@ -52,16 +52,14 @@ public sealed partial class SelfTestViewModel : ViewModelBase
     private readonly IComputeService _computeService;
     private readonly ITileBenchmarkService _benchmarkService;
     private readonly IVersionCatalog _versionCatalog;
-    private readonly IBiomeCatalog _biomeCatalog;
     private readonly ITileColorizer _tileColorizer;
     private readonly ITileBitmapService _tileBitmapService;
 
-    public SelfTestViewModel(IComputeService computeService, ITileBenchmarkService benchmarkService, IVersionCatalog versionCatalog, IBiomeCatalog biomeCatalog, ITileColorizer tileColorizer, ITileBitmapService tileBitmapService, INotificationService notificationService) : base(notificationService)
+    public SelfTestViewModel(IComputeService computeService, ITileBenchmarkService benchmarkService, IVersionCatalog versionCatalog, ITileColorizer tileColorizer, ITileBitmapService tileBitmapService, INotificationService notificationService) : base(notificationService)
     {
         _computeService = computeService;
         _benchmarkService = benchmarkService;
         _versionCatalog = versionCatalog;
-        _biomeCatalog = biomeCatalog;
         _tileColorizer = tileColorizer;
         _tileBitmapService = tileBitmapService;
     }
@@ -96,14 +94,14 @@ public sealed partial class SelfTestViewModel : ViewModelBase
 
     private void ShowSampleTile(TileData tile)
     {
-        var pixels = new byte[tile.Biomes.Length * BiomeTileColorizer.BytesPerPixel];
-        _tileColorizer.Colorize(tile.Biomes, _biomeCatalog.DefaultPalette, pixels);
+        var pixels = new byte[tile.Samples * tile.Samples * TileColorizer.BytesPerPixel];
+        _tileColorizer.Colorize(tile, pixels);
         SampleTile = _tileBitmapService.Create(pixels, tile.Samples, tile.Samples);
     }
 
-    private BiomeTileJob CreateSampleTileJob()
+    private TileJob CreateSampleTileJob()
     {
         var world = new WorldKey(SampleSeed, _versionCatalog.Newest, Dimension.Overworld, GeneratorFlags.None);
-        return new BiomeTileJob(new TileRequest(world, LayerMode.Biomes, SampleHeight, new TileKey(SampleScale, 0, 0)), SampleSize);
+        return new TileJob(new TileRequest(world, LayerMode.Biomes, SampleHeight, new TileKey(SampleScale, 0, 0)), SampleSize);
     }
 }

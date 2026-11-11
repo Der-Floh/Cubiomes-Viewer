@@ -4,7 +4,6 @@ using Avalonia.Media.Imaging;
 
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Service.TileServ;
-using Cubiomes_Viewer.Engine.Service.WorldGenServ;
 using Cubiomes_Viewer.Service.TileBitmapServ;
 
 namespace Cubiomes_Viewer.Controls.Map;
@@ -22,18 +21,16 @@ public sealed class TileLayer : IMapLayer
 
     private readonly IMapTileService _tileService;
     private readonly ITileColorizer _colorizer;
-    private readonly IBiomeCatalog _biomeCatalog;
     private readonly ITileBitmapService _bitmapService;
     private readonly Dictionary<TileRequest, LinkedListNode<TileBitmap>> _bitmaps = [];
     private readonly LinkedList<TileBitmap> _recency = new();
     private readonly UiThreadCoalescer _invalidation;
     private byte[] _pixels = [];
 
-    public TileLayer(IMapTileService tileService, ITileColorizer colorizer, IBiomeCatalog biomeCatalog, ITileBitmapService bitmapService)
+    public TileLayer(IMapTileService tileService, ITileColorizer colorizer, ITileBitmapService bitmapService)
     {
         _tileService = tileService;
         _colorizer = colorizer;
-        _biomeCatalog = biomeCatalog;
         _bitmapService = bitmapService;
         _invalidation = new UiThreadCoalescer(() => Invalidated?.Invoke(this, EventArgs.Empty));
     }
@@ -123,12 +120,12 @@ public sealed class TileLayer : IMapLayer
 
     private Bitmap CreateBitmap(TileData tile)
     {
-        var byteCount = tile.Biomes.Length * BiomeTileColorizer.BytesPerPixel;
+        var byteCount = tile.Samples * tile.Samples * TileColorizer.BytesPerPixel;
         if (_pixels.Length < byteCount)
             _pixels = new byte[byteCount];
 
         var pixels = _pixels.AsSpan(0, byteCount);
-        _colorizer.Colorize(tile.Biomes, _biomeCatalog.DefaultPalette, pixels);
+        _colorizer.Colorize(tile, pixels);
         return _bitmapService.Create(pixels, tile.Samples, tile.Samples);
     }
 

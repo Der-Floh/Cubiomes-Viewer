@@ -11,7 +11,7 @@ using Avalonia.Threading;
 
 using Cubiomes_Viewer.Controls;
 using Cubiomes_Viewer.Controls.Map;
-using Cubiomes_Viewer.Engine.Data.Biomes;
+using Cubiomes_Viewer.Engine.Data.Colors;
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.StructureServ;
@@ -79,7 +79,7 @@ public sealed class MapViewRenderTests
 
         Assert.NotNull(frame);
         var fill = Assert.IsAssignableFrom<ISolidColorBrush>(App.Services.GetRequiredService<IMapStyleService>().Spawn.Fill).Color;
-        Assert.Equal(new BiomeColor(fill.R, fill.G, fill.B), ReadPixel(frame, ViewSize / 2 - MarkerFillOffset, ViewSize / 2));
+        Assert.Equal(new RgbColor(fill.R, fill.G, fill.B), ReadPixel(frame, ViewSize / 2 - MarkerFillOffset, ViewSize / 2));
     }
 
     [AvaloniaFact]
@@ -100,7 +100,7 @@ public sealed class MapViewRenderTests
 
         Assert.NotNull(frame);
         var line = App.Services.GetRequiredService<IMapStyleService>().MeasureColor;
-        Assert.Equal(new BiomeColor(line.R, line.G, line.B), ReadPixel(frame, ViewSize / 2, ViewSize / 2));
+        Assert.Equal(new RgbColor(line.R, line.G, line.B), ReadPixel(frame, ViewSize / 2, ViewSize / 2));
         var backing = ReadPixel(frame, ViewSize / 2 + MeasuredBlocks / 2, ViewSize / 2 - LabelBackingOffset);
         Assert.InRange(backing.Red, BackingOnWhite - ColourTolerance, BackingOnWhite + ColourTolerance);
         Assert.InRange(backing.Green, BackingOnWhite - ColourTolerance, BackingOnWhite + ColourTolerance);
@@ -146,7 +146,7 @@ public sealed class MapViewRenderTests
         }
     }
 
-    private static BiomeColor ReadPixel(WriteableBitmap bitmap, int x, int y)
+    private static RgbColor ReadPixel(WriteableBitmap bitmap, int x, int y)
     {
         using var buffer = bitmap.Lock();
         var offset = y * buffer.RowBytes + x * BytesPerPixel;
@@ -155,7 +155,7 @@ public sealed class MapViewRenderTests
         var third = Marshal.ReadByte(buffer.Address, offset + 2);
 
         return buffer.Format == PixelFormat.Bgra8888
-            ? new BiomeColor(third, green, first)
-            : new BiomeColor(first, green, third);
+            ? new RgbColor(third, green, first)
+            : new RgbColor(first, green, third);
     }
 }

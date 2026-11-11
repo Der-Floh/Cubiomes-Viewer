@@ -1,7 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
 using Cubiomes_Viewer.Engine.Data.Maps;
-using Cubiomes_Viewer.Engine.Data.Worlds;
 
 namespace Cubiomes_Viewer.Engine.Service.TileServ;
 
@@ -22,6 +21,9 @@ public interface IMapTileService
     /// </summary>
     void SetVisibleTiles(IReadOnlyList<TileRequest> requests);
 
-    /// <summary>Looks up the biome at a block position in the finest tile that is already cached.</summary>
-    bool TryGetCachedBiome(WorldKey world, LayerMode layer, int y, int blockX, int blockZ, out int biome);
+    /// <summary>Looks up the biome at a block position in the finest tile of a layer of biomes that is already cached.</summary>
+    bool TryGetCachedBiome(MapContent content, int blockX, int blockZ, out int biome);
+
+    /// <summary>Looks up the number at a block position in the finest tile of a layer of numbers that is already cached.</summary>
+    bool TryGetCachedValue(MapContent content, int blockX, int blockZ, out short value);
 }

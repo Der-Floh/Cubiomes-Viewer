@@ -42,7 +42,7 @@ public sealed class TileBenchmarkService : ITileBenchmarkService
         };
     }
 
-    private BiomeTileJob[] CreateJobs()
+    private TileJob[] CreateJobs()
     {
         var world = new WorldKey(Seed, _versionCatalog.Newest, Dimension.Overworld, GeneratorFlags.None);
         var samples = TileMetrics.For(world).TileSamples;
@@ -51,7 +51,7 @@ public sealed class TileBenchmarkService : ITileBenchmarkService
         [
             .. from tileZ in Enumerable.Range(0, TilesPerSide)
                from tileX in Enumerable.Range(0, TilesPerSide)
-               select new BiomeTileJob(new TileRequest(world, LayerMode.Biomes, SampleHeight, new TileKey(Scale, tileX, tileZ)), samples),
+               select new TileJob(new TileRequest(world, LayerMode.Biomes, SampleHeight, new TileKey(Scale, tileX, tileZ)), samples),
         ];
     }
 }

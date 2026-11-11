@@ -3,7 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 using Cubiomes_Viewer.Engine.Data;
 using Cubiomes_Viewer.Engine.Data.Compute;
 using Cubiomes_Viewer.Engine.Data.Maps;
-using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.ComputeServ;
 
 using Microsoft.Extensions.Logging;
@@ -40,26 +39,46 @@ public sealed class MapTileService : IMapTileService
 
     public void SetVisibleTiles(IReadOnlyList<TileRequest> requests) => _loader.SetVisible(requests);
 
-    public bool TryGetCachedBiome(WorldKey world, LayerMode layer, int y, int blockX, int blockZ, out int biome)
+    public bool TryGetCachedBiome(MapContent content, int blockX, int blockZ, out int biome)
     {
-        var metrics = TileMetrics.For(world);
+        biome = Constants.NoBiomeId;
+        if (!TryFindSample(content, blockX, blockZ, out var sample) || sample.Tile.HasValues)
+            return false;
+
+        var value = sample.Tile.GetBiome(sample.X, sample.Z);
+        biome = value == Constants.NoBiomeTileValue ? Constants.NoBiomeId : value;
+        return true;
+    }
+
+    public bool TryGetCachedValue(MapContent content, int blockX, int blockZ, out short value)
+    {
+        value = 0;
+        if (!TryFindSample(content, blockX, blockZ, out var sample) || !sample.Tile.HasValues)
+            return false;
+
+        value = sample.Tile.GetValue(sample.X, sample.Z);
+        return true;
+    }
+
+    private bool TryFindSample(MapContent content, int blockX, int blockZ, out CachedSample sample)
+    {
+        var metrics = TileMetrics.For(content.World, content.Layer);
         foreach (var scale in metrics.Scales)
         {
             var key = TilePyramid.GetTileAt(metrics, scale, blockX, blockZ);
-            if (!_cache.TryGet(new TileRequest(world, layer, y, key), out var tile))
+            if (!_cache.TryGet(content.GetRequest(key), out var tile))
                 continue;
 
             var tileBlocks = TilePyramid.GetTileBlocks(metrics, scale);
-            var sampleX = (int)((blockX - key.X * tileBlocks) / scale);
-            var sampleZ = (int)((blockZ - key.Z * tileBlocks) / scale);
-            var value = tile.GetBiome(sampleX, sampleZ);
-            biome = value == Constants.NoBiomeTileValue ? Constants.NoBiomeId : value;
+            sample = new CachedSample(tile, (int)((blockX - key.X * tileBlocks) / scale), (int)((blockZ - key.Z * tileBlocks) / scale));
             return true;
         }
 
-        biome = Constants.NoBiomeId;
+        sample = default;
         return false;
     }
 
-    private static BiomeTileJob CreateJob(TileRequest request) => new(request, TileMetrics.For(request.World).TileSamples);
+    private static TileJob CreateJob(TileRequest request) => new(request, TileMetrics.For(request.World, request.Layer).TileSamples);
+
+    private readonly record struct CachedSample(TileData Tile, int X, int Z);
 }
