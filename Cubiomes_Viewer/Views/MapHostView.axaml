@@ -4,34 +4,39 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:Cubiomes_Viewer.ViewModels"
              xmlns:controls="using:Cubiomes_Viewer.Controls"
+             xmlns:views="using:Cubiomes_Viewer.Views"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="Cubiomes_Viewer.Views.MapHostView"
              x:DataType="vm:MapHostViewModel">
 
     <UserControl.KeyBindings>
-        <KeyBinding Gesture="Escape" Command="{Binding Menu.StopMeasuringCommand}"/>
+        <KeyBinding Gesture="Escape" Command="{Binding DismissCommand}"/>
     </UserControl.KeyBindings>
 
-    <controls:MapView Name="Map"
-                      Camera="{Binding Map.Camera}"
-                      World="{Binding Map.World}"
-                      SampleHeight="{Binding Map.SampleHeight}"
-                      SmoothMotion="{Binding Map.SmoothMotion}">
-        <controls:MapView.ContextFlyout>
-            <MenuFlyout>
-                <MenuItem Header="{Binding Menu.CopyCoordinatesLabel}" Command="{Binding Menu.CopyCoordinatesCommand}"/>
-                <MenuItem Header="{Binding Menu.CopyTeleportLabel}" Command="{Binding Menu.CopyTeleportCommand}"/>
-                <MenuItem Header="{Binding Menu.CopyChunkLabel}" Command="{Binding Menu.CopyChunkCommand}"/>
-                <MenuItem Header="{Binding Menu.CopyRegionFileLabel}" Command="{Binding Menu.CopyRegionFileCommand}"/>
-                <MenuItem Header="{Binding Menu.CopySeedLabel}" Command="{Binding Menu.CopySeedCommand}"/>
-                <Separator/>
-                <MenuItem Header="{Binding Menu.MeasureLabel}" Command="{Binding Menu.ToggleMeasuringCommand}"/>
-                <Separator/>
-                <MenuItem Header="{Binding Menu.OpenShadowSeedLabel}" Command="{Binding Menu.OpenShadowSeedCommand}"
-                          ToolTip.Tip="{Binding Menu.ShadowSeedHint}" ToolTip.ShowOnDisabled="True"/>
-                <MenuItem Header="{Binding Menu.SaveImageLabel}" Command="{Binding Menu.SaveImageCommand}"/>
-            </MenuFlyout>
-        </controls:MapView.ContextFlyout>
-    </controls:MapView>
+    <Panel>
+        <controls:MapView Name="Map"
+                          Camera="{Binding Map.Camera}"
+                          World="{Binding Map.World}"
+                          SampleHeight="{Binding Map.SampleHeight}"
+                          SmoothMotion="{Binding Map.SmoothMotion}">
+            <controls:MapView.ContextFlyout>
+                <MenuFlyout>
+                    <MenuItem Header="{Binding Menu.CopyCoordinatesLabel}" Command="{Binding Menu.CopyCoordinatesCommand}"/>
+                    <MenuItem Header="{Binding Menu.CopyTeleportLabel}" Command="{Binding Menu.CopyTeleportCommand}"/>
+                    <MenuItem Header="{Binding Menu.CopyChunkLabel}" Command="{Binding Menu.CopyChunkCommand}"/>
+                    <MenuItem Header="{Binding Menu.CopyRegionFileLabel}" Command="{Binding Menu.CopyRegionFileCommand}"/>
+                    <MenuItem Header="{Binding Menu.CopySeedLabel}" Command="{Binding Menu.CopySeedCommand}"/>
+                    <Separator/>
+                    <MenuItem Header="{Binding Menu.MeasureLabel}" Command="{Binding Menu.ToggleMeasuringCommand}"/>
+                    <Separator/>
+                    <MenuItem Header="{Binding Menu.OpenShadowSeedLabel}" Command="{Binding Menu.OpenShadowSeedCommand}"
+                              ToolTip.Tip="{Binding Menu.ShadowSeedHint}" ToolTip.ShowOnDisabled="True"/>
+                    <MenuItem Header="{Binding Menu.SaveImageLabel}" Command="{Binding Menu.SaveImageCommand}"/>
+                </MenuFlyout>
+            </controls:MapView.ContextFlyout>
+        </controls:MapView>
+
+        <views:SelectionCardView DataContext="{Binding Selection}"/>
+    </Panel>
 
 </UserControl>

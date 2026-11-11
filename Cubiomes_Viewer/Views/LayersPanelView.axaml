@@ -3,6 +3,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:Cubiomes_Viewer.ViewModels"
+             xmlns:views="using:Cubiomes_Viewer.Views"
              mc:Ignorable="d" d:DesignWidth="320" d:DesignHeight="600"
              x:Class="Cubiomes_Viewer.Views.LayersPanelView"
              x:DataType="vm:LayersPanelViewModel">
@@ -11,11 +12,7 @@
         <DataTemplate x:DataType="vm:MarkerToggleViewModel">
             <CheckBox IsChecked="{Binding IsChecked}">
                 <StackPanel Classes="marker-label">
-                    <Border Classes="marker" Background="{Binding Marker.Fill}">
-                        <Viewbox Classes="marker-glyph">
-                            <Path Classes="marker-glyph" Data="{Binding Marker.Glyph}"/>
-                        </Viewbox>
-                    </Border>
+                    <views:MarkerBadgeView DataContext="{Binding Marker}"/>
                     <TextBlock Text="{Binding Name}"/>
                 </StackPanel>
             </CheckBox>
@@ -29,6 +26,7 @@
             <TextBlock Classes="section" Text="{Binding OverlaysLabel}"/>
             <CheckBox Content="{Binding ShowGridLabel}" IsChecked="{Binding ShowGrid}"/>
             <CheckBox Content="{Binding ShowSlimeChunksLabel}" IsChecked="{Binding ShowSlimeChunks}" IsVisible="{Binding IsOverworld}"/>
+            <CheckBox Content="{Binding ShowGatewayLinksLabel}" IsChecked="{Binding ShowGatewayLinks}" IsVisible="{Binding IsEnd}"/>
 
             <StackPanel IsVisible="{Binding IsOverworld}">
                 <TextBlock Classes="section" Text="{Binding LandmarksLabel}"/>

@@ -17,33 +17,21 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
 {
     private readonly MapViewModel _map;
     private readonly MapMenuViewModel _menu;
-    private readonly GridLayer _gridLayer;
-    private readonly SlimeChunkLayer _slimeChunkLayer;
-    private readonly StructureLayer _structureLayer;
-    private readonly LandmarkLayer _landmarkLayer;
-    private readonly MeasureLayer _measureLayer;
+    private readonly SelectionViewModel _selection;
+    private readonly MapLayerSet _layers;
 
-    public MapHostView(MapHostViewModel viewModel, TileLayer tileLayer, SlimeChunkLayer slimeChunkLayer, GridLayer gridLayer, StructureLayer structureLayer, LandmarkLayer landmarkLayer, MeasureLayer measureLayer)
+    public MapHostView(MapHostViewModel viewModel, MapLayerSet layers)
     {
         InitializeComponent();
         DataContext = viewModel;
 
         _map = viewModel.Map;
         _menu = viewModel.Menu;
-        _gridLayer = gridLayer;
-        _slimeChunkLayer = slimeChunkLayer;
-        _structureLayer = structureLayer;
-        _landmarkLayer = landmarkLayer;
-        _measureLayer = measureLayer;
-        ShowOverlays();
-        ShowMeasurement();
+        _selection = viewModel.Selection;
+        _layers = layers;
 
-        Map.AddLayer(tileLayer);
-        Map.AddLayer(slimeChunkLayer);
-        Map.AddLayer(gridLayer);
-        Map.AddLayer(structureLayer);
-        Map.AddLayer(landmarkLayer);
-        Map.AddLayer(measureLayer);
+        foreach (var layer in layers.InDrawOrder)
+            Map.AddLayer(layer);
     }
 
     public byte[] CapturePng()
@@ -66,10 +54,16 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
         base.OnAttachedToVisualTree(e);
 
         Map.HoverChanged += OnHoverChanged;
+        Map.Clicked += OnMapClicked;
         Map.ContextRequested += OnContextRequested;
         _map.NavigationRequested += OnNavigationRequested;
         _map.PropertyChanged += OnMapPropertyChanged;
+        _selection.PropertyChanged += OnSelectionPropertyChanged;
         _menu.ImageSource = this;
+
+        ShowOverlays();
+        ShowMeasurement();
+        ShowSelection();
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
@@ -77,13 +71,22 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
         base.OnDetachedFromVisualTree(e);
 
         Map.HoverChanged -= OnHoverChanged;
+        Map.Clicked -= OnMapClicked;
         Map.ContextRequested -= OnContextRequested;
         _map.NavigationRequested -= OnNavigationRequested;
         _map.PropertyChanged -= OnMapPropertyChanged;
+        _selection.PropertyChanged -= OnSelectionPropertyChanged;
         _menu.ImageSource = null;
     }
 
     private void OnHoverChanged(object? sender, MapHoverEventArgs e) => _map.SetHover(e.Position);
+
+    private void OnMapClicked(object? sender, MapClickEventArgs e)
+    {
+        _map.Selection = Map.HitTestMarker(e.Position);
+        if (e.PointerType != PointerType.Mouse)
+            _map.SetHover(e.Block);
+    }
 
     private void OnContextRequested(object? sender, ContextRequestedEventArgs e)
     {
@@ -98,28 +101,44 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
         switch (e.PropertyName)
         {
             case nameof(MapViewModel.ShowGrid) or nameof(MapViewModel.ShowSlimeChunks) or nameof(MapViewModel.ShowSpawn)
-                or nameof(MapViewModel.ShowStrongholds) or nameof(MapViewModel.VisibleStructures):
+                or nameof(MapViewModel.ShowStrongholds) or nameof(MapViewModel.ShowGatewayLinks) or nameof(MapViewModel.VisibleStructures):
                 ShowOverlays();
                 Map.Refresh();
                 break;
             case nameof(MapViewModel.MeasureStart) or nameof(MapViewModel.HoverPosition):
                 ShowMeasurement();
                 break;
+            case nameof(MapViewModel.Selection):
+                ShowSelection();
+                break;
         }
+    }
+
+    private void OnSelectionPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(SelectionViewModel.Boxes))
+            ShowSelection();
     }
 
     private void ShowOverlays()
     {
-        _gridLayer.IsVisible = _map.ShowGrid;
-        _slimeChunkLayer.IsVisible = _map.ShowSlimeChunks;
-        _landmarkLayer.ShowSpawn = _map.ShowSpawn;
-        _landmarkLayer.ShowStrongholds = _map.ShowStrongholds;
-        _structureLayer.VisibleTypes = _map.VisibleStructures;
+        _layers.Grid.IsVisible = _map.ShowGrid;
+        _layers.SlimeChunks.IsVisible = _map.ShowSlimeChunks;
+        _layers.Gateways.IsVisible = _map.ShowGatewayLinks;
+        _layers.Landmarks.ShowSpawn = _map.ShowSpawn;
+        _layers.Landmarks.ShowStrongholds = _map.ShowStrongholds;
+        _layers.Structures.VisibleTypes = _map.VisibleStructures;
     }
 
     private void ShowMeasurement()
     {
-        _measureLayer.Start = _map.MeasureStart;
-        _measureLayer.End = _map.HoverPosition;
+        _layers.Measure.Start = _map.MeasureStart;
+        _layers.Measure.End = _map.HoverPosition;
+    }
+
+    private void ShowSelection()
+    {
+        _layers.Selection.Position = _map.Selection?.Position;
+        _layers.Selection.Boxes = _selection.Boxes;
     }
 }

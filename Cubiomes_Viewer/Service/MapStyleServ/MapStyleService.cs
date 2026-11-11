@@ -16,6 +16,7 @@ public sealed class MapStyleService : IMapStyleService
     private const string OutlineColorKey = "Marker.Outline";
     private const string SlimeChunkColorKey = "SlimeChunkColor";
     private const string MeasureColorKey = "MeasureColor";
+    private const string SelectionColorKey = "SelectionColor";
     private const double MarkerSideLength = 22;
     private const double GlyphDesignSize = 24;
     private const double GlyphSize = 14;
@@ -28,11 +29,13 @@ public sealed class MapStyleService : IMapStyleService
     public Color SlimeChunkColor => _slimeChunkColor ??= GetResource<Color>(SlimeChunkColorKey);
     public Color MeasureColor => _measureColor ??= GetResource<Color>(MeasureColorKey);
     public Color OutlineColor => _outlineColor ??= GetResource<Color>(OutlineColorKey);
+    public Color SelectionColor => _selectionColor ??= GetResource<Color>(SelectionColorKey);
 
     private readonly Dictionary<StructureType, MapMarker> _structureMarkers = [];
     private Color? _slimeChunkColor;
     private Color? _measureColor;
     private Color? _outlineColor;
+    private Color? _selectionColor;
 
     private IBrush GlyphBrush => field ??= new ImmutableSolidColorBrush(GetResource<Color>(GlyphColorKey));
     private IPen OutlinePen => field ??= new ImmutablePen(new ImmutableSolidColorBrush(OutlineColor));

@@ -21,6 +21,7 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
     public string ShowGridLabel { get; } = "Coordinate grid";
     public string ShowSlimeChunksLabel { get; } = "Slime chunks";
     public string LandmarksLabel { get; } = "Landmarks";
+    public string ShowGatewayLinksLabel { get; } = "Gateway links";
     public string StructuresLabel { get; } = "Structures";
     public string ShowAllLabel { get; } = "All";
     public string HideAllLabel { get; } = "None";
@@ -34,7 +35,13 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
     public partial bool ShowSlimeChunks { get; set; }
 
     [ObservableProperty]
+    public partial bool ShowGatewayLinks { get; set; } = true;
+
+    [ObservableProperty]
     public partial bool IsOverworld { get; set; } = true;
+
+    [ObservableProperty]
+    public partial bool IsEnd { get; set; }
 
     [ObservableProperty]
     public partial bool HasStructures { get; set; }
@@ -74,6 +81,7 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
         {
             ShowGrid = settings.ShowGrid;
             ShowSlimeChunks = settings.ShowSlimeChunks;
+            ShowGatewayLinks = settings.ShowGatewayLinks;
             Spawn.IsChecked = settings.ShowSpawn;
             Strongholds.IsChecked = settings.ShowStrongholds;
 
@@ -94,6 +102,8 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
 
     partial void OnShowSlimeChunksChanged(bool value) => ApplyOverlays();
 
+    partial void OnShowGatewayLinksChanged(bool value) => ApplyOverlays();
+
     private void OnSessionChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName is nameof(WorldSession.Version) or nameof(WorldSession.Dimension))
@@ -108,6 +118,7 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
 
         HasStructures = Structures.Count > 0;
         IsOverworld = _session.Dimension == Dimension.Overworld;
+        IsEnd = _session.Dimension == Dimension.End;
     }
 
     private MarkerToggleViewModel CreateStructureToggle(StructureInfo structure)
@@ -161,6 +172,7 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
     {
         _map.ShowGrid = ShowGrid;
         _map.ShowSlimeChunks = ShowSlimeChunks;
+        _map.ShowGatewayLinks = ShowGatewayLinks;
         _map.ShowSpawn = Spawn.IsChecked;
         _map.ShowStrongholds = Strongholds.IsChecked;
         _map.VisibleStructures = _visibleStructures.ToFrozenSet();
@@ -171,6 +183,7 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
         var settings = _settingsService.Current.Map;
         settings.ShowGrid = ShowGrid;
         settings.ShowSlimeChunks = ShowSlimeChunks;
+        settings.ShowGatewayLinks = ShowGatewayLinks;
         settings.ShowSpawn = Spawn.IsChecked;
         settings.ShowStrongholds = Strongholds.IsChecked;
         settings.VisibleStructures = [.. _visibleStructures.Order()];

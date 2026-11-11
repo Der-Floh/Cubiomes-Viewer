@@ -6,6 +6,7 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 
 using Cubiomes_Viewer.Controls.Map;
+using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 
@@ -27,9 +28,14 @@ public sealed class MapView : Control
 
     public static readonly StyledProperty<bool> SmoothMotionProperty = AvaloniaProperty.Register<MapView, bool>(nameof(SmoothMotion), true);
 
+    private const double TapSlopPixels = 6;
+
     private static readonly TimeSpan _navigationDuration = TimeSpan.FromMilliseconds(450);
 
     public event EventHandler<MapHoverEventArgs>? HoverChanged;
+
+    /// <summary>Raised when the map is clicked or tapped without being dragged.</summary>
+    public event EventHandler<MapClickEventArgs>? Clicked;
 
     public IBrush? Background
     {
@@ -65,6 +71,7 @@ public sealed class MapView : Control
     private readonly MapGestureController _gestures = new();
     private readonly Dictionary<int, Point> _pointers = [];
     private Point? _hoverPosition;
+    private Point? _tapStart;
     private Point _pinchCenter;
     private double _pinchDistance;
     private Navigation? _navigation;
@@ -122,6 +129,19 @@ public sealed class MapView : Control
     {
         var (blockX, blockZ) = Viewport.ToWorld(position.X, position.Y);
         return new BlockPos((int)Math.Floor(blockX), (int)Math.Floor(blockZ));
+    }
+
+    /// <summary>Returns the topmost marker drawn at a position inside the control, or <see langword="null"/>.</summary>
+    public MapSelection? HitTestMarker(Point position)
+    {
+        var scene = CreateScene();
+        for (var index = _layers.Count - 1; index >= 0; index--)
+        {
+            if (_layers[index] is IMarkerLayer markers && markers.HitTest(scene, position) is { } hit)
+                return hit;
+        }
+
+        return null;
     }
 
     public override void Render(DrawingContext context)
@@ -188,9 +208,15 @@ public sealed class MapView : Control
         _pointers[e.Pointer.Id] = point.Position;
 
         if (_pointers.Count == 1)
+        {
+            _tapStart = point.Position;
             _gestures.BeginDrag(point.Position.X, point.Position.Y, GetTime(e));
+        }
         else
+        {
+            _tapStart = null;
             BeginPinch();
+        }
 
         e.Handled = true;
     }
@@ -203,6 +229,8 @@ public sealed class MapView : Control
         if (_pointers.ContainsKey(e.Pointer.Id))
         {
             _pointers[e.Pointer.Id] = position;
+            if (_tapStart is { } start && Point.Distance(start, position) > TapSlopPixels)
+                _tapStart = null;
             if (_pointers.Count == 1)
                 SetCurrentValue(CameraProperty, _gestures.Drag(Camera, position.X, position.Y, GetTime(e)));
             else
@@ -223,6 +251,7 @@ public sealed class MapView : Control
         e.Pointer.Capture(null);
         if (_pointers.Count == 0)
         {
+            RaiseClickIfTapped(e);
             _gestures.EndDrag(GetTime(e));
             if (SmoothMotion && _gestures.HasInertia)
                 RequestFrame();
@@ -240,13 +269,20 @@ public sealed class MapView : Control
     {
         base.OnPointerCaptureLost(e);
 
-        if (_pointers.Remove(e.Pointer.Id) && _pointers.Count == 0)
+        if (!_pointers.Remove(e.Pointer.Id))
+            return;
+
+        _tapStart = null;
+        if (_pointers.Count == 0)
             _gestures.CancelDrag();
     }
 
     protected override void OnPointerExited(PointerEventArgs e)
     {
         base.OnPointerExited(e);
+        if (e.Pointer.Type != PointerType.Mouse)
+            return;
+
         _hoverPosition = null;
         HoverChanged?.Invoke(this, new MapHoverEventArgs(null));
     }
@@ -315,6 +351,16 @@ public sealed class MapView : Control
     }
 
     private void OnLayerInvalidated(object? sender, EventArgs e) => InvalidateVisual();
+
+    private void RaiseClickIfTapped(PointerReleasedEventArgs e)
+    {
+        if (_tapStart is null)
+            return;
+
+        _tapStart = null;
+        var position = e.GetPosition(this);
+        Clicked?.Invoke(this, new MapClickEventArgs(position, GetBlockAt(position), e.Pointer.Type));
+    }
 
     private void RaiseHover(Point position)
     {

@@ -21,7 +21,6 @@ namespace Cubiomes_Viewer.ViewModels;
 public sealed partial class MapViewModel : ViewModelBase
 {
     private const double ButtonZoomStep = 2;
-    private const int ChunkShift = 4;
 
     public string GeneratingLabel { get; } = "Generating...";
 
@@ -46,6 +45,13 @@ public sealed partial class MapViewModel : ViewModelBase
 
     [ObservableProperty]
     public partial bool ShowStrongholds { get; set; } = true;
+
+    [ObservableProperty]
+    public partial bool ShowGatewayLinks { get; set; } = true;
+
+    /// <summary>The marker that is picked on the map, or <see langword="null"/>.</summary>
+    [ObservableProperty]
+    public partial MapSelection? Selection { get; set; }
 
     /// <summary>The structure types marked on the map.</summary>
     [ObservableProperty]
@@ -115,8 +121,7 @@ public sealed partial class MapViewModel : ViewModelBase
             return;
         }
 
-        var location = string.Create(CultureInfo.InvariantCulture,
-            $"X {block.X}, Z {block.Z}  ·  Chunk {block.X >> ChunkShift}, {block.Z >> ChunkShift}");
+        var location = BlockPosText.ToLocation(block);
         var text = GetBiomeName(block) is { } biome ? $"{biome}  ·  {location}" : location;
         HoverText = MeasureStart is { } start ? $"{text}  ·  {DescribeDistance(start, block)}" : text;
     }
@@ -139,6 +144,9 @@ public sealed partial class MapViewModel : ViewModelBase
 
     private void OnSessionChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (World != _session.Key)
+            Selection = null;
+
         World = _session.Key;
         SampleHeight = _session.SampleHeight;
     }

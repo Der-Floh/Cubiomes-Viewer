@@ -3,6 +3,7 @@ using System.Collections.Frozen;
 using Avalonia;
 using Avalonia.Media;
 
+using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.StructureServ;
@@ -11,7 +12,7 @@ using Cubiomes_Viewer.Service.MapStyleServ;
 namespace Cubiomes_Viewer.Controls.Map;
 
 /// <summary>Marks the structures of the chosen types, each type only while it is not too dense for the zoom.</summary>
-public sealed class StructureLayer : IMapLayer
+public sealed class StructureLayer : IMarkerLayer
 {
     private static readonly RenderOptions _markerRenderOptions = new() { EdgeMode = EdgeMode.Antialias };
 
@@ -76,6 +77,30 @@ public sealed class StructureLayer : IMapLayer
                 }
             }
         }
+    }
+
+    public MapSelection? HitTest(MapScene scene, Point position)
+    {
+        if (!IsVisible)
+            return null;
+
+        var reach = _styleService.MarkerSize / 2;
+        for (var index = _requests.Count - 1; index >= 0; index--)
+        {
+            var request = _requests[index];
+            if (!_areaService.TryGetStructures(request, out var structures))
+                continue;
+
+            for (var last = structures.Positions.Length - 1; last >= 0; last--)
+            {
+                var structure = structures.Positions[last];
+                var (x, y) = scene.Viewport.ToScreen(structure.X, structure.Z);
+                if (Math.Abs(x - position.X) <= reach && Math.Abs(y - position.Y) <= reach)
+                    return new MapSelection(_catalog.GetInfo(request.Type).Name, _styleService.GetStructureMarker(request.Type), structure, request.Type);
+            }
+        }
+
+        return null;
     }
 
     private List<StructureAreaRequest> GetRequests(MapScene scene)

@@ -19,8 +19,6 @@ namespace Cubiomes_Viewer.ViewModels;
 /// <summary>The actions of the map's context menu; they refer to the block the menu was opened on.</summary>
 public sealed partial class MapMenuViewModel : ViewModelBase
 {
-    private const int ChunkShift = 4;
-    private const int RegionShift = 9;
     private const string ImageExtension = "png";
 
     public string CopyTeleportLabel { get; } = "Copy /tp command";
@@ -43,9 +41,9 @@ public sealed partial class MapMenuViewModel : ViewModelBase
     /// <summary>The view that shows the map; set by that view while it is on screen.</summary>
     public IMapImageSource? ImageSource { get; set; }
 
-    private string Coordinates => string.Create(CultureInfo.InvariantCulture, $"{Position.X}, {Position.Z}");
-    private string Chunk => string.Create(CultureInfo.InvariantCulture, $"{Position.X >> ChunkShift}, {Position.Z >> ChunkShift}");
-    private string RegionFile => string.Create(CultureInfo.InvariantCulture, $"r.{Position.X >> RegionShift}.{Position.Z >> RegionShift}.mca");
+    private string Coordinates => BlockPosText.ToCoordinates(Position);
+    private string Chunk => BlockPosText.ToChunk(Position);
+    private string RegionFile => BlockPosText.ToRegionFile(Position);
     private string Seed => _session.Seed.ToString(CultureInfo.InvariantCulture);
     private bool CanOpenShadowSeed => SeedMath.HasShadowBiomes(_session.Version);
 
@@ -75,7 +73,7 @@ public sealed partial class MapMenuViewModel : ViewModelBase
     public Task CopyCoordinatesAsync() => CopyAsync(Coordinates);
 
     [RelayCommand]
-    public Task CopyTeleportAsync() => CopyAsync(string.Create(CultureInfo.InvariantCulture, $"/tp @s {Position.X} ~ {Position.Z}"));
+    public Task CopyTeleportAsync() => CopyAsync(BlockPosText.ToTeleportCommand(Position));
 
     [RelayCommand]
     public Task CopyChunkAsync() => CopyAsync(Chunk);

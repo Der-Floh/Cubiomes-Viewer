@@ -39,6 +39,8 @@ public sealed class LayersPanelViewModelTests : IDisposable
         Assert.True(_main.Map.ShowSpawn);
         Assert.True(_main.Map.ShowStrongholds);
         Assert.False(_main.Map.ShowSlimeChunks);
+        Assert.True(_main.Map.ShowGatewayLinks);
+        Assert.False(_layers.IsEnd);
     }
 
     [AvaloniaFact]
@@ -71,6 +73,22 @@ public sealed class LayersPanelViewModelTests : IDisposable
         Assert.False(_layers.IsOverworld);
         Assert.Equal(["Nether fortress", "Bastion remnant", "Ruined portal"], _layers.Structures.Select(structure => structure.Name));
         Assert.Equal([true, true, false], _layers.Structures.Select(structure => structure.IsChecked));
+    }
+
+    [AvaloniaFact]
+    public async Task GatewayLinks_SwitchedOffInTheEnd_HideOnTheMapAndAreStored()
+    {
+        await _main.Initialization;
+        _services.GetRequiredService<WorldSession>().Dimension = Dimension.End;
+
+        _layers.ShowGatewayLinks = false;
+        await _services.GetRequiredService<ISettingsService>().FlushAsync(TestContext.Current.CancellationToken);
+
+        var stored = await _services.GetRequiredService<ISettingsRepository>().LoadAsync(TestContext.Current.CancellationToken);
+        Assert.True(_layers.IsEnd);
+        Assert.False(_layers.IsOverworld);
+        Assert.False(_main.Map.ShowGatewayLinks);
+        Assert.False(stored.Map.ShowGatewayLinks);
     }
 
     [AvaloniaFact]

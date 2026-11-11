@@ -41,7 +41,7 @@ In development the Browser head references the worker project, which serves it u
 
 ### Diagnostics
 
-Settings → Diagnostics → Run self-test checks the native generator against reference values and measures tile throughput on the compute workers of the current platform. Reference numbers from Release builds, for 64 biome tiles of 128×128 samples at 1:4 in 1.21: 180–200 tiles/s on 16 Desktop worker threads, 75–105 tiles/s on 6 Web Workers depending on what else the machine is doing, and about 20 tiles/s when the browser falls back to the main thread. The same button checks structures, strongholds, the spawn point and slime chunks against values recorded from the Windows build, which is how other platforms prove they generate identical worlds. The published worker bundle is 6.8 MB (2.1 MB with Brotli).
+Settings → Diagnostics → Run self-test checks the native generator against reference values and measures tile throughput on the compute workers of the current platform. Reference numbers from Release builds, for 64 biome tiles of 128×128 samples at 1:4 in 1.21: 180–200 tiles/s on 16 Desktop worker threads, 75–105 tiles/s on 6 Web Workers depending on what else the machine is doing, and about 20 tiles/s when the browser falls back to the main thread. The same button checks structures with their variants and pieces, strongholds, End gateways, the spawn point and slime chunks against values recorded from the Windows build, which is how other platforms prove they generate identical worlds. The published worker bundle is 6.8 MB (2.1 MB with Brotli).
 
 ## License
 

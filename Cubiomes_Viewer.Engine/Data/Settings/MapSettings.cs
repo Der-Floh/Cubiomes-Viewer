@@ -14,6 +14,7 @@ public sealed class MapSettings
     public bool ShowSlimeChunks { get; set; }
     public bool ShowSpawn { get; set; } = true;
     public bool ShowStrongholds { get; set; } = true;
+    public bool ShowGatewayLinks { get; set; } = true;
 
     /// <summary>The structure types marked on the map, across all dimensions.</summary>
     public List<StructureType> VisibleStructures { get; set; } =

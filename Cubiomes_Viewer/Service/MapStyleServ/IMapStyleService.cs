@@ -16,6 +16,7 @@ public interface IMapStyleService
     Color SlimeChunkColor { get; }
     Color MeasureColor { get; }
     Color OutlineColor { get; }
+    Color SelectionColor { get; }
 
     MapMarker GetStructureMarker(StructureType type);
 

@@ -1,0 +1,39 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Cubiomes_Viewer.ViewModels"
+             xmlns:views="using:Cubiomes_Viewer.Views"
+             mc:Ignorable="d" d:DesignWidth="320" d:DesignHeight="240"
+             x:Class="Cubiomes_Viewer.Views.SelectionCardView"
+             x:DataType="vm:SelectionViewModel">
+
+    <Border Classes="card" IsVisible="{Binding IsOpen}">
+        <StackPanel Classes="form">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <views:MarkerBadgeView DataContext="{Binding Marker}"/>
+                <TextBlock Grid.Column="1" Classes="card-title" Text="{Binding Title}"/>
+                <Button Grid.Column="2" Classes="card-close" Command="{Binding CloseCommand}" ToolTip.Tip="{Binding CloseLabel}">
+                    <PathIcon Data="{StaticResource CloseIcon}"/>
+                </Button>
+            </Grid>
+
+            <TextBlock Classes="damp" Text="{Binding PositionText}" TextWrapping="Wrap"/>
+            <TextBlock Classes="damp" Text="{Binding LoadingLabel}" IsVisible="{Binding IsLoading}"/>
+            <ItemsControl ItemsSource="{Binding Details}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="x:String">
+                        <TextBlock Text="{Binding}" TextWrapping="Wrap"/>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <WrapPanel Classes="card-actions">
+                <Button Content="{Binding CenterLabel}" Command="{Binding CenterCommand}"/>
+                <Button Content="{Binding CopyCoordinatesLabel}" Command="{Binding CopyCoordinatesCommand}"/>
+                <Button Content="{Binding CopyTeleportLabel}" Command="{Binding CopyTeleportCommand}"/>
+            </WrapPanel>
+        </StackPanel>
+    </Border>
+
+</UserControl>
