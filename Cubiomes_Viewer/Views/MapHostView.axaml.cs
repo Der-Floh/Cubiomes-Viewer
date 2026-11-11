@@ -102,8 +102,9 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
     {
         switch (e.PropertyName)
         {
-            case nameof(MapViewModel.HeightStyle) or nameof(MapViewModel.PotentialStructure) or nameof(MapViewModel.Layer) or nameof(MapViewModel.ShowGrid) or nameof(MapViewModel.ShowSlimeChunks) or nameof(MapViewModel.ShowSpawn)
-                or nameof(MapViewModel.ShowStrongholds) or nameof(MapViewModel.ShowGatewayLinks) or nameof(MapViewModel.VisibleStructures):
+            case nameof(MapViewModel.Layer) or nameof(MapViewModel.HeightStyle) or nameof(MapViewModel.PotentialStructure)
+                or nameof(MapViewModel.ShowGrid) or nameof(MapViewModel.ShowSlimeChunks) or nameof(MapViewModel.ShowGatewayLinks)
+                or nameof(MapViewModel.ShowSpawn) or nameof(MapViewModel.ShowStrongholds) or nameof(MapViewModel.VisibleStructures):
                 ShowOverlays();
                 Map.Refresh();
                 break;

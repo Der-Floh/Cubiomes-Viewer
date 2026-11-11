@@ -271,9 +271,10 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
         ApplyOverlays();
     }
 
-    /// <summary>Runs changes to several toggles without applying each one on its own.</summary>
+    /// <summary>Runs changes to several choices without applying each one on its own; may be nested.</summary>
     private void Update(Action changes)
     {
+        var wasUpdating = _isUpdating;
         _isUpdating = true;
         try
         {
@@ -281,7 +282,7 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
         }
         finally
         {
-            _isUpdating = false;
+            _isUpdating = wasUpdating;
         }
     }
 
