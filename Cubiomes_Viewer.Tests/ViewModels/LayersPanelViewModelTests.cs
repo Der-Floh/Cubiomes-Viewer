@@ -122,6 +122,24 @@ public sealed class LayersPanelViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
+    public async Task SelectedHeightStyle_Changed_IsOfferedForTheHeightLayerOnlyAndStored()
+    {
+        await _main.Initialization;
+        Assert.False(_layers.IsHeightShown);
+        Assert.Equal(HeightStyle.Shaded, _layers.SelectedHeightStyle?.Value);
+
+        _layers.SelectedLayer = _layers.Layers.Single(layer => layer.Value == LayerMode.Height);
+        _layers.SelectedHeightStyle = _layers.HeightStyles.Single(style => style.Value == HeightStyle.Contours);
+        await _services.GetRequiredService<ISettingsService>().FlushAsync(TestContext.Current.CancellationToken);
+
+        var stored = await _services.GetRequiredService<ISettingsRepository>().LoadAsync(TestContext.Current.CancellationToken);
+        Assert.True(_layers.IsHeightShown);
+        Assert.Equal(HeightStyle.Contours, _main.Map.HeightStyle);
+        Assert.Equal(HeightStyle.Contours, stored.Map.HeightStyle);
+        Assert.Equal(["Shaded relief", "Height colours", "Contour lines", "Grayscale"], _layers.HeightStyles.Select(style => style.Display));
+    }
+
+    [AvaloniaFact]
     public async Task Toggles_Changed_UpdateTheMapAndTheStoredSettings()
     {
         await _main.Initialization;

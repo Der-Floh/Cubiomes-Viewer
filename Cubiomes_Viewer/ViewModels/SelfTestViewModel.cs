@@ -95,7 +95,7 @@ public sealed partial class SelfTestViewModel : ViewModelBase
     private void ShowSampleTile(TileData tile)
     {
         var pixels = new byte[tile.Samples * tile.Samples * TileColorizer.BytesPerPixel];
-        _tileColorizer.Colorize(tile, pixels);
+        _tileColorizer.Colorize(tile, default, pixels);
         SampleTile = _tileBitmapService.Create(pixels, tile.Samples, tile.Samples);
     }
 

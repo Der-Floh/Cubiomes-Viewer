@@ -80,6 +80,13 @@ internal static class LayerRamps
         new(240, new(205, 205, 205)),
         new(320, new(255, 255, 255)));
 
+    /// <summary>Most of the range goes to the heights where most of the land lies.</summary>
+    public static ColorRamp OverworldHeightGray { get; } = new(
+        new(-64, new(0, 0, 0)), new(63, new(90, 90, 90)), new(140, new(200, 200, 200)), new(320, new(255, 255, 255)));
+
+    public static ColorRamp EndHeightGray { get; } = new(
+        new(0, new(0, 0, 0)), new(1, new(70, 70, 70)), new(90, new(255, 255, 255)));
+
     /// <summary>The void has a height of zero; the islands rise to about 70 blocks.</summary>
     public static ColorRamp EndHeight { get; } = new(
         new(0, new(15, 10, 25)),

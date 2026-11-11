@@ -43,6 +43,9 @@ public sealed partial class MapViewModel : ViewModelBase
     public partial int Octaves { get; set; }
 
     [ObservableProperty]
+    public partial HeightStyle HeightStyle { get; set; } = HeightStyle.Shaded;
+
+    [ObservableProperty]
     public partial bool ShowGrid { get; set; } = true;
 
     [ObservableProperty]

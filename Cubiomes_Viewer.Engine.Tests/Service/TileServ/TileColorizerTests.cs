@@ -28,7 +28,7 @@ public sealed class TileColorizerTests
         var expected = _biomeCatalog.DefaultPalette[PlainsBiomeId];
         var pixels = new byte[TileColorizer.BytesPerPixel];
 
-        _colorizer.Colorize(CreateBiomeTile(PlainsBiomeId), pixels);
+        _colorizer.Colorize(CreateBiomeTile(PlainsBiomeId), default, pixels);
 
         Assert.Equal([expected.Blue, expected.Green, expected.Red, byte.MaxValue], pixels);
     }
@@ -38,14 +38,14 @@ public sealed class TileColorizerTests
     {
         var pixels = new byte[] { 1, 2, 3, 4 };
 
-        _colorizer.Colorize(CreateBiomeTile(Constants.NoBiomeTileValue), pixels);
+        _colorizer.Colorize(CreateBiomeTile(Constants.NoBiomeTileValue), default, pixels);
 
         Assert.Equal(new byte[TileColorizer.BytesPerPixel], pixels);
     }
 
     [Fact]
     public void Colorize_PixelBufferTooSmall_ThrowsArgumentException()
-        => Assert.Throws<ArgumentException>(() => _colorizer.Colorize(CreateBiomeTile(PlainsBiomeId, PlainsBiomeId), new byte[TileColorizer.BytesPerPixel]));
+        => Assert.Throws<ArgumentException>(() => _colorizer.Colorize(CreateBiomeTile(PlainsBiomeId, PlainsBiomeId), default, new byte[TileColorizer.BytesPerPixel]));
 
     [Fact]
     public void Colorize_NumbersAtTheEndsOfTheRamp_TakeTheColoursOfItsEnds()
@@ -54,7 +54,7 @@ public sealed class TileColorizerTests
         short[] values = [ToSteps(ramp.Minimum), ToSteps(ramp.Maximum), short.MinValue, short.MaxValue];
         var pixels = new byte[values.Length * TileColorizer.BytesPerPixel];
 
-        _colorizer.Colorize(CreateValueTile(LayerMode.Temperature, values), pixels);
+        _colorizer.Colorize(CreateValueTile(LayerMode.Temperature, values), default, pixels);
 
         Assert.Equal(ramp.Stops[0].Color, ReadColor(pixels, 0));
         Assert.Equal(ramp.Stops[^1].Color, ReadColor(pixels, 1));
@@ -75,7 +75,7 @@ public sealed class TileColorizerTests
 
         foreach (var stop in ramp.Stops)
         {
-            _colorizer.Colorize(CreateValueTile(layer, (short)Math.Round(stop.Position * unit)), pixels);
+            _colorizer.Colorize(CreateValueTile(layer, (short)Math.Round(stop.Position * unit)), default, pixels);
 
             Assert.Equal(stop.Color, ReadColor(pixels, 0));
         }

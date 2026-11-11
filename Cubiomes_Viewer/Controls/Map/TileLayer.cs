@@ -19,6 +19,21 @@ public sealed class TileLayer : IMapLayer
 
     public bool IsVisible { get; set; } = true;
 
+    /// <summary>How the tiles are painted. Changing it repaints the tiles that are already loaded.</summary>
+    public TileStyle Style
+    {
+        get;
+        set
+        {
+            if (field == value)
+                return;
+
+            field = value;
+            DropBitmaps();
+            Invalidated?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
     private readonly IMapTileService _tileService;
     private readonly ITileColorizer _colorizer;
     private readonly ITileBitmapService _bitmapService;
@@ -41,11 +56,7 @@ public sealed class TileLayer : IMapLayer
     {
         _tileService.StateChanged -= _invalidation.Request;
         _tileService.SetVisibleTiles([]);
-
-        foreach (var entry in _recency)
-            entry.Bitmap.Dispose();
-        _recency.Clear();
-        _bitmaps.Clear();
+        DropBitmaps();
     }
 
     public void UpdateScene(MapScene scene)
@@ -125,8 +136,16 @@ public sealed class TileLayer : IMapLayer
             _pixels = new byte[byteCount];
 
         var pixels = _pixels.AsSpan(0, byteCount);
-        _colorizer.Colorize(tile, pixels);
+        _colorizer.Colorize(tile, Style, pixels);
         return _bitmapService.Create(pixels, tile.Samples, tile.Samples);
+    }
+
+    private void DropBitmaps()
+    {
+        foreach (var entry in _recency)
+            entry.Bitmap.Dispose();
+        _recency.Clear();
+        _bitmaps.Clear();
     }
 
     private void TrimBitmaps()

@@ -163,6 +163,25 @@ public sealed class MapHostViewTests : IDisposable
     }
 
     [AvaloniaFact]
+    public async Task HeightStyle_ChangedToGrayscale_RepaintsTheLoadedTilesWithoutColour()
+    {
+        _session.Layer = LayerMode.Height;
+        _map.ShowGrid = false;
+        _map.Camera = new MapCamera(0, 0, 1);
+        Dispatcher.UIThread.RunJobs();
+        var tileService = _services.GetRequiredService<IMapTileService>();
+        var content = MapContent.For(_map.World, LayerMode.Height, _map.SampleHeight, octaves: 0);
+        await TestWait.UntilAsync(() => tileService.TryGetCachedValue(content, 8, 8, out _) && tileService.PendingCount == 0, "The height tiles were not generated in time.");
+
+        var coloured = CapturePixel(ViewSize / 2 + 8, ViewSize / 2 + 8);
+        _map.HeightStyle = HeightStyle.Grayscale;
+        var gray = CapturePixel(ViewSize / 2 + 8, ViewSize / 2 + 8);
+
+        Assert.False(coloured.Red == coloured.Green && coloured.Green == coloured.Blue, $"The height colour is {coloured}.");
+        Assert.True(gray.Red == gray.Green && gray.Green == gray.Blue, $"The grayscale pixel is {gray}.");
+    }
+
+    [AvaloniaFact]
     public async Task Click_OnAnEndGateway_PicksItWhileGatewayLinksAreShown()
     {
         _session.Dimension = Dimension.End;
@@ -211,6 +230,14 @@ public sealed class MapHostViewTests : IDisposable
     {
         _map.Camera = new MapCamera(position.X, position.Z, 1);
         Dispatcher.UIThread.RunJobs();
+    }
+
+    private (int Red, int Green, int Blue) CapturePixel(int x, int y)
+    {
+        Dispatcher.UIThread.RunJobs();
+        AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+        using var frame = _window.CaptureRenderedFrame();
+        return ReadPixel(Assert.IsType<WriteableBitmap>(frame, exactMatch: false), x, y);
     }
 
     private TextBlock GetCardTitle()

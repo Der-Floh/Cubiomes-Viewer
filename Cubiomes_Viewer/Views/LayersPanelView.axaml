@@ -27,6 +27,7 @@
             <ComboBox Classes="fill" ItemsSource="{Binding Layers}" SelectedItem="{Binding SelectedLayer}"/>
             <ComboBox Classes="fill" ItemsSource="{Binding OctaveChoices}" SelectedItem="{Binding SelectedOctaves}"
                       IsVisible="{Binding HasOctaves}" ToolTip.Tip="{Binding OctavesHint}"/>
+            <ComboBox Classes="fill" ItemsSource="{Binding HeightStyles}" SelectedItem="{Binding SelectedHeightStyle}" IsVisible="{Binding IsHeightShown}"/>
 
             <TextBlock Classes="section" Text="{Binding OverlaysLabel}"/>
             <CheckBox Content="{Binding ShowGridLabel}" IsChecked="{Binding ShowGrid}"/>

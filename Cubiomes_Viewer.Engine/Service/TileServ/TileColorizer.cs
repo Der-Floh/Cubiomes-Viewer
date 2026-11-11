@@ -18,7 +18,7 @@ public sealed class TileColorizer : ITileColorizer
 
     private readonly IBiomeCatalog _biomeCatalog;
     private readonly ILayerCatalog _layerCatalog;
-    private readonly ConcurrentDictionary<LayerValues, RgbColor[]> _colorTables = new();
+    private readonly ConcurrentDictionary<(ColorRamp Ramp, int Unit), RgbColor[]> _colorTables = new();
 
     public TileColorizer(IBiomeCatalog biomeCatalog, ILayerCatalog layerCatalog)
     {
@@ -26,7 +26,7 @@ public sealed class TileColorizer : ITileColorizer
         _layerCatalog = layerCatalog;
     }
 
-    public void Colorize(TileData tile, Span<byte> bgra)
+    public void Colorize(TileData tile, TileStyle style, Span<byte> bgra)
     {
         ArgumentNullException.ThrowIfNull(tile);
 
@@ -34,10 +34,24 @@ public sealed class TileColorizer : ITileColorizer
         if (bgra.Length < samples * BytesPerPixel)
             throw new ArgumentException($"The pixel buffer holds {bgra.Length} bytes but {samples} samples need {samples * BytesPerPixel}.", nameof(bgra));
 
-        if (tile.HasValues)
-            ColorizeValues(tile.Values, GetValues(tile.Request), bgra);
-        else
+        if (!tile.HasValues)
+        {
             ColorizeBiomes(tile.Biomes, _biomeCatalog.DefaultPalette, bgra);
+            return;
+        }
+
+        var layer = GetValues(tile.Request);
+        ColorizeValues(tile.Values, layer.GetRamp(style), layer.Unit, bgra);
+        if (tile.Request.Layer == LayerMode.Height)
+            AddRelief(tile, style.Height, layer.Unit, bgra);
+    }
+
+    private static void AddRelief(TileData tile, HeightStyle style, int unit, Span<byte> bgra)
+    {
+        if (style == HeightStyle.Shaded)
+            HeightRelief.Shade(tile.Values, tile.Samples, tile.Request.Tile.Scale, unit, bgra);
+        else if (style == HeightStyle.Contours)
+            HeightRelief.DrawContours(tile.Values, tile.Samples, tile.Request.Tile.Scale, unit, bgra);
     }
 
     private LayerValues GetValues(TileRequest request)
@@ -56,19 +70,19 @@ public sealed class TileColorizer : ITileColorizer
         }
     }
 
-    private void ColorizeValues(ReadOnlySpan<short> values, LayerValues layer, Span<byte> bgra)
+    private void ColorizeValues(ReadOnlySpan<short> values, ColorRamp ramp, int unit, Span<byte> bgra)
     {
-        var table = _colorTables.GetOrAdd(layer, CreateColorTable);
+        var table = _colorTables.GetOrAdd((ramp, unit), CreateColorTable);
         for (var index = 0; index < values.Length; index++)
             Write(bgra.Slice(index * BytesPerPixel, BytesPerPixel), table[(ushort)values[index]]);
     }
 
     /// <summary>The colour of every number a sample can hold, at the index its bits give as an unsigned number.</summary>
-    private static RgbColor[] CreateColorTable(LayerValues layer)
+    private static RgbColor[] CreateColorTable((ColorRamp Ramp, int Unit) colors)
     {
         var table = new RgbColor[StoredNumberCount];
         for (int stored = short.MinValue; stored <= short.MaxValue; stored++)
-            table[(ushort)stored] = layer.Ramp.GetColor(layer.ToValue((short)stored));
+            table[(ushort)stored] = colors.Ramp.GetColor(stored / (double)colors.Unit);
         return table;
     }
 

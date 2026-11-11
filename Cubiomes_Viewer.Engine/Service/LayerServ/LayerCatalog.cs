@@ -66,15 +66,14 @@ public sealed class LayerCatalog : ILayerCatalog
             LayerMode.Weirdness => Climate(mode, "Weirdness", LayerRamps.Weirdness, WeirdnessOctaves),
             LayerMode.Rivers => new LayerInfo { Mode = mode, Name = "Rivers" },
             LayerMode.OceanTemperature => new LayerInfo { Mode = mode, Name = "Ocean temperature" },
-            LayerMode.Height => new LayerInfo
-            {
-                Mode = mode,
-                Name = "Surface height",
-                Values = new LayerValues(Constants.HeightUnit, dimension == Dimension.End ? LayerRamps.EndHeight : LayerRamps.OverworldHeight, BlockFormat),
-            },
+            LayerMode.Height => new LayerInfo { Mode = mode, Name = "Surface height", Values = GetHeightValues(dimension) },
             _ => throw new NotSupportedException($"Unsupported layer: {mode}"),
         };
     }
+
+    private static LayerValues GetHeightValues(Dimension dimension) => dimension == Dimension.End
+        ? new LayerValues(Constants.HeightUnit, LayerRamps.EndHeight, BlockFormat) { GrayRamp = LayerRamps.EndHeightGray }
+        : new LayerValues(Constants.HeightUnit, LayerRamps.OverworldHeight, BlockFormat) { GrayRamp = LayerRamps.OverworldHeightGray };
 
     private static LayerInfo Climate(LayerMode mode, string name, ColorRamp ramp, int maxOctaves)
         => new() { Mode = mode, Name = name, Values = new LayerValues(Constants.ClimateUnit, ramp, ClimateFormat), MaxOctaves = maxOctaves };

@@ -1,3 +1,4 @@
+using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 
 namespace Cubiomes_Viewer.Engine.Data.Settings;
@@ -15,6 +16,7 @@ public sealed class MapSettings
     public bool ShowSpawn { get; set; } = true;
     public bool ShowStrongholds { get; set; } = true;
     public bool ShowGatewayLinks { get; set; } = true;
+    public HeightStyle HeightStyle { get; set; } = HeightStyle.Shaded;
 
     /// <summary>The structure types marked on the map, across all dimensions.</summary>
     public List<StructureType> VisibleStructures { get; set; } =

@@ -41,7 +41,7 @@ public sealed partial class LegendViewModel : ViewModelBase
 
     private void OnMapChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(MapViewModel.Layer) or nameof(MapViewModel.World))
+        if (e.PropertyName is nameof(MapViewModel.Layer) or nameof(MapViewModel.World) or nameof(MapViewModel.HeightStyle))
             ShowLayer();
     }
 
@@ -53,9 +53,10 @@ public sealed partial class LegendViewModel : ViewModelBase
             return;
 
         Title = layer.Name;
-        Ramp = values.Ramp;
-        MinimumText = Format(values, values.Ramp.Minimum);
-        MaximumText = Format(values, values.Ramp.Maximum);
+        var ramp = values.GetRamp(new TileStyle(_map.HeightStyle));
+        Ramp = ramp;
+        MinimumText = Format(values, ramp.Minimum);
+        MaximumText = Format(values, ramp.Maximum);
     }
 
     private static string Format(LayerValues values, double value) => value.ToString(values.Format, CultureInfo.InvariantCulture);

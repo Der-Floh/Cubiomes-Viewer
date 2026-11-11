@@ -57,6 +57,20 @@ public sealed class LegendViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void HeightStyle_Grayscale_ShowsTheGraysInsteadOfTheHeightColours()
+    {
+        _session.Layer = LayerMode.Height;
+        var colours = _legend.Ramp;
+
+        _services.GetRequiredService<MapViewModel>().HeightStyle = HeightStyle.Grayscale;
+
+        var grays = Assert.IsType<ColorRamp>(_legend.Ramp);
+        Assert.NotSame(colours, grays);
+        Assert.All(grays.Stops, stop => Assert.True(stop.Color.Red == stop.Color.Green && stop.Color.Green == stop.Color.Blue));
+        Assert.Equal(("-64", "320"), (_legend.MinimumText, _legend.MaximumText));
+    }
+
+    [AvaloniaFact]
     public void Ramp_Converted_BecomesAGradientThroughItsStops()
     {
         _session.Layer = LayerMode.Weirdness;

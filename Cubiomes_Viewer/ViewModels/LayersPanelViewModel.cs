@@ -45,6 +45,12 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
     public partial bool HasOctaves { get; set; }
 
     [ObservableProperty]
+    public partial ComboChoice<HeightStyle>? SelectedHeightStyle { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsHeightShown { get; set; }
+
+    [ObservableProperty]
     public partial bool ShowGrid { get; set; } = true;
 
     [ObservableProperty]
@@ -70,6 +76,14 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
 
     public ObservableCollection<ComboChoice<int>> OctaveChoices { get; } = [];
 
+    public ObservableCollection<ComboChoice<HeightStyle>> HeightStyles { get; } =
+    [
+        new() { Display = "Shaded relief", Value = HeightStyle.Shaded },
+        new() { Display = "Height colours", Value = HeightStyle.Tinted },
+        new() { Display = "Contour lines", Value = HeightStyle.Contours },
+        new() { Display = "Grayscale", Value = HeightStyle.Grayscale },
+    ];
+
     /// <summary>The structure types of the current version and dimension.</summary>
     public ObservableCollection<MarkerToggleViewModel> Structures { get; } = [];
 
@@ -93,6 +107,7 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
 
         Spawn = new MarkerToggleViewModel("World spawn", styleService.Spawn, isChecked: true, _ => ApplyOverlays());
         Strongholds = new MarkerToggleViewModel("Strongholds", styleService.Stronghold, isChecked: true, _ => ApplyOverlays());
+        Update(() => SelectedHeightStyle = HeightStyles.First(choice => choice.Value == map.HeightStyle));
         ShowLayers();
         session.PropertyChanged += OnSessionChanged;
     }
@@ -106,6 +121,7 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
             ShowGrid = settings.ShowGrid;
             ShowSlimeChunks = settings.ShowSlimeChunks;
             ShowGatewayLinks = settings.ShowGatewayLinks;
+            SelectedHeightStyle = HeightStyles.FirstOrDefault(choice => choice.Value == settings.HeightStyle) ?? HeightStyles[0];
             Spawn.IsChecked = settings.ShowSpawn;
             Strongholds.IsChecked = settings.ShowStrongholds;
 
@@ -133,6 +149,8 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
         if (!_isUpdating && value is not null)
             _session.Octaves = value.Value;
     }
+
+    partial void OnSelectedHeightStyleChanged(ComboChoice<HeightStyle>? value) => ApplyOverlays();
 
     partial void OnShowGridChanged(bool value) => ApplyOverlays();
 
@@ -165,6 +183,7 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
             SelectedLayer = Layers.First(choice => choice.Value == layer.Mode);
             SelectedOctaves = OctaveChoices.First(choice => choice.Value == octaves);
             HasOctaves = layer.MaxOctaves > 0;
+            IsHeightShown = layer.Mode == LayerMode.Height;
         });
 
         _session.Layer = layer.Mode;
@@ -253,6 +272,7 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
 
     private void ShowOverlaysOnMap()
     {
+        _map.HeightStyle = SelectedHeightStyle?.Value ?? _map.HeightStyle;
         _map.ShowGrid = ShowGrid;
         _map.ShowSlimeChunks = ShowSlimeChunks;
         _map.ShowGatewayLinks = ShowGatewayLinks;
@@ -264,6 +284,7 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
     private void StoreOverlays()
     {
         var settings = _settingsService.Current.Map;
+        settings.HeightStyle = _map.HeightStyle;
         settings.ShowGrid = ShowGrid;
         settings.ShowSlimeChunks = ShowSlimeChunks;
         settings.ShowGatewayLinks = ShowGatewayLinks;
