@@ -2,12 +2,15 @@ using System.Diagnostics.CodeAnalysis;
 
 using Cubiomes_Viewer.Engine.Data.Compute;
 using Cubiomes_Viewer.Engine.Data.Maps;
+using Cubiomes_Viewer.Engine.Data.Search;
 using Cubiomes_Viewer.Engine.Data.SelfTests;
 using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Repository.AppDataRepo;
 using Cubiomes_Viewer.Engine.Repository.SettingsRepo;
 using Cubiomes_Viewer.Engine.Service.ComputeServ;
+using Cubiomes_Viewer.Engine.Service.ConditionServ;
 using Cubiomes_Viewer.Engine.Service.LayerServ;
+using Cubiomes_Viewer.Engine.Service.SearchServ;
 using Cubiomes_Viewer.Engine.Service.SeedServ;
 using Cubiomes_Viewer.Engine.Service.SelfTestServ;
 using Cubiomes_Viewer.Engine.Service.SettingsServ;
@@ -51,10 +54,23 @@ public static class ServiceCollectionExtensions
         services.AddJobHandler<EndGatewaysJob, EndGatewayData, EndGatewaysJobHandler>();
         services.AddJobHandler<SlimeAreaJob, SlimeAreaData, SlimeAreaJobHandler>();
         services.AddJobHandler<SelfTestJob, SelfTestReport, SelfTestJobHandler>();
+        services.AddJobHandler<SearchBatchJob, SearchBatchResult, SearchBatchJobHandler>();
         if (OperatingSystem.IsBrowser())
             services.AddSingleton<IComputeService, InlineComputeService>();
         else
             services.AddSingleton<IComputeService, InProcessComputeService>();
+
+        // seed search
+        services.AddSingleton<IConditionEvaluator, StructureConditionEvaluator>();
+        services.AddSingleton<IConditionEvaluator, BiomeConditionEvaluator>();
+        services.AddSingleton<IConditionEvaluator, SpawnConditionEvaluator>();
+        services.AddSingleton<IConditionEvaluator, StrongholdConditionEvaluator>();
+        services.AddSingleton<IConditionEvaluator, SlimeChunkConditionEvaluator>();
+        services.AddSingleton<IConditionEvaluator, AnyOfConditionEvaluator>();
+        services.AddSingleton<IConditionRegistry, ConditionRegistry>();
+        services.AddSingleton<IConditionValidator, ConditionValidator>();
+        services.AddSingleton<ISearchPlanCompiler, SearchPlanCompiler>();
+        services.AddSingleton<ISeedMatcher, SeedMatcher>();
 
         // services
         services.AddSingleton<ITileColorizer, TileColorizer>();

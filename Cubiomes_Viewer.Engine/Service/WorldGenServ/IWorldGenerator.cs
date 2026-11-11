@@ -57,6 +57,12 @@ public interface IWorldGenerator : IDisposable
     BlockPos[] FindStructures(StructureType type, BlockArea area);
 
     /// <summary>
+    /// Like <see cref="FindStructures(StructureType, BlockArea)"/>, but writes the positions into
+    /// <paramref name="destination"/>, which must hold one position per region the area touches, and returns their number.
+    /// </summary>
+    int FindStructures(StructureType type, BlockArea area, Span<BlockPos> destination);
+
+    /// <summary>
     /// Describes a structure found by <see cref="FindStructures"/>: its variant and, for end cities and fortresses, its pieces.
     /// The dimension of the structure type must be applied.
     /// </summary>
@@ -76,4 +82,10 @@ public interface IWorldGenerator : IDisposable
 
     /// <summary>Finds all strongholds in generation order. The Overworld must be applied.</summary>
     BlockPos[] FindStrongholds();
+
+    /// <summary>
+    /// Finds the first strongholds in generation order, as many as <paramref name="destination"/> holds, and returns
+    /// their number. The Overworld must be applied.
+    /// </summary>
+    int FindStrongholds(Span<BlockPos> destination);
 }

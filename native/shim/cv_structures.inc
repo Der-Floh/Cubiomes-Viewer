@@ -115,20 +115,15 @@ int32_t cv_structure_viable(cv_world *world, int32_t stype, int32_t x, int32_t z
     return cv_can_generate_at(world, stype, pos);
 }
 
-int32_t cv_structures_in_area(cv_world *world, int32_t stype, int32_t x0, int32_t z0, int32_t x1, int32_t z1, int32_t *positions, int32_t capacity)
+/* Collects the generation attempts of a structure type in [x0, x1) x [z0, z1), region by region.
+   With a world only the attempts at which a structure can generate are kept. */
+static int32_t cv_collect_structures(cv_world *world, int32_t stype, int32_t mc, uint64_t seed, const StructureConfig *config,
+    int32_t x0, int32_t z0, int32_t x1, int32_t z1, int32_t *positions, int32_t capacity)
 {
-    StructureConfig config;
-    int exists = 0;
-    int status = cv_check_structure_world(world, stype, &config, &exists);
-    if (status != CV_OK)
-        return status;
     if (x1 <= x0 || z1 <= z0 || !positions || capacity < 0)
         return CV_ERR_ARGUMENT;
-    if (!exists)
-        return 0;
 
-    const Generator *generator = &world->generator;
-    int region_blocks = config.regionSize * 16;
+    int region_blocks = config->regionSize * 16;
     int rx0 = floordiv(x0, region_blocks), rx1 = floordiv(x1 - 1, region_blocks);
     int rz0 = floordiv(z0, region_blocks), rz1 = floordiv(z1 - 1, region_blocks);
     if ((int64_t)(rx1 - rx0 + 1) * (rz1 - rz0 + 1) > CV_MAX_STRUCTURE_ATTEMPTS)
@@ -140,11 +135,11 @@ int32_t cv_structures_in_area(cv_world *world, int32_t stype, int32_t x0, int32_
         for (int rx = rx0; rx <= rx1; rx++)
         {
             Pos pos = {0, 0};
-            if (!getStructurePos(stype, generator->mc, generator->seed, rx, rz, &pos))
+            if (!getStructurePos(stype, mc, seed, rx, rz, &pos))
                 continue;
             if (pos.x < x0 || pos.x >= x1 || pos.z < z0 || pos.z >= z1)
                 continue;
-            if (!cv_can_generate_at(world, stype, pos))
+            if (world && !cv_can_generate_at(world, stype, pos))
                 continue;
             if (count >= capacity)
                 return CV_ERR_CAPACITY;
@@ -155,6 +150,33 @@ int32_t cv_structures_in_area(cv_world *world, int32_t stype, int32_t x0, int32_
         }
     }
     return count;
+}
+
+int32_t cv_structures_in_area(cv_world *world, int32_t stype, int32_t x0, int32_t z0, int32_t x1, int32_t z1, int32_t *positions, int32_t capacity)
+{
+    StructureConfig config;
+    int exists = 0;
+    int status = cv_check_structure_world(world, stype, &config, &exists);
+    if (status != CV_OK)
+        return status;
+    if (!exists)
+        return x1 <= x0 || z1 <= z0 || !positions || capacity < 0 ? CV_ERR_ARGUMENT : 0;
+
+    const Generator *generator = &world->generator;
+    return cv_collect_structures(world, stype, generator->mc, generator->seed, &config, x0, z0, x1, z1, positions, capacity);
+}
+
+int32_t cv_structure_attempts_in_area(int32_t stype, int32_t mc, uint64_t seed, int32_t x0, int32_t z0, int32_t x1, int32_t z1, int32_t *positions, int32_t capacity)
+{
+    if (!cv_is_valid_structure(stype) || !cv_is_valid_mc(mc))
+        return CV_ERR_ARGUMENT;
+    if (!cv_is_locatable_structure(stype))
+        return CV_ERR_UNSUPPORTED;
+
+    StructureConfig config;
+    if (!getStructureConfig(stype, mc, &config))
+        return x1 <= x0 || z1 <= z0 || !positions || capacity < 0 ? CV_ERR_ARGUMENT : 0;
+    return cv_collect_structures(NULL, stype, mc, seed, &config, x0, z0, x1, z1, positions, capacity);
 }
 
 /* The managed side names these piece kinds; a changed order in cubiomes must not go unnoticed. */

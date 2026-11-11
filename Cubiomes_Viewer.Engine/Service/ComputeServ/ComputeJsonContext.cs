@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 
 using Cubiomes_Viewer.Engine.Data.Compute;
 using Cubiomes_Viewer.Engine.Data.Maps;
+using Cubiomes_Viewer.Engine.Data.Search;
 using Cubiomes_Viewer.Engine.Data.SelfTests;
 using Cubiomes_Viewer.Engine.Data.Structures;
 
@@ -16,5 +17,6 @@ namespace Cubiomes_Viewer.Engine.Service.ComputeServ;
 [JsonSerializable(typeof(EndGatewayData))]
 [JsonSerializable(typeof(SlimeAreaData))]
 [JsonSerializable(typeof(SelfTestReport))]
+[JsonSerializable(typeof(SearchBatchResult))]
 [JsonSerializable(typeof(WorkerError))]
 internal sealed partial class ComputeJsonContext : JsonSerializerContext;

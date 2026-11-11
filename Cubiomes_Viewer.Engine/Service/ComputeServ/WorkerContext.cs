@@ -6,7 +6,7 @@ namespace Cubiomes_Viewer.Engine.Service.ComputeServ;
 public sealed class WorkerContext : IWorkerContext, IDisposable
 {
     private readonly IWorldGeneratorFactory _generatorFactory;
-    private readonly Dictionary<(McVersion Version, GeneratorFlags Flags), SeededGenerator> _generators = [];
+    private readonly Dictionary<(McVersion Version, GeneratorFlags Flags, Dimension Dimension), SeededGenerator> _generators = [];
 
     public WorkerContext(IWorldGeneratorFactory generatorFactory)
     {
@@ -15,14 +15,14 @@ public sealed class WorkerContext : IWorkerContext, IDisposable
 
     public IWorldGenerator GetGenerator(WorldKey world)
     {
-        var key = (world.Version, world.Flags);
+        var key = (world.Version, world.Flags, world.Dimension);
         if (!_generators.TryGetValue(key, out var seeded))
         {
-            seeded = new SeededGenerator(_generatorFactory.Create(world.Version, world.Flags));
+            seeded = new SeededGenerator(_generatorFactory.Create(world.Version, world.Flags), world.Dimension);
             _generators.Add(key, seeded);
         }
 
-        seeded.Apply(world.Dimension, world.Seed);
+        seeded.Apply(world.Seed);
         return seeded.Generator;
     }
 
@@ -33,19 +33,20 @@ public sealed class WorkerContext : IWorkerContext, IDisposable
         _generators.Clear();
     }
 
-    private sealed class SeededGenerator(IWorldGenerator generator)
+    /// <summary>One generator per dimension, so that work which alternates between dimensions seeds each of them once.</summary>
+    private sealed class SeededGenerator(IWorldGenerator generator, Dimension dimension)
     {
-        private (Dimension Dimension, long Seed)? _applied;
+        private long? _seed;
 
         public IWorldGenerator Generator { get; } = generator;
 
-        public void Apply(Dimension dimension, long seed)
+        public void Apply(long seed)
         {
-            if (_applied == (dimension, seed))
+            if (_seed == seed)
                 return;
 
             Generator.Apply(dimension, seed);
-            _applied = (dimension, seed);
+            _seed = seed;
         }
     }
 }

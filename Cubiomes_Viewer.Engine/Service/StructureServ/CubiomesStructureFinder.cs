@@ -29,6 +29,16 @@ public sealed class CubiomesStructureFinder : IStructureFinder
         return result > 0;
     }
 
+    public unsafe int FindAttempts(StructureType type, McVersion version, long seed, BlockArea area, Span<BlockPos> destination)
+    {
+        fixed (BlockPos* positions = destination)
+        {
+            var count = CubiomesNative.StructureAttemptsInArea(
+                (int)type, (int)version, unchecked((ulong)seed), area.X, area.Z, area.Right, area.Bottom, (int*)positions, destination.Length);
+            return CubiomesNativeException.ThrowIfError(count, nameof(FindAttempts));
+        }
+    }
+
     public bool TryGetViableBiomes(StructureType type, McVersion version, [NotNullWhen(true)] out IReadOnlySet<int>? biomes)
     {
         List<int> viable = [];

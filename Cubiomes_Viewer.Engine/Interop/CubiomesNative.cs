@@ -97,6 +97,10 @@ internal static unsafe partial class CubiomesNative
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial int StructuresInArea(nint world, int structureType, int x0, int z0, int x1, int z1, int* positions, int capacity);
 
+    [LibraryImport(LibraryName, EntryPoint = "cv_structure_attempts_in_area")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int StructureAttemptsInArea(int structureType, int version, ulong seed, int x0, int z0, int x1, int z1, int* positions, int capacity);
+
     [LibraryImport(LibraryName, EntryPoint = "cv_structure_variant")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial int StructureVariant(nint world, int structureType, int x, int z, NativeVariant* variant);

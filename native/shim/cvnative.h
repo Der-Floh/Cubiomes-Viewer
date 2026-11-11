@@ -11,7 +11,7 @@
 #define CV_API
 #endif
 
-#define CV_ABI_VERSION 5
+#define CV_ABI_VERSION 6
 
 #define CV_BIOME_NONE 255
 #define CV_BIOME_COLOR_BYTES 768
@@ -100,6 +100,10 @@ CV_API int32_t cv_structure_biome_viable(int32_t stype, int32_t mc, int32_t biom
 
 /* Writes the (x, z) pairs of the structures that generate in [x0, x1) x [z0, z1) and returns their number. */
 CV_API int32_t cv_structures_in_area(cv_world *world, int32_t stype, int32_t x0, int32_t z0, int32_t x1, int32_t z1, int32_t *positions, int32_t capacity);
+
+/* Like cv_structures_in_area, but without a world and without asking whether a structure can generate, so every
+   structure of the seed is among the attempts. */
+CV_API int32_t cv_structure_attempts_in_area(int32_t stype, int32_t mc, uint64_t seed, int32_t x0, int32_t z0, int32_t x1, int32_t z1, int32_t *positions, int32_t capacity);
 
 /* Details of a structure found by cv_structures_in_area. cv_structure_variant returns 1 when a variant is known;
    cv_structure_pieces returns the number of pieces, which is 0 for types other than end cities and fortresses. */

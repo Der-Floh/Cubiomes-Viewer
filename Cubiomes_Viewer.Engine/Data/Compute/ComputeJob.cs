@@ -15,6 +15,7 @@ namespace Cubiomes_Viewer.Engine.Data.Compute;
 [JsonDerivedType(typeof(EndGatewaysJob), "endGateways")]
 [JsonDerivedType(typeof(SlimeAreaJob), "slimeArea")]
 [JsonDerivedType(typeof(SelfTestJob), "selfTest")]
+[JsonDerivedType(typeof(SearchBatchJob), "searchBatch")]
 public abstract record ComputeJob;
 
 public abstract record ComputeJob<TResult> : ComputeJob;

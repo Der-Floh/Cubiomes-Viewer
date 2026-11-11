@@ -104,16 +104,23 @@ public sealed class CubiomesWorldGenerator : IWorldGenerator
         var buffer = ArrayPool<BlockPos>.Shared.Rent(capacity);
         try
         {
-            int count;
-            fixed (BlockPos* positions = buffer)
-                count = CubiomesNative.StructuresInArea(World, (int)type, area.X, area.Z, area.Right, area.Bottom, (int*)positions, buffer.Length);
-
-            CubiomesNativeException.ThrowIfError(count, nameof(FindStructures));
-            return buffer.AsSpan(0, count).ToArray();
+            return buffer.AsSpan(0, FindStructures(type, area, buffer)).ToArray();
         }
         finally
         {
             ArrayPool<BlockPos>.Shared.Return(buffer);
+        }
+    }
+
+    public unsafe int FindStructures(StructureType type, BlockArea area, Span<BlockPos> destination)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(area.SizeX);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(area.SizeZ);
+
+        fixed (BlockPos* positions = destination)
+        {
+            var count = CubiomesNative.StructuresInArea(World, (int)type, area.X, area.Z, area.Right, area.Bottom, (int*)positions, destination.Length);
+            return CubiomesNativeException.ThrowIfError(count, nameof(FindStructures));
         }
     }
 
@@ -149,12 +156,19 @@ public sealed class CubiomesWorldGenerator : IWorldGenerator
         return found > 0 ? new BlockPos(x, z) : null;
     }
 
-    public unsafe BlockPos[] FindStrongholds()
+    public BlockPos[] FindStrongholds()
     {
-        var buffer = stackalloc BlockPos[MaxStrongholds];
-        var count = CubiomesNative.Strongholds(World, (int*)buffer, MaxStrongholds);
-        CubiomesNativeException.ThrowIfError(count, nameof(FindStrongholds));
-        return new ReadOnlySpan<BlockPos>(buffer, count).ToArray();
+        Span<BlockPos> buffer = stackalloc BlockPos[MaxStrongholds];
+        return buffer[..FindStrongholds(buffer)].ToArray();
+    }
+
+    public unsafe int FindStrongholds(Span<BlockPos> destination)
+    {
+        fixed (BlockPos* positions = destination)
+        {
+            var count = CubiomesNative.Strongholds(World, (int*)positions, destination.Length);
+            return CubiomesNativeException.ThrowIfError(count, nameof(FindStrongholds));
+        }
     }
 
     public void Dispose() => _world.Dispose();
@@ -232,9 +246,7 @@ public sealed class CubiomesWorldGenerator : IWorldGenerator
         if (CubiomesNativeException.ThrowIfError(exists, nameof(FindStructures)) == 0)
             return 0;
 
-        var regionsX = Math.Floor((area.Right - 1) / (double)regionBlocks) - Math.Floor(area.X / (double)regionBlocks) + 1;
-        var regionsZ = Math.Floor((area.Bottom - 1) / (double)regionBlocks) - Math.Floor(area.Z / (double)regionBlocks) + 1;
-        return checked((int)(regionsX * regionsZ));
+        return checked((int)new StructurePlacement((Dimension)dimension, regionBlocks).CountRegions(area));
     }
 
     private nint World
