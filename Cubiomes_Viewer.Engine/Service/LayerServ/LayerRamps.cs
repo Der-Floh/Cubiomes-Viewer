@@ -72,11 +72,12 @@ internal static class LayerRamps
         new(40, new(30, 80, 170)),
         new(62, new(110, 180, 230)),
         new(63, new(230, 220, 170)),
-        new(70, new(110, 180, 90)),
-        new(100, new(50, 130, 60)),
-        new(140, new(160, 150, 90)),
-        new(180, new(130, 100, 70)),
-        new(230, new(200, 200, 200)),
+        new(66, new(125, 190, 95)),
+        new(90, new(60, 140, 65)),
+        new(120, new(40, 105, 55)),
+        new(150, new(150, 140, 85)),
+        new(190, new(130, 100, 70)),
+        new(240, new(205, 205, 205)),
         new(320, new(255, 255, 255)));
 
     /// <summary>The void has a height of zero; the islands rise to about 70 blocks.</summary>

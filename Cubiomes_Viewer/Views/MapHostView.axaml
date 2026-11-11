@@ -18,6 +18,8 @@
                           Camera="{Binding Map.Camera}"
                           World="{Binding Map.World}"
                           SampleHeight="{Binding Map.SampleHeight}"
+                          Layer="{Binding Map.Layer}"
+                          Octaves="{Binding Map.Octaves}"
                           SmoothMotion="{Binding Map.SmoothMotion}">
             <controls:MapView.ContextFlyout>
                 <MenuFlyout>
@@ -36,6 +38,7 @@
             </controls:MapView.ContextFlyout>
         </controls:MapView>
 
+        <views:LegendView DataContext="{Binding Legend}"/>
         <views:SelectionCardView DataContext="{Binding Selection}"/>
     </Panel>
 

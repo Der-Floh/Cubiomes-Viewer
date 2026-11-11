@@ -23,6 +23,11 @@
         <StackPanel Classes="panel">
             <TextBlock Classes="title" Text="{Binding Title}"/>
 
+            <TextBlock Classes="section" Text="{Binding MapLayerLabel}"/>
+            <ComboBox Classes="fill" ItemsSource="{Binding Layers}" SelectedItem="{Binding SelectedLayer}"/>
+            <ComboBox Classes="fill" ItemsSource="{Binding OctaveChoices}" SelectedItem="{Binding SelectedOctaves}"
+                      IsVisible="{Binding HasOctaves}" ToolTip.Tip="{Binding OctavesHint}"/>
+
             <TextBlock Classes="section" Text="{Binding OverlaysLabel}"/>
             <CheckBox Content="{Binding ShowGridLabel}" IsChecked="{Binding ShowGrid}"/>
             <CheckBox Content="{Binding ShowSlimeChunksLabel}" IsChecked="{Binding ShowSlimeChunks}" IsVisible="{Binding IsOverworld}"/>

@@ -10,6 +10,7 @@ using CommunityToolkit.Mvvm.Input;
 using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Worlds;
+using Cubiomes_Viewer.Engine.Service.LayerServ;
 using Cubiomes_Viewer.Engine.Service.TileServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
 using Cubiomes_Viewer.Service.NotificationServ;
@@ -33,6 +34,13 @@ public sealed partial class MapViewModel : ViewModelBase
 
     [ObservableProperty]
     public partial int SampleHeight { get; set; }
+
+    /// <summary>The layer the map shows: the one the session asks for, or biomes where the world does not have it.</summary>
+    [ObservableProperty]
+    public partial LayerMode Layer { get; set; }
+
+    [ObservableProperty]
+    public partial int Octaves { get; set; }
 
     [ObservableProperty]
     public partial bool ShowGrid { get; set; } = true;
@@ -87,16 +95,19 @@ public sealed partial class MapViewModel : ViewModelBase
     private readonly WorldSession _session;
     private readonly IMapTileService _tileService;
     private readonly IBiomeCatalog _biomeCatalog;
+    private readonly ILayerCatalog _layerCatalog;
     private int _stateUpdateQueued;
 
-    public MapViewModel(WorldSession session, IMapTileService tileService, IBiomeCatalog biomeCatalog, INotificationService notificationService) : base(notificationService)
+    private MapContent Content => MapContent.For(World, Layer, SampleHeight, Octaves);
+
+    public MapViewModel(WorldSession session, IMapTileService tileService, IBiomeCatalog biomeCatalog, ILayerCatalog layerCatalog, INotificationService notificationService) : base(notificationService)
     {
         _session = session;
         _tileService = tileService;
         _biomeCatalog = biomeCatalog;
+        _layerCatalog = layerCatalog;
 
-        World = session.Key;
-        SampleHeight = session.SampleHeight;
+        ShowSession();
         session.PropertyChanged += OnSessionChanged;
         tileService.StateChanged += OnTileStateChanged;
     }
@@ -122,15 +133,27 @@ public sealed partial class MapViewModel : ViewModelBase
         }
 
         var location = BlockPosText.ToLocation(block);
-        var text = GetBiomeName(block) is { } biome ? $"{biome}  ·  {location}" : location;
+        var text = DescribeSample(block) is { } sample ? $"{sample}  ·  {location}" : location;
         HoverText = MeasureStart is { } start ? $"{text}  ·  {DescribeDistance(start, block)}" : text;
     }
 
     private static string DescribeDistance(BlockPos start, BlockPos end)
         => string.Create(CultureInfo.InvariantCulture, $"{start.DistanceTo(end):0.#} blocks from {start.X}, {start.Z}");
 
+    /// <summary>What the shown layer has at a block: the name of its biome or the value of its number, if that tile is loaded.</summary>
+    private string? DescribeSample(BlockPos block)
+    {
+        var layer = _layerCatalog.GetInfo(Layer, World.Version, World.Dimension);
+        if (layer.Values is not { } values)
+            return GetBiomeName(block);
+
+        return _tileService.TryGetCachedValue(Content, block.X, block.Z, out var stored)
+            ? $"{layer.Name} {values.ToValue(stored).ToString(values.Format, CultureInfo.InvariantCulture)}"
+            : null;
+    }
+
     private string? GetBiomeName(BlockPos block)
-        => _tileService.TryGetCachedBiome(new MapContent(World, LayerMode.Biomes, SampleHeight), block.X, block.Z, out var biome) && biome != EngineConstants.NoBiomeId
+        => _tileService.TryGetCachedBiome(Content, block.X, block.Z, out var biome) && biome != EngineConstants.NoBiomeId
             ? _biomeCatalog.GetDisplayName(World.Version, biome)
             : null;
 
@@ -147,8 +170,15 @@ public sealed partial class MapViewModel : ViewModelBase
         if (World != _session.Key)
             Selection = null;
 
+        ShowSession();
+    }
+
+    private void ShowSession()
+    {
         World = _session.Key;
         SampleHeight = _session.SampleHeight;
+        Layer = _layerCatalog.IsAvailable(_session.Layer, _session.Version, _session.Dimension) ? _session.Layer : LayerMode.Biomes;
+        Octaves = _session.Octaves;
     }
 
     private void OnTileStateChanged()

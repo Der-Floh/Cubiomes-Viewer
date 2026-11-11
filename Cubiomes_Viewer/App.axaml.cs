@@ -140,6 +140,7 @@ public sealed partial class App : Application
         services.AddSingleton<MapViewModel>();
         services.AddSingleton<MapMenuViewModel>();
         services.AddSingleton<SelectionViewModel>();
+        services.AddSingleton<LegendViewModel>();
         services.AddSingleton<MapHostViewModel>();
         services.AddSingleton<LayersPanelViewModel>();
         services.AddSingleton<SettingsViewModel>();

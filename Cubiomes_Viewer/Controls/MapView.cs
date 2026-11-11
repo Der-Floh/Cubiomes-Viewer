@@ -26,6 +26,10 @@ public sealed class MapView : Control
 
     public static readonly StyledProperty<int> SampleHeightProperty = AvaloniaProperty.Register<MapView, int>(nameof(SampleHeight));
 
+    public static readonly StyledProperty<LayerMode> LayerProperty = AvaloniaProperty.Register<MapView, LayerMode>(nameof(Layer));
+
+    public static readonly StyledProperty<int> OctavesProperty = AvaloniaProperty.Register<MapView, int>(nameof(Octaves));
+
     public static readonly StyledProperty<bool> SmoothMotionProperty = AvaloniaProperty.Register<MapView, bool>(nameof(SmoothMotion), true);
 
     private const double TapSlopPixels = 6;
@@ -59,6 +63,20 @@ public sealed class MapView : Control
     {
         get => GetValue(SampleHeightProperty);
         set => SetValue(SampleHeightProperty, value);
+    }
+
+    /// <summary>What the map shows of the world.</summary>
+    public LayerMode Layer
+    {
+        get => GetValue(LayerProperty);
+        set => SetValue(LayerProperty, value);
+    }
+
+    /// <summary>How many of its widest noise octaves a climate layer shows; zero shows all of them.</summary>
+    public int Octaves
+    {
+        get => GetValue(OctavesProperty);
+        set => SetValue(OctavesProperty, value);
     }
 
     public bool SmoothMotion
@@ -183,10 +201,11 @@ public sealed class MapView : Control
     {
         base.OnPropertyChanged(change);
 
-        if (change.Property == WorldProperty)
+        if (change.Property == WorldProperty || change.Property == LayerProperty)
             SetCurrentValue(CameraProperty, MapGestureController.Clamp(Camera, ZoomLimits));
 
-        if (change.Property == CameraProperty || change.Property == WorldProperty || change.Property == SampleHeightProperty || change.Property == BoundsProperty)
+        if (change.Property == CameraProperty || change.Property == WorldProperty || change.Property == SampleHeightProperty
+            || change.Property == LayerProperty || change.Property == OctavesProperty || change.Property == BoundsProperty)
         {
             Refresh();
             if (_hoverPosition is { } position)
@@ -329,10 +348,10 @@ public sealed class MapView : Control
 
     private MapViewport Viewport => new(Camera, Bounds.Width, Bounds.Height);
 
-    private MapZoomLimits ZoomLimits => new(TileMetrics.MinBlocksPerPixel, TileMetrics.For(World).MaxBlocksPerPixel);
+    private MapZoomLimits ZoomLimits => new(TileMetrics.MinBlocksPerPixel, TileMetrics.For(World, Layer).MaxBlocksPerPixel);
 
     private MapScene CreateScene()
-        => new(World, LayerMode.Biomes, SampleHeight, Viewport, TopLevel.GetTopLevel(this)?.RenderScaling ?? 1);
+        => new(MapContent.For(World, Layer, SampleHeight, Octaves), Viewport, TopLevel.GetTopLevel(this)?.RenderScaling ?? 1);
 
     private void AttachLayer(IMapLayer layer)
     {

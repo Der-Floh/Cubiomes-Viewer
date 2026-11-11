@@ -14,6 +14,7 @@ using Cubiomes_Viewer.Controls.Map;
 using Cubiomes_Viewer.Engine.Data.Colors;
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Worlds;
+using Cubiomes_Viewer.Engine.Service.LayerServ;
 using Cubiomes_Viewer.Engine.Service.StructureServ;
 using Cubiomes_Viewer.Engine.Service.TileServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
@@ -57,6 +58,29 @@ public sealed class MapViewRenderTests
         Assert.NotNull(frame);
         var expected = App.Services.GetRequiredService<IBiomeCatalog>().DefaultPalette[MushroomFieldsBiomeId];
         Assert.Equal(expected, ReadPixel(frame, ViewSize / 2 + 8, ViewSize / 2 + 8));
+    }
+
+    [AvaloniaFact]
+    public async Task Render_TemperatureLayer_DrawsTheColourOfTheTemperatureAtTheCentre()
+    {
+        var world = new WorldKey(262, McVersion.V1_21_3, Dimension.Overworld, GeneratorFlags.None);
+        var content = MapContent.For(world, LayerMode.Temperature, SampleHeight, octaves: 0);
+        var map = new MapView { World = world, SampleHeight = SampleHeight, Layer = LayerMode.Temperature, Camera = new MapCamera(0, 0, 1), SmoothMotion = false };
+        map.AddLayer(App.Services.GetRequiredService<TileLayer>());
+        var window = new Window { Width = ViewSize, Height = ViewSize, Content = map };
+        window.Show();
+
+        await WaitForTileAsync(content.GetRequest(new TileKey(4, 0, 0)));
+        Dispatcher.UIThread.RunJobs();
+        AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+
+        using var frame = window.CaptureRenderedFrame();
+        window.Close();
+
+        Assert.NotNull(frame);
+        var values = Assert.IsType<LayerValues>(App.Services.GetRequiredService<ILayerCatalog>().GetInfo(LayerMode.Temperature, world.Version, world.Dimension).Values);
+        Assert.True(App.Services.GetRequiredService<IMapTileService>().TryGetCachedValue(content, 8, 8, out var stored));
+        Assert.Equal(values.Ramp.GetColor(values.ToValue(stored)), ReadPixel(frame, ViewSize / 2 + 8, ViewSize / 2 + 8));
     }
 
     [AvaloniaFact]

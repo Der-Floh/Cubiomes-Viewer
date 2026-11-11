@@ -74,6 +74,8 @@ public sealed partial class MainViewModel : ViewModelBase
         _session.Dimension = view.Dimension;
         _session.LargeBiomes = view.LargeBiomes;
         _session.SampleHeight = view.SampleHeight;
+        _session.Layer = view.Layer;
+        _session.Octaves = view.Octaves;
         _session.Seed = view.Seed;
         Map.Camera = new MapCamera(view.CenterX, view.CenterZ, view.BlocksPerPixel > 0 ? view.BlocksPerPixel : MapCamera.DefaultBlocksPerPixel);
     }
@@ -97,6 +99,8 @@ public sealed partial class MainViewModel : ViewModelBase
         view.Dimension = _session.Dimension;
         view.LargeBiomes = _session.LargeBiomes;
         view.SampleHeight = _session.SampleHeight;
+        view.Layer = _session.Layer;
+        view.Octaves = _session.Octaves;
         view.CenterX = Map.Camera.CenterX;
         view.CenterZ = Map.Camera.CenterZ;
         view.BlocksPerPixel = Map.Camera.BlocksPerPixel;

@@ -16,6 +16,7 @@ using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.StructureServ;
+using Cubiomes_Viewer.Engine.Service.TileServ;
 using Cubiomes_Viewer.Service.MapStyleServ;
 using Cubiomes_Viewer.ViewModels;
 using Cubiomes_Viewer.Views;
@@ -32,6 +33,7 @@ public sealed class MapHostViewTests : IDisposable
     private const int DragDistance = 40;
     private const int AntialiasingTolerance = 24;
     private const string CardTitleClass = "card-title";
+    private const string LegendTitleClass = "legend-title";
     private static readonly Point _center = new(ViewSize / 2, ViewSize / 2);
 
     private readonly ServiceProvider _services = TestServices.Create();
@@ -140,6 +142,24 @@ public sealed class MapHostViewTests : IDisposable
         _window.KeyPressQwerty(PhysicalKey.Escape, RawInputModifiers.None);
 
         Assert.False(_map.IsMeasuring);
+    }
+
+    [AvaloniaFact]
+    public async Task Hover_OverALayerOfNumbers_ShowsItsValueAndItsLegend()
+    {
+        _session.Layer = LayerMode.Continentalness;
+        _map.Camera = new MapCamera(0, 0, 1);
+        Dispatcher.UIThread.RunJobs();
+        var tileService = _services.GetRequiredService<IMapTileService>();
+        var content = MapContent.For(_map.World, LayerMode.Continentalness, _map.SampleHeight, octaves: 0);
+        await TestWait.UntilAsync(() => tileService.TryGetCachedValue(content, 0, 0, out _), "The continentalness tile was not generated in time.");
+
+        _window.MouseMove(_center);
+
+        var legendTitle = _host.GetVisualDescendants().OfType<TextBlock>().Single(text => text.Classes.Contains(LegendTitleClass));
+        Assert.StartsWith("Continentalness -1.", _map.HoverText, StringComparison.Ordinal);
+        Assert.True(legendTitle.IsEffectivelyVisible);
+        Assert.Equal("Continentalness", legendTitle.Text);
     }
 
     [AvaloniaFact]

@@ -9,7 +9,7 @@ using Cubiomes_Viewer.Service.TileBitmapServ;
 namespace Cubiomes_Viewer.Controls.Map;
 
 /// <summary>
-/// Draws the biome tiles of the level that fits the zoom, on top of the next coarser level so the view is covered quickly.
+/// Draws the tiles of the shown layer at the level that fits the zoom, on top of the next coarser level so the view is covered quickly.
 /// </summary>
 public sealed class TileLayer : IMapLayer
 {
@@ -56,7 +56,7 @@ public sealed class TileLayer : IMapLayer
             return;
         }
 
-        var metrics = TileMetrics.For(scene.World);
+        var metrics = TileMetrics.For(scene.World, scene.Content.Layer);
         var fineScale = TilePyramid.SelectScale(metrics, scene.Viewport.BlocksPerPixel);
 
         List<TileRequest> requests = [];
@@ -72,7 +72,7 @@ public sealed class TileLayer : IMapLayer
         if (!IsVisible || scene.Viewport.IsEmpty)
             return;
 
-        var metrics = TileMetrics.For(scene.World);
+        var metrics = TileMetrics.For(scene.World, scene.Content.Layer);
         var fineScale = TilePyramid.SelectScale(metrics, scene.Viewport.BlocksPerPixel);
 
         if (TilePyramid.GetCoarserScale(metrics, fineScale) is { } coarseScale)
@@ -82,7 +82,7 @@ public sealed class TileLayer : IMapLayer
 
     private static IEnumerable<TileRequest> GetRequests(MapScene scene, TileMetrics metrics, int scale)
         => TilePyramid.GetVisibleTiles(metrics, scale, scene.Viewport)
-            .Select(tile => new TileRequest(scene.World, scene.Layer, scene.SampleHeight, tile));
+            .Select(scene.Content.GetRequest);
 
     private void DrawLevel(DrawingContext context, MapScene scene, TileMetrics metrics, int scale)
     {

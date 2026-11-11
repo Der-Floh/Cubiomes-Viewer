@@ -13,6 +13,8 @@ public sealed class ViewSettings
     public bool LargeBiomes { get; set; }
     public Dimension Dimension { get; set; } = Dimension.Overworld;
     public int SampleHeight { get; set; } = DefaultSampleHeight;
+    public LayerMode Layer { get; set; }
+    public int Octaves { get; set; }
     public double CenterX { get; set; }
     public double CenterZ { get; set; }
     public double BlocksPerPixel { get; set; } = MapCamera.DefaultBlocksPerPixel;

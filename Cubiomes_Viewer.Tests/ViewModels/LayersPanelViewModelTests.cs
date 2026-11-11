@@ -1,6 +1,7 @@
 using Avalonia.Headless.XUnit;
 
 using Cubiomes_Viewer.Data;
+using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Repository.SettingsRepo;
 using Cubiomes_Viewer.Engine.Service.SettingsServ;
@@ -41,6 +42,83 @@ public sealed class LayersPanelViewModelTests : IDisposable
         Assert.False(_main.Map.ShowSlimeChunks);
         Assert.True(_main.Map.ShowGatewayLinks);
         Assert.False(_layers.IsEnd);
+    }
+
+    [AvaloniaFact]
+    public async Task Initialization_DefaultSettings_OffersTheLayersOfTheWorldAndShowsBiomes()
+    {
+        await _main.Initialization;
+
+        Assert.Equal(
+            ["Biomes", "Temperature", "Humidity", "Continentalness", "Erosion", "Depth", "Weirdness", "Surface height"],
+            _layers.Layers.Select(layer => layer.Display));
+        Assert.Equal(LayerMode.Biomes, _layers.SelectedLayer?.Value);
+        Assert.Equal(LayerMode.Biomes, _main.Map.Layer);
+        Assert.False(_layers.HasOctaves);
+    }
+
+    [AvaloniaFact]
+    public async Task SelectedLayer_ClimateLayerWithAnOctaveLimit_IsShownOnTheMapAndStored()
+    {
+        await _main.Initialization;
+
+        _layers.SelectedLayer = _layers.Layers.Single(layer => layer.Value == LayerMode.Temperature);
+        Assert.True(_layers.HasOctaves);
+        Assert.Equal(["All octaves", "1 octave", "2 octaves", "3 octaves"], _layers.OctaveChoices.Select(choice => choice.Display));
+
+        _layers.SelectedOctaves = _layers.OctaveChoices.Single(choice => choice.Value == 2);
+        await _services.GetRequiredService<ISettingsService>().FlushAsync(TestContext.Current.CancellationToken);
+
+        var stored = await _services.GetRequiredService<ISettingsRepository>().LoadAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(LayerMode.Temperature, _main.Map.Layer);
+        Assert.Equal(2, _main.Map.Octaves);
+        Assert.Equal(LayerMode.Temperature, stored.View.Layer);
+        Assert.Equal(2, stored.View.Octaves);
+    }
+
+    [AvaloniaFact]
+    public async Task SelectedLayer_ChangedToALayerWithFewerOctaves_ShowsAllOctavesAgain()
+    {
+        await _main.Initialization;
+        var session = _services.GetRequiredService<WorldSession>();
+        _layers.SelectedLayer = _layers.Layers.Single(layer => layer.Value == LayerMode.Continentalness);
+        _layers.SelectedOctaves = _layers.OctaveChoices.Single(choice => choice.Value == 10);
+
+        _layers.SelectedLayer = _layers.Layers.Single(layer => layer.Value == LayerMode.Temperature);
+
+        Assert.Equal(0, session.Octaves);
+        Assert.Equal(0, _layers.SelectedOctaves?.Value);
+    }
+
+    [AvaloniaFact]
+    public async Task Version_ChangedToOneWithoutTheShownLayer_FallsBackToBiomes()
+    {
+        await _main.Initialization;
+        var session = _services.GetRequiredService<WorldSession>();
+        _layers.SelectedLayer = _layers.Layers.Single(layer => layer.Value == LayerMode.Erosion);
+
+        session.Version = McVersion.V1_16_5;
+
+        Assert.Equal(["Biomes", "Rivers", "Ocean temperature", "Surface height"], _layers.Layers.Select(layer => layer.Display));
+        Assert.Equal(LayerMode.Biomes, _layers.SelectedLayer?.Value);
+        Assert.Equal(LayerMode.Biomes, session.Layer);
+        Assert.Equal(LayerMode.Biomes, _main.Map.Layer);
+        Assert.False(_layers.HasOctaves);
+    }
+
+    [AvaloniaFact]
+    public async Task Dimension_ChangedWhileHeightIsShown_KeepsTheLayerWhereTheDimensionHasIt()
+    {
+        await _main.Initialization;
+        var session = _services.GetRequiredService<WorldSession>();
+        _layers.SelectedLayer = _layers.Layers.Single(layer => layer.Value == LayerMode.Height);
+
+        session.Dimension = Dimension.End;
+        Assert.Equal(LayerMode.Height, _main.Map.Layer);
+
+        session.Dimension = Dimension.Nether;
+        Assert.Equal(LayerMode.Biomes, _main.Map.Layer);
+        Assert.Equal(["Biomes"], _layers.Layers.Select(layer => layer.Display));
     }
 
     [AvaloniaFact]

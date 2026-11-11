@@ -1,0 +1,22 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Cubiomes_Viewer.ViewModels"
+             xmlns:converters="using:Cubiomes_Viewer.Converters"
+             mc:Ignorable="d" d:DesignWidth="220" d:DesignHeight="70"
+             x:Class="Cubiomes_Viewer.Views.LegendView"
+             x:DataType="vm:LegendViewModel">
+
+    <Border Classes="legend" IsVisible="{Binding IsVisible}">
+        <StackPanel Classes="legend">
+            <TextBlock Classes="legend-title" Text="{Binding Title}"/>
+            <Border Classes="legend-ramp" Background="{Binding Ramp, Converter={x:Static converters:ColorRampBrushConverter.Instance}}"/>
+            <Grid ColumnDefinitions="*,*">
+                <TextBlock Classes="legend-label" Text="{Binding MinimumText}"/>
+                <TextBlock Grid.Column="1" Classes="legend-label" Text="{Binding MaximumText}" HorizontalAlignment="Right"/>
+            </Grid>
+        </StackPanel>
+    </Border>
+
+</UserControl>
