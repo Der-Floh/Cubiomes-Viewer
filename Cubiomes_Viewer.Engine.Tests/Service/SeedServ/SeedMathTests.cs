@@ -7,8 +7,12 @@ namespace Cubiomes_Viewer.Engine.Tests.Service.SeedServ;
 public sealed class SeedMathTests
 {
     private const long Seed = 262;
+    private const long SeedWithOceans = 0;
     private const int AreaScale = 4;
     private const int AreaSide = 96;
+    private const int WideAreaSide = 512;
+    private const byte Ocean = 0;
+    private static readonly byte[] _oceans = [Ocean, 10, 24, 44, 45, 46, 47, 48, 49, 50];
 
     [Theory]
     [InlineData(0L)]
@@ -36,6 +40,33 @@ public sealed class SeedMathTests
     }
 
     [Theory]
+    [InlineData(McVersion.V1_12_2)]
+    [InlineData(McVersion.V1_13_2)]
+    [InlineData(McVersion.V1_16_5)]
+    [InlineData(McVersion.V1_17_1)]
+    public void GetShadowSeed_AreaWithOceans_HasTheSameBiomesApartFromTheKindOfOcean(McVersion version)
+    {
+        var biomes = GenerateBiomes(version, SeedWithOceans, WideAreaSide);
+        var shadowBiomes = GenerateBiomes(version, SeedMath.GetShadowSeed(SeedWithOceans), WideAreaSide);
+
+        Assert.Contains(Ocean, biomes.Select(WithoutOceanKind));
+        Assert.Equal(biomes.Select(WithoutOceanKind), shadowBiomes.Select(WithoutOceanKind));
+    }
+
+    [Theory]
+    [InlineData(McVersion.V1_12_2, true)]
+    [InlineData(McVersion.V1_13_2, false)]
+    [InlineData(McVersion.V1_16_5, false)]
+    [InlineData(McVersion.V1_17_1, false)]
+    public void GetShadowSeed_AreaWithOceans_KeepsTheKindOfOceanOnlyBefore1_13(McVersion version, bool keepsOceans)
+    {
+        var biomes = GenerateBiomes(version, SeedWithOceans, WideAreaSide);
+        var shadowBiomes = GenerateBiomes(version, SeedMath.GetShadowSeed(SeedWithOceans), WideAreaSide);
+
+        Assert.Equal(keepsOceans, biomes.SequenceEqual(shadowBiomes));
+    }
+
+    [Theory]
     [InlineData(McVersion.Beta1_7)]
     [InlineData(McVersion.V1_18_2)]
     [InlineData(McVersion.V1_21_3)]
@@ -53,12 +84,15 @@ public sealed class SeedMathTests
         Assert.NotEqual(FindVillages(Seed, area), FindVillages(SeedMath.GetShadowSeed(Seed), area));
     }
 
-    private static byte[] GenerateBiomes(McVersion version, long seed)
+    /// <summary>Folds every ocean biome into one, because a warm temperature also makes a deep ocean shallow.</summary>
+    private static byte WithoutOceanKind(byte biome) => _oceans.Contains(biome) ? Ocean : biome;
+
+    private static byte[] GenerateBiomes(McVersion version, long seed, int side = AreaSide)
     {
         using var generator = new CubiomesWorldGenerator(version, GeneratorFlags.None);
         generator.Apply(Dimension.Overworld, seed);
 
-        var area = new BiomeArea(AreaScale, -AreaSide / 2, -AreaSide / 2, AreaSide, AreaSide, 16);
+        var area = new BiomeArea(AreaScale, -side / 2, -side / 2, side, side, 16);
         var biomes = new byte[area.SampleCount];
         generator.GenerateBiomes(area, biomes);
         return biomes;

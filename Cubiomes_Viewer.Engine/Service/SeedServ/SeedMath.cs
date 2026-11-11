@@ -9,7 +9,8 @@ public static class SeedMath
 
     /// <summary>
     /// Returns the shadow of a seed. In the versions that <see cref="HasShadowBiomes"/> accepts, a world and its
-    /// shadow have the same Overworld biome layout while structures and terrain differ.
+    /// shadow have the same Overworld biome layout while structures and terrain differ. Since 1.13 the kind of
+    /// each ocean (its temperature, and with it whether it is deep) differs too.
     /// The shadow of the shadow is the seed itself.
     /// </summary>
     public static long GetShadowSeed(long seed) => unchecked(ShadowSeedOffset - seed);

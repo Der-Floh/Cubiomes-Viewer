@@ -23,7 +23,7 @@ public sealed partial class MapMenuViewModel : ViewModelBase
 
     public string CopyTeleportLabel { get; } = "Copy /tp command";
     public string OpenShadowSeedLabel { get; } = "Open shadow seed";
-    public string ShadowSeedHint { get; } = "The shadow seed has the same Overworld biomes in Beta 1.8 to 1.17, but other structures and terrain.";
+    public string ShadowSeedHint { get; } = "The shadow seed has the same Overworld biome layout in Beta 1.8 to 1.17. Its structures and terrain differ, and since 1.13 its oceans have other temperatures.";
     public string SaveImageLabel { get; } = "Save map image...";
     public string CopiedTitle { get; } = "Copied";
     public string SaveImageTitle { get; } = "Save map image";
