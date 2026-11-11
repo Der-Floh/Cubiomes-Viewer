@@ -25,6 +25,18 @@ public sealed class MapContentTests
     }
 
     [Fact]
+    public void For_LandBiomes_AsksForTheBiomesOfTheWorldWithoutItsOceans()
+    {
+        var beta = new WorldKey(262, McVersion.Beta1_7, Dimension.Overworld, GeneratorFlags.ForceOceanVariants);
+
+        var content = MapContent.For(beta, LayerMode.LandBiomes, SampleHeight, Octaves);
+
+        Assert.Equal(beta with { Flags = GeneratorFlags.ForceOceanVariants | GeneratorFlags.NoBetaOcean }, content.World);
+        Assert.Equal(LayerMode.Biomes, content.Layer);
+        Assert.Equal(0, content.Octaves);
+    }
+
+    [Fact]
     public void GetRequest_Tile_AsksForThatTileOfTheContent()
     {
         var content = new MapContent(_world, LayerMode.Depth, SampleHeight, Octaves);

@@ -351,7 +351,7 @@ public sealed class MapView : Control
     private MapZoomLimits ZoomLimits => new(TileMetrics.MinBlocksPerPixel, TileMetrics.For(World, Layer).MaxBlocksPerPixel);
 
     private MapScene CreateScene()
-        => new(MapContent.For(World, Layer, SampleHeight, Octaves), Viewport, TopLevel.GetTopLevel(this)?.RenderScaling ?? 1);
+        => new(World, MapContent.For(World, Layer, SampleHeight, Octaves), Viewport, TopLevel.GetTopLevel(this)?.RenderScaling ?? 1);
 
     private void AttachLayer(IMapLayer layer)
     {

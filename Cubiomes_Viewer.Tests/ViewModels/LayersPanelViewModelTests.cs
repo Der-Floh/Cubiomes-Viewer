@@ -229,6 +229,7 @@ public sealed class LayersPanelViewModelTests : IDisposable
 
         Assert.False(_layers.HasStructures);
         Assert.Empty(_layers.Structures);
+        Assert.Equal(["Biomes", "Temperature", "Humidity", "Biomes without oceans"], _layers.Layers.Select(layer => layer.Display));
     }
 
     [AvaloniaFact]

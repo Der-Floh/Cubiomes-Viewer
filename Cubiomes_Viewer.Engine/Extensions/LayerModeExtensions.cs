@@ -6,8 +6,11 @@ public static class LayerModeExtensions
 {
     extension(LayerMode mode)
     {
+        /// <summary>Whether the layer is a view of the biome map and is painted on the tiles of the biomes.</summary>
+        public bool ShowsBiomeMap => mode is LayerMode.Biomes or LayerMode.StructurePotential or LayerMode.LandBiomes;
+
         /// <summary>Whether the samples of the layer are biome ids rather than numbers.</summary>
-        public bool HasBiomeSamples => mode is LayerMode.Biomes or LayerMode.StructurePotential or LayerMode.Rivers or LayerMode.OceanTemperature;
+        public bool HasBiomeSamples => mode.ShowsBiomeMap || mode is LayerMode.Rivers or LayerMode.OceanTemperature;
 
         /// <summary>Whether the layer changes with the height it is sampled at.</summary>
         public bool DependsOnHeight => mode is LayerMode.Biomes or LayerMode.StructurePotential or LayerMode.Depth;

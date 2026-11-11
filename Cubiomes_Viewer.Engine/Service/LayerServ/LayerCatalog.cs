@@ -54,6 +54,8 @@ public sealed class LayerCatalog : ILayerCatalog
             return true;
         if (mode == LayerMode.StructurePotential)
             return _structureCatalog.GetWithBiomeRule(version, dimension).Count > 0;
+        if (mode == LayerMode.LandBiomes)
+            return version <= McVersion.Beta1_7 && dimension == Dimension.Overworld;
         if (mode.ToClimateParameter() is { } parameter)
             return CubiomesNative.ClimateSupported((int)version, (int)dimension, (int)parameter) == Supported;
         if (mode.ToGeneratorLayer() is { } layer)
@@ -77,6 +79,7 @@ public sealed class LayerCatalog : ILayerCatalog
             LayerMode.OceanTemperature => new LayerInfo { Mode = mode, Name = "Ocean temperature" },
             LayerMode.Height => new LayerInfo { Mode = mode, Name = "Surface height", Values = GetHeightValues(dimension) },
             LayerMode.StructurePotential => new LayerInfo { Mode = mode, Name = "Structure potential" },
+            LayerMode.LandBiomes => new LayerInfo { Mode = mode, Name = "Biomes without oceans" },
             _ => throw new NotSupportedException($"Unsupported layer: {mode}"),
         };
     }

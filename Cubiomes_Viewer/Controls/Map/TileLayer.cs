@@ -67,7 +67,7 @@ public sealed class TileLayer : IMapLayer
             return;
         }
 
-        var metrics = TileMetrics.For(scene.World, scene.Content.Layer);
+        var metrics = TileMetrics.For(scene.Content.World, scene.Content.Layer);
         var fineScale = TilePyramid.SelectScale(metrics, scene.Viewport.BlocksPerPixel);
 
         List<TileRequest> requests = [];
@@ -83,7 +83,7 @@ public sealed class TileLayer : IMapLayer
         if (!IsVisible || scene.Viewport.IsEmpty)
             return;
 
-        var metrics = TileMetrics.For(scene.World, scene.Content.Layer);
+        var metrics = TileMetrics.For(scene.Content.World, scene.Content.Layer);
         var fineScale = TilePyramid.SelectScale(metrics, scene.Viewport.BlocksPerPixel);
 
         if (TilePyramid.GetCoarserScale(metrics, fineScale) is { } coarseScale)

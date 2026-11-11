@@ -101,6 +101,25 @@ public sealed class CubiomesWorldGeneratorLayerTests
         Assert.NotEqual(temperature, humidity);
     }
 
+    [Fact]
+    public void GenerateBiomes_BetaWithoutOceans_ShowsTheClimateBiomesWhereTheOceansAre()
+    {
+        byte[] oceans = [0, 10];
+        var area = new BiomeArea(CellScale, -Side, -Side, 2 * Side, 2 * Side, SurfaceY);
+        var biomes = new byte[area.SampleCount];
+        var landBiomes = new byte[area.SampleCount];
+        using var generator = CreateGenerator(McVersion.Beta1_7, Dimension.Overworld);
+        using var landGenerator = new CubiomesWorldGenerator(McVersion.Beta1_7, GeneratorFlags.NoBetaOcean);
+        landGenerator.Apply(Dimension.Overworld, Seed);
+
+        generator.GenerateBiomes(area, biomes);
+        landGenerator.GenerateBiomes(area, landBiomes);
+
+        Assert.Contains(biomes, biome => oceans.Contains(biome));
+        Assert.DoesNotContain(landBiomes, biome => oceans.Contains(biome));
+        Assert.All(biomes.Zip(landBiomes), pair => Assert.True(oceans.Contains(pair.First) || pair.First == pair.Second));
+    }
+
     [Theory]
     [InlineData(McVersion.V1_16_5, Dimension.Overworld, ClimateParameter.Temperature)]
     [InlineData(McVersion.Beta1_7, Dimension.Overworld, ClimateParameter.Erosion)]

@@ -28,7 +28,7 @@ public sealed class LayerCatalogTests
         { McVersion.Beta1_8, Dimension.Overworld, [LayerMode.Biomes, LayerMode.Rivers, LayerMode.Height] },
         { McVersion.V1_8_9, Dimension.End, [LayerMode.Biomes] },
         { McVersion.V1_9_4, Dimension.End, [LayerMode.Biomes, LayerMode.Height] },
-        { McVersion.Beta1_7, Dimension.Overworld, [LayerMode.Biomes, LayerMode.Temperature, LayerMode.Humidity] },
+        { McVersion.Beta1_7, Dimension.Overworld, [LayerMode.Biomes, LayerMode.Temperature, LayerMode.Humidity, LayerMode.LandBiomes] },
     };
 
     [Theory]

@@ -16,4 +16,7 @@ public enum LayerMode
 
     /// <summary>The biomes, with those dimmed in which a chosen structure type cannot generate.</summary>
     StructurePotential = 10,
+
+    /// <summary>The biomes Beta 1.7 picks from its climate alone, before the terrain turns low places into ocean.</summary>
+    LandBiomes = 11,
 }
