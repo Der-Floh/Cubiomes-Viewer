@@ -19,6 +19,7 @@ using Cubiomes_Viewer.Engine.Service.TileServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Cubiomes_Viewer.Engine.Extensions;
 
@@ -71,6 +72,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IConditionValidator, ConditionValidator>();
         services.AddSingleton<ISearchPlanCompiler, SearchPlanCompiler>();
         services.AddSingleton<ISeedMatcher, SeedMatcher>();
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddSingleton<ISeedSearchService, SeedSearchService>();
 
         // services
         services.AddSingleton<ITileColorizer, TileColorizer>();
