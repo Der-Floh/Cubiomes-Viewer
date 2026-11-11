@@ -4,9 +4,23 @@ struct cv_world
     int *cache;
     size_t cache_length;
     int is_seeded;
-    SurfaceNoise end_surface;
-    int has_end_surface;
+    SurfaceNoise surface;
+    int has_surface;
+    BiomeNoise *octave_noise;
+    int octave_parameter;
+    int octave_count;
 };
+
+/* The terrain noise of the dimension the world is applied to; valid for the Overworld and the End. */
+static const SurfaceNoise *cv_surface(cv_world *world)
+{
+    if (!world->has_surface)
+    {
+        initSurfaceNoise(&world->surface, world->generator.dim, world->generator.seed);
+        world->has_surface = 1;
+    }
+    return &world->surface;
+}
 
 static int cv_ensure_cache(cv_world *world, size_t length)
 {
@@ -64,6 +78,7 @@ void cv_world_destroy(cv_world *world)
     if (!world)
         return;
     free(world->cache);
+    free(world->octave_noise);
     free(world);
 }
 
@@ -73,7 +88,8 @@ int32_t cv_world_apply(cv_world *world, int32_t dim, uint64_t seed)
         return CV_ERR_ARGUMENT;
     applySeed(&world->generator, dim, seed);
     world->is_seeded = 1;
-    world->has_end_surface = 0;
+    world->has_surface = 0;
+    world->octave_parameter = -1;
     return CV_OK;
 }
 

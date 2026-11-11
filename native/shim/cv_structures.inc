@@ -9,23 +9,13 @@ static int cv_is_locatable_structure(int32_t stype)
     return cv_is_valid_structure(stype) && stype != Feature && stype != End_Island;
 }
 
-static const SurfaceNoise *cv_end_surface(cv_world *world)
-{
-    if (!world->has_end_surface)
-    {
-        initSurfaceNoise(&world->end_surface, DIM_END, world->generator.seed);
-        world->has_end_surface = 1;
-    }
-    return &world->end_surface;
-}
-
 static int cv_can_generate_at(cv_world *world, int32_t stype, Pos pos)
 {
     Generator *generator = &world->generator;
     if (!isViableStructurePos(stype, generator, pos.x, pos.z, 0))
         return 0;
     if (stype == End_City)
-        return isViableEndCityTerrain(generator, cv_end_surface(world), pos.x, pos.z) != 0;
+        return isViableEndCityTerrain(generator, cv_surface(world), pos.x, pos.z) != 0;
     return isViableStructureTerrain(stype, generator, pos.x, pos.z) != 0;
 }
 

@@ -1,3 +1,5 @@
+using Cubiomes_Viewer.Engine.Data;
+using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 
@@ -22,6 +24,25 @@ public interface IWorldGenerator : IDisposable
     /// samples without a biome are written as <c>255</c>.
     /// </summary>
     void GenerateBiomes(BiomeArea area, Span<byte> destination);
+
+    /// <summary>
+    /// Fills <paramref name="destination"/> row by row with one value per sample: a climate parameter times
+    /// <see cref="Constants.ClimateUnit"/>, as the biome lookup sees it. With <paramref name="octaves"/> above zero
+    /// only that many of the widest noise octaves contribute. The Overworld must be applied.
+    /// </summary>
+    void GenerateClimate(ClimateParameter parameter, int octaves, BiomeArea area, Span<short> destination);
+
+    /// <summary>
+    /// Fills <paramref name="destination"/> row by row with the biome ids of an inner layer of the layered generator;
+    /// samples the layer leaves empty are written as <c>255</c>. The Overworld must be applied.
+    /// </summary>
+    void GenerateLayer(GeneratorLayer layer, BiomeArea area, Span<byte> destination);
+
+    /// <summary>
+    /// Fills <paramref name="destination"/> row by row with the approximate surface height in blocks times
+    /// <see cref="Constants.HeightUnit"/>. The Overworld or the End must be applied.
+    /// </summary>
+    void GenerateHeights(BiomeArea area, Span<short> destination);
 
     /// <summary>
     /// Whether a structure can generate at a position its type attempts to generate at.

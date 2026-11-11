@@ -53,6 +53,30 @@ internal static unsafe partial class CubiomesNative
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial int GenerateBiomes(nint world, int scale, int x, int z, int sizeX, int sizeZ, int y, byte* destination, int capacity);
 
+    [LibraryImport(LibraryName, EntryPoint = "cv_climate_supported")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int ClimateSupported(int version, int dimension, int parameter);
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_gen_climate")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int GenerateClimate(nint world, int parameter, int octaves, int scale, int x, int z, int sizeX, int sizeZ, int y, short* destination, int capacity);
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_layer_supported")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int LayerSupported(int version, int dimension, int layer, int scale);
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_gen_layer_u8")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int GenerateLayer(nint world, int layer, int scale, int x, int z, int sizeX, int sizeZ, byte* destination, int capacity);
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_height_supported")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int HeightSupported(int version, int dimension);
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_gen_heights")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int GenerateHeights(nint world, int scale, int x, int z, int sizeX, int sizeZ, short* destination, int capacity);
+
     [LibraryImport(LibraryName, EntryPoint = "cv_structure_config")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial int StructureConfig(int structureType, int version, int* dimension, int* regionBlocks);

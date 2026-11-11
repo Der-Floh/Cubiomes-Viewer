@@ -83,7 +83,7 @@ int32_t cv_end_gateways(cv_world *world, int32_t *positions, int32_t capacity)
     Pos gateways[CV_END_GATEWAYS];
     getFixedEndGateways(generator->mc, generator->seed, gateways);
 
-    const SurfaceNoise *surface = cv_end_surface(world);
+    const SurfaceNoise *surface = cv_surface(world);
     for (int i = 0; i < CV_END_GATEWAYS; i++)
     {
         Pos linked = getLinkedGatewayPos(&generator->en, surface, generator->seed, gateways[i]);

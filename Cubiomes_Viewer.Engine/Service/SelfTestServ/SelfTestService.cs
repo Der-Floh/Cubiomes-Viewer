@@ -64,6 +64,8 @@ public sealed class SelfTestService : ISelfTestService
             .. ReferenceStructureHash.Spawns.Select(expected =>
                 RunCheck($"Spawn point {expected.Version}", () => CheckSpawn(expected.Version, expected.Spawn))),
             RunCheck("Slime chunk regression hash", CheckSlimeChunkHash),
+            .. ReferenceLayerHash.Cases.Select(expected =>
+                RunCheck($"Layer regression hash {expected.Name}", () => CheckLayerHash(expected))),
             RunCheck("Invalid input is rejected without terminating", CheckInvalidInputIsRejected),
         ];
 
@@ -234,6 +236,15 @@ public sealed class SelfTestService : ISelfTestService
 
         var actual = ReferenceStructureHash.Hash(chunks);
         return (actual == ReferenceStructureHash.SlimeChunkHash, $"expected {ReferenceStructureHash.SlimeChunkHash:x8}, got {actual:x8}");
+    }
+
+    private (bool, string) CheckLayerHash(ReferenceLayerHash.LayerCase expected)
+    {
+        using var generator = _generatorFactory.Create(expected.Version, GeneratorFlags.None);
+        generator.Apply(expected.Dimension, ReferenceLayerHash.Seed);
+
+        var actual = expected.Compute(generator);
+        return (actual == expected.Hash, $"expected {expected.Hash:x8}, got {actual:x8}");
     }
 
     private (bool, string) CheckInvalidInputIsRejected()

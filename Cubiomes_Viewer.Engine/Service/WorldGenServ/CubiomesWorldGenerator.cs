@@ -1,5 +1,6 @@
 using System.Buffers;
 
+using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Interop;
@@ -42,15 +43,46 @@ public sealed class CubiomesWorldGenerator : IWorldGenerator
 
     public unsafe void GenerateBiomes(BiomeArea area, Span<byte> destination)
     {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(area.SizeX);
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(area.SizeZ);
-        if (destination.Length < area.SampleCount)
-            throw new ArgumentException($"The destination holds {destination.Length} samples but the area needs {area.SampleCount}.", nameof(destination));
+        ThrowIfTooSmall(area, destination.Length);
 
         fixed (byte* buffer = destination)
         {
             var result = CubiomesNative.GenerateBiomes(World, area.Scale, area.X, area.Z, area.SizeX, area.SizeZ, area.Y, buffer, destination.Length);
             CubiomesNativeException.ThrowIfError(result, nameof(GenerateBiomes));
+        }
+    }
+
+    public unsafe void GenerateClimate(ClimateParameter parameter, int octaves, BiomeArea area, Span<short> destination)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(octaves);
+        ThrowIfTooSmall(area, destination.Length);
+
+        fixed (short* buffer = destination)
+        {
+            var result = CubiomesNative.GenerateClimate(World, (int)parameter, octaves, area.Scale, area.X, area.Z, area.SizeX, area.SizeZ, area.Y, buffer, destination.Length);
+            CubiomesNativeException.ThrowIfError(result, nameof(GenerateClimate));
+        }
+    }
+
+    public unsafe void GenerateLayer(GeneratorLayer layer, BiomeArea area, Span<byte> destination)
+    {
+        ThrowIfTooSmall(area, destination.Length);
+
+        fixed (byte* buffer = destination)
+        {
+            var result = CubiomesNative.GenerateLayer(World, (int)layer, area.Scale, area.X, area.Z, area.SizeX, area.SizeZ, buffer, destination.Length);
+            CubiomesNativeException.ThrowIfError(result, nameof(GenerateLayer));
+        }
+    }
+
+    public unsafe void GenerateHeights(BiomeArea area, Span<short> destination)
+    {
+        ThrowIfTooSmall(area, destination.Length);
+
+        fixed (short* buffer = destination)
+        {
+            var result = CubiomesNative.GenerateHeights(World, area.Scale, area.X, area.Z, area.SizeX, area.SizeZ, buffer, destination.Length);
+            CubiomesNativeException.ThrowIfError(result, nameof(GenerateHeights));
         }
     }
 
@@ -126,6 +158,14 @@ public sealed class CubiomesWorldGenerator : IWorldGenerator
     }
 
     public void Dispose() => _world.Dispose();
+
+    private static void ThrowIfTooSmall(BiomeArea area, int capacity)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(area.SizeX);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(area.SizeZ);
+        if (capacity < area.SampleCount)
+            throw new ArgumentException($"The destination holds {capacity} samples but the area needs {area.SampleCount}.", nameof(area));
+    }
 
     private unsafe StructureVariant? FindVariant(StructureType type, BlockPos position)
     {
