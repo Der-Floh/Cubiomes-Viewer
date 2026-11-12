@@ -13,6 +13,7 @@ using Cubiomes_Viewer.Engine.Repository.SettingsRepo;
 using Cubiomes_Viewer.Engine.Service.AnalysisServ;
 using Cubiomes_Viewer.Engine.Service.ComputeServ;
 using Cubiomes_Viewer.Engine.Service.ConditionServ;
+using Cubiomes_Viewer.Engine.Service.ExportServ;
 using Cubiomes_Viewer.Engine.Service.LayerServ;
 using Cubiomes_Viewer.Engine.Service.SearchServ;
 using Cubiomes_Viewer.Engine.Service.SeedServ;
@@ -98,6 +99,9 @@ public static class ServiceCollectionExtensions
 
         // analysis
         services.AddSingleton<IAnalysisService, AnalysisService>();
+
+        // export
+        services.AddSingleton<IMapExportService, MapExportService>();
 
         // services
         services.AddSingleton<ITileColorizer, TileColorizer>();

@@ -55,6 +55,8 @@ public sealed class TileColorizer : ITileColorizer
             AddRelief(tile, style.Height, layer.Unit, bgra);
     }
 
+    public IReadOnlyList<RgbColor> GetBiomeColors(TileStyle style, McVersion version) => GetBiomeColors(style.PotentialOf, version);
+
     private static void AddRelief(TileData tile, HeightStyle style, int unit, Span<byte> bgra)
     {
         if (style == HeightStyle.Shaded)
