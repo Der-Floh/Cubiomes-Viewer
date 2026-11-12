@@ -82,6 +82,9 @@ public sealed class MainViewModelTests : IDisposable
         Assert.IsType<SearchPanelViewModel>(main.CurrentPanel);
 
         main.SelectedPanelIndex = 2;
+        Assert.IsType<AnalysisPanelViewModel>(main.CurrentPanel);
+
+        main.SelectedPanelIndex = 3;
         Assert.IsType<SettingsViewModel>(main.CurrentPanel);
 
         main.SelectedPanelIndex = MainViewModel.NoPanel;

@@ -141,6 +141,7 @@ public sealed partial class App : Application
         services.AddTransient<MapHostView>();
         services.AddTransient<LayersPanelView>();
         services.AddTransient<SearchPanelView>();
+        services.AddTransient<AnalysisPanelView>();
         services.AddTransient<SettingsView>();
 
         // view models
@@ -159,6 +160,11 @@ public sealed partial class App : Application
         services.AddSingleton<SearchResultsViewModel>();
         services.AddSingleton<SearchPresetsViewModel>();
         services.AddSingleton<SearchPanelViewModel>();
+        services.AddSingleton<AnalysisScopeViewModel>();
+        services.AddSingleton<BiomeAnalysisViewModel>();
+        services.AddSingleton<StructureAnalysisViewModel>();
+        services.AddSingleton<LocationAnalysisViewModel>();
+        services.AddSingleton<AnalysisPanelViewModel>();
         services.AddSingleton<SettingsViewModel>();
         services.AddTransient<SelfTestViewModel>();
 

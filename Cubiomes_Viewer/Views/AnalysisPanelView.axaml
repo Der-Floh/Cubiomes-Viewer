@@ -1,0 +1,118 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Cubiomes_Viewer.ViewModels"
+             xmlns:data="using:Cubiomes_Viewer.Data"
+             xmlns:views="using:Cubiomes_Viewer.Views"
+             mc:Ignorable="d" d:DesignWidth="320" d:DesignHeight="900"
+             x:Class="Cubiomes_Viewer.Views.AnalysisPanelView"
+             x:DataType="vm:AnalysisPanelViewModel">
+
+    <UserControl.Resources>
+        <DataTemplate x:Key="AnalysisResultsTemplate" x:DataType="vm:AnalysisTabViewModel">
+            <StackPanel Classes="form">
+                <WrapPanel Classes="card-actions">
+                    <Button Classes="accent" Content="{Binding RunLabel}" Command="{Binding RunCommand}" IsVisible="{Binding !IsRunning}"/>
+                    <Button Content="{Binding StopLabel}" Command="{Binding StopCommand}" IsVisible="{Binding IsRunning}"/>
+                    <Button Content="{Binding SaveLabel}" Command="{Binding SaveCommand}" IsVisible="{Binding HasRows}"/>
+                </WrapPanel>
+                <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap"/>
+                <TextBlock Classes="damp" Text="{Binding OpenHint}" TextWrapping="Wrap" IsVisible="{Binding HasRows}"/>
+                <ListBox Classes="results" ItemsSource="{Binding Rows}" SelectedItem="{Binding SelectedRow}" IsVisible="{Binding HasRows}"/>
+            </StackPanel>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <UserControl.DataTemplates>
+        <DataTemplate x:DataType="vm:MarkerToggleViewModel">
+            <CheckBox IsChecked="{Binding IsChecked}">
+                <StackPanel Classes="marker-label">
+                    <views:MarkerBadgeView DataContext="{Binding Marker}"/>
+                    <TextBlock Text="{Binding Name}"/>
+                </StackPanel>
+            </CheckBox>
+        </DataTemplate>
+
+        <DataTemplate x:DataType="data:AnalysisRow">
+            <StackPanel>
+                <TextBlock Classes="condition-title" Text="{Binding Title}"/>
+                <TextBlock Classes="damp" Text="{Binding Detail}" TextWrapping="Wrap"/>
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate x:DataType="vm:BiomeAnalysisViewModel">
+            <StackPanel Classes="form">
+                <TextBlock Classes="damp" Text="{Binding Hint}" TextWrapping="Wrap"/>
+                <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
+                    <TextBlock Classes="field-label" Text="{Binding ScaleLabel}"/>
+                    <ComboBox Grid.Row="1" Classes="fill" ItemsSource="{Binding Scales}" SelectedItem="{Binding SelectedScale}"/>
+                    <TextBlock Grid.Column="1" Classes="field-label" Text="{Binding HeightLabel}"/>
+                    <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding Height}" Minimum="{Binding MinHeight}" Maximum="{Binding MaxHeight}" Increment="8" FormatString="0"/>
+                </Grid>
+                <ContentControl Content="{Binding}" ContentTemplate="{StaticResource AnalysisResultsTemplate}"/>
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate x:DataType="vm:StructureAnalysisViewModel">
+            <StackPanel Classes="form">
+                <TextBlock Classes="field-label" Text="{Binding TypesLabel}"/>
+                <Border Classes="choice-list">
+                    <ScrollViewer>
+                        <ItemsControl ItemsSource="{Binding Types}"/>
+                    </ScrollViewer>
+                </Border>
+                <CheckBox Content="{Binding DescribeLabel}" IsChecked="{Binding Describe}"/>
+                <CheckBox Content="{Binding QuadsLabel}" IsChecked="{Binding ListQuads}"/>
+                <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" IsVisible="{Binding ListQuads}">
+                    <ComboBox Grid.Row="1" Classes="fill" ItemsSource="{Binding QuadTypes}" SelectedItem="{Binding SelectedQuadType}"/>
+                    <TextBlock Grid.Column="1" Classes="field-label" Text="{Binding QuadQualityLabel}"/>
+                    <ComboBox Grid.Row="1" Grid.Column="1" Classes="fill" ItemsSource="{Binding QuadQualities}" SelectedItem="{Binding SelectedQuadQuality}"/>
+                </Grid>
+                <ContentControl Content="{Binding}" ContentTemplate="{StaticResource AnalysisResultsTemplate}"/>
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate x:DataType="vm:LocationAnalysisViewModel">
+            <StackPanel Classes="form">
+                <TextBlock Classes="damp" Text="{Binding Hint}" TextWrapping="Wrap"/>
+                <CheckBox Content="{Binding LandmarksLabel}" IsChecked="{Binding ShowLandmarks}"/>
+                <CheckBox Content="{Binding ConditionsLabel}" IsChecked="{Binding ShowConditions}"/>
+                <ContentControl Content="{Binding}" ContentTemplate="{StaticResource AnalysisResultsTemplate}"/>
+            </StackPanel>
+        </DataTemplate>
+    </UserControl.DataTemplates>
+
+    <ScrollViewer>
+        <StackPanel Classes="panel">
+            <TextBlock Classes="title" Text="{Binding Title}"/>
+
+            <TextBlock Classes="section" Text="{Binding ScopeLabel}"/>
+            <StackPanel Classes="form" DataContext="{Binding Scope}" x:DataType="vm:AnalysisScopeViewModel">
+                <TextBlock Classes="field-label" Text="{Binding SeedsLabel}"/>
+                <ComboBox Classes="fill" ItemsSource="{Binding SeedChoices}" SelectedItem="{Binding SelectedSeeds}"/>
+                <TextBlock Classes="field-label" Text="{Binding CenterLabel}"/>
+                <Grid Classes="pair" ColumnDefinitions="*,*,Auto">
+                    <NumericUpDown Value="{Binding CenterX}" Minimum="{Binding MinCoordinate}" Maximum="{Binding MaxCoordinateValue}" Increment="16" FormatString="0"/>
+                    <NumericUpDown Grid.Column="1" Value="{Binding CenterZ}" Minimum="{Binding MinCoordinate}" Maximum="{Binding MaxCoordinateValue}" Increment="16" FormatString="0"/>
+                    <Button Grid.Column="2" Classes="compact" Content="{Binding UseMapCenterLabel}" Command="{Binding UseMapCenterCommand}"/>
+                </Grid>
+                <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
+                    <TextBlock Classes="field-label" Text="{Binding ShapeLabel}"/>
+                    <ComboBox Grid.Row="1" Classes="fill" ItemsSource="{Binding Shapes}" SelectedItem="{Binding SelectedShape}"/>
+                    <TextBlock Grid.Column="1" Classes="field-label" Text="{Binding SizeLabel}"/>
+                    <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding Size}" Minimum="{Binding MinSize}" Maximum="{Binding MaxSizeValue}" Increment="256" FormatString="0"/>
+                </Grid>
+            </StackPanel>
+
+            <TabControl Classes="analysis" ItemsSource="{Binding Tabs}" SelectedIndex="{Binding SelectedTabIndex}">
+                <TabControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:AnalysisTabViewModel">
+                        <TextBlock Text="{Binding Title}"/>
+                    </DataTemplate>
+                </TabControl.ItemTemplate>
+            </TabControl>
+        </StackPanel>
+    </ScrollViewer>
+
+</UserControl>
