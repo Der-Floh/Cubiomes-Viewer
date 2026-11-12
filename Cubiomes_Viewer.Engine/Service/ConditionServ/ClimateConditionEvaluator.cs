@@ -44,10 +44,8 @@ public sealed class ClimateConditionEvaluator : ConditionEvaluator<ClimateCondit
         else if (condition.Max < condition.Min)
             yield return "The highest value comes before the lowest one.";
 
-        if (!_scales.Contains(condition.Scale))
-            yield return $"The distance between samples must be one of {string.Join(", ", _scales)} blocks.";
-        else if (SampleGrid.CountAtMost(condition.Area, condition.Scale) > MaxSamples)
-            yield return $"The area needs more than {MaxSamples} samples at {condition.Scale} blocks per sample; sample it more coarsely or make it smaller.";
+        foreach (var problem in SampleGrid.FindProblems(condition.Area, condition.Scale, _scales, MaxSamples))
+            yield return problem;
     }
 
     protected override MatchStatus Evaluate(ClimateCondition condition, BlockPos reference, SearchSeedContext context, SearchPass pass, List<BlockPos> matches)

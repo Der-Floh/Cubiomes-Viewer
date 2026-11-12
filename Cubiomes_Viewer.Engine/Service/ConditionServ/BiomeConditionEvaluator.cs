@@ -37,19 +37,8 @@ public sealed class BiomeConditionEvaluator : ConditionEvaluator<BiomeCondition>
 
     protected override IEnumerable<string> Validate(BiomeCondition condition, SearchDefinition definition)
     {
-        if (condition.Biomes.IsEmpty)
-            yield return "Choose at least one biome.";
-
-        if (!Enum.IsDefined(condition.Dimension))
-            yield return "Choose the dimension the biomes are in.";
-        else
-        {
-            foreach (var biome in condition.Biomes.ToArray().Where(biome => !_biomeCatalog.Generates(definition.Version, condition.Dimension, biome)))
-                yield return $"{DescribeBiome(definition.Version, biome)} does not generate in the {condition.Dimension} of this version.";
-        }
-
-        foreach (var problem in condition.Match == BiomeMatch.Share ? ValidateShare(condition) : ValidateGrid(condition))
-            yield return problem;
+        var sampling = condition.Match == BiomeMatch.Share ? ValidateShare(condition) : SampleGrid.FindProblems(condition.Area, condition.Scale, _scales, MaxGridSamples);
+        return BiomeProblems.Find(condition.Biomes, condition.Dimension, definition.Version, _biomeCatalog).Concat(sampling);
     }
 
     protected override MatchStatus Evaluate(BiomeCondition condition, BlockPos reference, SearchSeedContext context, SearchPass pass, List<BlockPos> matches)
@@ -61,16 +50,6 @@ public sealed class BiomeConditionEvaluator : ConditionEvaluator<BiomeCondition>
         if (match is { } position)
             matches.Add(position);
         return Decide(condition, reference, matches);
-    }
-
-    private string DescribeBiome(McVersion version, int biome) => _biomeCatalog.GetDisplayName(version, biome) ?? $"Biome {biome}";
-
-    private static IEnumerable<string> ValidateGrid(BiomeCondition condition)
-    {
-        if (!_scales.Contains(condition.Scale))
-            yield return $"The distance between samples must be one of {string.Join(", ", _scales)} blocks.";
-        else if (SampleGrid.CountAtMost(condition.Area, condition.Scale) > MaxGridSamples)
-            yield return $"The area needs more than {MaxGridSamples} samples at {condition.Scale} blocks per sample; sample it more coarsely or make it smaller.";
     }
 
     private static IEnumerable<string> ValidateShare(BiomeCondition condition)

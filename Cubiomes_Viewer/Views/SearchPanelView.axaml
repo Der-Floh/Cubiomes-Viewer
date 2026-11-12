@@ -36,7 +36,7 @@
             <CheckBox Content="{Binding Name}" IsChecked="{Binding IsChecked}"/>
         </DataTemplate>
 
-        <DataTemplate x:DataType="vm:BiomeFieldsViewModel">
+        <DataTemplate x:DataType="vm:BiomePickerViewModel">
             <StackPanel Classes="form">
                 <TextBlock Classes="field-label" Text="{Binding DimensionLabel}"/>
                 <ComboBox Classes="fill" ItemsSource="{Binding Dimensions}" SelectedItem="{Binding SelectedDimension}"/>
@@ -48,6 +48,27 @@
                     </ScrollViewer>
                 </Border>
                 <TextBlock Classes="damp" Text="{Binding ChosenText}"/>
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate x:DataType="vm:BiomePatchFieldsViewModel">
+            <StackPanel Classes="form">
+                <ContentControl Content="{Binding Picker}"/>
+                <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
+                    <TextBlock Classes="field-label" Text="{Binding MinChunksLabel}"/>
+                    <NumericUpDown Grid.Row="1" Value="{Binding MinChunks}" Minimum="{Binding MinChunksMinimum}" Maximum="{Binding MinChunksMaximum}" Increment="10" FormatString="0"/>
+                    <TextBlock Grid.Column="1" Classes="field-label" Text="{Binding ScaleLabel}"/>
+                    <ComboBox Grid.Row="1" Grid.Column="1" Classes="fill" ItemsSource="{Binding Scales}" SelectedItem="{Binding SelectedScale}"/>
+                </Grid>
+                <TextBlock Classes="damp" Text="{Binding PatchHint}" TextWrapping="Wrap"/>
+                <TextBlock Classes="field-label" Text="{Binding HeightLabel}"/>
+                <NumericUpDown Value="{Binding Height}" Minimum="{Binding MinHeight}" Maximum="{Binding MaxHeight}" Increment="8" FormatString="0"/>
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate x:DataType="vm:BiomeFieldsViewModel">
+            <StackPanel Classes="form">
+                <ContentControl Content="{Binding Picker}"/>
                 <TextBlock Classes="field-label" Text="{Binding MatchLabel}"/>
                 <ComboBox Classes="fill" ItemsSource="{Binding Matches}" SelectedItem="{Binding SelectedMatch}"/>
                 <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" IsVisible="{Binding IsShare}">

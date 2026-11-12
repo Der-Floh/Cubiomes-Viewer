@@ -28,5 +28,14 @@ internal static class SampleGrid
     /// <summary>The most samples an area can need, wherever it lies.</summary>
     public static long CountAtMost(SearchArea area, int scale) => ((long)area.SizeX / scale + 2) * ((long)area.SizeZ / scale + 2);
 
+    /// <summary>What keeps an area from being sampled every so many blocks: a spacing it does not offer, or too many samples.</summary>
+    public static IEnumerable<string> FindProblems(SearchArea area, int scale, int[] scales, int maxSamples)
+    {
+        if (!scales.Contains(scale))
+            yield return $"The distance between samples must be one of {string.Join(", ", scales)} blocks.";
+        else if (CountAtMost(area, scale) > maxSamples)
+            yield return $"The area needs more than {maxSamples} samples at {scale} blocks per sample; sample it more coarsely or make it smaller.";
+    }
+
     private static int FloorDivide(int value, int divisor) => (int)Math.Floor(value / (double)divisor);
 }

@@ -9,6 +9,9 @@ namespace Cubiomes_Viewer.Engine.Service.SearchServ;
 public static class ExampleSearchPresets
 {
     private const int MushroomFields = 14;
+    private const int Jungle = 21;
+    private const int SparseJungle = 23;
+    private const int BambooJungle = 168;
     private const int BiomeScale = 16;
 
     public static IReadOnlyList<SearchPreset> All { get; } =
@@ -53,6 +56,15 @@ public static class ExampleSearchPresets
             Setup = new SearchSetup
             {
                 Definition = Define(new BiomeCondition { Id = 1, Biomes = BiomeSet.Of(MushroomFields), Area = SearchArea.Circle(1024), Scale = BiomeScale }),
+            },
+        },
+        new()
+        {
+            Name = "Big jungle near the origin",
+            Description = "A jungle of at least 300 chunks, bamboo and sparse jungle included, within 2,000 blocks of the world origin. The match is the middle of the jungle.",
+            Setup = new SearchSetup
+            {
+                Definition = Define(new BiomePatchCondition { Id = 1, Biomes = BiomeSet.Of(Jungle, SparseJungle, BambooJungle), Area = SearchArea.Circle(2000), MinChunks = 300, Scale = 64 }),
             },
         },
         new()

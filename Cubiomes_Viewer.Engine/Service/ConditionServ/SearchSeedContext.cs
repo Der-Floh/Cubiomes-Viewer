@@ -21,6 +21,8 @@ public sealed class SearchSeedContext
     private QuadPosition[] _quads = [];
     private byte[] _bytes = [];
     private short[] _values = [];
+    private int[] _indices = [];
+    private bool[] _marks = [];
 
     public SearchSeedContext(IWorkerContext workerContext, SearchDefinition definition)
     {
@@ -68,5 +70,23 @@ public sealed class SearchSeedContext
         if (_values.Length < count)
             _values = new short[count];
         return _values.AsSpan(0, count);
+    }
+
+    /// <summary>Lends a buffer for indices that stays valid until the next request.</summary>
+    public Span<int> GetIndices(int count)
+    {
+        if (_indices.Length < count)
+            _indices = new int[count];
+        return _indices.AsSpan(0, count);
+    }
+
+    /// <summary>Lends a cleared buffer of marks that stays valid until the next request.</summary>
+    public Span<bool> GetMarks(int count)
+    {
+        if (_marks.Length < count)
+            _marks = new bool[count];
+        var marks = _marks.AsSpan(0, count);
+        marks.Clear();
+        return marks;
     }
 }

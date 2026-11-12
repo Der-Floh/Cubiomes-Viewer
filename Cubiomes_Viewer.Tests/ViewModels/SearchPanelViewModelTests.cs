@@ -171,7 +171,7 @@ public sealed class SearchPanelViewModelTests : IDisposable
         Assert.False(Setup.IsValid);
 
         var fields = Assert.IsType<BiomeFieldsViewModel>(biome.Fields);
-        fields.Biomes.First().IsChecked = true;
+        fields.Picker.Biomes.First().IsChecked = true;
 
         Assert.False(biome.HasProblems);
         Assert.True(Setup.IsValid);
@@ -182,15 +182,15 @@ public sealed class SearchPanelViewModelTests : IDisposable
     {
         var biome = Add<BiomeCondition>();
         var fields = Assert.IsType<BiomeFieldsViewModel>(biome.Fields);
-        fields.Biomes.Single(toggle => toggle.Name == "Plains").IsChecked = true;
+        fields.Picker.Biomes.Single(toggle => toggle.Name == "Plains").IsChecked = true;
 
-        fields.SelectedDimension = fields.Dimensions.Single(choice => choice.Value == Dimension.Nether);
+        fields.Picker.SelectedDimension = fields.Picker.Dimensions.Single(choice => choice.Value == Dimension.Nether);
 
-        Assert.Equal(["Basalt Deltas", "Crimson Forest", "Nether Wastes", "Soul Sand Valley", "Warped Forest"], fields.Biomes.Select(toggle => toggle.Name));
+        Assert.Equal(["Basalt Deltas", "Crimson Forest", "Nether Wastes", "Soul Sand Valley", "Warped Forest"], fields.Picker.Biomes.Select(toggle => toggle.Name));
         Assert.True(Assert.IsType<BiomeCondition>(Assert.Single(Setup.Setup.Definition.Conditions)).Biomes.IsEmpty);
 
-        fields.Filter = "forest";
-        Assert.Equal(["Crimson Forest", "Warped Forest"], fields.Biomes.Select(toggle => toggle.Name));
+        fields.Picker.Filter = "forest";
+        Assert.Equal(["Crimson Forest", "Warped Forest"], fields.Picker.Biomes.Select(toggle => toggle.Name));
     }
 
     [AvaloniaFact]
@@ -198,7 +198,7 @@ public sealed class SearchPanelViewModelTests : IDisposable
     {
         var biome = Add<BiomeCondition>();
         var fields = Assert.IsType<BiomeFieldsViewModel>(biome.Fields);
-        fields.Biomes.Single(toggle => toggle.Name == "Plains").IsChecked = true;
+        fields.Picker.Biomes.Single(toggle => toggle.Name == "Plains").IsChecked = true;
 
         fields.SelectedMatch = fields.Matches.Single(choice => choice.Value == BiomeMatch.Share);
         fields.SharePercent = 35;
@@ -208,6 +208,25 @@ public sealed class SearchPanelViewModelTests : IDisposable
         Assert.True(fields.IsShare);
         Assert.Equal((BiomeMatch.Share, 0.35, 800), (condition.Match, condition.MinShare, condition.Samples));
         Assert.StartsWith("Plains on 35 % of the area · ", biome.Summary, StringComparison.Ordinal);
+        Assert.True(Setup.IsValid);
+    }
+
+    [AvaloniaFact]
+    public void BiomePatchFields_BiomesSizeAndCount_GoIntoTheConditionAndItsSummary()
+    {
+        var patch = Add<BiomePatchCondition>();
+        var fields = Assert.IsType<BiomePatchFieldsViewModel>(patch.Fields);
+
+        fields.Picker.Biomes.Single(toggle => toggle.Name == "Jungle").IsChecked = true;
+        fields.Picker.Biomes.Single(toggle => toggle.Name == "Bamboo Jungle").IsChecked = true;
+        fields.MinChunks = 250;
+        fields.SelectedScale = fields.Scales.Single(choice => choice.Value == 64);
+        patch.Count = 2;
+
+        var condition = Assert.IsType<BiomePatchCondition>(Assert.Single(Setup.Setup.Definition.Conditions));
+        Assert.Equal("1 · Biome patch", patch.Header);
+        Assert.StartsWith("Bamboo Jungle or Jungle of 250 chunks or more · at least 2 ", patch.Summary, StringComparison.Ordinal);
+        Assert.Equal((250, 64, 2, 2), (condition.MinChunks, condition.Scale, condition.Biomes.Count, condition.Count));
         Assert.True(Setup.IsValid);
     }
 

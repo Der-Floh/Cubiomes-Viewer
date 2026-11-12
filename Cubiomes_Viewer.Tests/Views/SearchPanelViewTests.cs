@@ -108,6 +108,18 @@ public sealed class SearchPanelViewTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void BiomeEditors_ShowTheBiomesToPick()
+    {
+        var biome = Assert.IsType<BiomeFieldsViewModel>(Add<BiomeCondition>().Fields);
+        var patch = Assert.IsType<BiomePatchFieldsViewModel>(Add<BiomePatchCondition>().Fields);
+
+        var shown = FindAll<CheckBox>().Select(box => box.DataContext).OfType<BiomeToggleViewModel>().ToHashSet();
+
+        Assert.Contains(biome.Picker.Biomes.First(), shown);
+        Assert.Contains(patch.Picker.Biomes.First(), shown);
+    }
+
+    [AvaloniaFact]
     public void BiomeShare_ShowsItsSamplesInsteadOfTheGrid()
     {
         var fields = Assert.IsType<BiomeFieldsViewModel>(Add<BiomeCondition>().Fields);
