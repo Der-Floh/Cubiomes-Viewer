@@ -18,6 +18,10 @@ namespace Cubiomes_Viewer.Engine.Data.Compute;
 [JsonDerivedType(typeof(SearchBatchJob), "searchBatch")]
 [JsonDerivedType(typeof(StructureSeedBatchJob), "structureSeedBatch")]
 [JsonDerivedType(typeof(QuadHutBaseScanJob), "quadHutBaseScan")]
+[JsonDerivedType(typeof(BiomeCensusJob), "biomeCensus")]
+[JsonDerivedType(typeof(StructureListJob), "structureList")]
+[JsonDerivedType(typeof(QuadListJob), "quadList")]
+[JsonDerivedType(typeof(ConditionLocationsJob), "conditionLocations")]
 public abstract record ComputeJob;
 
 public abstract record ComputeJob<TResult> : ComputeJob;

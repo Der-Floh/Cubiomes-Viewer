@@ -1,6 +1,7 @@
 using Cubiomes_Viewer.Engine.Data.Search;
 using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Data.Worlds;
+using Cubiomes_Viewer.Engine.Extensions;
 using Cubiomes_Viewer.Engine.Service.StructureServ;
 
 namespace Cubiomes_Viewer.Engine.Service.ConditionServ;
@@ -15,7 +16,6 @@ public sealed class QuadHutConditionEvaluator : ConditionEvaluator<QuadHutCondit
     private const int MaxMatches = 16;
     private const int DefaultSide = 2048;
     private const int SearchCost = 15;
-    private const int HutsPerQuad = 4;
     private static readonly QuadQuality[] _qualities = [QuadQuality.Ideal, QuadQuality.Classic, QuadQuality.Normal, QuadQuality.Barely];
 
     public override ConditionDescriptor Descriptor { get; } = new()
@@ -66,29 +66,18 @@ public sealed class QuadHutConditionEvaluator : ConditionEvaluator<QuadHutCondit
         var quads = context.GetQuads((x1 - x0 + 1) * (z1 - z0 + 1));
         var count = _quadFinder.FindQuads(condition.Type, context.Version, context.Seed, x0, z0, x1, z1, quads);
 
-        Span<BlockPos> huts = stackalloc BlockPos[HutsPerQuad];
+        Span<BlockPos> huts = stackalloc BlockPos[StructureFinderExtensions.StructuresPerQuad];
         foreach (var quad in quads[..count])
         {
-            if (quad.Quality > condition.Quality || !TryGetHuts(condition.Type, context, quad, huts))
+            if (quad.Quality > condition.Quality || !_structureFinder.TryGetQuadPositions(condition.Type, context.Version, context.Seed, quad, huts))
                 continue;
 
-            var middle = GetMiddle(huts);
+            var middle = BlockPos.MiddleOf(huts);
             if (condition.Area.Contains(reference, middle) && (pass == SearchPass.Quick || CanAllGenerate(condition.Type, context, huts)))
                 matches.Add(middle);
         }
 
         return pass == SearchPass.Quick ? DecideCandidates(condition, reference, matches) : Decide(condition, reference, matches);
-    }
-
-    private bool TryGetHuts(StructureType type, SearchSeedContext context, QuadPosition quad, Span<BlockPos> huts)
-    {
-        for (var index = 0; index < HutsPerQuad; index++)
-        {
-            if (!_structureFinder.TryGetRegionPosition(type, context.Version, context.Seed, quad.RegionX + index % 2, quad.RegionZ + index / 2, out huts[index]))
-                return false;
-        }
-
-        return true;
     }
 
     private static bool CanAllGenerate(StructureType type, SearchSeedContext context, ReadOnlySpan<BlockPos> huts)
@@ -101,18 +90,6 @@ public sealed class QuadHutConditionEvaluator : ConditionEvaluator<QuadHutCondit
         }
 
         return true;
-    }
-
-    private static BlockPos GetMiddle(ReadOnlySpan<BlockPos> huts)
-    {
-        long sumX = 0, sumZ = 0;
-        foreach (var hut in huts)
-        {
-            sumX += hut.X;
-            sumZ += hut.Z;
-        }
-
-        return new BlockPos((int)(sumX / huts.Length), (int)(sumZ / huts.Length));
     }
 
     private string DescribeType(StructureType type)

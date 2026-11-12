@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 
+using Cubiomes_Viewer.Engine.Data.Analysis;
 using Cubiomes_Viewer.Engine.Data.Compute;
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Search;
@@ -19,5 +20,9 @@ namespace Cubiomes_Viewer.Engine.Service.ComputeServ;
 [JsonSerializable(typeof(SelfTestReport))]
 [JsonSerializable(typeof(SearchBatchResult))]
 [JsonSerializable(typeof(QuadHutBaseScan))]
+[JsonSerializable(typeof(BiomeCensus))]
+[JsonSerializable(typeof(StructureListing))]
+[JsonSerializable(typeof(QuadListing))]
+[JsonSerializable(typeof(ConditionLocations))]
 [JsonSerializable(typeof(WorkerError))]
 internal sealed partial class ComputeJsonContext : JsonSerializerContext;

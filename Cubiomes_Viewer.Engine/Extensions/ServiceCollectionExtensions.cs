@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
+using Cubiomes_Viewer.Engine.Data.Analysis;
 using Cubiomes_Viewer.Engine.Data.Compute;
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Search;
@@ -9,6 +10,7 @@ using Cubiomes_Viewer.Engine.Repository.AppDataRepo;
 using Cubiomes_Viewer.Engine.Repository.PresetRepo;
 using Cubiomes_Viewer.Engine.Repository.SessionRepo;
 using Cubiomes_Viewer.Engine.Repository.SettingsRepo;
+using Cubiomes_Viewer.Engine.Service.AnalysisServ;
 using Cubiomes_Viewer.Engine.Service.ComputeServ;
 using Cubiomes_Viewer.Engine.Service.ConditionServ;
 using Cubiomes_Viewer.Engine.Service.LayerServ;
@@ -63,6 +65,10 @@ public static class ServiceCollectionExtensions
         services.AddJobHandler<SearchBatchJob, SearchBatchResult, SearchBatchJobHandler>();
         services.AddJobHandler<StructureSeedBatchJob, SearchBatchResult, StructureSeedBatchJobHandler>();
         services.AddJobHandler<QuadHutBaseScanJob, QuadHutBaseScan, QuadHutBaseScanJobHandler>();
+        services.AddJobHandler<BiomeCensusJob, BiomeCensus, BiomeCensusJobHandler>();
+        services.AddJobHandler<StructureListJob, StructureListing, StructureListJobHandler>();
+        services.AddJobHandler<QuadListJob, QuadListing, QuadListJobHandler>();
+        services.AddJobHandler<ConditionLocationsJob, ConditionLocations, ConditionLocationsJobHandler>();
         if (OperatingSystem.IsBrowser())
             services.AddSingleton<IComputeService, InlineComputeService>();
         else
@@ -89,6 +95,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISeedSearchService, SeedSearchService>();
         services.AddSingleton<ISearchSessionService, SearchSessionService>();
         services.AddSingleton<ISearchPresetService, SearchPresetService>();
+
+        // analysis
+        services.AddSingleton<IAnalysisService, AnalysisService>();
 
         // services
         services.AddSingleton<ITileColorizer, TileColorizer>();
