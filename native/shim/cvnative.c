@@ -11,6 +11,7 @@
 #include "../cubiomes/generator.c"
 #include "../cubiomes/finders.c"
 #include "../cubiomes/util.c"
+#include "../cubiomes/quadbase.h"
 
 #if defined(_MSC_VER)
 #pragma warning(pop)
@@ -23,3 +24,4 @@
 #include "cv_structures.inc"
 #include "cv_landmarks.inc"
 #include "cv_layers.inc"
+#include "cv_quad.inc"

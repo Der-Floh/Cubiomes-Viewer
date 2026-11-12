@@ -46,6 +46,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ILayerCatalog, LayerCatalog>();
         services.AddSingleton<IStructureFinder, CubiomesStructureFinder>();
         services.AddSingleton<ISlimeChunkFinder, CubiomesSlimeChunkFinder>();
+        services.AddSingleton<IQuadFinder, CubiomesQuadFinder>();
 
         // compute
         services.AddSingleton<JobHandlerRegistry>();
@@ -58,6 +59,7 @@ public static class ServiceCollectionExtensions
         services.AddJobHandler<SlimeAreaJob, SlimeAreaData, SlimeAreaJobHandler>();
         services.AddJobHandler<SelfTestJob, SelfTestReport, SelfTestJobHandler>();
         services.AddJobHandler<SearchBatchJob, SearchBatchResult, SearchBatchJobHandler>();
+        services.AddJobHandler<QuadHutBaseScanJob, QuadHutBaseScan, QuadHutBaseScanJobHandler>();
         if (OperatingSystem.IsBrowser())
             services.AddSingleton<IComputeService, InlineComputeService>();
         else
@@ -75,6 +77,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISearchPlanCompiler, SearchPlanCompiler>();
         services.AddSingleton<ISeedMatcher, SeedMatcher>();
         services.TryAddSingleton(TimeProvider.System);
+        services.AddSingleton<IQuadHutBaseService, QuadHutBaseService>();
         services.AddSingleton<ISeedSearchService, SeedSearchService>();
         services.AddSingleton<ISearchSessionService, SearchSessionService>();
 

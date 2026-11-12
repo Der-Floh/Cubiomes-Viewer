@@ -18,5 +18,6 @@ namespace Cubiomes_Viewer.Engine.Service.ComputeServ;
 [JsonSerializable(typeof(SlimeAreaData))]
 [JsonSerializable(typeof(SelfTestReport))]
 [JsonSerializable(typeof(SearchBatchResult))]
+[JsonSerializable(typeof(QuadHutBaseScan))]
 [JsonSerializable(typeof(WorkerError))]
 internal sealed partial class ComputeJsonContext : JsonSerializerContext;

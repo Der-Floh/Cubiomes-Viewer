@@ -33,6 +33,30 @@ internal static unsafe partial class CubiomesNative
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial int BiomeDimension(int version, int biome, int* dimension);
 
+    [LibraryImport(LibraryName, EntryPoint = "cv_quad_supported")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int QuadSupported(int structureType, int version);
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_quad_hut_low_bits")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int QuadHutLowBits(int quality, ulong* values, int capacity);
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_quad_hut_scan")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int QuadHutScan(ulong low20, uint firstHigh, uint count, ulong* bases, int capacity);
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_quad_hut_base_info")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int QuadHutBaseInfo(ulong baseSeed, float* radius);
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_quad_seed_of_base")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int QuadSeedOfBase(int structureType, int version, ulong baseSeed, int regionX, int regionZ, ulong* seed);
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_quads_in_area")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int QuadsInArea(int structureType, int version, ulong seed, int regionX0, int regionZ0, int regionX1, int regionZ1, int* quads, int capacity);
+
     [LibraryImport(LibraryName, EntryPoint = "cv_default_biome_colors")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial int DefaultBiomeColors(byte* rgb, int capacity);

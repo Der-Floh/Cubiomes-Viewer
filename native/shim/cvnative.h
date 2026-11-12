@@ -11,7 +11,7 @@
 #define CV_API
 #endif
 
-#define CV_ABI_VERSION 7
+#define CV_ABI_VERSION 8
 
 #define CV_BIOME_NONE 255
 #define CV_BIOME_COLOR_BYTES 768
@@ -25,6 +25,7 @@
 #define CV_HEIGHT_UNIT 16
 #define CV_LAYER_RIVER 0
 #define CV_LAYER_OCEAN_TEMPERATURE 1
+#define CV_QUAD_OTHER 5
 
 enum cv_status
 {
@@ -123,6 +124,16 @@ CV_API int32_t cv_strongholds(cv_world *world, int32_t *positions, int32_t capac
 
 /* Writes one byte per chunk, row by row: 1 for a slime chunk, 0 otherwise. Returns the number of chunks. */
 CV_API int32_t cv_slime_chunks(uint64_t seed, int32_t chunk_x, int32_t chunk_z, int32_t size_x, int32_t size_z, uint8_t *out, int32_t capacity);
+
+/* Quad structures (cv_quad.inc). Qualities are 1 ideal, 2 classic, 3 normal and 4 barely, after how close the four
+   structures are; CV_QUAD_OTHER marks a quad outside these classes. A base is the lower 48 bits of a seed plus the
+   structure salt, with the quad in regions (0,0) to (1,1). */
+CV_API int32_t cv_quad_supported(int32_t stype, int32_t mc);
+CV_API int32_t cv_quad_hut_low_bits(int32_t quality, uint64_t *values, int32_t capacity);
+CV_API int32_t cv_quad_hut_scan(uint64_t low20, uint32_t first_high, uint32_t count, uint64_t *bases, int32_t capacity);
+CV_API int32_t cv_quad_hut_base_info(uint64_t base, float *radius);
+CV_API int32_t cv_quad_seed_of_base(int32_t stype, int32_t mc, uint64_t base, int32_t reg_x, int32_t reg_z, uint64_t *seed);
+CV_API int32_t cv_quads_in_area(int32_t stype, int32_t mc, uint64_t seed, int32_t reg_x0, int32_t reg_z0, int32_t reg_x1, int32_t reg_z1, int32_t *quads, int32_t capacity);
 
 #ifdef __cplusplus
 }
