@@ -10,6 +10,7 @@ namespace Cubiomes_Viewer.Engine.Data.Search;
 [JsonDerivedType(typeof(SeedRangeSource), "range")]
 [JsonDerivedType(typeof(QuadHutSeedSource), "quadHuts")]
 [JsonDerivedType(typeof(SeedListSource), "list")]
+[JsonDerivedType(typeof(StructureSeedSource), "structureSeeds")]
 public abstract record SeedSource;
 
 /// <summary>Every seed from <see cref="FirstSeed"/> to <see cref="LastSeed"/>, ascending.</summary>
@@ -34,6 +35,19 @@ public sealed record QuadHutSeedSource : SeedSource
     public QuadQuality Quality { get; init; } = QuadQuality.Barely;
     public int RegionX { get; init; } = AroundTheOrigin;
     public int RegionZ { get; init; } = AroundTheOrigin;
+}
+
+/// <summary>
+/// The structure seeds from <see cref="FirstStructureSeed"/> to <see cref="LastStructureSeed"/>, each with its 65,536
+/// sister seeds. The quick pass needs only the structure seed, so it looks at each one once and the sister seeds of one
+/// it rules out cost next to nothing.
+/// </summary>
+public sealed record StructureSeedSource : SeedSource
+{
+    public long FirstStructureSeed { get; init; }
+
+    /// <summary>The last structure seed to scan; without it the search runs through all structure seeds from the first on.</summary>
+    public long LastStructureSeed { get; init; } = StructureSeed.Max;
 }
 
 /// <summary>The seeds of a list, in its order. Two lists with the same seeds are equal.</summary>

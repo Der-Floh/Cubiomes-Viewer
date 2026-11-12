@@ -28,6 +28,7 @@ public sealed class SeedSequenceFactory : ISeedSequenceFactory
         SeedRangeSource range => ValidateRange(range),
         QuadHutSeedSource quad => ValidateQuad(quad, version),
         SeedListSource list => ValidateList(list),
+        StructureSeedSource structureSeeds => ValidateStructureSeeds(structureSeeds),
         _ => throw new NotSupportedException($"Unsupported seed source: {source?.GetType().Name}"),
     };
 
@@ -36,6 +37,7 @@ public sealed class SeedSequenceFactory : ISeedSequenceFactory
         SeedRangeSource range => new SeedRangeSequence(range),
         QuadHutSeedSource quad => await CreateQuadSequenceAsync(quad, version, progress, cancellationToken),
         SeedListSource list => new SeedListSequence(list),
+        StructureSeedSource structureSeeds => new StructureSeedSequence(structureSeeds),
         _ => throw new NotSupportedException($"Unsupported seed source: {source?.GetType().Name}"),
     };
 
@@ -67,6 +69,14 @@ public sealed class SeedSequenceFactory : ISeedSequenceFactory
             yield return "Add at least one seed to the list.";
         else if (list.Seeds.Count > SeedListSource.MaxSeeds)
             yield return $"A list may hold at most {SeedListSource.MaxSeeds} seeds.";
+    }
+
+    private static IEnumerable<string> ValidateStructureSeeds(StructureSeedSource structureSeeds)
+    {
+        if (structureSeeds.FirstStructureSeed is < 0 or > StructureSeed.Max || structureSeeds.LastStructureSeed is < 0 or > StructureSeed.Max)
+            yield return $"A structure seed is a whole number from 0 to {StructureSeed.Max}.";
+        else if (structureSeeds.LastStructureSeed < structureSeeds.FirstStructureSeed)
+            yield return "The last structure seed comes before the first one.";
     }
 
     private string DescribeType(StructureType type)

@@ -84,6 +84,24 @@ public sealed class StagedSearchTests : IDisposable
         Assert.InRange(found, 1, SeedsPerDefinition - 1);
     }
 
+    [Theory]
+    [MemberData(nameof(DefinitionNames))]
+    public void Evaluate_QuickPass_ComesOutTheSameForAllSisterSeeds(string name)
+    {
+        var definition = _definitions[name];
+        var plan = _compiler.Compile(definition);
+        var random = new Random(name.Length);
+
+        for (var index = 0; index < SeedsPerDefinition; index++)
+        {
+            var structureSeed = random.NextInt64(StructureSeed.Max);
+            var expected = _matcher.Evaluate(plan, _bench.Open(definition, structureSeed), SearchPass.Quick);
+
+            foreach (var upperBits in new[] { 1, random.Next(StructureSeed.SisterSeeds), StructureSeed.SisterSeeds - 1 })
+                Assert.Equal(expected, _matcher.Evaluate(plan, _bench.Open(definition, StructureSeed.ToWorldSeed(structureSeed, upperBits)), SearchPass.Quick));
+        }
+    }
+
     [Fact]
     public void IsMatch_VillageWithARuinedPortalNearby_AgreesWithLookingForBothByHand()
     {

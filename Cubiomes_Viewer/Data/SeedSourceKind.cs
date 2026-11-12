@@ -6,4 +6,5 @@ public enum SeedSourceKind
     Range,
     QuadHuts,
     List,
+    StructureSeeds,
 }

@@ -195,6 +195,16 @@
                         <TextBox Classes="seed-list" Text="{Binding SeedListText}" PlaceholderText="{Binding SeedListPlaceholder}"/>
                         <TextBlock Classes="damp" Text="{Binding SeedListSummary}"/>
                     </StackPanel>
+
+                    <StackPanel Classes="form" IsVisible="{Binding IsStructureSeedSource}">
+                        <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
+                            <TextBlock Classes="field-label" Text="{Binding FirstStructureSeedLabel}"/>
+                            <TextBox Grid.Row="1" Text="{Binding FirstStructureSeedText}"/>
+                            <TextBlock Grid.Column="1" Classes="field-label" Text="{Binding LastStructureSeedLabel}"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding LastStructureSeedText}" PlaceholderText="{Binding LastSeedPlaceholder}"/>
+                        </Grid>
+                        <TextBlock Classes="damp" Text="{Binding StructureSeedHint}" TextWrapping="Wrap"/>
+                    </StackPanel>
                 </StackPanel>
                 <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
                     <TextBlock Classes="field-label" Text="{Binding MaxResultsLabel}"/>

@@ -45,6 +45,21 @@ public sealed class SeedSearchSchedulingTests
     });
 
     [Fact]
+    public void StartAsync_WorkersStopBatchesHalfway_HandsOutTheRestAndKeepsTheSeedsInOrder() => SingleThread.Run(async () =>
+    {
+        _compute.TestedShare = 0.5;
+        var setup = new SearchSetup { Definition = _definition, Source = new SeedRangeSource { FirstSeed = -5000, LastSeed = 250_000 }, MaxResults = 10_000, Workers = Workers };
+
+        await _search.StartAsync(setup, TestContext.Current.CancellationToken);
+
+        Assert.Equal(Enumerable.Range(-5, 256).Select(index => index * (long)MatchEvery), _search.Results);
+        Assert.Equal(255_001, _search.Progress.Scanned);
+        Assert.Equal(SearchState.Finished, _search.State);
+        Assert.Equal(255_001, _compute.Tested);
+        Assert.True(_compute.BatchSizes.Sum() > 255_001);
+    });
+
+    [Fact]
     public void StartAsync_EnoughSeedsFound_DropsWhatLaterBatchesFound() => SingleThread.Run(async () =>
     {
         var setup = new SearchSetup { Definition = _definition, Source = new SeedRangeSource { FirstSeed = 1 }, MaxResults = 12, Workers = Workers };
@@ -145,7 +160,7 @@ public sealed class SeedSearchSchedulingTests
 
     /// <summary>
     /// Workers that find every thousandth seed and take a fixed time per seed. Whenever the search waits they answer
-    /// one of the batches they hold: the newest and the oldest in turns.
+    /// one of the batches they hold: the newest and the oldest in turns. They may test only a share of each batch.
     /// </summary>
     private sealed class ScriptedComputeService(int workers, ManualTimeProvider time) : IComputeService
     {
@@ -153,7 +168,9 @@ public sealed class SeedSearchSchedulingTests
         public int MostBatchesAtOnce { get; private set; }
         public int AnsweredOutOfOrder { get; private set; }
         public List<int> BatchSizes { get; } = [];
+        public long Tested { get; private set; }
         public long? FailAtSeed { get; set; }
+        public double TestedShare { get; set; } = 1;
 
         private readonly List<(SearchBatchJob Job, TaskCompletionSource<SearchBatchResult> Completion)> _held = [];
         private int _answers;
@@ -182,7 +199,8 @@ public sealed class SeedSearchSchedulingTests
 
         private void Answer(SearchBatchJob job, TaskCompletionSource<SearchBatchResult> completion)
         {
-            var milliseconds = job.Count / SeedsPerMillisecond;
+            var tested = Math.Max(1, (int)(job.Count * TestedShare));
+            var milliseconds = tested / SeedsPerMillisecond;
             time.Advance(TimeSpan.FromMilliseconds(milliseconds));
 
             if (FailAtSeed is { } failing && failing >= job.FirstSeed && failing - job.FirstSeed < job.Count)
@@ -191,8 +209,9 @@ public sealed class SeedSearchSchedulingTests
                 return;
             }
 
-            int[] matches = [.. Enumerable.Range(0, job.Count).Where(index => job.GetSeed(index) % MatchEvery == 0)];
-            completion.SetResult(new SearchBatchResult { Count = job.Count, Matches = matches, ElapsedMilliseconds = milliseconds });
+            int[] matches = [.. Enumerable.Range(0, tested).Where(index => job.GetSeed(index) % MatchEvery == 0)];
+            Tested += tested;
+            completion.SetResult(new SearchBatchResult { Count = tested, Matches = matches, ElapsedMilliseconds = milliseconds });
         }
     }
 

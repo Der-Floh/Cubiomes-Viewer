@@ -37,6 +37,17 @@ public static class ExampleSearchPresets
         },
         new()
         {
+            Name = "Four villages close together",
+            Description = "Four villages within 320 blocks of the world origin. Checks each structure seed once and tries all of its sister seeds only where four villages attempt to generate there.",
+            Setup = new SearchSetup
+            {
+                Definition = Define(new StructureCondition { Id = 1, Type = StructureType.Village, Area = SearchArea.Circle(320), Count = 4 }),
+                Source = new StructureSeedSource(),
+                MaxResults = 20,
+            },
+        },
+        new()
+        {
             Name = "Mushroom fields near spawn",
             Description = "Mushroom fields, where no hostile mobs spawn, within 1,024 blocks of the world origin.",
             Setup = new SearchSetup

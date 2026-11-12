@@ -8,6 +8,7 @@ public sealed class SeedRangeSequence : ISeedSequence
 {
     public UInt128 Count { get; }
     public bool IsEndless { get; }
+    public int MaxBatchCount => ISeedSequence.DefaultMaxBatchCount;
 
     private readonly long _firstSeed;
 
@@ -23,6 +24,6 @@ public sealed class SeedRangeSequence : ISeedSequence
 
     public long GetSeed(UInt128 position) => unchecked(_firstSeed + (long)(ulong)position);
 
-    public SearchBatchJob CreateBatch(SearchDefinition definition, UInt128 position, int maxCount)
-        => new(definition, GetSeed(position), (int)UInt128.Min((UInt128)maxCount, Count - position));
+    public SearchJob CreateBatch(SearchDefinition definition, UInt128 position, int maxCount)
+        => new SearchBatchJob(definition, GetSeed(position), (int)UInt128.Min((UInt128)maxCount, Count - position));
 }

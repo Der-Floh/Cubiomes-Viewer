@@ -61,6 +61,7 @@ public static class ServiceCollectionExtensions
         services.AddJobHandler<SlimeAreaJob, SlimeAreaData, SlimeAreaJobHandler>();
         services.AddJobHandler<SelfTestJob, SelfTestReport, SelfTestJobHandler>();
         services.AddJobHandler<SearchBatchJob, SearchBatchResult, SearchBatchJobHandler>();
+        services.AddJobHandler<StructureSeedBatchJob, SearchBatchResult, StructureSeedBatchJobHandler>();
         services.AddJobHandler<QuadHutBaseScanJob, QuadHutBaseScan, QuadHutBaseScanJobHandler>();
         if (OperatingSystem.IsBrowser())
             services.AddSingleton<IComputeService, InlineComputeService>();

@@ -13,13 +13,16 @@ using Cubiomes_Viewer.Engine.Service.StructureServ;
 
 namespace Cubiomes_Viewer.ViewModels;
 
-/// <summary>Edits where the seeds of a search come from: a range, the seeds with a quad of huts, or a list.</summary>
+/// <summary>Edits where the seeds of a search come from: a range, the seeds with a quad of huts, a list, or structure seeds.</summary>
 public sealed partial class SeedSourceViewModel : ObservableObject
 {
     public string SourceLabel { get; } = "Seeds from";
     public string FirstSeedLabel { get; } = "From seed";
     public string LastSeedLabel { get; } = "To seed";
     public string LastSeedPlaceholder { get; } = "No end";
+    public string FirstStructureSeedLabel { get; } = "From structure seed";
+    public string LastStructureSeedLabel { get; } = "To structure seed";
+    public string StructureSeedHint { get; } = "A structure seed is the lower 48 bits of a seed. It alone decides where structures attempt to generate and where slime chunks are, so the search checks that once per structure seed and tries its 65,536 sister seeds only where it fits. This finds rare structure layouts far faster than a range of seeds.";
     public string QuadTypeLabel { get; } = "Structure";
     public string QuadQualityLabel { get; } = "The huts at least as close as";
     public string QuadRegionLabel { get; } = "First region of the quad, X and Z";
@@ -29,7 +32,7 @@ public sealed partial class SeedSourceViewModel : ObservableObject
     public decimal MinRegion { get; } = -SeedSequenceFactory.MaxRegion;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsRangeSource), nameof(IsQuadSource), nameof(IsListSource))]
+    [NotifyPropertyChangedFor(nameof(IsRangeSource), nameof(IsQuadSource), nameof(IsListSource), nameof(IsStructureSeedSource))]
     public partial ComboChoice<SeedSourceKind>? SelectedKind { get; set; }
 
     [ObservableProperty]
@@ -37,6 +40,12 @@ public sealed partial class SeedSourceViewModel : ObservableObject
 
     [ObservableProperty]
     public partial string LastSeedText { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial string FirstStructureSeedText { get; set; } = "0";
+
+    [ObservableProperty]
+    public partial string LastStructureSeedText { get; set; } = string.Empty;
 
     [ObservableProperty]
     public partial ComboChoice<StructureType>? SelectedQuadType { get; set; }
@@ -61,6 +70,7 @@ public sealed partial class SeedSourceViewModel : ObservableObject
         new() { Display = "A range of seeds", Value = SeedSourceKind.Range },
         new() { Display = "Seeds with quad huts", Value = SeedSourceKind.QuadHuts },
         new() { Display = "A list of seeds", Value = SeedSourceKind.List },
+        new() { Display = "Structure seeds first", Value = SeedSourceKind.StructureSeeds },
     ];
 
     public ObservableCollection<ComboChoice<StructureType>> QuadTypes { get; }
@@ -69,6 +79,7 @@ public sealed partial class SeedSourceViewModel : ObservableObject
     public bool IsRangeSource => SelectedKind?.Value == SeedSourceKind.Range;
     public bool IsQuadSource => SelectedKind?.Value == SeedSourceKind.QuadHuts;
     public bool IsListSource => SelectedKind?.Value == SeedSourceKind.List;
+    public bool IsStructureSeedSource => SelectedKind?.Value == SeedSourceKind.StructureSeeds;
 
     /// <summary>The source as it is entered; seeds that cannot be read keep their last readable value.</summary>
     public SeedSource Source { get; private set; } = new SeedRangeSource();
@@ -100,10 +111,12 @@ public sealed partial class SeedSourceViewModel : ObservableObject
             {
                 QuadHutSeedSource => SeedSourceKind.QuadHuts,
                 SeedListSource => SeedSourceKind.List,
+                StructureSeedSource => SeedSourceKind.StructureSeeds,
                 _ => SeedSourceKind.Range,
             });
             ShowRange(source as SeedRangeSource ?? new SeedRangeSource());
             ShowQuad(source as QuadHutSeedSource ?? new QuadHutSeedSource());
+            ShowStructureSeeds(source as StructureSeedSource ?? new StructureSeedSource());
             SeedListText = source is SeedListSource list ? string.Join(Environment.NewLine, list.Seeds.Select(FormatSeed)) : string.Empty;
         }
         finally
@@ -121,6 +134,10 @@ public sealed partial class SeedSourceViewModel : ObservableObject
 
     partial void OnLastSeedTextChanged(string value) => Refresh();
 
+    partial void OnFirstStructureSeedTextChanged(string value) => Refresh();
+
+    partial void OnLastStructureSeedTextChanged(string value) => Refresh();
+
     partial void OnSelectedQuadTypeChanged(ComboChoice<StructureType>? value) => Refresh();
 
     partial void OnSelectedQuadQualityChanged(ComboChoice<QuadQuality>? value) => Refresh();
@@ -137,6 +154,12 @@ public sealed partial class SeedSourceViewModel : ObservableObject
     {
         FirstSeedText = FormatSeed(range.FirstSeed);
         LastSeedText = range.LastSeed == long.MaxValue ? string.Empty : FormatSeed(range.LastSeed);
+    }
+
+    private void ShowStructureSeeds(StructureSeedSource structureSeeds)
+    {
+        FirstStructureSeedText = FormatSeed(structureSeeds.FirstStructureSeed);
+        LastStructureSeedText = structureSeeds.LastStructureSeed == StructureSeed.Max ? string.Empty : FormatSeed(structureSeeds.LastStructureSeed);
     }
 
     private void ShowQuad(QuadHutSeedSource quad)
@@ -157,6 +180,7 @@ public sealed partial class SeedSourceViewModel : ObservableObject
         {
             SeedSourceKind.QuadHuts => CreateQuadSource(),
             SeedSourceKind.List => CreateListSource(problems),
+            SeedSourceKind.StructureSeeds => CreateStructureSeedSource(problems),
             _ => CreateRangeSource(problems),
         };
         Problems = problems;
@@ -169,6 +193,14 @@ public sealed partial class SeedSourceViewModel : ObservableObject
         var firstSeed = ReadSeed(FirstSeedText, "first", problems) ?? last.FirstSeed;
         var lastSeed = string.IsNullOrWhiteSpace(LastSeedText) ? long.MaxValue : ReadSeed(LastSeedText, "last", problems) ?? last.LastSeed;
         return new SeedRangeSource { FirstSeed = firstSeed, LastSeed = lastSeed };
+    }
+
+    private StructureSeedSource CreateStructureSeedSource(List<string> problems)
+    {
+        var last = Source as StructureSeedSource ?? new StructureSeedSource();
+        var firstStructureSeed = ReadStructureSeed(FirstStructureSeedText, "first", problems) ?? last.FirstStructureSeed;
+        var lastStructureSeed = string.IsNullOrWhiteSpace(LastStructureSeedText) ? StructureSeed.Max : ReadStructureSeed(LastStructureSeedText, "last", problems) ?? last.LastStructureSeed;
+        return new StructureSeedSource { FirstStructureSeed = firstStructureSeed, LastStructureSeed = lastStructureSeed };
     }
 
     private QuadHutSeedSource CreateQuadSource() => new()
@@ -195,6 +227,15 @@ public sealed partial class SeedSourceViewModel : ObservableObject
             return seed;
 
         problems.Add(string.Create(CultureInfo.InvariantCulture, $"The {which} seed must be a whole number from {long.MinValue} to {long.MaxValue}."));
+        return null;
+    }
+
+    private static long? ReadStructureSeed(string text, string which, List<string> problems)
+    {
+        if (long.TryParse(text.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var structureSeed) && structureSeed <= StructureSeed.Max)
+            return structureSeed;
+
+        problems.Add(string.Create(CultureInfo.InvariantCulture, $"The {which} structure seed must be a whole number from 0 to {StructureSeed.Max}."));
         return null;
     }
 

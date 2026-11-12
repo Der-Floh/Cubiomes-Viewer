@@ -47,8 +47,20 @@ public sealed class SearchDefinitionTests
         [
             new(SampleDefinitions.CreateEveryKindOfCondition(), 0x1234, 64, 1L << 48),
             new(SampleDefinitions.CreateEveryKindOfCondition(), 5, 3, Seeds: [5, -9, long.MaxValue]),
+            new SearchBatchJob(SampleDefinitions.CreateEveryKindOfCondition(), 9, 100) { MaxMatches = 3, MaxMilliseconds = 40 },
         ];
 
         Assert.All(jobs, job => Assert.Equal(job, ComputeEnvelope.DeserializeJob(ComputeEnvelope.SerializeJob(job))));
+        Assert.NotEqual(jobs[^1], jobs[^1] with { MaxMatches = 4 });
+    }
+
+    [Fact]
+    public void StructureSeedBatchJob_RoundTripsThroughTheEnvelope()
+    {
+        var job = new StructureSeedBatchJob(SampleDefinitions.CreateEveryKindOfCondition(), (1L << 48) - 3, 65_000, 200_000) { MaxMatches = 7, MaxMilliseconds = 250 };
+
+        var restored = ComputeEnvelope.DeserializeJob(ComputeEnvelope.SerializeJob(job));
+
+        Assert.Equal(job, restored);
     }
 }

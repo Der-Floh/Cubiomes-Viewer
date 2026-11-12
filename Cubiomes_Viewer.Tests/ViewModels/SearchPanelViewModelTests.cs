@@ -243,6 +243,54 @@ public sealed class SearchPanelViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void SeedSource_StructureSeeds_RunToTheLastStructureSeedWithoutAnEnd()
+    {
+        Add<StructureCondition>();
+
+        Setup.Seeds.SelectedKind = Setup.Seeds.Kinds.Single(choice => choice.Value == SeedSourceKind.StructureSeeds);
+        Setup.Seeds.FirstStructureSeedText = " 4096 ";
+        var open = Setup.Setup.Source;
+        Setup.Seeds.LastStructureSeedText = "70000";
+
+        Assert.True(Setup.Seeds.IsStructureSeedSource);
+        Assert.False(Setup.Seeds.IsRangeSource);
+        Assert.Equal(new StructureSeedSource { FirstStructureSeed = 4096 }, open);
+        Assert.Equal(new StructureSeedSource { FirstStructureSeed = 4096, LastStructureSeed = 70_000 }, Setup.Setup.Source);
+        Assert.True(Setup.IsValid);
+    }
+
+    [AvaloniaTheory]
+    [InlineData("-1")]
+    [InlineData("281474976710656")]
+    [InlineData("structure")]
+    public void SeedSource_StructureSeedBeyondTheLowerBits_IsAProblem(string text)
+    {
+        Add<StructureCondition>();
+        Setup.Seeds.SelectedKind = Setup.Seeds.Kinds.Single(choice => choice.Value == SeedSourceKind.StructureSeeds);
+
+        Setup.Seeds.FirstStructureSeedText = text;
+
+        Assert.Equal(["The first structure seed must be a whole number from 0 to 281474976710655."], Setup.Problems);
+        Assert.False(Setup.IsValid);
+    }
+
+    [AvaloniaFact]
+    public void Show_SetupWithStructureSeeds_ShowsItsRange()
+    {
+        var setup = new SearchSetup
+        {
+            Definition = new SearchDefinition { Conditions = [new StructureCondition { Id = 1, Type = StructureType.Village }] },
+            Source = new StructureSeedSource { FirstStructureSeed = 12, LastStructureSeed = 34 },
+        };
+
+        Setup.Show(setup);
+
+        Assert.True(Setup.Seeds.IsStructureSeedSource);
+        Assert.Equal(("12", "34"), (Setup.Seeds.FirstStructureSeedText, Setup.Seeds.LastStructureSeedText));
+        Assert.Equal(setup.Source, Setup.Setup.Source);
+    }
+
+    [AvaloniaFact]
     public void Show_SetupWithAQuadSource_ShowsItsFields()
     {
         var setup = new SearchSetup

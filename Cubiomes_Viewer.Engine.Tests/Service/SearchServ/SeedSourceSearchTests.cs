@@ -78,6 +78,37 @@ public sealed class SeedSourceSearchTests : IDisposable
     }
 
     [Fact]
+    public async Task StartAsync_StructureSeeds_FindsWhatTestingEverySeedFindsInTheSameOrder()
+    {
+        var definition = ConditionTestBench.Define(Version, new StructureCondition { Id = 1, Type = StructureType.DesertPyramid, Area = SearchArea.Square(512) });
+        var source = new StructureSeedSource { FirstStructureSeed = 5_000, LastStructureSeed = 5_019 };
+        var setup = new SearchSetup { Definition = definition, Source = source, MaxResults = 40 };
+        var sequence = new StructureSeedSequence(source);
+        var plan = TestEngine.CreateSearchPlanCompiler().Compile(definition);
+        var matcher = new SeedMatcher();
+        var expected = Enumerable.Range(0, (int)sequence.Count).Select(position => sequence.GetSeed((UInt128)position)).Where(seed => matcher.IsMatch(plan, _bench.Open(definition, seed))).Take(setup.MaxResults).ToList();
+
+        await _search.StartAsync(setup, TestContext.Current.CancellationToken);
+
+        Assert.Equal(setup.MaxResults, expected.Count);
+        Assert.Equal(expected, _search.Results);
+        Assert.Equal(SearchState.Finished, _search.State);
+    }
+
+    [Theory]
+    [InlineData(-1, 5, "A structure seed is a whole number from 0 to 281474976710655.")]
+    [InlineData(0, 1L << 48, "A structure seed is a whole number from 0 to 281474976710655.")]
+    [InlineData(9, 8, "The last structure seed comes before the first one.")]
+    public async Task StartAsync_StructureSeedsOutOfOrderOrRange_Throws(long first, long last, string expected)
+    {
+        var setup = new SearchSetup { Definition = SearchRuns.SlimeChunks, Source = new StructureSeedSource { FirstStructureSeed = first, LastStructureSeed = last } };
+
+        var exception = await Assert.ThrowsAsync<InvalidSearchException>(() => _search.StartAsync(setup, TestContext.Current.CancellationToken));
+
+        Assert.Equal(expected, Assert.Single(exception.Problems).Message);
+    }
+
+    [Fact]
     public async Task StartAsync_QuadHutSourceForAVersionWithoutHuts_Throws()
     {
         var setup = new SearchSetup
