@@ -40,6 +40,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         new() { Display = "Dark", Value = AppTheme.Dark },
     ];
 
+    public WorldSettingsViewModel World { get; }
     public SelfTestViewModel SelfTest { get; }
 
     private readonly MapViewModel _map;
@@ -48,12 +49,13 @@ public sealed partial class SettingsViewModel : ViewModelBase
     private readonly IMapTileService _tileService;
     private bool _isShowingSettings;
 
-    public SettingsViewModel(MapViewModel map, SelfTestViewModel selfTest, ISettingsService settingsService, IThemeService themeService, IMapTileService tileService)
+    public SettingsViewModel(MapViewModel map, WorldSettingsViewModel world, SelfTestViewModel selfTest, ISettingsService settingsService, IThemeService themeService, IMapTileService tileService)
     {
         _map = map;
         _settingsService = settingsService;
         _themeService = themeService;
         _tileService = tileService;
+        World = world;
         SelfTest = selfTest;
         SelectedTheme = Themes[0];
     }
@@ -61,6 +63,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
     /// <summary>Shows and applies the stored settings; called once they are loaded.</summary>
     public void ShowSettings()
     {
+        World.ShowSettings();
+
         var settings = _settingsService.Current;
         _isShowingSettings = true;
         try

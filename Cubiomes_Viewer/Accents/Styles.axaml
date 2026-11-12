@@ -184,6 +184,18 @@
             </ItemsPanelTemplate>
         </Setter>
     </Style>
+    <Style Selector="ItemsControl.rows">
+        <Setter Property="ItemsPanel">
+            <ItemsPanelTemplate>
+                <StackPanel Spacing="4"/>
+            </ItemsPanelTemplate>
+        </Setter>
+    </Style>
+    <Style Selector="NumericUpDown.plain">
+        <Setter Property="ShowButtonSpinner" Value="False"/>
+        <Setter Property="FormatString" Value="0"/>
+        <Setter Property="Increment" Value="1"/>
+    </Style>
     <Style Selector="Button.preset">
         <Setter Property="HorizontalAlignment" Value="Stretch"/>
         <Setter Property="HorizontalContentAlignment" Value="Left"/>

@@ -117,7 +117,7 @@ public sealed class SearchSessionRepositoryTests : IDisposable
 
     private static SearchSession CreateSession()
     {
-        var setup = new SearchSetup { Definition = SampleDefinitions.CreateEveryKindOfCondition(), Source = new SeedRangeSource { FirstSeed = -5_000_000_000, LastSeed = 7 }, MaxResults = 250, Workers = 3 };
+        var setup = new SearchSetup { Definition = SampleDefinitions.CreateEveryKindOfCondition() with { Rules = new StructureRules { EstimateTerrain = false, Salts = [new StructureSalt(StructureType.Village, -9)] } }, Source = new SeedRangeSource { FirstSeed = -5_000_000_000, LastSeed = 7 }, MaxResults = 250, Workers = 3 };
         return new SearchSession
         {
             Setup = setup,

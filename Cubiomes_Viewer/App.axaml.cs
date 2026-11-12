@@ -165,6 +165,7 @@ public sealed partial class App : Application
         services.AddSingleton<StructureAnalysisViewModel>();
         services.AddSingleton<LocationAnalysisViewModel>();
         services.AddSingleton<AnalysisPanelViewModel>();
+        services.AddSingleton<WorldSettingsViewModel>();
         services.AddSingleton<SettingsViewModel>();
         services.AddTransient<SelfTestViewModel>();
 

@@ -43,6 +43,7 @@ public sealed class SettingsRepositoryTests : IDisposable
         {
             Appearance = { Theme = AppTheme.Dark },
             Map = { CacheMegabytes = 512, SmoothMotion = false, ShowGrid = false },
+            World = { ShowExperimentalVersions = true, EstimateTerrain = false, Salts = [new StructureSaltSetting { Type = StructureType.Bastion, Salt = -7, IsReplacing = true }] },
             View =
             {
                 Seed = -42, Version = McVersion.V1_16_5, LargeBiomes = true, Dimension = Dimension.Nether,
@@ -57,6 +58,8 @@ public sealed class SettingsRepositoryTests : IDisposable
         Assert.Equal(512, loaded.Map.CacheMegabytes);
         Assert.False(loaded.Map.SmoothMotion);
         Assert.False(loaded.Map.ShowGrid);
+        Assert.True(loaded.World.ShowExperimentalVersions);
+        Assert.Equal(new StructureRules { EstimateTerrain = false, Salts = [new StructureSalt(StructureType.Bastion, -7)] }, loaded.World.ToRules());
         Assert.Equal(-42, loaded.View.Seed);
         Assert.Equal(McVersion.V1_16_5, loaded.View.Version);
         Assert.True(loaded.View.LargeBiomes);

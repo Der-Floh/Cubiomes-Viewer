@@ -60,9 +60,14 @@ public sealed partial class WorldBarViewModel : ViewModelBase
     [ObservableProperty]
     public partial decimal? GoToZ { get; set; } = 0;
 
+    /// <summary>Whether the versions the generator supports less completely are offered too; the open world's version always is.</summary>
+    [ObservableProperty]
+    public partial bool IncludeExperimentalVersions { get; set; }
+
     public bool IsLargeBiomesAvailable => _session.Version >= FirstLargeBiomesVersion;
 
-    public ObservableCollection<ComboChoice<McVersion>> Versions { get; }
+    /// <summary>The versions offered, newest first.</summary>
+    public ObservableCollection<ComboChoice<McVersion>> Versions { get; } = [];
 
     public ObservableCollection<ComboChoice<Dimension>> Dimensions { get; } =
     [
@@ -79,16 +84,17 @@ public sealed partial class WorldBarViewModel : ViewModelBase
     private readonly WorldSession _session;
     private readonly ISeedParser _seedParser;
     private readonly ISeedHistoryService _seedHistory;
+    private readonly IVersionCatalog _versionCatalog;
 
     public WorldBarViewModel(WorldSession session, MapViewModel map, ISeedParser seedParser, ISeedHistoryService seedHistory, IVersionCatalog versionCatalog, INotificationService notificationService) : base(notificationService)
     {
         _session = session;
         _seedParser = seedParser;
         _seedHistory = seedHistory;
+        _versionCatalog = versionCatalog;
         Map = map;
 
-        Versions = [.. versionCatalog.Versions.Reverse().Select(version => new ComboChoice<McVersion> { Display = versionCatalog.GetName(version), Value = version })];
-
+        ShowVersions();
         ShowSession();
         ShowRecentSeeds();
         session.PropertyChanged += OnSessionChanged;
@@ -102,6 +108,12 @@ public sealed partial class WorldBarViewModel : ViewModelBase
     }
 
     partial void OnLargeBiomesChanged(bool value) => _session.LargeBiomes = value;
+
+    partial void OnIncludeExperimentalVersionsChanged(bool value)
+    {
+        ShowVersions();
+        SelectedVersion = Versions.FirstOrDefault(choice => choice.Value == _session.Version);
+    }
 
     partial void OnSelectedDimensionChanged(ComboChoice<Dimension>? value)
     {
@@ -143,8 +155,28 @@ public sealed partial class WorldBarViewModel : ViewModelBase
 
     private void OnSessionChanged(object? sender, PropertyChangedEventArgs e) => ShowSession();
 
+    /// <summary>
+    /// Offers the versions the setting asks for and the open world's. A version is only taken out when the setting
+    /// changes, so that leaving an experimental version does not change the list while it is being picked from.
+    /// </summary>
+    private void ShowVersions()
+    {
+        var offered = _versionCatalog.Versions.Reverse()
+            .Where(version => IncludeExperimentalVersions || !_versionCatalog.IsExperimental(version) || version == _session.Version)
+            .ToList();
+        if (Versions.Select(choice => choice.Value).SequenceEqual(offered))
+            return;
+
+        Versions.Clear();
+        foreach (var version in offered)
+            Versions.Add(new ComboChoice<McVersion> { Display = _versionCatalog.GetName(version), Value = version });
+    }
+
     private void ShowSession()
     {
+        if (Versions.All(choice => choice.Value != _session.Version))
+            ShowVersions();
+
         if (!long.TryParse(SeedText, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var shown) || shown != _session.Seed)
         {
             SeedText = FormatSeed(_session.Seed);

@@ -21,6 +21,30 @@
             <TextBlock Classes="field-label" Text="{Binding CacheLabel}"/>
             <NumericUpDown Value="{Binding CacheMegabytes}" Minimum="{Binding MinCacheMegabytes}" Maximum="{Binding MaxCacheMegabytes}" Increment="64" FormatString="0"/>
 
+            <TextBlock Classes="section" Text="{Binding World.Title}"/>
+            <StackPanel Classes="form" DataContext="{Binding World}" x:DataType="vm:WorldSettingsViewModel">
+                <CheckBox Content="{Binding ExperimentalVersionsLabel}" IsChecked="{Binding ShowExperimentalVersions}"/>
+                <TextBlock Classes="damp" Text="{Binding ExperimentalVersionsHint}" TextWrapping="Wrap"/>
+                <CheckBox Content="{Binding EstimateTerrainLabel}" IsChecked="{Binding EstimateTerrain}"/>
+                <TextBlock Classes="damp" Text="{Binding EstimateTerrainHint}" TextWrapping="Wrap"/>
+                <Expander Header="{Binding SaltsLabel}" HorizontalAlignment="Stretch">
+                    <StackPanel Classes="form">
+                        <TextBlock Classes="damp" Text="{Binding SaltsHint}" TextWrapping="Wrap"/>
+                        <ItemsControl Classes="rows" ItemsSource="{Binding Salts}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:StructureSaltViewModel">
+                                    <Grid Classes="pair" ColumnDefinitions="*,120">
+                                        <CheckBox Content="{Binding Name}" IsChecked="{Binding IsReplacing}" ToolTip.Tip="{Binding GameSaltHint}"/>
+                                        <NumericUpDown Grid.Column="1" Classes="plain" Value="{Binding Salt}" IsEnabled="{Binding IsReplacing}" Minimum="{Binding MinSalt}" Maximum="{Binding MaxSalt}"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Button Content="{Binding GameSaltsLabel}" Command="{Binding UseGameSaltsCommand}" IsEnabled="{Binding HasReplacedSalts}"/>
+                    </StackPanel>
+                </Expander>
+            </StackPanel>
+
             <Expander Classes="section-content" Header="{Binding DiagnosticsLabel}" HorizontalAlignment="Stretch">
                 <views:SelfTestView DataContext="{Binding SelfTest}"/>
             </Expander>
