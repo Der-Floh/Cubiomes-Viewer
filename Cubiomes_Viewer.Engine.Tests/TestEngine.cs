@@ -24,6 +24,7 @@ internal static class TestEngine
         new BiomeConditionEvaluator(new BiomeCatalog()),
         new BiomePatchConditionEvaluator(new BiomeCatalog()),
         new ClimateConditionEvaluator(CreateLayerCatalog()),
+        new TemperatureCategoryConditionEvaluator(),
         new SpawnConditionEvaluator(),
         new StrongholdConditionEvaluator(),
         new SlimeChunkConditionEvaluator(new CubiomesSlimeChunkFinder()),

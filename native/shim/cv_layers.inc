@@ -162,8 +162,24 @@ int32_t cv_gen_climate(cv_world *world, int32_t parameter, int32_t octaves, int3
 
 /* ---- inner layers of the layered generator ---- */
 
+/* The special layer keeps the category in the low bits and marks the special variant in bits 8 to 11; the variant
+   changes only warm, lush and cold land. */
+static uint8_t cv_temperature_category(int value)
+{
+    int category = value & 0xff;
+    int special = (value & 0xf00) != 0 && (category == Warm || category == Lush || category == Cold);
+    return (uint8_t)(category + (special ? CV_TEMPERATURE_SPECIAL : 0));
+}
+
+static int cv_is_known_layer(int32_t layer)
+{
+    return layer == CV_LAYER_RIVER || layer == CV_LAYER_OCEAN_TEMPERATURE || layer == CV_LAYER_TEMPERATURE_CATEGORY;
+}
+
 static int cv_find_layer_id(int32_t mc, int32_t layer, int32_t scale)
 {
+    if (layer == CV_LAYER_TEMPERATURE_CATEGORY)
+        return mc >= MC_1_7 && scale == 1024 ? L_SPECIAL_1024 : -1;
     if (layer == CV_LAYER_RIVER)
         return scale >= CV_RIVER_SCALE && scale <= CV_RIVER_MAX_SCALE ? L_SMOOTH_4_RIVER : -1;
     if (layer != CV_LAYER_OCEAN_TEMPERATURE || mc < MC_1_13)
@@ -180,7 +196,7 @@ static int cv_find_layer_id(int32_t mc, int32_t layer, int32_t scale)
 
 int32_t cv_layer_supported(int32_t mc, int32_t dim, int32_t layer, int32_t scale)
 {
-    if (!cv_is_valid_mc(mc) || !cv_is_valid_dim(dim) || !cv_is_valid_scale(scale) || (layer != CV_LAYER_RIVER && layer != CV_LAYER_OCEAN_TEMPERATURE))
+    if (!cv_is_valid_mc(mc) || !cv_is_valid_dim(dim) || !cv_is_valid_scale(scale) || !cv_is_known_layer(layer))
         return CV_ERR_ARGUMENT;
     if (dim != DIM_OVERWORLD || mc < MC_B1_8 || mc > MC_1_17)
         return 0;
@@ -232,10 +248,11 @@ static int cv_gen_merged_rivers(cv_world *world, const Layer *source, int32_t sc
 int32_t cv_gen_layer_u8(cv_world *world, int32_t layer, int32_t scale,
     int32_t x, int32_t z, int32_t sx, int32_t sz, uint8_t *out, int32_t capacity)
 {
-    int status = cv_check_area(world, scale, sx, sz);
+    /* The special layer lies above the scales the layered generator makes biomes at. */
+    int status = layer == CV_LAYER_TEMPERATURE_CATEGORY ? cv_check_area_shape(world, scale, sx, sz) : cv_check_area(world, scale, sx, sz);
     if (status != CV_OK)
         return status;
-    if (layer != CV_LAYER_RIVER && layer != CV_LAYER_OCEAN_TEMPERATURE)
+    if (!cv_is_known_layer(layer))
         return CV_ERR_ARGUMENT;
     status = cv_check_output(out, sx, sz, capacity);
     if (status != CV_OK)
@@ -262,7 +279,10 @@ int32_t cv_gen_layer_u8(cv_world *world, int32_t layer, int32_t scale,
     for (int32_t i = 0; i < count; i++)
     {
         int id = world->cache[i];
-        out[i] = (id < 0 || id > 254) ? CV_BIOME_NONE : (uint8_t)id;
+        if (layer == CV_LAYER_TEMPERATURE_CATEGORY)
+            out[i] = cv_temperature_category(id);
+        else
+            out[i] = (id < 0 || id > 254) ? CV_BIOME_NONE : (uint8_t)id;
     }
     return count;
 }

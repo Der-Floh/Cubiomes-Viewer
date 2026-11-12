@@ -74,6 +74,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IConditionEvaluator, BiomeConditionEvaluator>();
         services.AddSingleton<IConditionEvaluator, BiomePatchConditionEvaluator>();
         services.AddSingleton<IConditionEvaluator, ClimateConditionEvaluator>();
+        services.AddSingleton<IConditionEvaluator, TemperatureCategoryConditionEvaluator>();
         services.AddSingleton<IConditionEvaluator, SpawnConditionEvaluator>();
         services.AddSingleton<IConditionEvaluator, StrongholdConditionEvaluator>();
         services.AddSingleton<IConditionEvaluator, SlimeChunkConditionEvaluator>();

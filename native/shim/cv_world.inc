@@ -47,7 +47,7 @@ static int cv_generate(cv_world *world, int32_t scale, int32_t x, int32_t z, int
     return genBiomes(&world->generator, world->cache, range) == 0 ? CV_OK : CV_ERR_GENERATION;
 }
 
-static int cv_check_area(const cv_world *world, int32_t scale, int32_t sx, int32_t sz)
+static int cv_check_area_shape(const cv_world *world, int32_t scale, int32_t sx, int32_t sz)
 {
     if (!world)
         return CV_ERR_ARGUMENT;
@@ -55,6 +55,14 @@ static int cv_check_area(const cv_world *world, int32_t scale, int32_t sx, int32
         return CV_ERR_STATE;
     if (!cv_is_valid_scale(scale) || sx <= 0 || sz <= 0 || sx > CV_MAX_AREA_SIDE || sz > CV_MAX_AREA_SIDE)
         return CV_ERR_ARGUMENT;
+    return CV_OK;
+}
+
+static int cv_check_area(const cv_world *world, int32_t scale, int32_t sx, int32_t sz)
+{
+    int status = cv_check_area_shape(world, scale, sx, sz);
+    if (status != CV_OK)
+        return status;
     if (scale > CV_MAX_LAYERED_SCALE && cv_is_layered_overworld(&world->generator))
         return CV_ERR_UNSUPPORTED;
     return CV_OK;

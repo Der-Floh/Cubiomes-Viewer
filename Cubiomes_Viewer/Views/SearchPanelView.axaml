@@ -87,6 +87,14 @@
             </StackPanel>
         </DataTemplate>
 
+        <DataTemplate x:DataType="vm:TemperatureCategoryFieldsViewModel">
+            <StackPanel Classes="form">
+                <TextBlock Classes="field-label" Text="{Binding CategoryLabel}"/>
+                <ComboBox Classes="fill" ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategory}"/>
+                <TextBlock Classes="damp" Text="{Binding CategoryHint}" TextWrapping="Wrap"/>
+            </StackPanel>
+        </DataTemplate>
+
         <DataTemplate x:DataType="vm:ClimateFieldsViewModel">
             <StackPanel Classes="form">
                 <TextBlock Classes="field-label" Text="{Binding ParameterLabel}"/>

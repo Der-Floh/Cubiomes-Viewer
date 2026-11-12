@@ -231,6 +231,31 @@ public sealed class SearchPanelViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void TemperatureCategoryFields_Category_GoesIntoTheConditionAndItsSummary()
+    {
+        _session.Version = McVersion.V1_16_5;
+        var temperature = Add<TemperatureCategoryCondition>();
+        var fields = Assert.IsType<TemperatureCategoryFieldsViewModel>(temperature.Fields);
+
+        fields.SelectedCategory = fields.Categories.Single(choice => choice.Value == TemperatureCategory.SpecialWarm);
+
+        Assert.Equal(TemperatureCategory.SpecialWarm, Assert.IsType<TemperatureCategoryCondition>(Assert.Single(Setup.Setup.Definition.Conditions)).Category);
+        Assert.Equal("1 · Temperature category", temperature.Header);
+        Assert.StartsWith("Special warm: badlands plateaus · ", temperature.Summary, StringComparison.Ordinal);
+        Assert.True(Setup.IsValid);
+    }
+
+    [AvaloniaFact]
+    public void TemperatureCategoryFields_InANoiseVersion_ShowTheProblem()
+    {
+        _session.Version = McVersion.V1_21_3;
+
+        var temperature = Add<TemperatureCategoryCondition>();
+
+        Assert.Equal(["Temperature categories decide the biomes of 1.7 to 1.17 only."], temperature.Problems);
+    }
+
+    [AvaloniaFact]
     public void ClimateFields_ParameterRangeAndMatch_GoIntoTheConditionAndItsSummary()
     {
         _session.Version = McVersion.V1_21_3;

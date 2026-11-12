@@ -36,6 +36,7 @@ public sealed class SearchConditionFactory
         BiomeCondition biome => new BiomeFieldsViewModel(biome, version, _biomeCatalog, changed),
         BiomePatchCondition patch => new BiomePatchFieldsViewModel(patch, version, _biomeCatalog, changed),
         ClimateCondition climate => new ClimateFieldsViewModel(climate, version, _layerCatalog, changed),
+        TemperatureCategoryCondition temperature => new TemperatureCategoryFieldsViewModel(temperature, changed),
         _ => null,
     };
 }

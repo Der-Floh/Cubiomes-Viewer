@@ -11,7 +11,7 @@
 #define CV_API
 #endif
 
-#define CV_ABI_VERSION 8
+#define CV_ABI_VERSION 9
 
 #define CV_BIOME_NONE 255
 #define CV_BIOME_COLOR_BYTES 768
@@ -25,6 +25,8 @@
 #define CV_HEIGHT_UNIT 16
 #define CV_LAYER_RIVER 0
 #define CV_LAYER_OCEAN_TEMPERATURE 1
+#define CV_LAYER_TEMPERATURE_CATEGORY 2
+#define CV_TEMPERATURE_SPECIAL 4
 #define CV_QUAD_OTHER 5
 
 enum cv_status
@@ -86,7 +88,10 @@ CV_API int32_t cv_gen_biomes_u8(cv_world *world, int32_t scale, int32_t x, int32
 CV_API int32_t cv_climate_supported(int32_t mc, int32_t dim, int32_t parameter);
 CV_API int32_t cv_gen_climate(cv_world *world, int32_t parameter, int32_t octaves, int32_t scale, int32_t x, int32_t z, int32_t sx, int32_t sz, int32_t y, int16_t *out, int32_t capacity);
 
-/* An inner layer of the layered generator (CV_LAYER_*) as biome ids, CV_BIOME_NONE where the layer is empty. */
+/* An inner layer of the layered generator (CV_LAYER_*) as biome ids, CV_BIOME_NONE where the layer is empty.
+   CV_LAYER_TEMPERATURE_CATEGORY (1.7 to 1.17, scale 1024) writes the category instead: 0 oceanic, 1 warm, 2 lush,
+   3 cold, 4 freezing, and warm, lush or cold plus CV_TEMPERATURE_SPECIAL where the special variant is set. With large
+   biomes the biomes of a cell cover 4096 blocks, although the layer itself cannot tell. */
 CV_API int32_t cv_layer_supported(int32_t mc, int32_t dim, int32_t layer, int32_t scale);
 CV_API int32_t cv_gen_layer_u8(cv_world *world, int32_t layer, int32_t scale, int32_t x, int32_t z, int32_t sx, int32_t sz, uint8_t *out, int32_t capacity);
 

@@ -23,6 +23,7 @@ internal static class SampleDefinitions
             new SlimeChunkCondition { Id = 6, RelativeTo = 5, Count = 12, Anchor = MatchAnchor.Center },
             new QuadHutCondition { Id = 7, Type = StructureType.Igloo, Quality = QuadQuality.Classic, Count = 2 },
             new BiomePatchCondition { Id = 9, Biomes = BiomeSet.Of(21, 149), Dimension = Dimension.Overworld, MinChunks = 450, Scale = 64, Y = 100, Count = 3, Anchor = MatchAnchor.Center },
+            new TemperatureCategoryCondition { Id = 10, RelativeTo = 9, Category = TemperatureCategory.SpecialWarm, Area = SearchArea.Circle(5000), Count = 2, Anchor = MatchAnchor.Nearest },
             new ClimateCondition { Id = 8, RelativeTo = 7, Parameter = ClimateParameter.Erosion, Min = -0.375, Max = 0.05, Match = ClimateMatch.OnAverage, Scale = 16, Y = -20, Count = 0 },
         ],
     };

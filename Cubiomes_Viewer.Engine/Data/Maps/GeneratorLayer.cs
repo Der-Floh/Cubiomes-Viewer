@@ -5,4 +5,7 @@ public enum GeneratorLayer
 {
     River = 0,
     OceanTemperature = 1,
+
+    /// <summary>The temperature category of each cell of the special layer, as <see cref="TemperatureCategory"/> numbers.</summary>
+    TemperatureCategory = 2,
 }
