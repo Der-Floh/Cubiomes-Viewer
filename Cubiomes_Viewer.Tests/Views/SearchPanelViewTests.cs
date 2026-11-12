@@ -108,6 +108,19 @@ public sealed class SearchPanelViewTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void BiomeShare_ShowsItsSamplesInsteadOfTheGrid()
+    {
+        var fields = Assert.IsType<BiomeFieldsViewModel>(Add<BiomeCondition>().Fields);
+        var onGrid = (Shown(fields, fields.ScaleLabel), Shown(fields, fields.SamplesLabel));
+
+        fields.SelectedMatch = fields.Matches.Single(choice => choice.Value == BiomeMatch.Share);
+        Render();
+
+        Assert.Equal((true, false), onGrid);
+        Assert.Equal((false, true), (Shown(fields, fields.ScaleLabel), Shown(fields, fields.SamplesLabel)));
+    }
+
+    [AvaloniaFact]
     public void ClimateHeight_ShownOnlyForTheDepth()
     {
         _services.GetRequiredService<WorldSession>().Version = McVersion.V1_21_3;
@@ -160,7 +173,9 @@ public sealed class SearchPanelViewTests : IDisposable
 
     private bool IsKindChoiceShown(StructureFieldsViewModel fields) => FindAll<ComboBox>().Any(box => ReferenceEquals(box.ItemsSource, fields.Traits));
 
-    private bool IsHeightShown(ClimateFieldsViewModel fields) => FindAll<TextBlock>().Any(text => text.DataContext == fields && text.Text == fields.HeightLabel);
+    private bool IsHeightShown(ClimateFieldsViewModel fields) => Shown(fields, fields.HeightLabel);
+
+    private bool Shown(object fields, string label) => FindAll<TextBlock>().Any(text => text.DataContext == fields && text.Text == label);
 
     private static void Click(Control control) => HeadlessInput.Click(control);
 

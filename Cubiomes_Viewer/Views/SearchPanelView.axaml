@@ -50,9 +50,16 @@
                 <TextBlock Classes="damp" Text="{Binding ChosenText}"/>
                 <TextBlock Classes="field-label" Text="{Binding MatchLabel}"/>
                 <ComboBox Classes="fill" ItemsSource="{Binding Matches}" SelectedItem="{Binding SelectedMatch}"/>
+                <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" IsVisible="{Binding IsShare}">
+                    <TextBlock Classes="field-label" Text="{Binding ShareLabel}"/>
+                    <NumericUpDown Grid.Row="1" Value="{Binding SharePercent}" Minimum="{Binding MinSharePercent}" Maximum="{Binding MaxSharePercent}" Increment="5" FormatString="0"/>
+                    <TextBlock Grid.Column="1" Classes="field-label" Text="{Binding SamplesLabel}"/>
+                    <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding Samples}" Minimum="{Binding MinSamples}" Maximum="{Binding MaxSamples}" Increment="100" FormatString="0"/>
+                </Grid>
+                <TextBlock Classes="damp" Text="{Binding ShareHint}" TextWrapping="Wrap" IsVisible="{Binding IsShare}"/>
                 <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
-                    <TextBlock Classes="field-label" Text="{Binding ScaleLabel}"/>
-                    <ComboBox Grid.Row="1" Classes="fill" ItemsSource="{Binding Scales}" SelectedItem="{Binding SelectedScale}"/>
+                    <TextBlock Classes="field-label" Text="{Binding ScaleLabel}" IsVisible="{Binding !IsShare}"/>
+                    <ComboBox Grid.Row="1" Classes="fill" ItemsSource="{Binding Scales}" SelectedItem="{Binding SelectedScale}" IsVisible="{Binding !IsShare}"/>
                     <TextBlock Grid.Column="1" Classes="field-label" Text="{Binding HeightLabel}"/>
                     <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding Height}" Minimum="{Binding MinHeight}" Maximum="{Binding MaxHeight}" Increment="8" FormatString="0"/>
                 </Grid>

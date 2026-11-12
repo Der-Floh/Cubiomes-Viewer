@@ -12,10 +12,11 @@ using Cubiomes_Viewer.Engine.Service.WorldGenServ;
 
 namespace Cubiomes_Viewer.ViewModels;
 
-/// <summary>Which biomes a biome condition looks for, where and how finely it samples them.</summary>
+/// <summary>Which biomes a biome condition looks for, where and how it samples them: on a grid, or at random points for a share of the area.</summary>
 public sealed partial class BiomeFieldsViewModel : ObservableObject, IConditionFields
 {
     private const int NamedBiomes = 3;
+    private const decimal PercentPerShare = 100;
 
     public string Title { get; } = "Biome";
     public string BiomesLabel { get; } = "Biomes";
@@ -24,14 +25,28 @@ public sealed partial class BiomeFieldsViewModel : ObservableObject, IConditionF
     public string DimensionLabel { get; } = "Dimension";
     public string ScaleLabel { get; } = "Sample every";
     public string HeightLabel { get; } = "Sample at Y";
+    public string ShareLabel { get; } = "Cover at least, in %";
+    public string SamplesLabel { get; } = "Random samples";
+    public string ShareHint { get; } = "The share is judged from random points at 4 blocks per sample, the same ones for a seed every time. More samples judge it more closely but take longer; 400 come within about 5 % of the true share.";
     public decimal MinHeight { get; } = Constants.MinSampleHeight;
     public decimal MaxHeight { get; } = Constants.MaxSampleHeight;
+    public decimal MinSharePercent { get; } = 1;
+    public decimal MaxSharePercent { get; } = PercentPerShare;
+    public decimal MinSamples { get; } = BiomeCondition.MinSamples;
+    public decimal MaxSamples { get; } = BiomeCondition.MaxSamples;
 
     [ObservableProperty]
     public partial ComboChoice<Dimension>? SelectedDimension { get; set; }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsShare))]
     public partial ComboChoice<BiomeMatch>? SelectedMatch { get; set; }
+
+    [ObservableProperty]
+    public partial decimal? SharePercent { get; set; }
+
+    [ObservableProperty]
+    public partial decimal? Samples { get; set; }
 
     [ObservableProperty]
     public partial ComboChoice<int>? SelectedScale { get; set; }
@@ -56,6 +71,7 @@ public sealed partial class BiomeFieldsViewModel : ObservableObject, IConditionF
     [
         new() { Display = "One of the biomes", Value = BiomeMatch.Any },
         new() { Display = "Each of the biomes", Value = BiomeMatch.All },
+        new() { Display = "A share of the area", Value = BiomeMatch.Share },
     ];
 
     public ObservableCollection<ComboChoice<int>> Scales { get; } =
@@ -70,7 +86,10 @@ public sealed partial class BiomeFieldsViewModel : ObservableObject, IConditionF
     /// <summary>The biomes of the dimension that match the filter, together with the chosen ones even when the version lacks them.</summary>
     public ObservableCollection<BiomeToggleViewModel> Biomes { get; } = [];
 
-    public string? Detail => _chosen.IsEmpty ? null : DescribeChosen();
+    /// <summary>Whether the biomes have to cover a share of the area, judged from random points instead of a grid.</summary>
+    public bool IsShare => SelectedMatch?.Value == BiomeMatch.Share;
+
+    public string? Detail => _chosen.IsEmpty ? null : IsShare ? string.Create(CultureInfo.InvariantCulture, $"{DescribeChosen()} on {SharePercent ?? 0:0} % of the area") : DescribeChosen();
 
     private readonly IBiomeCatalog _catalog;
     private readonly Action _changed;
@@ -93,6 +112,8 @@ public sealed partial class BiomeFieldsViewModel : ObservableObject, IConditionF
             SelectedMatch = Matches.FirstOrDefault(choice => choice.Value == condition.Match) ?? Matches[0];
             SelectedScale = Scales.FirstOrDefault(choice => choice.Value == condition.Scale) ?? Scales.First(choice => choice.Value == BiomeCondition.DefaultScale);
             Height = condition.Y;
+            SharePercent = (decimal)condition.MinShare * PercentPerShare;
+            Samples = condition.Samples;
             ShowBiomes();
         });
     }
@@ -106,6 +127,8 @@ public sealed partial class BiomeFieldsViewModel : ObservableObject, IConditionF
                 Dimension = SelectedDimension?.Value ?? Dimension.Overworld,
                 Scale = SelectedScale?.Value ?? BiomeCondition.DefaultScale,
                 Y = (int)Math.Round(Height ?? ViewSettings.DefaultSampleHeight),
+                MinShare = (double)((SharePercent ?? 0) / PercentPerShare),
+                Samples = (int)Math.Round(Samples ?? BiomeCondition.DefaultSamples),
             }
             : condition;
 
@@ -131,6 +154,10 @@ public sealed partial class BiomeFieldsViewModel : ObservableObject, IConditionF
     partial void OnSelectedScaleChanged(ComboChoice<int>? value) => ReportChange();
 
     partial void OnHeightChanged(decimal? value) => ReportChange();
+
+    partial void OnSharePercentChanged(decimal? value) => ReportChange();
+
+    partial void OnSamplesChanged(decimal? value) => ReportChange();
 
     partial void OnFilterChanged(string value) => ShowFilteredBiomes();
 

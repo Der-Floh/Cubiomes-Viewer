@@ -194,6 +194,24 @@ public sealed class SearchPanelViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void BiomeFields_Share_AsksHowMuchOfTheAreaAndHowManySamples()
+    {
+        var biome = Add<BiomeCondition>();
+        var fields = Assert.IsType<BiomeFieldsViewModel>(biome.Fields);
+        fields.Biomes.Single(toggle => toggle.Name == "Plains").IsChecked = true;
+
+        fields.SelectedMatch = fields.Matches.Single(choice => choice.Value == BiomeMatch.Share);
+        fields.SharePercent = 35;
+        fields.Samples = 800;
+
+        var condition = Assert.IsType<BiomeCondition>(Assert.Single(Setup.Setup.Definition.Conditions));
+        Assert.True(fields.IsShare);
+        Assert.Equal((BiomeMatch.Share, 0.35, 800), (condition.Match, condition.MinShare, condition.Samples));
+        Assert.StartsWith("Plains on 35 % of the area · ", biome.Summary, StringComparison.Ordinal);
+        Assert.True(Setup.IsValid);
+    }
+
+    [AvaloniaFact]
     public void ClimateFields_ParameterRangeAndMatch_GoIntoTheConditionAndItsSummary()
     {
         _session.Version = McVersion.V1_21_3;

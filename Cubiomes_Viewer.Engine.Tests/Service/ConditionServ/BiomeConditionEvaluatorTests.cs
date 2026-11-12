@@ -2,12 +2,17 @@ using Cubiomes_Viewer.Engine.Data.Biomes;
 using Cubiomes_Viewer.Engine.Data.Search;
 using Cubiomes_Viewer.Engine.Data.Settings;
 using Cubiomes_Viewer.Engine.Data.Worlds;
+using Cubiomes_Viewer.Engine.Service.ConditionServ;
 
 namespace Cubiomes_Viewer.Engine.Tests.Service.ConditionServ;
 
 public sealed class BiomeConditionEvaluatorTests : IDisposable
 {
     private const int NoBiome = -1;
+    private const int Ocean = 0;
+    private const int Plains = 1;
+    private const int Forest = 4;
+    private const int DeepOcean = 24;
 
     private static readonly BlockPos _reference = new(700, -300);
 
@@ -111,6 +116,102 @@ public sealed class BiomeConditionEvaluatorTests : IDisposable
     [Fact]
     public void Evaluate_QuickPass_CannotTell()
         => Assert.Equal(MatchStatus.Unknown, _bench.Evaluate(Biomes(SearchArea.Square(64), 16, BiomeSet.Of(1)), McVersion.V1_16_5, 1, SearchPass.Quick).Status);
+
+    [Theory]
+    [InlineData(McVersion.V1_21_3)]
+    [InlineData(McVersion.V1_16_5)]
+    public void Evaluate_Share_AgreesWithCountingEveryRandomPoint(McVersion version)
+    {
+        var condition = Share(SearchArea.Circle(1500), Plains, 0.5) with { Biomes = BiomeSet.Of(Ocean, Plains, Forest, DeepOcean), Samples = 200 };
+        var shares = Enumerable.Range(0, 24).Select(seed => (Seed: (long)seed, Share: (double)CountHits(condition, version, seed, condition.Samples) / condition.Samples)).ToList();
+        condition = condition with { MinShare = shares.Select(entry => entry.Share).Order().ElementAt(shares.Count / 2) };
+        List<bool> outcomes = [];
+
+        foreach (var (seed, share) in shares)
+        {
+            var (status, matches) = _bench.Evaluate(condition, version, seed, SearchPass.Full, _reference);
+
+            Assert.Equal(share >= condition.MinShare ? MatchStatus.Matched : MatchStatus.Failed, status);
+            if (status == MatchStatus.Matched)
+                Assert.True(condition.Area.Contains(_reference, Assert.Single(matches)));
+            outcomes.Add(status == MatchStatus.Matched);
+        }
+
+        Assert.Contains(true, outcomes);
+        Assert.Contains(false, outcomes);
+    }
+
+    [Fact]
+    public void Evaluate_ShareExclusion_HoldsAtItsReferencePointWhenTheBiomesCoverLess()
+    {
+        const McVersion version = McVersion.V1_21_3;
+        var condition = Share(SearchArea.Square(2000), Plains, 0.25) with { Count = 0 };
+        var seed = Enumerable.Range(0, 50).Select(index => (long)index).First(candidate => CountHits(condition, version, candidate, condition.Samples) < 100);
+
+        var (status, matches) = _bench.Evaluate(condition, version, seed, SearchPass.Full, _reference);
+
+        Assert.Equal(MatchStatus.Matched, status);
+        Assert.Equal([_reference], matches);
+    }
+
+    [Fact]
+    public void RandomPoints_ManyOfThem_EstimateTheShareTheGridShows()
+    {
+        const McVersion version = McVersion.V1_21_3;
+        const int scale = 16;
+        var area = SearchArea.Square(4096);
+
+        for (var seed = 11L; seed < 14; seed++)
+        {
+            var onGrid = SampleGridShare(version, seed, area, scale, Plains);
+            var estimate = (double)CountHits(Share(area, Plains, 0.5), version, seed, 4000) / 4000;
+
+            Assert.InRange(estimate, onGrid - 0.05, onGrid + 0.05);
+        }
+    }
+
+    [Fact]
+    public void RandomPoints_OfACircle_AllLieInside()
+    {
+        var area = SearchArea.Circle(300);
+        var points = new RandomPoints(42, 3);
+
+        Assert.All(Enumerable.Range(0, 2000).Select(_ => points.Next(area, _reference)), point => Assert.True(area.Contains(_reference, point)));
+    }
+
+    [Theory]
+    [InlineData(0, BiomeCondition.DefaultSamples, "The biomes have to cover more than 0 % and at most 100 % of the area.")]
+    [InlineData(1.5, BiomeCondition.DefaultSamples, "The biomes have to cover more than 0 % and at most 100 % of the area.")]
+    [InlineData(0.5, 5, "Take from 10 to 10000 random samples.")]
+    public void Validate_ShareThatCannotBeJudged_IsAProblem(double minShare, int samples, string expected)
+    {
+        var condition = Share(SearchArea.Square(100_000), Plains, minShare) with { Samples = samples };
+
+        var problems = TestEngine.CreateConditionValidator().Validate(ConditionTestBench.Define(McVersion.V1_21_3, condition));
+
+        Assert.Equal([expected], problems.Select(problem => problem.Message));
+    }
+
+    /// <summary>How many of the first random points of a condition have one of its biomes, asked one point at a time.</summary>
+    private int CountHits(BiomeCondition condition, McVersion version, long seed, int samples)
+    {
+        var generator = _bench.GetGenerator(version, seed);
+        var points = new RandomPoints(seed, condition.Id);
+        return Enumerable.Range(0, samples)
+            .Select(_ => points.Next(condition.Area, _reference))
+            .Count(point => condition.Biomes.Contains(generator.GetBiomeAt(4, point.X >> 2, ViewSettings.DefaultSampleHeight >> 2, point.Z >> 2)));
+    }
+
+    private double SampleGridShare(McVersion version, long seed, SearchArea area, int scale, int biome)
+    {
+        var blocks = area.ToBlocks(_reference);
+        var grid = new BiomeArea(scale, FloorDivide(blocks.X, scale), FloorDivide(blocks.Z, scale), blocks.SizeX / scale, blocks.SizeZ / scale, ViewSettings.DefaultSampleHeight >> 2);
+        var samples = new byte[grid.SampleCount];
+        _bench.GetGenerator(version, seed).GenerateBiomes(grid, samples);
+        return samples.Count(sample => sample == biome) / (double)samples.Length;
+    }
+
+    private static BiomeCondition Share(SearchArea area, int biome, double minShare) => new() { Id = 1, Area = area, Biomes = BiomeSet.Of(biome), Match = BiomeMatch.Share, MinShare = minShare };
 
     /// <summary>Asks the generator for the biome of every sample that touches the area, one sample at a time.</summary>
     private HashSet<int> SampleBiomes(McVersion version, long seed, SearchArea area, int scale, BlockPos? around = null)
