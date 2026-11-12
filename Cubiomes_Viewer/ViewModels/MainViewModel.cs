@@ -4,7 +4,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 
 using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Maps;
-using Cubiomes_Viewer.Engine.Service.SearchServ;
 using Cubiomes_Viewer.Engine.Service.SeedServ;
 using Cubiomes_Viewer.Engine.Service.SettingsServ;
 using Cubiomes_Viewer.Service.NotificationServ;
@@ -38,11 +37,10 @@ public sealed partial class MainViewModel : ViewModelBase
     private readonly SettingsViewModel _settingsPanel;
     private readonly WorldSession _session;
     private readonly ISettingsService _settingsService;
-    private readonly ISearchSessionService _searchSessions;
     private readonly ISeedHistoryService _seedHistory;
     private bool _isInitialized;
 
-    public MainViewModel(WorldBarViewModel worldBar, MapViewModel map, LayersPanelViewModel layersPanel, SearchPanelViewModel searchPanel, SettingsViewModel settingsPanel, WorldSession session, ISettingsService settingsService, ISearchSessionService searchSessions, ISeedHistoryService seedHistory, INotificationService notificationService) : base(notificationService)
+    public MainViewModel(WorldBarViewModel worldBar, MapViewModel map, LayersPanelViewModel layersPanel, SearchPanelViewModel searchPanel, SettingsViewModel settingsPanel, WorldSession session, ISettingsService settingsService, ISeedHistoryService seedHistory, INotificationService notificationService) : base(notificationService)
     {
         WorldBar = worldBar;
         Map = map;
@@ -52,7 +50,6 @@ public sealed partial class MainViewModel : ViewModelBase
         _panels = [layersPanel, searchPanel, settingsPanel];
         _session = session;
         _settingsService = settingsService;
-        _searchSessions = searchSessions;
         _seedHistory = seedHistory;
 
         Initialization = RunGuardedAsync(InitializeAsync);
@@ -70,8 +67,7 @@ public sealed partial class MainViewModel : ViewModelBase
         _seedHistory.Changed += StoreView;
         _isInitialized = true;
 
-        await _searchSessions.LoadAsync();
-        _searchPanel.ShowSession();
+        await _searchPanel.LoadAsync();
     }
 
     private void ShowStoredView()

@@ -177,6 +177,18 @@
             </ItemsPanelTemplate>
         </Setter>
     </Style>
+    <Style Selector="ItemsControl.presets">
+        <Setter Property="ItemsPanel">
+            <ItemsPanelTemplate>
+                <StackPanel Spacing="4"/>
+            </ItemsPanelTemplate>
+        </Setter>
+    </Style>
+    <Style Selector="Button.preset">
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        <Setter Property="Padding" Value="10,6"/>
+    </Style>
     <Style Selector="Border.condition">
         <Setter Property="Background" Value="{DynamicResource RegionColorDamp}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>

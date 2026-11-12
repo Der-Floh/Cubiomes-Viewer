@@ -62,6 +62,17 @@ public sealed class SearchPanelViewTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void ExamplesMenu_ItemClicked_OpensThatExample()
+    {
+        var examples = FindAll<DropDownButton>().Single(button => Equals(button.Content, _panel.Presets.ExamplesLabel));
+
+        Click(HeadlessInput.OpenMenu(examples).Single(item => Equals(item.Header, "Slime chunks at the origin")));
+
+        Assert.Equal("1 · Slime chunks", Assert.Single(_panel.Setup.Conditions).Header);
+        Assert.False(examples.Flyout?.IsOpen);
+    }
+
+    [AvaloniaFact]
     public void ConditionHeader_Clicked_FoldsTheEditorAwayAndBack()
     {
         var condition = Add<StructureCondition>();

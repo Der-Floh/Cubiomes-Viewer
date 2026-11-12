@@ -157,6 +157,7 @@ public sealed partial class App : Application
         services.AddSingleton<SearchSetupViewModel>();
         services.AddSingleton<SearchRunViewModel>();
         services.AddSingleton<SearchResultsViewModel>();
+        services.AddSingleton<SearchPresetsViewModel>();
         services.AddSingleton<SearchPanelViewModel>();
         services.AddSingleton<SettingsViewModel>();
         services.AddTransient<SelfTestViewModel>();

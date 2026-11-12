@@ -115,6 +115,35 @@
         <StackPanel Classes="panel">
             <TextBlock Classes="title" Text="{Binding Title}"/>
 
+            <StackPanel Classes="form" DataContext="{Binding Presets}" x:DataType="vm:SearchPresetsViewModel">
+                <DropDownButton Classes="fill" Content="{Binding ExamplesLabel}">
+                    <DropDownButton.Flyout>
+                        <MenuFlyout ItemsSource="{Binding Examples}" Placement="BottomEdgeAlignedLeft">
+                            <MenuFlyout.ItemContainerTheme>
+                                <ControlTheme TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}" x:DataType="vm:PresetEntryViewModel">
+                                    <Setter Property="Header" Value="{Binding Name}"/>
+                                    <Setter Property="Command" Value="{Binding OpenCommand}"/>
+                                    <Setter Property="ToolTip.Tip" Value="{Binding Description}"/>
+                                </ControlTheme>
+                            </MenuFlyout.ItemContainerTheme>
+                        </MenuFlyout>
+                    </DropDownButton.Flyout>
+                </DropDownButton>
+                <TextBlock Classes="field-label" Text="{Binding UserPresetsLabel}" IsVisible="{Binding HasUserPresets}"/>
+                <ItemsControl Classes="presets" ItemsSource="{Binding UserPresets}" IsVisible="{Binding HasUserPresets}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:PresetEntryViewModel">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <Button Classes="preset" Content="{Binding Name}" Command="{Binding OpenCommand}"/>
+                                <Button Grid.Column="1" Classes="card-close" Command="{Binding DeleteCommand}" ToolTip.Tip="{Binding DeleteLabel}">
+                                    <PathIcon Data="{StaticResource CloseIcon}"/>
+                                </Button>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
             <StackPanel Classes="form" DataContext="{Binding Setup}" x:DataType="vm:SearchSetupViewModel">
                 <TextBlock Classes="damp" Text="{Binding VersionText}" TextWrapping="Wrap"/>
 
@@ -197,6 +226,10 @@
 
             <TextBlock Classes="section" Text="{Binding SessionLabel}"/>
             <TextBlock Classes="damp" Text="{Binding SessionHint}" TextWrapping="Wrap"/>
+            <Grid Classes="pair" ColumnDefinitions="*,Auto" DataContext="{Binding Presets}" x:DataType="vm:SearchPresetsViewModel">
+                <TextBox Text="{Binding NewName}" PlaceholderText="{Binding NamePlaceholder}"/>
+                <Button Grid.Column="1" Content="{Binding SaveLabel}" Command="{Binding SaveCommand}"/>
+            </Grid>
             <WrapPanel Classes="card-actions">
                 <Button Content="{Binding SaveLabel}" Command="{Binding SaveSessionCommand}"/>
                 <Button Content="{Binding OpenLabel}" Command="{Binding OpenSessionCommand}"/>

@@ -164,18 +164,22 @@ public sealed class SeedSearchService : ISeedSearchService
     /// <summary>Prepares the seeds of the source and reports how far that has come while it takes.</summary>
     private async Task<ISeedSequence> PrepareAsync(SearchSetup setup, CancellationToken cancellationToken)
     {
-        var progress = new Progress<double>(share =>
+        var progress = new PreparationProgress(this);
+        try
         {
-            if (State != SearchState.Running || _sequence is not null)
-                return;
+            return await _sequenceFactory.CreateAsync(setup.Source, setup.Definition.Version, progress, cancellationToken);
+        }
+        finally
+        {
+            progress.Complete();
+            Progress = Progress with { Preparing = null };
+        }
+    }
 
-            Progress = Progress with { Preparing = share };
-            RaiseChanged();
-        });
-
-        var sequence = await _sequenceFactory.CreateAsync(setup.Source, setup.Definition.Version, progress, cancellationToken);
-        Progress = Progress with { Preparing = null };
-        return sequence;
+    private void ShowPreparation(double share)
+    {
+        Progress = Progress with { Preparing = share };
+        RaiseChanged();
     }
 
     private bool IsComplete(SearchSetup setup, ISeedSequence sequence) => _scanned >= sequence.Count || _results.Count >= setup.MaxResults;
@@ -316,6 +320,40 @@ public sealed class SeedSearchService : ISeedSearchService
     }
 
     private void RaiseChanged() => Changed?.Invoke(this, EventArgs.Empty);
+
+    /// <summary>
+    /// Shows the reports of a preparation on the context the search was started from, one after the other even where
+    /// there is none, and none once the preparation is over.
+    /// </summary>
+    private sealed class PreparationProgress(SeedSearchService search) : IProgress<double>
+    {
+        private readonly SynchronizationContext? _context = SynchronizationContext.Current;
+        private readonly object _gate = new();
+        private bool _isComplete;
+
+        public void Report(double value)
+        {
+            if (_context is null)
+                Show(value);
+            else
+                _context.Post(_ => Show(value), null);
+        }
+
+        public void Complete()
+        {
+            lock (_gate)
+                _isComplete = true;
+        }
+
+        private void Show(double share)
+        {
+            lock (_gate)
+            {
+                if (!_isComplete)
+                    search.ShowPreparation(share);
+            }
+        }
+    }
 
     /// <summary>Batches nobody waits for any more must not surface as unobserved failures.</summary>
     private static void Forget(IEnumerable<Task<SearchBatchResult>> batches)

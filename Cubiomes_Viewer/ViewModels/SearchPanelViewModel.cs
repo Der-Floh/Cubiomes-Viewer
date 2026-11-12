@@ -4,6 +4,7 @@ using Avalonia.Platform.Storage;
 
 using CommunityToolkit.Mvvm.Input;
 
+using Cubiomes_Viewer.Engine.Data.Search;
 using Cubiomes_Viewer.Engine.Service.SearchServ;
 using Cubiomes_Viewer.Service.NotificationServ;
 using Cubiomes_Viewer.Service.StorageServ;
@@ -30,26 +31,34 @@ public sealed partial class SearchPanelViewModel : ViewModelBase
     public SearchSetupViewModel Setup { get; }
     public SearchRunViewModel Run { get; }
     public SearchResultsViewModel Results { get; }
+    public SearchPresetsViewModel Presets { get; }
 
     private readonly ISearchSessionService _sessions;
     private readonly IStorageService _storage;
     private readonly INotificationService _notifications;
 
-    public SearchPanelViewModel(SearchSetupViewModel setup, SearchRunViewModel run, SearchResultsViewModel results, ISearchSessionService sessions, IStorageService storage, INotificationService notifications) : base(notifications)
+    public SearchPanelViewModel(SearchSetupViewModel setup, SearchRunViewModel run, SearchResultsViewModel results, SearchPresetsViewModel presets, ISearchSessionService sessions, IStorageService storage, INotificationService notifications) : base(notifications)
     {
         Setup = setup;
         Run = run;
         Results = results;
+        Presets = presets;
         _sessions = sessions;
         _storage = storage;
         _notifications = notifications;
 
         setup.Changed += OnSetupChanged;
         run.PropertyChanged += OnRunChanged;
+        presets.Opened += OnPresetOpened;
     }
 
-    /// <summary>Shows the stored setup; called once the session is loaded.</summary>
-    public void ShowSession() => Setup.Show(_sessions.Setup);
+    /// <summary>Loads the stored session and the user's presets and shows them; called once the settings are loaded.</summary>
+    public async Task LoadAsync()
+    {
+        await _sessions.LoadAsync();
+        ShowSession();
+        await Presets.LoadAsync();
+    }
 
     [RelayCommand]
     private Task SaveSessionAsync() => RunGuardedAsync(async () =>
@@ -78,6 +87,10 @@ public sealed partial class SearchPanelViewModel : ViewModelBase
     }, browserFireAndForget: true);
 
     private bool CanOpenSession() => !Run.IsRunning;
+
+    private void ShowSession() => Setup.Show(_sessions.Setup);
+
+    private void OnPresetOpened(object? sender, SearchPreset preset) => Setup.Show(preset.Setup);
 
     private void OnSetupChanged(object? sender, EventArgs e) => _sessions.Setup = Setup.Setup;
 

@@ -5,6 +5,7 @@ using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Search;
 using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Data.Worlds;
+using Cubiomes_Viewer.Engine.Repository.PresetRepo;
 using Cubiomes_Viewer.Engine.Repository.SessionRepo;
 using Cubiomes_Viewer.Engine.Service.SearchServ;
 using Cubiomes_Viewer.Service.ClipboardServ;
@@ -238,6 +239,56 @@ public sealed class SearchPanelViewModelTests : IDisposable
         Assert.Equal(QuadQuality.Classic, Setup.Seeds.SelectedQuadQuality?.Value);
         Assert.Equal((7m, -2m), (Setup.Seeds.QuadRegionX, Setup.Seeds.QuadRegionZ));
         Assert.Equal(setup.Source, Setup.Setup.Source);
+    }
+
+    [AvaloniaFact]
+    public void Presets_ExampleOpened_ShowsItsConditionsAndSeeds()
+    {
+        var example = _panel.Presets.Examples.Single(entry => entry.Name == "Quad witch huts near spawn");
+
+        example.OpenCommand.Execute(null);
+
+        Assert.Equal("1 · Quad swamp huts", Assert.Single(Setup.Conditions).Header);
+        Assert.True(Setup.Seeds.IsQuadSource);
+        Assert.True(Setup.IsValid);
+    }
+
+    [AvaloniaFact]
+    public async Task Presets_SavedThenOpenedAndDeleted_ComeAndGo()
+    {
+        Add<StructureCondition>();
+        _panel.Presets.NewName = "  My villages ";
+
+        await _panel.Presets.SaveCommand.ExecuteAsync(null);
+        var saved = Assert.Single(_panel.Presets.UserPresets);
+        Setup.Conditions[0].RemoveCommand.Execute(null);
+        saved.OpenCommand.Execute(null);
+        var reopened = Setup.Conditions.Count;
+        var delete = saved.DeleteCommand;
+        Assert.NotNull(delete);
+        await delete.ExecuteAsync(null);
+
+        Assert.Empty(Notifications.Errors);
+        Assert.Equal("My villages", saved.Name);
+        Assert.Equal(string.Empty, _panel.Presets.NewName);
+        Assert.Equal(1, reopened);
+        Assert.Empty(_panel.Presets.UserPresets);
+        Assert.False(_panel.Presets.HasUserPresets);
+    }
+
+    [AvaloniaFact]
+    public void Presets_WithoutAName_CannotBeSaved()
+        => Assert.False(_panel.Presets.SaveCommand.CanExecute(null));
+
+    [AvaloniaFact]
+    public async Task Initialization_StoredPresets_AreListed()
+    {
+        SearchPreset[] stored = [new() { Name = "Kept", Setup = new SearchSetup { Definition = new SearchDefinition() } }];
+        await _services.GetRequiredService<ISearchPresetRepository>().SaveAsync(stored, TestContext.Current.CancellationToken);
+
+        await _services.GetRequiredService<MainViewModel>().Initialization;
+
+        Assert.Equal(["Kept"], _panel.Presets.UserPresets.Select(entry => entry.Name));
     }
 
     [AvaloniaFact]
