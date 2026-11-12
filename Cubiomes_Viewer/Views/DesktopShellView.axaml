@@ -12,29 +12,40 @@
         <views:WorldBarView DataContext="{Binding WorldBar}"/>
 
         <Grid Grid.Row="1" ColumnDefinitions="Auto,Auto,*">
-            <ListBox Classes="rail" SelectedIndex="{Binding SelectedPanelIndex}" SelectionMode="Single,Toggle">
-                <ListBoxItem ToolTip.Tip="{Binding LayersLabel}">
-                    <PathIcon Data="{StaticResource LayersIcon}"/>
-                </ListBoxItem>
-                <ListBoxItem ToolTip.Tip="{Binding SearchLabel}">
-                    <PathIcon Data="{StaticResource SearchIcon}"/>
-                </ListBoxItem>
-                <ListBoxItem ToolTip.Tip="{Binding AnalysisLabel}">
-                    <PathIcon Data="{StaticResource AnalysisIcon}"/>
-                </ListBoxItem>
-                <ListBoxItem ToolTip.Tip="{Binding ExportLabel}">
-                    <PathIcon Data="{StaticResource ExportIcon}"/>
-                </ListBoxItem>
-                <ListBoxItem ToolTip.Tip="{Binding SettingsLabel}">
-                    <PathIcon Data="{StaticResource SettingsIcon}"/>
-                </ListBoxItem>
-            </ListBox>
+            <Border Classes="rail-column">
+                <Grid RowDefinitions="*,Auto">
+                    <ListBox Classes="rail" SelectedIndex="{Binding SelectedPanelIndex}" SelectionMode="Single,Toggle">
+                        <ListBoxItem ToolTip.Tip="{Binding LayersLabel}">
+                            <PathIcon Data="{StaticResource LayersIcon}"/>
+                        </ListBoxItem>
+                        <ListBoxItem ToolTip.Tip="{Binding SearchLabel}">
+                            <PathIcon Data="{StaticResource SearchIcon}"/>
+                        </ListBoxItem>
+                        <ListBoxItem ToolTip.Tip="{Binding AnalysisLabel}">
+                            <PathIcon Data="{StaticResource AnalysisIcon}"/>
+                        </ListBoxItem>
+                        <ListBoxItem ToolTip.Tip="{Binding ExportLabel}">
+                            <PathIcon Data="{StaticResource ExportIcon}"/>
+                        </ListBoxItem>
+                        <ListBoxItem ToolTip.Tip="{Binding SettingsLabel}">
+                            <PathIcon Data="{StaticResource SettingsIcon}"/>
+                        </ListBoxItem>
+                    </ListBox>
+                    <Button Grid.Row="1" Classes="rail-button" Command="{Binding ToggleMapWindowCommand}" ToolTip.Tip="{Binding MapWindowLabel}" IsVisible="{Binding CanUndockMap}">
+                        <PathIcon Data="{StaticResource MapWindowIcon}"/>
+                    </Button>
+                </Grid>
+            </Border>
 
             <Border Grid.Column="1" Classes="side-panel" IsVisible="{Binding IsPanelOpen}">
                 <ContentControl Content="{Binding CurrentPanel}"/>
             </Border>
 
             <Panel Grid.Column="2" Name="MapSlot"/>
+            <StackPanel Grid.Column="2" Classes="map-away" IsVisible="{Binding IsMapUndocked}">
+                <TextBlock Classes="damp" Text="{Binding MapWindowHint}"/>
+                <Button Content="{Binding DockMapLabel}" Command="{Binding ToggleMapWindowCommand}"/>
+            </StackPanel>
         </Grid>
 
         <views:StatusBarView Grid.Row="2" DataContext="{Binding Map}"/>

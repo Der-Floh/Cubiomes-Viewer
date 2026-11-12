@@ -1,12 +1,14 @@
 using System.ComponentModel;
 
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 
 using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Service.SeedServ;
 using Cubiomes_Viewer.Engine.Service.SettingsServ;
 using Cubiomes_Viewer.Service.NotificationServ;
+using Cubiomes_Viewer.Service.WindowServ;
 
 namespace Cubiomes_Viewer.ViewModels;
 
@@ -19,6 +21,8 @@ public sealed partial class MainViewModel : ViewModelBase
     public string AnalysisLabel { get; } = "Analysis";
     public string ExportLabel { get; } = "Export";
     public string SettingsLabel { get; } = "Settings";
+    public string MapWindowHint { get; } = "The map is in its own window.";
+    public string DockMapLabel { get; } = "Bring the map back";
 
     public WorldBarViewModel WorldBar { get; }
     public MapViewModel Map { get; }
@@ -29,6 +33,16 @@ public sealed partial class MainViewModel : ViewModelBase
 
     public ViewModelBase? CurrentPanel => SelectedPanelIndex >= 0 && SelectedPanelIndex < _panels.Length ? _panels[SelectedPanelIndex] : null;
     public bool IsPanelOpen => CurrentPanel is not null;
+
+    /// <summary>Whether the map can get a window of its own, as on the desktop.</summary>
+    public bool CanUndockMap { get; }
+
+    /// <summary>Whether the map is shown in a window of its own instead of next to the panels.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(MapWindowLabel))]
+    public partial bool IsMapUndocked { get; set; }
+
+    public string MapWindowLabel => IsMapUndocked ? DockMapLabel : "Open the map in its own window";
 
     /// <summary>Completes once the stored settings, the last view and the last search are loaded and shown.</summary>
     public Task Initialization { get; }
@@ -43,8 +57,9 @@ public sealed partial class MainViewModel : ViewModelBase
     private readonly ISeedParser _seedParser;
     private bool _isInitialized;
 
-    public MainViewModel(WorldBarViewModel worldBar, MapViewModel map, LayersPanelViewModel layersPanel, SearchPanelViewModel searchPanel, AnalysisPanelViewModel analysisPanel, ExportViewModel exportPanel, SettingsViewModel settingsPanel, WorldSession session, ISettingsService settingsService, ISeedHistoryService seedHistory, ISeedParser seedParser, INotificationService notificationService) : base(notificationService)
+    public MainViewModel(WorldBarViewModel worldBar, MapViewModel map, LayersPanelViewModel layersPanel, SearchPanelViewModel searchPanel, AnalysisPanelViewModel analysisPanel, ExportViewModel exportPanel, SettingsViewModel settingsPanel, WorldSession session, ISettingsService settingsService, ISeedHistoryService seedHistory, ISeedParser seedParser, IWindowService windowService, INotificationService notificationService) : base(notificationService)
     {
+        CanUndockMap = windowService.HasWindows;
         WorldBar = worldBar;
         Map = map;
         _layersPanel = layersPanel;
@@ -58,6 +73,9 @@ public sealed partial class MainViewModel : ViewModelBase
 
         Initialization = RunGuardedAsync(InitializeAsync);
     }
+
+    [RelayCommand]
+    public void ToggleMapWindow() => IsMapUndocked = CanUndockMap && !IsMapUndocked;
 
     partial void OnSelectedPanelIndexChanged(int value)
     {

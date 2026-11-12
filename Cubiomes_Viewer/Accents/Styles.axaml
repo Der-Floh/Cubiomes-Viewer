@@ -143,6 +143,30 @@
         <Setter Property="Width" Value="20"/>
         <Setter Property="Height" Value="20"/>
     </Style>
+    <Style Selector="Border.rail-column">
+        <Setter Property="Background" Value="{DynamicResource RegionColor}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
+        <Setter Property="BorderThickness" Value="0,0,1,0"/>
+    </Style>
+    <Style Selector="Border.rail-column ListBox.rail">
+        <Setter Property="BorderThickness" Value="0"/>
+    </Style>
+    <Style Selector="Button.rail-button">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="16,14"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="Button.rail-button PathIcon">
+        <Setter Property="Width" Value="20"/>
+        <Setter Property="Height" Value="20"/>
+    </Style>
+    <Style Selector="StackPanel.map-away">
+        <Setter Property="Spacing" Value="12"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
     <Style Selector="ListBox.bottom-nav">
         <Setter Property="BorderThickness" Value="0,1,0,0"/>
     </Style>
