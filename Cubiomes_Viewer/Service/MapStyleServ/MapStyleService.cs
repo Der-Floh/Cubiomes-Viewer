@@ -22,7 +22,9 @@ public sealed class MapStyleService : IMapStyleService
     private const double GlyphSize = 14;
     private const double CornerRadius = 5;
 
-    public double MarkerSize => MarkerSideLength;
+    public double MarkerSize => MarkerSideLength * MarkerScale;
+
+    public double MarkerScale { get; set; } = 1;
 
     public MapMarker Spawn => field ??= CreateMarker(SpawnKey);
     public MapMarker Stronghold => field ??= CreateMarker(StrongholdKey);
@@ -57,10 +59,11 @@ public sealed class MapStyleService : IMapStyleService
         ArgumentNullException.ThrowIfNull(marker);
 
         var badge = new Rect(center.X - MarkerSize / 2, center.Y - MarkerSize / 2, MarkerSize, MarkerSize);
-        context.DrawRectangle(marker.Fill, OutlinePen, badge, CornerRadius, CornerRadius);
+        context.DrawRectangle(marker.Fill, OutlinePen, badge, CornerRadius * MarkerScale, CornerRadius * MarkerScale);
 
-        var scale = GlyphSize / GlyphDesignSize;
-        var transform = Matrix.CreateScale(scale, scale) * Matrix.CreateTranslation(center.X - GlyphSize / 2, center.Y - GlyphSize / 2);
+        var glyphSize = GlyphSize * MarkerScale;
+        var scale = glyphSize / GlyphDesignSize;
+        var transform = Matrix.CreateScale(scale, scale) * Matrix.CreateTranslation(center.X - glyphSize / 2, center.Y - glyphSize / 2);
         using (context.PushTransform(transform))
             context.DrawGeometry(GlyphBrush, null, marker.Glyph);
     }

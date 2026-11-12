@@ -11,6 +11,9 @@ public interface IMapStyleService
     /// <summary>The side length of a drawn marker in device-independent pixels.</summary>
     double MarkerSize { get; }
 
+    /// <summary>How much larger or smaller than normal markers are drawn.</summary>
+    double MarkerScale { get; set; }
+
     MapMarker Spawn { get; }
     MapMarker Stronghold { get; }
     Color SlimeChunkColor { get; }

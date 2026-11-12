@@ -8,5 +8,7 @@ public sealed class AppSettings
     public AppearanceSettings Appearance { get; set; } = new();
     public MapSettings Map { get; set; } = new();
     public WorldSettings World { get; set; } = new();
+    public SessionSettings Session { get; set; } = new();
+    public ExportSettings Export { get; set; } = new();
     public ViewSettings View { get; set; } = new();
 }

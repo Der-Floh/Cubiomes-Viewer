@@ -10,6 +10,7 @@ using Cubiomes_Viewer.Controls;
 using Cubiomes_Viewer.Controls.Map;
 using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Maps;
+using Cubiomes_Viewer.Service.MapStyleServ;
 using Cubiomes_Viewer.ViewModels;
 
 namespace Cubiomes_Viewer.Views;
@@ -20,8 +21,9 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
     private readonly MapMenuViewModel _menu;
     private readonly SelectionViewModel _selection;
     private readonly MapLayerSet _layers;
+    private readonly IMapStyleService _styleService;
 
-    public MapHostView(MapHostViewModel viewModel, MapLayerSet layers)
+    public MapHostView(MapHostViewModel viewModel, MapLayerSet layers, IMapStyleService styleService)
     {
         InitializeComponent();
         DataContext = viewModel;
@@ -30,6 +32,7 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
         _menu = viewModel.Menu;
         _selection = viewModel.Selection;
         _layers = layers;
+        _styleService = styleService;
 
         foreach (var layer in layers.InDrawOrder)
             Map.AddLayer(layer);
@@ -108,7 +111,8 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
         {
             case nameof(MapViewModel.Layer) or nameof(MapViewModel.HeightStyle) or nameof(MapViewModel.PotentialStructure) or nameof(MapViewModel.BiomeColors)
                 or nameof(MapViewModel.ShowGrid) or nameof(MapViewModel.ShowSlimeChunks) or nameof(MapViewModel.ShowGatewayLinks)
-                or nameof(MapViewModel.ShowSpawn) or nameof(MapViewModel.ShowStrongholds) or nameof(MapViewModel.VisibleStructures):
+                or nameof(MapViewModel.ShowSpawn) or nameof(MapViewModel.ShowStrongholds) or nameof(MapViewModel.VisibleStructures)
+                or nameof(MapViewModel.GridSpacing) or nameof(MapViewModel.GridMultiplier) or nameof(MapViewModel.MarkerScale) or nameof(MapViewModel.MarkerZoomLimits):
                 ShowOverlays();
                 Map.Refresh();
                 break;
@@ -131,11 +135,15 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
     {
         _layers.Tiles.Style = new TileStyle(_map.HeightStyle, _map.Layer == LayerMode.StructurePotential ? _map.PotentialStructure : null, _map.BiomeColors);
         _layers.Grid.IsVisible = _map.ShowGrid;
+        _layers.Grid.BaseSpacing = _map.GridSpacing;
+        _layers.Grid.Multiplier = _map.GridMultiplier;
+        _styleService.MarkerScale = _map.MarkerScale;
         _layers.SlimeChunks.IsVisible = _map.ShowSlimeChunks;
         _layers.Gateways.IsVisible = _map.ShowGatewayLinks;
         _layers.Landmarks.ShowSpawn = _map.ShowSpawn;
         _layers.Landmarks.ShowStrongholds = _map.ShowStrongholds;
         _layers.Structures.VisibleTypes = _map.VisibleStructures;
+        _layers.Structures.ZoomLimits = _map.MarkerZoomLimits;
     }
 
     private void ShowMeasurement()

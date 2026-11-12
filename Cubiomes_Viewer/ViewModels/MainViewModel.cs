@@ -40,9 +40,10 @@ public sealed partial class MainViewModel : ViewModelBase
     private readonly WorldSession _session;
     private readonly ISettingsService _settingsService;
     private readonly ISeedHistoryService _seedHistory;
+    private readonly ISeedParser _seedParser;
     private bool _isInitialized;
 
-    public MainViewModel(WorldBarViewModel worldBar, MapViewModel map, LayersPanelViewModel layersPanel, SearchPanelViewModel searchPanel, AnalysisPanelViewModel analysisPanel, ExportViewModel exportPanel, SettingsViewModel settingsPanel, WorldSession session, ISettingsService settingsService, ISeedHistoryService seedHistory, INotificationService notificationService) : base(notificationService)
+    public MainViewModel(WorldBarViewModel worldBar, MapViewModel map, LayersPanelViewModel layersPanel, SearchPanelViewModel searchPanel, AnalysisPanelViewModel analysisPanel, ExportViewModel exportPanel, SettingsViewModel settingsPanel, WorldSession session, ISettingsService settingsService, ISeedHistoryService seedHistory, ISeedParser seedParser, INotificationService notificationService) : base(notificationService)
     {
         WorldBar = worldBar;
         Map = map;
@@ -53,6 +54,7 @@ public sealed partial class MainViewModel : ViewModelBase
         _session = session;
         _settingsService = settingsService;
         _seedHistory = seedHistory;
+        _seedParser = seedParser;
 
         Initialization = RunGuardedAsync(InitializeAsync);
     }
@@ -66,7 +68,8 @@ public sealed partial class MainViewModel : ViewModelBase
     private async Task InitializeAsync()
     {
         await _settingsService.LoadAsync();
-        ShowStoredView();
+        var restore = _settingsService.Current.Session.RestoreLastSession;
+        ShowStoredView(restore);
         _layersPanel.ShowSettings();
         _settingsPanel.ShowSettings();
         await _layersPanel.BiomeColors.LoadAsync();
@@ -76,10 +79,11 @@ public sealed partial class MainViewModel : ViewModelBase
         _seedHistory.Changed += StoreView;
         _isInitialized = true;
 
-        await _searchPanel.LoadAsync();
+        await _searchPanel.LoadAsync(restore);
     }
 
-    private void ShowStoredView()
+    /// <summary>Opens the version, dimension and layer of last time, and also its seed and place on the map when the session is restored.</summary>
+    private void ShowStoredView(bool restore)
     {
         var view = _settingsService.Current.View;
         _seedHistory.Load(view.RecentSeeds);
@@ -90,6 +94,12 @@ public sealed partial class MainViewModel : ViewModelBase
         _session.SampleHeight = view.SampleHeight;
         _session.Layer = view.Layer;
         _session.Octaves = view.Octaves;
+        if (!restore)
+        {
+            _session.Seed = _seedParser.Parse(null).Seed;
+            return;
+        }
+
         _session.Seed = view.Seed;
         Map.Camera = new MapCamera(view.CenterX, view.CenterZ, view.BlocksPerPixel > 0 ? view.BlocksPerPixel : MapCamera.DefaultBlocksPerPixel);
     }

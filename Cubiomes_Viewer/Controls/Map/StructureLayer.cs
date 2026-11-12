@@ -23,6 +23,9 @@ public sealed class StructureLayer : IMarkerLayer
     /// <summary>The structure types to mark.</summary>
     public IReadOnlySet<StructureType> VisibleTypes { get; set; } = FrozenSet<StructureType>.Empty;
 
+    /// <summary>How far out the types are marked where it differs from their defaults, in blocks per pixel.</summary>
+    public IReadOnlyDictionary<StructureType, double> ZoomLimits { get; set; } = FrozenDictionary<StructureType, double>.Empty;
+
     private readonly IStructureAreaService _areaService;
     private readonly IStructureCatalog _catalog;
     private readonly IMapStyleService _styleService;
@@ -108,7 +111,7 @@ public sealed class StructureLayer : IMarkerLayer
         List<StructureAreaRequest> requests = [];
         foreach (var structure in _catalog.Structures)
         {
-            if (VisibleTypes.Contains(structure.Type) && scene.Viewport.BlocksPerPixel <= structure.MaxBlocksPerPixel)
+            if (VisibleTypes.Contains(structure.Type) && scene.Viewport.BlocksPerPixel <= ZoomLimits.GetValueOrDefault(structure.Type, structure.MaxBlocksPerPixel))
                 requests.AddRange(_areaService.GetVisibleAreas(scene.World, structure.Type, scene.Viewport));
         }
 

@@ -53,10 +53,15 @@ public sealed partial class SearchPanelViewModel : ViewModelBase
     }
 
     /// <summary>Loads the stored session and the user's presets and shows them; called once the settings are loaded.</summary>
-    public async Task LoadAsync()
+    /// <summary>Loads the presets, and the search of last time when <paramref name="restoreSession"/> is set.</summary>
+    public async Task LoadAsync(bool restoreSession = true)
     {
-        await _sessions.LoadAsync();
-        ShowSession();
+        if (restoreSession)
+        {
+            await _sessions.LoadAsync();
+            ShowSession();
+        }
+
         await Presets.LoadAsync();
     }
 

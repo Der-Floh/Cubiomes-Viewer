@@ -10,6 +10,7 @@ using CommunityToolkit.Mvvm.Input;
 using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Biomes;
 using Cubiomes_Viewer.Engine.Data.Maps;
+using Cubiomes_Viewer.Engine.Data.Settings;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.LayerServ;
 using Cubiomes_Viewer.Engine.Service.TileServ;
@@ -56,6 +57,20 @@ public sealed partial class MapViewModel : ViewModelBase
 
     [ObservableProperty]
     public partial bool ShowGrid { get; set; } = true;
+
+    [ObservableProperty]
+    public partial int GridSpacing { get; set; } = MapSettings.DefaultGridSpacing;
+
+    [ObservableProperty]
+    public partial int GridMultiplier { get; set; } = MapSettings.DefaultGridMultiplier;
+
+    /// <summary>How much larger or smaller than normal markers are drawn.</summary>
+    [ObservableProperty]
+    public partial double MarkerScale { get; set; } = 1;
+
+    /// <summary>How far out structure types are marked where it differs from their defaults, in blocks per pixel.</summary>
+    [ObservableProperty]
+    public partial IReadOnlyDictionary<StructureType, double> MarkerZoomLimits { get; set; } = FrozenDictionary<StructureType, double>.Empty;
 
     [ObservableProperty]
     public partial bool ShowSlimeChunks { get; set; }

@@ -8,10 +8,20 @@ public sealed class MapSettings
     public const int MinCacheMegabytes = 32;
     public const int MaxCacheMegabytes = 4096;
     public const int DefaultCacheMegabytes = 256;
+    public const int DefaultGridSpacing = 16;
+    public const int DefaultGridMultiplier = 2;
 
     public int CacheMegabytes { get; set; } = DefaultCacheMegabytes;
     public bool SmoothMotion { get; set; } = true;
     public bool ShowGrid { get; set; } = true;
+
+    /// <summary>The blocks between grid lines when zoomed in; zoomed out, the spacing grows by <see cref="GridMultiplier"/> until lines are apart.</summary>
+    public int GridSpacing { get; set; } = DefaultGridSpacing;
+    public int GridMultiplier { get; set; } = DefaultGridMultiplier;
+    public MarkerSize MarkerSize { get; set; } = MarkerSize.Normal;
+
+    /// <summary>Zoom limits that differ from the defaults of their structure types.</summary>
+    public List<StructureZoomLimit> ZoomLimits { get; set; } = [];
     public bool ShowSlimeChunks { get; set; }
     public bool ShowSpawn { get; set; } = true;
     public bool ShowStrongholds { get; set; } = true;

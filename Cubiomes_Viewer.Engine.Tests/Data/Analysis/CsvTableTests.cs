@@ -17,6 +17,24 @@ public sealed class CsvTableTests
     }
 
     [Fact]
+    public void ToCsv_WithSemicolons_QuotesFieldsWithSemicolonsButNotThoseWithCommas()
+    {
+        var table = new CsvTable("Biome", "Note");
+        table.Add("Badlands, eroded", "red; dry");
+
+        Assert.Equal("Biome;Note\r\nBadlands, eroded;\"red; dry\"\r\n", table.ToCsv(CsvSeparator.Semicolon));
+    }
+
+    [Fact]
+    public void ToCsv_WithTabs_SeparatesByTabs()
+    {
+        var table = new CsvTable("X", "Z");
+        table.Add("-16", "32");
+
+        Assert.Equal("X\tZ\r\n-16\t32\r\n", table.ToCsv(CsvSeparator.Tab));
+    }
+
+    [Fact]
     public void Add_RowOfAnotherWidth_Throws()
     {
         var table = new CsvTable("A", "B");

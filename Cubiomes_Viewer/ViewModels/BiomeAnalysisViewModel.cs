@@ -8,6 +8,7 @@ using Cubiomes_Viewer.Engine.Data.Settings;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.AnalysisServ;
 using Cubiomes_Viewer.Engine.Service.SeedServ;
+using Cubiomes_Viewer.Engine.Service.SettingsServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
 using Cubiomes_Viewer.Service.NotificationServ;
 using Cubiomes_Viewer.Service.StorageServ;
@@ -48,8 +49,8 @@ public sealed partial class BiomeAnalysisViewModel : AnalysisTabViewModel
     private readonly IBiomeCatalog _biomeCatalog;
     private readonly WorldSession _session;
 
-    public BiomeAnalysisViewModel(AnalysisScopeViewModel scope, IAnalysisService analysis, IBiomeCatalog biomeCatalog, WorldSession session, MapViewModel map, ISeedHistoryService seedHistory, IStorageService storage, INotificationService notifications)
-        : base(scope, session, map, seedHistory, storage, notifications)
+    public BiomeAnalysisViewModel(AnalysisScopeViewModel scope, IAnalysisService analysis, IBiomeCatalog biomeCatalog, WorldSession session, MapViewModel map, ISeedHistoryService seedHistory, IStorageService storage, ISettingsService settingsService, INotificationService notifications)
+        : base(scope, session, map, seedHistory, storage, settingsService, notifications)
     {
         _analysis = analysis;
         _biomeCatalog = biomeCatalog;

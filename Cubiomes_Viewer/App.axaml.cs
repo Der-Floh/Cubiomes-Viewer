@@ -15,6 +15,7 @@ using Cubiomes_Viewer.Service.StructureDescriptionServ;
 using Cubiomes_Viewer.Service.ThemeServ;
 using Cubiomes_Viewer.Service.TileBitmapServ;
 using Cubiomes_Viewer.Service.TopLevelServ;
+using Cubiomes_Viewer.Service.WindowServ;
 using Cubiomes_Viewer.ViewModels;
 using Cubiomes_Viewer.Views;
 
@@ -47,6 +48,7 @@ public sealed partial class App : Application
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+            LoadSettingsBeforeTheWindowOpens();
             desktop.MainWindow = Services.GetRequiredService<MainWindow>();
             desktop.Exit += (_, _) => FlushStoredState();
         }
@@ -60,6 +62,16 @@ public sealed partial class App : Application
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    /// <summary>
+    /// Reads the settings off the UI thread and waits for them, so that the main window opens where it was closed
+    /// instead of jumping there; the desktop reads a small local file.
+    /// </summary>
+    private static void LoadSettingsBeforeTheWindowOpens()
+    {
+        var settings = Services.GetRequiredService<ISettingsService>();
+        Task.Run(() => settings.LoadAsync()).GetAwaiter().GetResult();
     }
 
     /// <summary>Writes what is waiting to be stored, as the desktop app ends before delayed saves would run.</summary>
@@ -120,6 +132,7 @@ public sealed partial class App : Application
         services.AddSingleton<IMapStyleService, MapStyleService>();
         services.AddSingleton<IClipboardService, ClipboardService>();
         services.AddSingleton<IStructureDescriptionService, StructureDescriptionService>();
+        services.AddSingleton<IWindowService, WindowService>();
         services.AddSingleton<WorldSession>();
 
         // map layers

@@ -6,10 +6,9 @@ using Avalonia.Media.Immutable;
 
 namespace Cubiomes_Viewer.Controls.Map;
 
-/// <summary>Draws a coordinate grid whose spacing doubles from one chunk upwards until lines are comfortably apart.</summary>
+/// <summary>Draws a coordinate grid whose spacing grows from <see cref="BaseSpacing"/> by <see cref="Multiplier"/> until lines are comfortably apart.</summary>
 public sealed class GridLayer : IMapLayer
 {
-    private const long ChunkBlocks = 16;
     private const double MinSpacingPixels = 96;
     private const double LabelFontSize = 11;
     private const double LabelMargin = 4;
@@ -30,6 +29,12 @@ public sealed class GridLayer : IMapLayer
     }
 
     public bool IsVisible { get; set; } = true;
+
+    /// <summary>The blocks between lines when zoomed in far enough.</summary>
+    public long BaseSpacing { get; set; } = 16;
+
+    /// <summary>The factor the spacing grows by while lines would be too close.</summary>
+    public long Multiplier { get; set; } = 2;
 
     public void Attach() { }
     public void Detach() { }
@@ -59,11 +64,12 @@ public sealed class GridLayer : IMapLayer
         }
     }
 
-    private static long GetSpacing(double blocksPerPixel)
+    private long GetSpacing(double blocksPerPixel)
     {
-        var spacing = ChunkBlocks;
+        var spacing = Math.Max(BaseSpacing, 1);
+        var multiplier = Math.Max(Multiplier, 2);
         while (spacing / blocksPerPixel < MinSpacingPixels)
-            spacing *= 2;
+            spacing *= multiplier;
         return spacing;
     }
 
