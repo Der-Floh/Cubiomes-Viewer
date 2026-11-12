@@ -45,6 +45,17 @@ const char *cv_biome_name(int32_t mc, int32_t biome)
     return biome2str(mc, biome);
 }
 
+int32_t cv_biome_dimension(int32_t mc, int32_t biome, int32_t *dimension)
+{
+    if (!cv_is_valid_mc(mc) || biome < 0 || biome > 255 || !dimension)
+        return CV_ERR_ARGUMENT;
+
+    *dimension = getDimension(biome);
+    if (*dimension == DIM_OVERWORLD)
+        return isOverworld(mc, biome) != 0;
+    return biomeExists(mc, biome) != 0;
+}
+
 int32_t cv_default_biome_colors(uint8_t *rgb, int32_t capacity)
 {
     if (!rgb)

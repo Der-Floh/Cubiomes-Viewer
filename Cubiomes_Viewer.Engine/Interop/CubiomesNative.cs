@@ -29,6 +29,10 @@ internal static unsafe partial class CubiomesNative
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial nint BiomeName(int version, int biome);
 
+    [LibraryImport(LibraryName, EntryPoint = "cv_biome_dimension")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int BiomeDimension(int version, int biome, int* dimension);
+
     [LibraryImport(LibraryName, EntryPoint = "cv_default_biome_colors")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial int DefaultBiomeColors(byte* rgb, int capacity);

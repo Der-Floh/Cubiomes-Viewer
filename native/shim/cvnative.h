@@ -11,7 +11,7 @@
 #define CV_API
 #endif
 
-#define CV_ABI_VERSION 6
+#define CV_ABI_VERSION 7
 
 #define CV_BIOME_NONE 255
 #define CV_BIOME_COLOR_BYTES 768
@@ -66,6 +66,9 @@ CV_API int32_t cv_mc_oldest(void);
 CV_API int32_t cv_mc_newest(void);
 CV_API const char *cv_mc_name(int32_t mc);
 CV_API const char *cv_biome_name(int32_t mc, int32_t biome);
+
+/* Writes the dimension a biome belongs to and returns 1 when it generates there in the version, 0 when it does not. */
+CV_API int32_t cv_biome_dimension(int32_t mc, int32_t biome, int32_t *dimension);
 CV_API int32_t cv_default_biome_colors(uint8_t *rgb, int32_t capacity);
 
 CV_API cv_world *cv_world_create(int32_t mc, uint32_t flags);

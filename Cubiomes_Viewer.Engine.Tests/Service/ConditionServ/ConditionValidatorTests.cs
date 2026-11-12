@@ -8,6 +8,8 @@ namespace Cubiomes_Viewer.Engine.Tests.Service.ConditionServ;
 public sealed class ConditionValidatorTests
 {
     private const int Plains = 1;
+    private const int NetherWastes = 8;
+    private const int CrimsonForest = 171;
     private const int UnknownBiome = 250;
 
     private readonly ConditionValidator _validator = TestEngine.CreateConditionValidator();
@@ -118,7 +120,23 @@ public sealed class ConditionValidatorTests
 
     [Fact]
     public void Validate_BiomeTheVersionDoesNotHave_IsAProblem()
-        => AssertProblem(Define(new BiomeCondition { Id = 1, Biomes = BiomeSet.Of(Plains, UnknownBiome) }), 1, "Biome 250 does not exist");
+        => AssertProblem(Define(new BiomeCondition { Id = 1, Biomes = BiomeSet.Of(Plains, UnknownBiome) }), 1, "Biome 250 does not generate in the Overworld");
+
+    [Fact]
+    public void Validate_BiomeOfAnotherDimension_IsAProblem()
+        => AssertProblem(Define(new BiomeCondition { Id = 1, Biomes = BiomeSet.Of(Plains, NetherWastes) }), 1, "Nether Wastes does not generate in the Overworld");
+
+    [Fact]
+    public void Validate_BiomeOfTheDimensionTheConditionLooksIn_IsNoProblem()
+        => Assert.Empty(_validator.Validate(Define(new BiomeCondition { Id = 1, Biomes = BiomeSet.Of(NetherWastes, CrimsonForest), Dimension = Dimension.Nether })));
+
+    [Fact]
+    public void Validate_BiomeThatCameLater_IsAProblemInOlderVersions()
+    {
+        var definition = Define(new BiomeCondition { Id = 1, Biomes = BiomeSet.Of(CrimsonForest), Dimension = Dimension.Nether }) with { Version = McVersion.V1_15_2 };
+
+        AssertProblem(definition, 1, "Crimson Forest does not generate in the Nether");
+    }
 
     [Fact]
     public void Validate_BiomeSampleDistanceTheGeneratorDoesNotHave_IsAProblem()
