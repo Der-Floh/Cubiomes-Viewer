@@ -75,6 +75,7 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
     [ObservableProperty]
     public partial bool HasStructures { get; set; }
 
+    public BiomeColorsViewModel BiomeColors { get; }
     public MarkerToggleViewModel Spawn { get; }
     public MarkerToggleViewModel Strongholds { get; }
 
@@ -106,8 +107,9 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
     private readonly HashSet<StructureType> _visibleStructures = [];
     private bool _isUpdating;
 
-    public LayersPanelViewModel(MapViewModel map, WorldSession session, IStructureCatalog structureCatalog, ILayerCatalog layerCatalog, IMapStyleService styleService, ISettingsService settingsService)
+    public LayersPanelViewModel(MapViewModel map, BiomeColorsViewModel biomeColors, WorldSession session, IStructureCatalog structureCatalog, ILayerCatalog layerCatalog, IMapStyleService styleService, ISettingsService settingsService)
     {
+        BiomeColors = biomeColors;
         _map = map;
         _session = session;
         _structureCatalog = structureCatalog;

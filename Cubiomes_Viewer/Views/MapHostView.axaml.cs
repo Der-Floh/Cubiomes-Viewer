@@ -106,7 +106,7 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
     {
         switch (e.PropertyName)
         {
-            case nameof(MapViewModel.Layer) or nameof(MapViewModel.HeightStyle) or nameof(MapViewModel.PotentialStructure)
+            case nameof(MapViewModel.Layer) or nameof(MapViewModel.HeightStyle) or nameof(MapViewModel.PotentialStructure) or nameof(MapViewModel.BiomeColors)
                 or nameof(MapViewModel.ShowGrid) or nameof(MapViewModel.ShowSlimeChunks) or nameof(MapViewModel.ShowGatewayLinks)
                 or nameof(MapViewModel.ShowSpawn) or nameof(MapViewModel.ShowStrongholds) or nameof(MapViewModel.VisibleStructures):
                 ShowOverlays();
@@ -129,7 +129,7 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
 
     private void ShowOverlays()
     {
-        _layers.Tiles.Style = new TileStyle(_map.HeightStyle, _map.Layer == LayerMode.StructurePotential ? _map.PotentialStructure : null);
+        _layers.Tiles.Style = new TileStyle(_map.HeightStyle, _map.Layer == LayerMode.StructurePotential ? _map.PotentialStructure : null, _map.BiomeColors);
         _layers.Grid.IsVisible = _map.ShowGrid;
         _layers.SlimeChunks.IsVisible = _map.ShowSlimeChunks;
         _layers.Gateways.IsVisible = _map.ShowGatewayLinks;

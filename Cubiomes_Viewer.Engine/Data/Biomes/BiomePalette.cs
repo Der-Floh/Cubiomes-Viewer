@@ -2,11 +2,12 @@ using Cubiomes_Viewer.Engine.Data.Colors;
 
 namespace Cubiomes_Viewer.Engine.Data.Biomes;
 
-/// <summary>One colour per biome id (0–255).</summary>
+/// <summary>One colour per biome id (0–255). Palettes are compared by identity: a changed palette is a new one.</summary>
 public sealed class BiomePalette
 {
     public int Count => _colors.Length;
     public RgbColor this[int biome] => _colors[biome];
+    public IReadOnlyList<RgbColor> Colors => _colors;
 
     private readonly RgbColor[] _colors;
 
@@ -28,5 +29,21 @@ public sealed class BiomePalette
         }
 
         return new BiomePalette(colors);
+    }
+
+    /// <summary>A copy of the palette in which the given biomes have the given colours.</summary>
+    public BiomePalette With(IEnumerable<BiomeColor> colors)
+    {
+        ArgumentNullException.ThrowIfNull(colors);
+
+        var changed = (RgbColor[])_colors.Clone();
+        foreach (var color in colors)
+        {
+            if (color.Biome < 0 || color.Biome >= changed.Length)
+                throw new ArgumentOutOfRangeException(nameof(colors), color.Biome, "A biome id is from 0 to 255.");
+            changed[color.Biome] = color.Color;
+        }
+
+        return new BiomePalette(changed);
     }
 }

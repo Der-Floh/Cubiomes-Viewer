@@ -8,6 +8,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
 using Cubiomes_Viewer.Data;
+using Cubiomes_Viewer.Engine.Data.Biomes;
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.LayerServ;
@@ -44,6 +45,10 @@ public sealed partial class MapViewModel : ViewModelBase
 
     [ObservableProperty]
     public partial HeightStyle HeightStyle { get; set; } = HeightStyle.Shaded;
+
+    /// <summary>The colours biomes are painted in; the default ones when it is <see langword="null"/>.</summary>
+    [ObservableProperty]
+    public partial BiomePalette? BiomeColors { get; set; }
 
     /// <summary>The structure type whose biomes the structure potential layer highlights.</summary>
     [ObservableProperty]

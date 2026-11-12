@@ -69,6 +69,7 @@ public sealed partial class MainViewModel : ViewModelBase
         ShowStoredView();
         _layersPanel.ShowSettings();
         _settingsPanel.ShowSettings();
+        await _layersPanel.BiomeColors.LoadAsync();
 
         _session.PropertyChanged += OnSessionChanged;
         Map.PropertyChanged += OnMapChanged;

@@ -18,6 +18,9 @@ public sealed class MapSettings
     public bool ShowGatewayLinks { get; set; } = true;
     public HeightStyle HeightStyle { get; set; } = HeightStyle.Shaded;
 
+    /// <summary>The name of the colour map biomes are painted with; the default colours when it is <see langword="null"/>.</summary>
+    public string? ColorMap { get; set; }
+
     /// <summary>The structure type whose biomes the structure potential layer highlights.</summary>
     public StructureType PotentialStructure { get; set; } = StructureType.Village;
 

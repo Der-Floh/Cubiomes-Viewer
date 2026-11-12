@@ -7,10 +7,12 @@ using Cubiomes_Viewer.Engine.Data.Search;
 using Cubiomes_Viewer.Engine.Data.SelfTests;
 using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Repository.AppDataRepo;
+using Cubiomes_Viewer.Engine.Repository.ColorMapRepo;
 using Cubiomes_Viewer.Engine.Repository.PresetRepo;
 using Cubiomes_Viewer.Engine.Repository.SessionRepo;
 using Cubiomes_Viewer.Engine.Repository.SettingsRepo;
 using Cubiomes_Viewer.Engine.Service.AnalysisServ;
+using Cubiomes_Viewer.Engine.Service.ColorMapServ;
 using Cubiomes_Viewer.Engine.Service.ComputeServ;
 using Cubiomes_Viewer.Engine.Service.ConditionServ;
 using Cubiomes_Viewer.Engine.Service.ExportServ;
@@ -43,6 +45,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISettingsRepository, SettingsRepository>();
         services.AddSingleton<ISearchSessionRepository, SearchSessionRepository>();
         services.AddSingleton<ISearchPresetRepository, SearchPresetRepository>();
+        services.AddSingleton<IColorMapRepository, ColorMapRepository>();
 
         // world generation
         services.AddSingleton<IWorldGeneratorFactory, CubiomesWorldGeneratorFactory>();
@@ -102,6 +105,7 @@ public static class ServiceCollectionExtensions
 
         // export
         services.AddSingleton<IMapExportService, MapExportService>();
+        services.AddSingleton<IColorMapService, ColorMapService>();
 
         // services
         services.AddSingleton<ITileColorizer, TileColorizer>();

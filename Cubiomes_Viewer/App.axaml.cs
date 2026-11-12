@@ -153,6 +153,7 @@ public sealed partial class App : Application
         services.AddSingleton<SelectionViewModel>();
         services.AddSingleton<LegendViewModel>();
         services.AddSingleton<MapHostViewModel>();
+        services.AddSingleton<BiomeColorsViewModel>();
         services.AddSingleton<LayersPanelViewModel>();
         services.AddSingleton<SearchConditionFactory>();
         services.AddSingleton<SeedSourceViewModel>();

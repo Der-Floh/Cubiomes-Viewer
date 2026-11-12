@@ -31,6 +31,49 @@
             <ComboBox Classes="fill" ItemsSource="{Binding PotentialStructures}" SelectedItem="{Binding SelectedPotentialStructure}"
                       IsVisible="{Binding IsPotentialShown}" ToolTip.Tip="{Binding PotentialHint}"/>
 
+            <TextBlock Classes="section" Text="{Binding BiomeColors.Title}"/>
+            <StackPanel Classes="form" DataContext="{Binding BiomeColors}" x:DataType="vm:BiomeColorsViewModel">
+                <ComboBox Classes="fill" ItemsSource="{Binding MapChoices}" SelectedItem="{Binding SelectedMap}" IsEnabled="{Binding !IsEditing}"/>
+                <WrapPanel Classes="card-actions" IsVisible="{Binding !IsEditing}">
+                    <Button Content="{Binding NewLabel}" Command="{Binding NewCommand}"/>
+                    <Button Content="{Binding EditLabel}" Command="{Binding EditCommand}"/>
+                    <Button Content="{Binding ImportLabel}" Command="{Binding ImportCommand}"/>
+                    <Button Content="{Binding ExportLabel}" Command="{Binding ExportCommand}"/>
+                    <Button Content="{Binding DeleteLabel}" Command="{Binding DeleteCommand}"/>
+                </WrapPanel>
+                <Border Classes="condition" IsVisible="{Binding IsEditing}">
+                    <StackPanel Classes="form">
+                        <TextBlock Classes="field-label" Text="{Binding NameLabel}"/>
+                        <TextBox Text="{Binding EditName}"/>
+                        <TextBlock Classes="damp" Text="{Binding EditHint}" TextWrapping="Wrap"/>
+                        <TextBox Text="{Binding Filter}" PlaceholderText="{Binding FilterPlaceholder}"/>
+                        <Border Classes="choice-list colors">
+                            <ScrollViewer>
+                                <ItemsControl Classes="rows" ItemsSource="{Binding Entries}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:BiomeColorEntryViewModel">
+                                            <Grid Classes="pair" ColumnDefinitions="Auto,*,Auto">
+                                                <ColorPicker Classes="swatch" Color="{Binding Color}"/>
+                                                <TextBlock Grid.Column="1" Classes="color-name" Text="{Binding Name}"/>
+                                                <Button Grid.Column="2" Classes="compact" Content="{Binding DefaultLabel}" Command="{Binding UseDefaultCommand}" IsVisible="{Binding IsChanged}"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Border>
+                        <WrapPanel Classes="card-actions">
+                            <Button Content="{Binding AllDefaultLabel}" Command="{Binding UseAllDefaultCommand}"/>
+                            <Button Content="{Binding AllDimmedLabel}" Command="{Binding UseAllDimmedCommand}"/>
+                        </WrapPanel>
+                        <WrapPanel Classes="card-actions">
+                            <Button Classes="accent" Content="{Binding SaveLabel}" Command="{Binding SaveCommand}"/>
+                            <Button Content="{Binding CancelLabel}" Command="{Binding CancelCommand}"/>
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
             <TextBlock Classes="section" Text="{Binding OverlaysLabel}"/>
             <CheckBox Content="{Binding ShowGridLabel}" IsChecked="{Binding ShowGrid}"/>
             <CheckBox Content="{Binding ShowSlimeChunksLabel}" IsChecked="{Binding ShowSlimeChunks}" IsVisible="{Binding IsOverworld}"/>
