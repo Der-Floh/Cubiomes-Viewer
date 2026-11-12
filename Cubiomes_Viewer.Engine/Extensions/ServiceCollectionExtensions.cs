@@ -79,6 +79,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISeedMatcher, SeedMatcher>();
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<IQuadHutBaseService, QuadHutBaseService>();
+        services.AddSingleton<ISeedSequenceFactory, SeedSequenceFactory>();
         services.AddSingleton<ISeedSearchService, SeedSearchService>();
         services.AddSingleton<ISearchSessionService, SearchSessionService>();
 

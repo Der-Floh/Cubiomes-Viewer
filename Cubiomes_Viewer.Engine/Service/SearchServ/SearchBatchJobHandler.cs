@@ -7,7 +7,7 @@ using Cubiomes_Viewer.Engine.Service.ConditionServ;
 
 namespace Cubiomes_Viewer.Engine.Service.SearchServ;
 
-/// <summary>Tests a run of consecutive seeds against a definition.</summary>
+/// <summary>Tests a batch of seeds against a definition.</summary>
 public sealed class SearchBatchJobHandler : IJobHandler<SearchBatchJob, SearchBatchResult>
 {
     private readonly ISearchPlanCompiler _planCompiler;
@@ -24,25 +24,25 @@ public sealed class SearchBatchJobHandler : IJobHandler<SearchBatchJob, SearchBa
         ArgumentNullException.ThrowIfNull(job);
         ArgumentNullException.ThrowIfNull(context);
         ArgumentOutOfRangeException.ThrowIfNegative(job.Count);
+        if (job.Seeds is { } seeds && seeds.Length != job.Count)
+            throw new ArgumentException($"The batch lists {seeds.Length} seeds but counts {job.Count}.", nameof(job));
 
         var stopwatch = Stopwatch.StartNew();
         var plan = _planCompiler.Compile(job.Definition);
         var seedContext = new SearchSeedContext(context, job.Definition);
-        List<long> matches = [];
+        List<int> matches = [];
 
         for (var index = 0; index < job.Count; index++)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var seed = unchecked(job.FirstSeed + index);
-            seedContext.Open(seed);
+            seedContext.Open(job.GetSeed(index));
             if (_seedMatcher.IsMatch(plan, seedContext))
-                matches.Add(seed);
+                matches.Add(index);
         }
 
         return new SearchBatchResult
         {
-            FirstSeed = job.FirstSeed,
             Count = job.Count,
             Matches = [.. matches],
             ElapsedMilliseconds = stopwatch.Elapsed.TotalMilliseconds,

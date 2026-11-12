@@ -1,6 +1,8 @@
 using System.Text;
 
 using Cubiomes_Viewer.Engine.Data.Search;
+using Cubiomes_Viewer.Engine.Data.Structures;
+using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Repository.AppDataRepo;
 using Cubiomes_Viewer.Engine.Repository.SessionRepo;
 using Cubiomes_Viewer.Engine.Tests.Data.Search;
@@ -54,6 +56,24 @@ public sealed class SearchSessionRepositoryTests : IDisposable
         Assert.Null(loaded?.Search);
     }
 
+    [Theory]
+    [MemberData(nameof(Sources))]
+    public async Task SaveAsync_EveryKindOfSource_RoundTrips(SeedSource source)
+    {
+        var session = new SearchSession { Setup = CreateSession().Setup with { Source = source } };
+
+        await _repository.SaveAsync(session, TestContext.Current.CancellationToken);
+
+        Assert.Equal(session, await _repository.LoadAsync(TestContext.Current.CancellationToken));
+    }
+
+    public static TheoryData<SeedSource> Sources() =>
+    [
+        new SeedRangeSource { FirstSeed = 3 },
+        new QuadHutSeedSource { Type = StructureType.Igloo, Quality = QuadQuality.Classic, RegionX = 4, RegionZ = -9 },
+        new SeedListSource { Seeds = [7, -1, long.MinValue] },
+    ];
+
     [Fact]
     public async Task LoadAsync_CorruptContent_ReturnsNothing()
     {
@@ -97,11 +117,11 @@ public sealed class SearchSessionRepositoryTests : IDisposable
 
     private static SearchSession CreateSession()
     {
-        var setup = new SearchSetup { Definition = SampleDefinitions.CreateEveryKindOfCondition(), FirstSeed = -5_000_000_000, LastSeed = 7, MaxResults = 250, Workers = 3 };
+        var setup = new SearchSetup { Definition = SampleDefinitions.CreateEveryKindOfCondition(), Source = new SeedRangeSource { FirstSeed = -5_000_000_000, LastSeed = 7 }, MaxResults = 250, Workers = 3 };
         return new SearchSession
         {
             Setup = setup,
-            Search = new SearchSnapshot { Setup = setup with { MaxResults = 10 }, NextSeed = -4_999_000_000, Results = [-4_999_999_999, -4_999_500_000] },
+            Search = new SearchSnapshot { Setup = setup with { MaxResults = 10 }, Scanned = 1_000_000_000, NextSeed = -4_999_000_000, Results = [-4_999_999_999, -4_999_500_000] },
         };
     }
 }

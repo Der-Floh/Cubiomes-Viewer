@@ -136,12 +136,35 @@
                 </DropDownButton>
 
                 <TextBlock Classes="section" Text="{Binding SeedsLabel}"/>
-                <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
-                    <TextBlock Classes="field-label" Text="{Binding FirstSeedLabel}"/>
-                    <TextBox Grid.Row="1" Text="{Binding FirstSeedText}"/>
-                    <TextBlock Grid.Column="1" Classes="field-label" Text="{Binding LastSeedLabel}"/>
-                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding LastSeedText}" PlaceholderText="{Binding LastSeedPlaceholder}"/>
-                </Grid>
+                <StackPanel Classes="form" DataContext="{Binding Seeds}" x:DataType="vm:SeedSourceViewModel">
+                    <TextBlock Classes="field-label" Text="{Binding SourceLabel}"/>
+                    <ComboBox Classes="fill" ItemsSource="{Binding Kinds}" SelectedItem="{Binding SelectedKind}"/>
+
+                    <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" IsVisible="{Binding IsRangeSource}">
+                        <TextBlock Classes="field-label" Text="{Binding FirstSeedLabel}"/>
+                        <TextBox Grid.Row="1" Text="{Binding FirstSeedText}"/>
+                        <TextBlock Grid.Column="1" Classes="field-label" Text="{Binding LastSeedLabel}"/>
+                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding LastSeedText}" PlaceholderText="{Binding LastSeedPlaceholder}"/>
+                    </Grid>
+
+                    <StackPanel Classes="form" IsVisible="{Binding IsQuadSource}">
+                        <TextBlock Classes="field-label" Text="{Binding QuadTypeLabel}"/>
+                        <ComboBox Classes="fill" ItemsSource="{Binding QuadTypes}" SelectedItem="{Binding SelectedQuadType}"/>
+                        <TextBlock Classes="field-label" Text="{Binding QuadQualityLabel}"/>
+                        <ComboBox Classes="fill" ItemsSource="{Binding QuadQualities}" SelectedItem="{Binding SelectedQuadQuality}"/>
+                        <TextBlock Classes="field-label" Text="{Binding QuadRegionLabel}"/>
+                        <Grid Classes="pair" ColumnDefinitions="*,*">
+                            <NumericUpDown Value="{Binding QuadRegionX}" Minimum="{Binding MinRegion}" Maximum="{Binding MaxRegion}" Increment="1" FormatString="0"/>
+                            <NumericUpDown Grid.Column="1" Value="{Binding QuadRegionZ}" Minimum="{Binding MinRegion}" Maximum="{Binding MaxRegion}" Increment="1" FormatString="0"/>
+                        </Grid>
+                        <TextBlock Classes="damp" Text="{Binding QuadHint}" TextWrapping="Wrap"/>
+                    </StackPanel>
+
+                    <StackPanel Classes="form" IsVisible="{Binding IsListSource}">
+                        <TextBox Classes="seed-list" Text="{Binding SeedListText}" PlaceholderText="{Binding SeedListPlaceholder}"/>
+                        <TextBlock Classes="damp" Text="{Binding SeedListSummary}"/>
+                    </StackPanel>
+                </StackPanel>
                 <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
                     <TextBlock Classes="field-label" Text="{Binding MaxResultsLabel}"/>
                     <NumericUpDown Grid.Row="1" Value="{Binding MaxResults}" Minimum="1" Maximum="{Binding MaxResultsLimit}" Increment="10" FormatString="0"/>

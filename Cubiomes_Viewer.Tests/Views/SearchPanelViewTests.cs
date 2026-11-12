@@ -93,7 +93,7 @@ public sealed class SearchPanelViewTests : IDisposable
     public async Task SearchButton_Clicked_FindsSeedsAndAClickOnOneOpensItOnTheMap()
     {
         Add<SlimeChunkCondition>().Count = ManySlimeChunks;
-        _panel.Setup.LastSeedText = "199999";
+        _panel.Setup.Seeds.LastSeedText = "199999";
         _panel.Setup.MaxResults = 3;
         var search = _services.GetRequiredService<ISeedSearchService>();
 

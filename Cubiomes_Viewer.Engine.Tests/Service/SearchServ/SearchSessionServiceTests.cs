@@ -11,7 +11,7 @@ namespace Cubiomes_Viewer.Engine.Tests.Service.SearchServ;
 public sealed class SearchSessionServiceTests : IDisposable
 {
     private static readonly TimeSpan _saveTimeout = TimeSpan.FromSeconds(10);
-    private static readonly SearchSetup _setup = new() { Definition = SearchRuns.SlimeChunks, FirstSeed = -40_000, LastSeed = 59_999, MaxResults = 10_000 };
+    private static readonly SearchSetup _setup = new() { Definition = SearchRuns.SlimeChunks, Source = new SeedRangeSource { FirstSeed = -40_000, LastSeed = 59_999 }, MaxResults = 10_000 };
 
     private readonly string _directory = Path.Combine(Path.GetTempPath(), "cubiomes-viewer-tests", Guid.NewGuid().ToString("N"));
 
@@ -80,7 +80,7 @@ public sealed class SearchSessionServiceTests : IDisposable
     [Fact]
     public async Task LoadAsync_StoredSearchThatCannotContinue_KeepsOnlyTheSetup()
     {
-        var broken = new SearchSnapshot { Setup = _setup with { Definition = new SearchDefinition() }, NextSeed = 5, Results = [] };
+        var broken = new SearchSnapshot { Setup = _setup with { Definition = new SearchDefinition() }, Scanned = 5, Results = [] };
         using var services = CreateServices(new FakeRepository { Stored = new SearchSession { Setup = _setup, Search = broken } });
         var sessions = services.GetRequiredService<ISearchSessionService>();
 
@@ -132,7 +132,7 @@ public sealed class SearchSessionServiceTests : IDisposable
         var sessions = services.GetRequiredService<ISearchSessionService>();
         var search = services.GetRequiredService<ISeedSearchService>();
         await sessions.LoadAsync(TestContext.Current.CancellationToken);
-        var finished = new SearchSnapshot { Setup = _setup, NextSeed = 12, Results = [3, 11], IsFinished = true };
+        var finished = new SearchSnapshot { Setup = _setup, Scanned = 12, Results = [3, 11], IsFinished = true };
 
         sessions.Open(new SearchSession { Setup = _setup with { Workers = 1 }, Search = finished });
 

@@ -20,11 +20,13 @@ public static class SearchProgressText
     public static string DescribeState(SearchState state, SearchProgress progress, int found, int maxResults, bool canContinue) => state switch
     {
         SearchState.Idle => string.Empty,
+        SearchState.Running when progress.Preparing is not null => "Preparing the seeds to scan…",
         SearchState.Running => "Searching…",
-        SearchState.Paused when canContinue => string.Create(CultureInfo.InvariantCulture, $"Stopped before seed {progress.NextSeed}."),
+        SearchState.Paused when canContinue && progress.NextSeed is { } next => string.Create(CultureInfo.InvariantCulture, $"Stopped before seed {next}."),
+        SearchState.Paused when canContinue => "Stopped.",
         SearchState.Paused => "Stopped. The setup has changed since, so a new search starts over.",
         SearchState.Finished when found >= maxResults => $"Finished after finding {Count(found, "seed")}.",
-        SearchState.Finished => "Finished: every seed of the range was scanned.",
+        SearchState.Finished => "Finished: every seed was scanned.",
         _ => throw new NotSupportedException($"Unsupported search state: {state}"),
     };
 
@@ -33,6 +35,8 @@ public static class SearchProgressText
     {
         if (state == SearchState.Idle)
             return string.Empty;
+        if (state == SearchState.Running && progress.Preparing is { } share)
+            return string.Create(CultureInfo.InvariantCulture, $"{share * 100:0} % prepared · this happens once, the result is kept");
 
         List<string> parts = [$"{Count(progress.Scanned, "seed")} scanned"];
         if (state == SearchState.Running && progress.SeedsPerSecond > 0)

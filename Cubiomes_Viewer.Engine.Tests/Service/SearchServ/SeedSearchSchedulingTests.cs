@@ -28,13 +28,13 @@ public sealed class SeedSearchSchedulingTests
     public SeedSearchSchedulingTests()
     {
         _compute = new ScriptedComputeService(Workers, _time);
-        _search = new SeedSearchService(_compute, TestEngine.CreateConditionValidator(), _time, NullLogger<SeedSearchService>.Instance);
+        _search = new SeedSearchService(_compute, TestEngine.CreateConditionValidator(), TestEngine.CreateSeedSequenceFactory(), _time, NullLogger<SeedSearchService>.Instance);
     }
 
     [Fact]
     public void StartAsync_BatchesFinishOutOfOrder_KeepsTheSeedsInOrder() => SingleThread.Run(async () =>
     {
-        var setup = new SearchSetup { Definition = _definition, FirstSeed = -5000, LastSeed = 250_000, MaxResults = 10_000, Workers = Workers };
+        var setup = new SearchSetup { Definition = _definition, Source = new SeedRangeSource { FirstSeed = -5000, LastSeed = 250_000 }, MaxResults = 10_000, Workers = Workers };
 
         await _search.StartAsync(setup, TestContext.Current.CancellationToken);
 
@@ -47,12 +47,12 @@ public sealed class SeedSearchSchedulingTests
     [Fact]
     public void StartAsync_EnoughSeedsFound_DropsWhatLaterBatchesFound() => SingleThread.Run(async () =>
     {
-        var setup = new SearchSetup { Definition = _definition, FirstSeed = 1, MaxResults = 12, Workers = Workers };
+        var setup = new SearchSetup { Definition = _definition, Source = new SeedRangeSource { FirstSeed = 1 }, MaxResults = 12, Workers = Workers };
 
         await _search.StartAsync(setup, TestContext.Current.CancellationToken);
 
         Assert.Equal(Enumerable.Range(1, 12).Select(index => index * (long)MatchEvery), _search.Results);
-        Assert.Equal(12 * MatchEvery + 1, _search.Progress.NextSeed);
+        Assert.Null(_search.Progress.NextSeed);
         Assert.Equal(12 * MatchEvery, _search.Progress.Scanned);
         Assert.Equal(SearchState.Finished, _search.State);
     });
@@ -63,7 +63,7 @@ public sealed class SeedSearchSchedulingTests
     [InlineData(99, Workers)]
     public void StartAsync_Workers_RunsThatManyBatchesAtOnce(int asked, int expected) => SingleThread.Run(async () =>
     {
-        var setup = new SearchSetup { Definition = _definition, LastSeed = 100_000, Workers = asked };
+        var setup = new SearchSetup { Definition = _definition, Source = new SeedRangeSource { LastSeed = 100_000 }, Workers = asked };
 
         await _search.StartAsync(setup, TestContext.Current.CancellationToken);
 
@@ -73,7 +73,7 @@ public sealed class SeedSearchSchedulingTests
     [Fact]
     public void StartAsync_Batches_GrowUntilTheyTakeAFractionOfASecond() => SingleThread.Run(async () =>
     {
-        var setup = new SearchSetup { Definition = _definition, LastSeed = 1_000_000, MaxResults = 10_000, Workers = 1 };
+        var setup = new SearchSetup { Definition = _definition, Source = new SeedRangeSource { LastSeed = 1_000_000 }, MaxResults = 10_000, Workers = 1 };
 
         await _search.StartAsync(setup, TestContext.Current.CancellationToken);
 
@@ -85,7 +85,7 @@ public sealed class SeedSearchSchedulingTests
     [Fact]
     public void StartAsync_SearchWithAnEnd_ReportsItsSpeedAndTheTimeLeft() => SingleThread.Run(async () =>
     {
-        var setup = new SearchSetup { Definition = _definition, LastSeed = 999_999, MaxResults = 10_000, Workers = 1 };
+        var setup = new SearchSetup { Definition = _definition, Source = new SeedRangeSource { LastSeed = 999_999 }, MaxResults = 10_000, Workers = 1 };
         List<SearchProgress> reports = [];
         _search.Changed += (_, _) => reports.Add(_search.Progress);
 
@@ -115,11 +115,11 @@ public sealed class SeedSearchSchedulingTests
     [Fact]
     public void StartAsync_BatchFails_ThrowsAndCanContinueWhereItStopped() => SingleThread.Run(async () =>
     {
-        var setup = new SearchSetup { Definition = _definition, LastSeed = 99_999, MaxResults = 10_000, Workers = 1 };
+        var setup = new SearchSetup { Definition = _definition, Source = new SeedRangeSource { LastSeed = 99_999 }, MaxResults = 10_000, Workers = 1 };
         _compute.FailAtSeed = 40_000;
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => _search.StartAsync(setup, TestContext.Current.CancellationToken));
-        var paused = (_search.State, _search.Progress.NextSeed);
+        var paused = (_search.State, NextSeed: _search.Progress.NextSeed ?? -1);
         _compute.FailAtSeed = null;
         await _search.ResumeAsync(TestContext.Current.CancellationToken);
 
@@ -133,12 +133,12 @@ public sealed class SeedSearchSchedulingTests
     [Fact]
     public void StartAsync_RangeUpToTheLastSeedThereIs_EndsThere() => SingleThread.Run(async () =>
     {
-        var setup = new SearchSetup { Definition = _definition, FirstSeed = long.MaxValue - 2500, MaxResults = 10_000, Workers = Workers };
+        var setup = new SearchSetup { Definition = _definition, Source = new SeedRangeSource { FirstSeed = long.MaxValue - 2500 }, MaxResults = 10_000, Workers = Workers };
 
         await _search.StartAsync(setup, TestContext.Current.CancellationToken);
 
         Assert.Equal(2501, _search.Progress.Scanned);
-        Assert.Equal(long.MaxValue, _search.Progress.NextSeed);
+        Assert.Null(_search.Progress.NextSeed);
         Assert.Equal(SearchState.Finished, _search.State);
         Assert.Equal([9223372036854774000, 9223372036854775000], _search.Results);
     });
@@ -191,8 +191,8 @@ public sealed class SeedSearchSchedulingTests
                 return;
             }
 
-            long[] matches = [.. Enumerable.Range(0, job.Count).Select(index => unchecked(job.FirstSeed + index)).Where(seed => seed % MatchEvery == 0)];
-            completion.SetResult(new SearchBatchResult { FirstSeed = job.FirstSeed, Count = job.Count, Matches = matches, ElapsedMilliseconds = milliseconds });
+            int[] matches = [.. Enumerable.Range(0, job.Count).Where(index => job.GetSeed(index) % MatchEvery == 0)];
+            completion.SetResult(new SearchBatchResult { Count = job.Count, Matches = matches, ElapsedMilliseconds = milliseconds });
         }
     }
 

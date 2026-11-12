@@ -126,10 +126,10 @@ public sealed class SearchPanelViewModelTests : IDisposable
     {
         Add<StructureCondition>();
 
-        Setup.FirstSeedText = "seed";
+        Setup.Seeds.FirstSeedText = "seed";
         var unreadable = Setup.Problems.ToList();
-        Setup.FirstSeedText = "10";
-        Setup.LastSeedText = "-5";
+        Setup.Seeds.FirstSeedText = "10";
+        Setup.Seeds.LastSeedText = "-5";
 
         Assert.Contains(unreadable, problem => problem.StartsWith("The first seed must be a whole number", StringComparison.Ordinal));
         Assert.Equal(["The last seed comes before the first one."], Setup.Problems);
@@ -170,6 +170,74 @@ public sealed class SearchPanelViewModelTests : IDisposable
 
         fields.Filter = "forest";
         Assert.Equal(["Crimson Forest", "Warped Forest"], fields.Biomes.Select(toggle => toggle.Name));
+    }
+
+    [AvaloniaFact]
+    public void SeedSource_QuadHuts_PutsTheQuadAroundTheOriginByDefault()
+    {
+        Add<QuadHutCondition>();
+
+        Setup.Seeds.SelectedKind = Setup.Seeds.Kinds.Single(choice => choice.Value == SeedSourceKind.QuadHuts);
+        Setup.Seeds.SelectedQuadQuality = Setup.Seeds.QuadQualities.Single(choice => choice.Value == QuadQuality.Ideal);
+
+        Assert.True(Setup.Seeds.IsQuadSource);
+        Assert.False(Setup.Seeds.IsRangeSource);
+        Assert.Equal(new QuadHutSeedSource { Quality = QuadQuality.Ideal }, Setup.Setup.Source);
+        Assert.True(Setup.IsValid);
+    }
+
+    [AvaloniaFact]
+    public void SeedSource_QuadHutsInAVersionWithoutHuts_IsAProblem()
+    {
+        Add<SlimeChunkCondition>();
+        _session.Version = McVersion.Beta1_7;
+
+        Setup.Seeds.SelectedKind = Setup.Seeds.Kinds.Single(choice => choice.Value == SeedSourceKind.QuadHuts);
+
+        Assert.Equal(["Swamp huts form no quads in this version."], Setup.Problems);
+        Assert.False(Setup.IsValid);
+    }
+
+    [AvaloniaFact]
+    public void SeedSource_List_ReadsOneSeedPerLineAsNumberOrText()
+    {
+        Add<StructureCondition>();
+
+        Setup.Seeds.SelectedKind = Setup.Seeds.Kinds.Single(choice => choice.Value == SeedSourceKind.List);
+        Setup.Seeds.SeedListText = "5\r\nhello\n\n  -3  ";
+
+        var list = Assert.IsType<SeedListSource>(Setup.Setup.Source);
+        Assert.Equal([5L, 99162322, -3], list.Seeds);
+        Assert.Equal("3 seeds.", Setup.Seeds.SeedListSummary);
+        Assert.True(Setup.IsValid);
+    }
+
+    [AvaloniaFact]
+    public void SeedSource_EmptyList_IsAProblem()
+    {
+        Add<StructureCondition>();
+
+        Setup.Seeds.SelectedKind = Setup.Seeds.Kinds.Single(choice => choice.Value == SeedSourceKind.List);
+
+        Assert.Equal(["Add at least one seed to the list."], Setup.Problems);
+    }
+
+    [AvaloniaFact]
+    public void Show_SetupWithAQuadSource_ShowsItsFields()
+    {
+        var setup = new SearchSetup
+        {
+            Definition = new SearchDefinition { Conditions = [new QuadHutCondition { Id = 1 }] },
+            Source = new QuadHutSeedSource { Type = StructureType.Igloo, Quality = QuadQuality.Classic, RegionX = 7, RegionZ = -2 },
+        };
+
+        Setup.Show(setup);
+
+        Assert.True(Setup.Seeds.IsQuadSource);
+        Assert.Equal(StructureType.Igloo, Setup.Seeds.SelectedQuadType?.Value);
+        Assert.Equal(QuadQuality.Classic, Setup.Seeds.SelectedQuadQuality?.Value);
+        Assert.Equal((7m, -2m), (Setup.Seeds.QuadRegionX, Setup.Seeds.QuadRegionZ));
+        Assert.Equal(setup.Source, Setup.Setup.Source);
     }
 
     [AvaloniaFact]
@@ -281,11 +349,11 @@ public sealed class SearchPanelViewModelTests : IDisposable
     {
         var storage = (MemoryStorageService)_services.GetRequiredService<IStorageService>();
         Add<StructureCondition>().Count = 3;
-        Setup.FirstSeedText = "100";
-        Setup.LastSeedText = "5000";
+        Setup.Seeds.FirstSeedText = "100";
+        Setup.Seeds.LastSeedText = "5000";
         await _panel.SaveSessionCommand.ExecuteAsync(null);
         Setup.Conditions[0].RemoveCommand.Execute(null);
-        Setup.FirstSeedText = "0";
+        Setup.Seeds.FirstSeedText = "0";
 
         storage.ContentToOpen = storage.SavedContent;
         await _panel.OpenSessionCommand.ExecuteAsync(null);
@@ -293,8 +361,8 @@ public sealed class SearchPanelViewModelTests : IDisposable
         Assert.Equal("search.json", storage.LastSaveOptions?.SuggestedFileName);
         Assert.Empty(Notifications.Errors);
         Assert.Equal(3, Assert.Single(Setup.Conditions).Count);
-        Assert.Equal("100", Setup.FirstSeedText);
-        Assert.Equal("5000", Setup.LastSeedText);
+        Assert.Equal("100", Setup.Seeds.FirstSeedText);
+        Assert.Equal("5000", Setup.Seeds.LastSeedText);
     }
 
     [AvaloniaFact]
@@ -316,18 +384,17 @@ public sealed class SearchPanelViewModelTests : IDisposable
         var setup = new SearchSetup
         {
             Definition = new SearchDefinition { Version = McVersion.V1_21_3, Conditions = [new StructureCondition { Id = 1, Type = StructureType.Village }] },
-            FirstSeed = 10,
-            LastSeed = 99_999,
+            Source = new SeedRangeSource { FirstSeed = 10, LastSeed = 99_999 },
         };
-        var stored = new SearchSession { Setup = setup, Search = new SearchSnapshot { Setup = setup, NextSeed = 500, Results = [12, 400] } };
+        var stored = new SearchSession { Setup = setup, Search = new SearchSnapshot { Setup = setup, Scanned = 490, NextSeed = 500, Results = [12, 400] } };
         await _services.GetRequiredService<ISearchSessionRepository>().SaveAsync(stored, TestContext.Current.CancellationToken);
 
         await _services.GetRequiredService<MainViewModel>().Initialization;
 
         Assert.Empty(Notifications.Errors);
         Assert.Equal("1 · Village", Assert.Single(Setup.Conditions).Header);
-        Assert.Equal("10", Setup.FirstSeedText);
-        Assert.Equal("99999", Setup.LastSeedText);
+        Assert.Equal("10", Setup.Seeds.FirstSeedText);
+        Assert.Equal("99999", Setup.Seeds.LastSeedText);
         Assert.True(_panel.Run.CanContinue);
         Assert.Equal("Stopped before seed 500.", _panel.Run.StatusText);
         Assert.Equal([12L, 400L], _panel.Results.Seeds.Select(seed => seed.Value));
@@ -345,8 +412,8 @@ public sealed class SearchPanelViewModelTests : IDisposable
     private void SetUpSlimeChunks(int count, int maxResults, string lastSeed = "199999")
     {
         Add<SlimeChunkCondition>().Count = count;
-        Setup.FirstSeedText = "0";
-        Setup.LastSeedText = lastSeed;
+        Setup.Seeds.FirstSeedText = "0";
+        Setup.Seeds.LastSeedText = lastSeed;
         Setup.MaxResults = maxResults;
     }
 }

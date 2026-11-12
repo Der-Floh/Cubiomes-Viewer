@@ -24,18 +24,9 @@ public sealed partial class SearchSetupViewModel : ObservableObject
     public string NoConditionsHint { get; } = "Add what a seed has to have. A condition looks around the world origin, or around where another condition was found.";
     public string AddConditionLabel { get; } = "Add a condition";
     public string SeedsLabel { get; } = "Seeds";
-    public string FirstSeedLabel { get; } = "From seed";
-    public string LastSeedLabel { get; } = "To seed";
-    public string LastSeedPlaceholder { get; } = "No end";
     public string MaxResultsLabel { get; } = "Stop after finding";
     public string WorkersLabel { get; } = "Workers";
     public decimal MaxResultsLimit { get; } = SearchSetup.MaxResultsLimit;
-
-    [ObservableProperty]
-    public partial string FirstSeedText { get; set; } = "0";
-
-    [ObservableProperty]
-    public partial string LastSeedText { get; set; } = string.Empty;
 
     [ObservableProperty]
     public partial decimal? MaxResults { get; set; } = SearchSetup.DefaultMaxResults;
@@ -52,6 +43,7 @@ public sealed partial class SearchSetupViewModel : ObservableObject
     [ObservableProperty]
     public partial bool HasProblems { get; set; }
 
+    public SeedSourceViewModel Seeds { get; }
     public ObservableCollection<SearchConditionViewModel> Conditions { get; } = [];
     public IReadOnlyList<ConditionKindViewModel> ConditionKinds { get; }
     public ObservableCollection<ComboChoice<int>> WorkerChoices { get; }
@@ -61,7 +53,7 @@ public sealed partial class SearchSetupViewModel : ObservableObject
 
     public bool HasWorkerChoices => WorkerChoices.Count > 2;
 
-    /// <summary>The search as it is set up; seeds that cannot be read keep their last readable value.</summary>
+    /// <summary>The search as it is set up; seeds that cannot be read keep their last readable values.</summary>
     public SearchSetup Setup { get; private set; }
 
     /// <summary>Whether the search can run as it is set up.</summary>
@@ -71,14 +63,17 @@ public sealed partial class SearchSetupViewModel : ObservableObject
 
     private readonly SearchConditionFactory _factory;
     private readonly IConditionValidator _validator;
+    private readonly ISeedSequenceFactory _sequenceFactory;
     private readonly IVersionCatalog _versionCatalog;
     private readonly WorldSession _session;
     private bool _isShowing;
 
-    public SearchSetupViewModel(SearchConditionFactory factory, IConditionValidator validator, IVersionCatalog versionCatalog, ISeedSearchService search, WorldSession session)
+    public SearchSetupViewModel(SeedSourceViewModel seeds, SearchConditionFactory factory, IConditionValidator validator, ISeedSequenceFactory sequenceFactory, IVersionCatalog versionCatalog, ISeedSearchService search, WorldSession session)
     {
+        Seeds = seeds;
         _factory = factory;
         _validator = validator;
+        _sequenceFactory = sequenceFactory;
         _versionCatalog = versionCatalog;
         _session = session;
 
@@ -89,6 +84,7 @@ public sealed partial class SearchSetupViewModel : ObservableObject
         ShowVersion();
         Refresh();
         session.PropertyChanged += OnSessionChanged;
+        seeds.Changed += OnSeedsChanged;
     }
 
     /// <summary>Shows a stored setup, such as the one of the last session.</summary>
@@ -102,8 +98,7 @@ public sealed partial class SearchSetupViewModel : ObservableObject
             foreach (var condition in setup.Definition.Conditions)
                 Conditions.Add(_factory.Create(condition, _session.Version, OnConditionEdited, OnConditionRemoved));
 
-            FirstSeedText = FormatSeed(setup.FirstSeed);
-            LastSeedText = setup.LastSeed == long.MaxValue ? string.Empty : FormatSeed(setup.LastSeed);
+            Seeds.Show(setup.Source);
             MaxResults = setup.MaxResults;
             SelectedWorkers = WorkerChoices.FirstOrDefault(choice => choice.Value == setup.Workers) ?? WorkerChoices[0];
         });
@@ -112,10 +107,6 @@ public sealed partial class SearchSetupViewModel : ObservableObject
         ShowReferences();
         Refresh();
     }
-
-    partial void OnFirstSeedTextChanged(string value) => Refresh();
-
-    partial void OnLastSeedTextChanged(string value) => Refresh();
 
     partial void OnMaxResultsChanged(decimal? value) => Refresh();
 
@@ -144,6 +135,8 @@ public sealed partial class SearchSetupViewModel : ObservableObject
 
         return null;
     }
+
+    private void OnSeedsChanged(object? sender, EventArgs e) => Refresh();
 
     private void OnConditionEdited(SearchConditionViewModel condition)
     {
@@ -217,11 +210,9 @@ public sealed partial class SearchSetupViewModel : ObservableObject
         if (_isShowing)
             return;
 
-        List<string> problems = [];
-        var firstSeed = ReadSeed(FirstSeedText, "first", problems) ?? Setup.FirstSeed;
-        var lastSeed = string.IsNullOrWhiteSpace(LastSeedText) ? long.MaxValue : ReadSeed(LastSeedText, "last", problems) ?? Setup.LastSeed;
-        if (problems.Count == 0 && lastSeed < firstSeed)
-            problems.Add("The last seed comes before the first one.");
+        List<string> problems = [.. Seeds.Problems];
+        if (problems.Count == 0)
+            problems.AddRange(_sequenceFactory.Validate(Seeds.Source, _session.Version));
 
         var definition = new SearchDefinition
         {
@@ -232,8 +223,7 @@ public sealed partial class SearchSetupViewModel : ObservableObject
         Setup = new SearchSetup
         {
             Definition = definition,
-            FirstSeed = firstSeed,
-            LastSeed = lastSeed,
+            Source = Seeds.Source,
             MaxResults = (int)Math.Clamp(Math.Round(MaxResults ?? SearchSetup.DefaultMaxResults), 1, SearchSetup.MaxResultsLimit),
             Workers = SelectedWorkers?.Value ?? AutomaticWorkers,
         };
@@ -271,15 +261,6 @@ public sealed partial class SearchSetupViewModel : ObservableObject
         }
     }
 
-    private static long? ReadSeed(string text, string which, List<string> problems)
-    {
-        if (long.TryParse(text.Trim(), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var seed))
-            return seed;
-
-        problems.Add(string.Create(CultureInfo.InvariantCulture, $"The {which} seed must be a whole number from {long.MinValue} to {long.MaxValue}."));
-        return null;
-    }
-
     private static ObservableCollection<ComboChoice<int>> CreateWorkerChoices(ISeedSearchService search)
     {
         var automatic = string.Create(CultureInfo.InvariantCulture, $"Automatic ({search.AutomaticWorkers})");
@@ -289,6 +270,4 @@ public sealed partial class SearchSetupViewModel : ObservableObject
             .. Enumerable.Range(1, search.MaxWorkers).Select(count => new ComboChoice<int> { Display = count.ToString(CultureInfo.InvariantCulture), Value = count }),
         ];
     }
-
-    private static string FormatSeed(long seed) => seed.ToString(CultureInfo.InvariantCulture);
 }

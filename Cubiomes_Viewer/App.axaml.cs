@@ -153,6 +153,7 @@ public sealed partial class App : Application
         services.AddSingleton<MapHostViewModel>();
         services.AddSingleton<LayersPanelViewModel>();
         services.AddSingleton<SearchConditionFactory>();
+        services.AddSingleton<SeedSourceViewModel>();
         services.AddSingleton<SearchSetupViewModel>();
         services.AddSingleton<SearchRunViewModel>();
         services.AddSingleton<SearchResultsViewModel>();

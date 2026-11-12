@@ -3,7 +3,7 @@ namespace Cubiomes_Viewer.Engine.Data.Search;
 /// <summary>What the search holds between two runs of the app, and what a session file stores.</summary>
 public sealed record SearchSession
 {
-    public const int CurrentSchemaVersion = 1;
+    public const int CurrentSchemaVersion = 2;
 
     public int SchemaVersion { get; init; } = CurrentSchemaVersion;
 

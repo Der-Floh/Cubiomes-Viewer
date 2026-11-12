@@ -39,4 +39,16 @@ public sealed class SearchDefinitionTests
 
         Assert.Equal(job, restored);
     }
+
+    [Fact]
+    public void SearchBatchJob_WithStrideOrSeeds_RoundTripsThroughTheEnvelope()
+    {
+        SearchBatchJob[] jobs =
+        [
+            new(SampleDefinitions.CreateEveryKindOfCondition(), 0x1234, 64, 1L << 48),
+            new(SampleDefinitions.CreateEveryKindOfCondition(), 5, 3, Seeds: [5, -9, long.MaxValue]),
+        ];
+
+        Assert.All(jobs, job => Assert.Equal(job, ComputeEnvelope.DeserializeJob(ComputeEnvelope.SerializeJob(job))));
+    }
 }

@@ -36,7 +36,7 @@ public sealed class SeedSearchServiceTests : IDisposable
     [Fact]
     public async Task StartAsync_WholeRange_FindsTheSeedsThatTestingEachSeedFinds()
     {
-        var setup = new SearchSetup { Definition = _slimeChunks, FirstSeed = FirstSeed, LastSeed = LastSeed, MaxResults = 10_000 };
+        var setup = new SearchSetup { Definition = _slimeChunks, Source = new SeedRangeSource { FirstSeed = FirstSeed, LastSeed = LastSeed }, MaxResults = 10_000 };
         var expected = FindByHand(setup);
 
         await _search.StartAsync(setup, TestContext.Current.CancellationToken);
@@ -54,7 +54,7 @@ public sealed class SeedSearchServiceTests : IDisposable
             Version,
             new StructureCondition { Id = 1, Type = StructureType.Village, Area = SearchArea.Square(1024) },
             new StructureCondition { Id = 2, RelativeTo = 1, Type = StructureType.RuinedPortal, Area = SearchArea.Square(700) });
-        var setup = new SearchSetup { Definition = definition, FirstSeed = 7000, LastSeed = 7399, MaxResults = 1000 };
+        var setup = new SearchSetup { Definition = definition, Source = new SeedRangeSource { FirstSeed = 7000, LastSeed = 7399 }, MaxResults = 1000 };
         var expected = FindByHand(setup);
 
         await _search.StartAsync(setup, TestContext.Current.CancellationToken);
@@ -66,7 +66,7 @@ public sealed class SeedSearchServiceTests : IDisposable
     [Fact]
     public async Task StartAsync_EnoughSeedsFound_StopsRightBehindTheLastOfThem()
     {
-        var setup = new SearchSetup { Definition = _slimeChunks, FirstSeed = FirstSeed, LastSeed = LastSeed, MaxResults = 7 };
+        var setup = new SearchSetup { Definition = _slimeChunks, Source = new SeedRangeSource { FirstSeed = FirstSeed, LastSeed = LastSeed }, MaxResults = 7 };
         var expected = FindByHand(setup);
 
         await _search.StartAsync(setup, TestContext.Current.CancellationToken);
@@ -74,13 +74,14 @@ public sealed class SeedSearchServiceTests : IDisposable
         Assert.Equal(7, expected.Count);
         Assert.Equal(expected, _search.Results);
         Assert.Equal(SearchState.Finished, _search.State);
-        Assert.Equal(expected[^1] + 1, _search.Progress.NextSeed);
+        Assert.Equal(expected[^1] - FirstSeed + 1, _search.Progress.Scanned);
+        Assert.Null(_search.Progress.NextSeed);
     }
 
     [Fact]
     public async Task ResumeAsync_AfterTheSearchWasStopped_FindsWhatAnUninterruptedSearchFinds()
     {
-        var setup = new SearchSetup { Definition = _slimeChunks, FirstSeed = FirstSeed, LastSeed = LastSeed, MaxResults = 10_000 };
+        var setup = new SearchSetup { Definition = _slimeChunks, Source = new SeedRangeSource { FirstSeed = FirstSeed, LastSeed = LastSeed }, MaxResults = 10_000 };
         var expected = FindByHand(setup);
 
         await SearchRuns.StartAndStopAtTheFirstProgressAsync(_search, setup);
@@ -88,7 +89,7 @@ public sealed class SeedSearchServiceTests : IDisposable
         await _search.ResumeAsync(TestContext.Current.CancellationToken);
 
         Assert.InRange(paused.Scanned, 1, LastSeed - FirstSeed);
-        Assert.Equal(FirstSeed + paused.Scanned, paused.NextSeed);
+        Assert.Equal((long?)(FirstSeed + paused.Scanned), paused.NextSeed);
         Assert.Equal(SearchState.Finished, _search.State);
         Assert.Equal(expected, _search.Results);
     }
@@ -96,7 +97,7 @@ public sealed class SeedSearchServiceTests : IDisposable
     [Fact]
     public async Task Restore_SnapshotOfAStoppedSearch_ContinuesInAnotherServiceAsIfNothingHappened()
     {
-        var setup = new SearchSetup { Definition = _slimeChunks, FirstSeed = FirstSeed, LastSeed = LastSeed, MaxResults = 10_000 };
+        var setup = new SearchSetup { Definition = _slimeChunks, Source = new SeedRangeSource { FirstSeed = FirstSeed, LastSeed = LastSeed }, MaxResults = 10_000 };
         var expected = FindByHand(setup);
         await SearchRuns.StartAndStopAtTheFirstProgressAsync(_search, setup);
         var snapshot = Assert.IsType<SearchSnapshot>(_search.CreateSnapshot());
@@ -116,7 +117,7 @@ public sealed class SeedSearchServiceTests : IDisposable
     [Fact]
     public async Task Restore_SnapshotOfAFinishedSearch_IsFinished()
     {
-        var setup = new SearchSetup { Definition = _slimeChunks, FirstSeed = 0, LastSeed = 999, MaxResults = 3 };
+        var setup = new SearchSetup { Definition = _slimeChunks, Source = new SeedRangeSource { FirstSeed = 0, LastSeed = 999 }, MaxResults = 3 };
         await _search.StartAsync(setup, TestContext.Current.CancellationToken);
         var snapshot = Assert.IsType<SearchSnapshot>(_search.CreateSnapshot());
 
@@ -160,7 +161,7 @@ public sealed class SeedSearchServiceTests : IDisposable
     [Fact]
     public async Task Reset_AfterASearch_ForgetsIt()
     {
-        await _search.StartAsync(new SearchSetup { Definition = _slimeChunks, FirstSeed = 0, LastSeed = 999 }, TestContext.Current.CancellationToken);
+        await _search.StartAsync(new SearchSetup { Definition = _slimeChunks, Source = new SeedRangeSource { FirstSeed = 0, LastSeed = 999 }}, TestContext.Current.CancellationToken);
 
         _search.Reset();
 
@@ -175,7 +176,8 @@ public sealed class SeedSearchServiceTests : IDisposable
         var plan = TestEngine.CreateSearchPlanCompiler().Compile(setup.Definition);
         var matcher = new SeedMatcher();
         List<long> found = [];
-        for (var seed = setup.FirstSeed; seed <= setup.LastSeed && found.Count < setup.MaxResults; seed++)
+        var range = Assert.IsType<SeedRangeSource>(setup.Source);
+        for (var seed = range.FirstSeed; seed <= range.LastSeed && found.Count < setup.MaxResults; seed++)
         {
             if (matcher.IsMatch(plan, _bench.Open(setup.Definition, seed)))
                 found.Add(seed);

@@ -8,10 +8,7 @@ public sealed record SearchSetup
 
     public required SearchDefinition Definition { get; init; }
 
-    public long FirstSeed { get; init; }
-
-    /// <summary>The last seed to scan; the search runs through all seeds from <see cref="FirstSeed"/> upwards without it.</summary>
-    public long LastSeed { get; init; } = long.MaxValue;
+    public SeedSource Source { get; init; } = new SeedRangeSource();
 
     /// <summary>The search stops once it has found this many seeds.</summary>
     public int MaxResults { get; init; } = DefaultMaxResults;

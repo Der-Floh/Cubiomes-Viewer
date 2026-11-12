@@ -13,8 +13,6 @@ namespace Cubiomes_Viewer.ViewModels;
 /// <summary>Which huts a quad-huts condition looks for and how close together they have to be.</summary>
 public sealed partial class QuadHutFieldsViewModel : ObservableObject, IConditionFields
 {
-    private static readonly StructureType[] _types = [StructureType.SwampHut, StructureType.DesertPyramid, StructureType.JungleTemple, StructureType.Igloo];
-
     public string TypeLabel { get; } = "Structure";
     public string QualityLabel { get; } = "The huts at least as close as";
 
@@ -26,13 +24,7 @@ public sealed partial class QuadHutFieldsViewModel : ObservableObject, IConditio
 
     public ObservableCollection<ComboChoice<StructureType>> Types { get; }
 
-    public ObservableCollection<ComboChoice<QuadQuality>> Qualities { get; } =
-    [
-        new() { Display = "An ideal constellation", Value = QuadQuality.Ideal },
-        new() { Display = "A classic constellation", Value = QuadQuality.Classic },
-        new() { Display = "Room for a 43-block drop", Value = QuadQuality.Normal },
-        new() { Display = "All four in range of one point", Value = QuadQuality.Barely },
-    ];
+    public IReadOnlyList<ComboChoice<QuadQuality>> Qualities => QuadChoices.Qualities;
 
     public string Title => $"Quad {(SelectedType?.Display ?? TypeLabel).ToLowerInvariant()}s";
 
@@ -52,7 +44,7 @@ public sealed partial class QuadHutFieldsViewModel : ObservableObject, IConditio
         ArgumentNullException.ThrowIfNull(condition);
         ArgumentNullException.ThrowIfNull(catalog);
 
-        Types = [.. _types.Select(type => new ComboChoice<StructureType> { Display = catalog.GetInfo(type).Name, Value = type })];
+        Types = [.. QuadChoices.CreateTypeChoices(catalog)];
         SelectedType = Types.FirstOrDefault(choice => choice.Value == condition.Type) ?? Types[0];
         SelectedQuality = Qualities.FirstOrDefault(choice => choice.Value == condition.Quality) ?? Qualities[^1];
         _changed = changed;

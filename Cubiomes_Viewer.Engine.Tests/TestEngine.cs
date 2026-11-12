@@ -1,4 +1,6 @@
+using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Service.ConditionServ;
+using Cubiomes_Viewer.Engine.Service.SearchServ;
 using Cubiomes_Viewer.Engine.Service.LayerServ;
 using Cubiomes_Viewer.Engine.Service.StructureServ;
 using Cubiomes_Viewer.Engine.Service.TileServ;
@@ -29,4 +31,13 @@ internal static class TestEngine
     public static ConditionValidator CreateConditionValidator() => new(CreateConditionRegistry(), new VersionCatalog());
 
     public static SearchPlanCompiler CreateSearchPlanCompiler() => new(CreateConditionRegistry());
+
+    /// <summary>A factory for sources other than quad huts, whose bases these tests never need.</summary>
+    public static SeedSequenceFactory CreateSeedSequenceFactory() => new(new NoQuadHutBases(), new CubiomesQuadFinder(), CreateStructureCatalog());
+
+    private sealed class NoQuadHutBases : IQuadHutBaseService
+    {
+        public Task<IReadOnlyList<ulong>> GetBasesAsync(QuadQuality worst, IProgress<double>? progress = null, CancellationToken cancellationToken = default)
+            => throw new NotSupportedException("These tests search no quad-hut seeds.");
+    }
 }
