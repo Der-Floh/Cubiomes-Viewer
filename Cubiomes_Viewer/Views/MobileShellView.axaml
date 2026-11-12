@@ -32,6 +32,9 @@
             <ListBoxItem ToolTip.Tip="{Binding LayersLabel}">
                 <PathIcon Data="{StaticResource LayersIcon}"/>
             </ListBoxItem>
+            <ListBoxItem ToolTip.Tip="{Binding SearchLabel}">
+                <PathIcon Data="{StaticResource SearchIcon}"/>
+            </ListBoxItem>
             <ListBoxItem ToolTip.Tip="{Binding SettingsLabel}">
                 <PathIcon Data="{StaticResource SettingsIcon}"/>
             </ListBoxItem>

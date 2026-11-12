@@ -1,0 +1,175 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Cubiomes_Viewer.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="320" d:DesignHeight="900"
+             x:Class="Cubiomes_Viewer.Views.SearchPanelView"
+             x:DataType="vm:SearchPanelViewModel">
+
+    <UserControl.Resources>
+        <DataTemplate x:Key="ProblemTemplate" x:DataType="x:String">
+            <TextBlock Classes="problem" Text="{Binding}"/>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <UserControl.DataTemplates>
+        <DataTemplate x:DataType="vm:StructureFieldsViewModel">
+            <StackPanel Classes="form">
+                <TextBlock Classes="field-label" Text="{Binding TypeLabel}"/>
+                <ComboBox Classes="fill" ItemsSource="{Binding Types}" SelectedItem="{Binding SelectedType}"/>
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate x:DataType="vm:BiomeToggleViewModel">
+            <CheckBox Content="{Binding Name}" IsChecked="{Binding IsChecked}"/>
+        </DataTemplate>
+
+        <DataTemplate x:DataType="vm:BiomeFieldsViewModel">
+            <StackPanel Classes="form">
+                <TextBlock Classes="field-label" Text="{Binding DimensionLabel}"/>
+                <ComboBox Classes="fill" ItemsSource="{Binding Dimensions}" SelectedItem="{Binding SelectedDimension}"/>
+                <TextBlock Classes="field-label" Text="{Binding BiomesLabel}"/>
+                <TextBox Text="{Binding Filter}" PlaceholderText="{Binding FilterPlaceholder}"/>
+                <Border Classes="choice-list">
+                    <ScrollViewer>
+                        <ItemsControl ItemsSource="{Binding Biomes}"/>
+                    </ScrollViewer>
+                </Border>
+                <TextBlock Classes="damp" Text="{Binding ChosenText}"/>
+                <TextBlock Classes="field-label" Text="{Binding MatchLabel}"/>
+                <ComboBox Classes="fill" ItemsSource="{Binding Matches}" SelectedItem="{Binding SelectedMatch}"/>
+                <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
+                    <TextBlock Classes="field-label" Text="{Binding ScaleLabel}"/>
+                    <ComboBox Grid.Row="1" Classes="fill" ItemsSource="{Binding Scales}" SelectedItem="{Binding SelectedScale}"/>
+                    <TextBlock Grid.Column="1" Classes="field-label" Text="{Binding HeightLabel}"/>
+                    <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding Height}" Minimum="{Binding MinHeight}" Maximum="{Binding MaxHeight}" Increment="8" FormatString="0"/>
+                </Grid>
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate x:DataType="vm:SearchConditionViewModel">
+            <Border Classes="condition" Classes.problem="{Binding HasProblems}">
+                <StackPanel Classes="form">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <ToggleButton Classes="condition-header" IsChecked="{Binding IsExpanded}">
+                            <StackPanel>
+                                <TextBlock Classes="condition-title" Text="{Binding Header}"/>
+                                <TextBlock Classes="damp" Text="{Binding Summary}" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </ToggleButton>
+                        <Button Grid.Column="1" Classes="card-close" Command="{Binding RemoveCommand}" ToolTip.Tip="{Binding RemoveLabel}">
+                            <PathIcon Data="{StaticResource CloseIcon}"/>
+                        </Button>
+                    </Grid>
+                    <ItemsControl ItemsSource="{Binding Problems}" ItemTemplate="{StaticResource ProblemTemplate}" IsVisible="{Binding HasProblems}"/>
+
+                    <StackPanel Classes="form" IsVisible="{Binding IsExpanded}">
+                        <ContentControl Content="{Binding Fields}" IsVisible="{Binding Fields, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+
+                        <TextBlock Classes="field-label" Text="{Binding ReferenceLabel}"/>
+                        <ComboBox Classes="fill" ItemsSource="{Binding ReferenceChoices}" SelectedItem="{Binding SelectedReference}"/>
+
+                        <StackPanel Classes="form" IsVisible="{Binding HasArea}">
+                            <TextBlock Classes="field-label" Text="{Binding ShapeLabel}"/>
+                            <ComboBox Classes="fill" ItemsSource="{Binding Shapes}" SelectedItem="{Binding SelectedShape}"/>
+                            <StackPanel Classes="form" IsVisible="{Binding IsDistanceShown}">
+                                <TextBlock Classes="field-label" Text="{Binding DistanceLabel}"/>
+                                <NumericUpDown Value="{Binding Distance}" Minimum="0" Maximum="{Binding MaxOffset}" Increment="16" FormatString="0"/>
+                            </StackPanel>
+                            <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto" IsVisible="{Binding IsRectangleShown}">
+                                <TextBlock Grid.ColumnSpan="2" Classes="field-label" Text="{Binding FromLabel}"/>
+                                <NumericUpDown Grid.Row="1" Value="{Binding FromX}" Minimum="{Binding MinOffset}" Maximum="{Binding MaxOffset}" Increment="16" FormatString="0"/>
+                                <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding FromZ}" Minimum="{Binding MinOffset}" Maximum="{Binding MaxOffset}" Increment="16" FormatString="0"/>
+                                <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Classes="field-label" Text="{Binding ToLabel}"/>
+                                <NumericUpDown Grid.Row="3" Value="{Binding ToX}" Minimum="{Binding MinOffset}" Maximum="{Binding MaxOffset}" Increment="16" FormatString="0"/>
+                                <NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding ToZ}" Minimum="{Binding MinOffset}" Maximum="{Binding MaxOffset}" Increment="16" FormatString="0"/>
+                            </Grid>
+                        </StackPanel>
+
+                        <CheckBox Content="{Binding ExcludeLabel}" IsChecked="{Binding IsExcluded}" IsVisible="{Binding CanExclude}"/>
+                        <StackPanel Classes="form" IsVisible="{Binding IsCountShown}">
+                            <TextBlock Classes="field-label" Text="{Binding CountLabel}"/>
+                            <NumericUpDown Value="{Binding Count}" Minimum="1" Maximum="{Binding MaxCount}" Increment="1" FormatString="0"/>
+                        </StackPanel>
+                        <StackPanel Classes="form" IsVisible="{Binding IsAnchorShown}">
+                            <TextBlock Classes="field-label" Text="{Binding AnchorLabel}"/>
+                            <ComboBox Classes="fill" ItemsSource="{Binding Anchors}" SelectedItem="{Binding SelectedAnchor}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+    </UserControl.DataTemplates>
+
+    <ScrollViewer>
+        <StackPanel Classes="panel">
+            <TextBlock Classes="title" Text="{Binding Title}"/>
+
+            <StackPanel Classes="form" DataContext="{Binding Setup}" x:DataType="vm:SearchSetupViewModel">
+                <TextBlock Classes="damp" Text="{Binding VersionText}" TextWrapping="Wrap"/>
+
+                <TextBlock Classes="section" Text="{Binding ConditionsLabel}"/>
+                <TextBlock Classes="damp" Text="{Binding NoConditionsHint}" TextWrapping="Wrap" IsVisible="{Binding !HasConditions}"/>
+                <ItemsControl Classes="conditions" ItemsSource="{Binding Conditions}"/>
+                <DropDownButton Classes="fill" Content="{Binding AddConditionLabel}">
+                    <DropDownButton.Flyout>
+                        <MenuFlyout ItemsSource="{Binding ConditionKinds}" Placement="BottomEdgeAlignedLeft">
+                            <MenuFlyout.ItemContainerTheme>
+                                <ControlTheme TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}" x:DataType="vm:ConditionKindViewModel">
+                                    <Setter Property="Header" Value="{Binding Name}"/>
+                                    <Setter Property="Command" Value="{Binding AddCommand}"/>
+                                    <Setter Property="ToolTip.Tip" Value="{Binding Description}"/>
+                                </ControlTheme>
+                            </MenuFlyout.ItemContainerTheme>
+                        </MenuFlyout>
+                    </DropDownButton.Flyout>
+                </DropDownButton>
+
+                <TextBlock Classes="section" Text="{Binding SeedsLabel}"/>
+                <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
+                    <TextBlock Classes="field-label" Text="{Binding FirstSeedLabel}"/>
+                    <TextBox Grid.Row="1" Text="{Binding FirstSeedText}"/>
+                    <TextBlock Grid.Column="1" Classes="field-label" Text="{Binding LastSeedLabel}"/>
+                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding LastSeedText}" PlaceholderText="{Binding LastSeedPlaceholder}"/>
+                </Grid>
+                <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
+                    <TextBlock Classes="field-label" Text="{Binding MaxResultsLabel}"/>
+                    <NumericUpDown Grid.Row="1" Value="{Binding MaxResults}" Minimum="1" Maximum="{Binding MaxResultsLimit}" Increment="10" FormatString="0"/>
+                    <TextBlock Grid.Column="1" Classes="field-label" Text="{Binding WorkersLabel}" IsVisible="{Binding HasWorkerChoices}"/>
+                    <ComboBox Grid.Row="1" Grid.Column="1" Classes="fill" ItemsSource="{Binding WorkerChoices}" SelectedItem="{Binding SelectedWorkers}" IsVisible="{Binding HasWorkerChoices}"/>
+                </Grid>
+                <ItemsControl ItemsSource="{Binding Problems}" ItemTemplate="{StaticResource ProblemTemplate}" IsVisible="{Binding HasProblems}"/>
+            </StackPanel>
+
+            <StackPanel Classes="form" DataContext="{Binding Run}" x:DataType="vm:SearchRunViewModel">
+                <WrapPanel Classes="card-actions">
+                    <Button Classes="accent" Content="{Binding StartLabel}" Command="{Binding StartCommand}" IsVisible="{Binding IsStartShown}"/>
+                    <Button Classes="accent" Content="{Binding ContinueLabel}" Command="{Binding ContinueCommand}" IsVisible="{Binding CanContinue}"/>
+                    <Button Content="{Binding StopLabel}" Command="{Binding StopCommand}" IsVisible="{Binding IsRunning}"/>
+                    <Button Content="{Binding ClearLabel}" Command="{Binding ClearCommand}" ToolTip.Tip="{Binding ClearHint}" IsVisible="{Binding HasSearch}"/>
+                </WrapPanel>
+                <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap" IsVisible="{Binding HasSearch}"/>
+                <TextBlock Classes="damp" Text="{Binding ProgressText}" TextWrapping="Wrap" IsVisible="{Binding HasSearch}"/>
+            </StackPanel>
+
+            <StackPanel Classes="form" DataContext="{Binding Results}" x:DataType="vm:SearchResultsViewModel">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Classes="section" Text="{Binding Title}"/>
+                    <Button Grid.Column="1" Classes="compact" Content="{Binding CopyLabel}" Command="{Binding CopyCommand}" IsVisible="{Binding HasSeeds}"/>
+                </Grid>
+                <TextBlock Classes="damp" Text="{Binding NoSeedsLabel}" IsVisible="{Binding !HasSeeds}"/>
+                <TextBlock Classes="damp" Text="{Binding OpenHint}" TextWrapping="Wrap" IsVisible="{Binding HasSeeds}"/>
+                <ListBox Classes="results" ItemsSource="{Binding Seeds}" SelectedItem="{Binding SelectedSeed}" IsVisible="{Binding HasSeeds}"/>
+            </StackPanel>
+
+            <TextBlock Classes="section" Text="{Binding SessionLabel}"/>
+            <TextBlock Classes="damp" Text="{Binding SessionHint}" TextWrapping="Wrap"/>
+            <WrapPanel Classes="card-actions">
+                <Button Content="{Binding SaveLabel}" Command="{Binding SaveSessionCommand}"/>
+                <Button Content="{Binding OpenLabel}" Command="{Binding OpenSessionCommand}"/>
+            </WrapPanel>
+        </StackPanel>
+    </ScrollViewer>
+
+</UserControl>

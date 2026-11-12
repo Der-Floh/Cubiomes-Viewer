@@ -24,4 +24,12 @@ public interface ISearchSessionService
     /// <summary>Replaces the setup and the last search with the ones of another session.</summary>
     /// <exception cref="InvalidOperationException">A search is running.</exception>
     void Open(SearchSession session);
+
+    /// <summary>Writes the setup and the last search as the content of a session file.</summary>
+    byte[] Export();
+
+    /// <summary>Opens the session a session file holds.</summary>
+    /// <exception cref="FormatException">The content is not a session this version can read.</exception>
+    /// <exception cref="InvalidOperationException">A search is running.</exception>
+    void Import(ReadOnlySpan<byte> content);
 }

@@ -16,6 +16,9 @@ public sealed class SearchSessionService : ISearchSessionService, IDisposable
         set
         {
             ArgumentNullException.ThrowIfNull(value);
+            if (value == field)
+                return;
+
             field = value;
             RequestSave(_saveDelay, replacePending: true);
         }
@@ -68,6 +71,10 @@ public sealed class SearchSessionService : ISearchSessionService, IDisposable
         Adopt(session);
         RequestSave(_saveDelay, replacePending: true);
     }
+
+    public byte[] Export() => _repository.Serialize(CreateSession());
+
+    public void Import(ReadOnlySpan<byte> content) => Open(_repository.Deserialize(content));
 
     public void Dispose()
     {

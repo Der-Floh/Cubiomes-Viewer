@@ -54,6 +54,27 @@ public sealed class StorageService : IStorageService
         return file.Name;
     }
 
+    public async Task<byte[]?> OpenFileAsync(FilePickerOpenOptions options)
+    {
+        var files = await OpenFilePickerAsync(options);
+        try
+        {
+            if (files.Count == 0)
+                return null;
+
+            await using var stream = await files[0].OpenReadAsync();
+            using var content = new MemoryStream();
+            await stream.CopyToAsync(content);
+            _logger.LogDebug("Read {Bytes} bytes from {File}", content.Length, files[0].Name);
+            return content.ToArray();
+        }
+        finally
+        {
+            foreach (var file in files)
+                file.Dispose();
+        }
+    }
+
     public Task<IStorageFile?> TryGetFileFromPathAsync(string absolutePath)
         => StorageProvider.TryGetFileFromPathAsync(new Uri(absolutePath));
 }

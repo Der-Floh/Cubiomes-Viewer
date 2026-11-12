@@ -13,6 +13,10 @@
     <Style Selector="ComboBox.fill">
         <Setter Property="HorizontalAlignment" Value="Stretch"/>
     </Style>
+    <Style Selector="DropDownButton.fill">
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+    </Style>
 
     <Style Selector="PathIcon">
         <Setter Property="Width" Value="16"/>
@@ -160,6 +164,65 @@
     <Style Selector="StackPanel.panel">
         <Setter Property="Margin" Value="16"/>
         <Setter Property="Spacing" Value="8"/>
+    </Style>
+
+    <Style Selector="Grid.pair">
+        <Setter Property="ColumnSpacing" Value="8"/>
+        <Setter Property="RowSpacing" Value="4"/>
+    </Style>
+    <Style Selector="ItemsControl.conditions">
+        <Setter Property="ItemsPanel">
+            <ItemsPanelTemplate>
+                <StackPanel Spacing="8"/>
+            </ItemsPanelTemplate>
+        </Setter>
+    </Style>
+    <Style Selector="Border.condition">
+        <Setter Property="Background" Value="{DynamicResource RegionColorDamp}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="10,8"/>
+    </Style>
+    <Style Selector="Border.condition.problem">
+        <Setter Property="BorderBrush" Value="{DynamicResource ErrorColor}"/>
+    </Style>
+    <Style Selector="ToggleButton.condition-header">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="0,2"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+    </Style>
+    <Style Selector="ToggleButton.condition-header:checked /template/ ContentPresenter#PART_ContentPresenter, ToggleButton.condition-header:pointerover /template/ ContentPresenter#PART_ContentPresenter, ToggleButton.condition-header:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource FontColor}"/>
+    </Style>
+    <Style Selector="TextBlock.condition-title">
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+    <Style Selector="TextBlock.problem">
+        <Setter Property="Foreground" Value="{DynamicResource ErrorColor}"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+    </Style>
+    <Style Selector="Border.choice-list">
+        <Setter Property="MaxHeight" Value="200"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="Padding" Value="8,2"/>
+    </Style>
+    <Style Selector="ListBox.results">
+        <Setter Property="MaxHeight" Value="240"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="4"/>
+    </Style>
+    <Style Selector="ListBox.results ListBoxItem">
+        <Setter Property="Padding" Value="10,6"/>
+        <Setter Property="Cursor" Value="Hand"/>
     </Style>
 
     <Style Selector="Border.card">

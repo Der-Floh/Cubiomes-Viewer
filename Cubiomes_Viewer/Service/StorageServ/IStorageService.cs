@@ -17,5 +17,10 @@ public interface IStorageService
     /// </summary>
     Task<string?> SaveFileAsync(FilePickerSaveOptions options, ReadOnlyMemory<byte> content);
 
+    /// <summary>
+    /// Lets the user choose a file and reads it. Returns its content, or <see langword="null"/> when they cancel.
+    /// </summary>
+    Task<byte[]?> OpenFileAsync(FilePickerOpenOptions options);
+
     Task<IStorageFile?> TryGetFileFromPathAsync(string absolutePath);
 }

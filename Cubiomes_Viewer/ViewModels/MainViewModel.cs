@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 
 using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Maps;
+using Cubiomes_Viewer.Engine.Service.SearchServ;
 using Cubiomes_Viewer.Engine.Service.SeedServ;
 using Cubiomes_Viewer.Engine.Service.SettingsServ;
 using Cubiomes_Viewer.Service.NotificationServ;
@@ -15,6 +16,7 @@ public sealed partial class MainViewModel : ViewModelBase
     public const int NoPanel = -1;
 
     public string LayersLabel { get; } = "Layers";
+    public string SearchLabel { get; } = "Search";
     public string SettingsLabel { get; } = "Settings";
 
     public WorldBarViewModel WorldBar { get; }
@@ -27,26 +29,30 @@ public sealed partial class MainViewModel : ViewModelBase
     public ViewModelBase? CurrentPanel => SelectedPanelIndex >= 0 && SelectedPanelIndex < _panels.Length ? _panels[SelectedPanelIndex] : null;
     public bool IsPanelOpen => CurrentPanel is not null;
 
-    /// <summary>Completes once the stored settings and the last view are loaded and shown.</summary>
+    /// <summary>Completes once the stored settings, the last view and the last search are loaded and shown.</summary>
     public Task Initialization { get; }
 
     private readonly ViewModelBase[] _panels;
     private readonly LayersPanelViewModel _layersPanel;
+    private readonly SearchPanelViewModel _searchPanel;
     private readonly SettingsViewModel _settingsPanel;
     private readonly WorldSession _session;
     private readonly ISettingsService _settingsService;
+    private readonly ISearchSessionService _searchSessions;
     private readonly ISeedHistoryService _seedHistory;
     private bool _isInitialized;
 
-    public MainViewModel(WorldBarViewModel worldBar, MapViewModel map, LayersPanelViewModel layersPanel, SettingsViewModel settingsPanel, WorldSession session, ISettingsService settingsService, ISeedHistoryService seedHistory, INotificationService notificationService) : base(notificationService)
+    public MainViewModel(WorldBarViewModel worldBar, MapViewModel map, LayersPanelViewModel layersPanel, SearchPanelViewModel searchPanel, SettingsViewModel settingsPanel, WorldSession session, ISettingsService settingsService, ISearchSessionService searchSessions, ISeedHistoryService seedHistory, INotificationService notificationService) : base(notificationService)
     {
         WorldBar = worldBar;
         Map = map;
         _layersPanel = layersPanel;
+        _searchPanel = searchPanel;
         _settingsPanel = settingsPanel;
-        _panels = [layersPanel, settingsPanel];
+        _panels = [layersPanel, searchPanel, settingsPanel];
         _session = session;
         _settingsService = settingsService;
+        _searchSessions = searchSessions;
         _seedHistory = seedHistory;
 
         Initialization = RunGuardedAsync(InitializeAsync);
@@ -63,6 +69,9 @@ public sealed partial class MainViewModel : ViewModelBase
         Map.PropertyChanged += OnMapChanged;
         _seedHistory.Changed += StoreView;
         _isInitialized = true;
+
+        await _searchSessions.LoadAsync();
+        _searchPanel.ShowSession();
     }
 
     private void ShowStoredView()

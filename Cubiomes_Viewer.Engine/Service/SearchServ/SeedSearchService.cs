@@ -28,6 +28,8 @@ public sealed class SeedSearchService : ISeedSearchService
     public SearchSetup? Setup { get; private set; }
     public SearchProgress Progress { get; private set; }
     public IReadOnlyList<long> Results => _results;
+    public int MaxWorkers => _compute.WorkerCount;
+    public int AutomaticWorkers => Math.Max(1, _compute.WorkerCount - 1);
 
     public event EventHandler? Changed;
 
@@ -112,7 +114,7 @@ public sealed class SeedSearchService : ISeedSearchService
 
     private async Task RunAsync(SearchSetup setup, CancellationToken cancellationToken)
     {
-        var workers = setup.Workers > 0 ? Math.Min(setup.Workers, _compute.WorkerCount) : Math.Max(1, _compute.WorkerCount - 1);
+        var workers = setup.Workers > 0 ? Math.Min(setup.Workers, MaxWorkers) : AutomaticWorkers;
         using var stopping = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         List<Task<SearchBatchResult>> running = [];
         var finished = false;

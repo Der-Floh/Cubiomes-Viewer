@@ -5,6 +5,7 @@ using Avalonia.Markup.Xaml;
 using Cubiomes_Viewer.Controls.Map;
 using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Extensions;
+using Cubiomes_Viewer.Engine.Service.SearchServ;
 using Cubiomes_Viewer.Engine.Service.SettingsServ;
 using Cubiomes_Viewer.Service.ClipboardServ;
 using Cubiomes_Viewer.Service.MapStyleServ;
@@ -47,7 +48,7 @@ public sealed partial class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             desktop.MainWindow = Services.GetRequiredService<MainWindow>();
-            desktop.Exit += (_, _) => Services.GetRequiredService<ISettingsService>().FlushAsync().GetAwaiter().GetResult();
+            desktop.Exit += (_, _) => FlushStoredState();
         }
         else if (ApplicationLifetime is IActivityApplicationLifetime activity)
         {
@@ -59,6 +60,13 @@ public sealed partial class App : Application
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    /// <summary>Writes what is waiting to be stored, as the desktop app ends before delayed saves would run.</summary>
+    private static void FlushStoredState()
+    {
+        Services.GetRequiredService<ISettingsService>().FlushAsync().GetAwaiter().GetResult();
+        Services.GetRequiredService<ISearchSessionService>().FlushAsync().GetAwaiter().GetResult();
     }
 
     private static void SetupGlobalExceptionHandlers()
@@ -132,6 +140,7 @@ public sealed partial class App : Application
         services.AddTransient<MobileShellView>();
         services.AddTransient<MapHostView>();
         services.AddTransient<LayersPanelView>();
+        services.AddTransient<SearchPanelView>();
         services.AddTransient<SettingsView>();
 
         // view models
@@ -143,6 +152,11 @@ public sealed partial class App : Application
         services.AddSingleton<LegendViewModel>();
         services.AddSingleton<MapHostViewModel>();
         services.AddSingleton<LayersPanelViewModel>();
+        services.AddSingleton<SearchConditionFactory>();
+        services.AddSingleton<SearchSetupViewModel>();
+        services.AddSingleton<SearchRunViewModel>();
+        services.AddSingleton<SearchResultsViewModel>();
+        services.AddSingleton<SearchPanelViewModel>();
         services.AddSingleton<SettingsViewModel>();
         services.AddTransient<SelfTestViewModel>();
 

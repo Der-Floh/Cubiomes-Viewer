@@ -15,6 +15,12 @@ public interface ISeedSearchService
 
     SearchProgress Progress { get; }
 
+    /// <summary>The most workers a search can scan with.</summary>
+    int MaxWorkers { get; }
+
+    /// <summary>How many workers a search scans with when its setup leaves the number open: all but one, which stays with the map.</summary>
+    int AutomaticWorkers { get; }
+
     /// <summary>The seeds found so far, in ascending order. They are the first ones from the start of the search on.</summary>
     IReadOnlyList<long> Results { get; }
 

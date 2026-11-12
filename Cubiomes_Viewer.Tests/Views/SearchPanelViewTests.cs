@@ -1,0 +1,120 @@
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.Headless;
+using Avalonia.Headless.XUnit;
+using Avalonia.Input;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
+
+using Cubiomes_Viewer.Data;
+using Cubiomes_Viewer.Engine.Data.Search;
+using Cubiomes_Viewer.Engine.Service.SearchServ;
+using Cubiomes_Viewer.ViewModels;
+using Cubiomes_Viewer.Views;
+
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Cubiomes_Viewer.Tests.Views;
+
+public sealed class SearchPanelViewTests : IDisposable
+{
+    private const int PanelWidth = 320;
+    private const int PanelHeight = 2400;
+    private const int ManySlimeChunks = 14;
+    private const string ConditionHeaderClass = "condition-header";
+    private const string RemoveButtonClass = "card-close";
+    private const string ResultsClass = "results";
+
+    private readonly ServiceProvider _services = TestServices.Create();
+    private readonly SearchPanelViewModel _panel;
+    private readonly Window _window;
+
+    public SearchPanelViewTests()
+    {
+        _panel = _services.GetRequiredService<SearchPanelViewModel>();
+        var view = _services.GetRequiredService<SearchPanelView>();
+        view.DataContext = _panel;
+        _window = new Window { Width = PanelWidth, Height = PanelHeight, Content = view };
+        _window.Show();
+    }
+
+    public void Dispose()
+    {
+        _window.Close();
+        _services.Dispose();
+    }
+
+    [AvaloniaFact]
+    public void ConditionHeader_Clicked_FoldsTheEditorAwayAndBack()
+    {
+        var condition = Add<StructureCondition>();
+        var header = FindAll<ToggleButton>().Single(button => button.Classes.Contains(ConditionHeaderClass));
+        var typeChoice = FindAll<ComboBox>().Single(box => box.DataContext is StructureFieldsViewModel);
+        Assert.True(typeChoice.IsEffectivelyVisible);
+
+        Click(header);
+        var folded = (condition.IsExpanded, typeChoice.IsEffectivelyVisible);
+        Click(header);
+
+        Assert.Equal((false, false), folded);
+        Assert.True(condition.IsExpanded);
+        Assert.True(typeChoice.IsEffectivelyVisible);
+    }
+
+    [AvaloniaFact]
+    public void RemoveButton_Clicked_RemovesTheCondition()
+    {
+        Add<StructureCondition>();
+
+        Click(FindAll<Button>().Single(button => button.Classes.Contains(RemoveButtonClass)));
+
+        Assert.Empty(_panel.Setup.Conditions);
+        Assert.DoesNotContain(FindAll<ToggleButton>(), button => button.Classes.Contains(ConditionHeaderClass));
+    }
+
+    [AvaloniaFact]
+    public async Task SearchButton_Clicked_FindsSeedsAndAClickOnOneOpensItOnTheMap()
+    {
+        Add<SlimeChunkCondition>().Count = ManySlimeChunks;
+        _panel.Setup.LastSeedText = "199999";
+        _panel.Setup.MaxResults = 3;
+        var search = _services.GetRequiredService<ISeedSearchService>();
+
+        Click(FindAll<Button>().Single(button => Equals(button.Content, _panel.Run.StartLabel)));
+        await TestWait.UntilAsync(() => search.State == SearchState.Finished, "The search did not finish.");
+        Render();
+        var seeds = FindAll<ListBox>().Single(box => box.Classes.Contains(ResultsClass)).GetVisualDescendants().OfType<ListBoxItem>().ToList();
+        Click(seeds[1]);
+
+        Assert.Equal(3, seeds.Count);
+        Assert.Equal(search.Results[1], _services.GetRequiredService<WorldSession>().Seed);
+        Assert.Same(_panel.Results.Seeds[1], _panel.Results.SelectedSeed);
+    }
+
+    private SearchConditionViewModel Add<TCondition>() where TCondition : SearchCondition
+    {
+        _panel.Setup.ConditionKinds.Single(kind => kind.Descriptor.ConditionType == typeof(TCondition)).AddCommand.Execute(null);
+        Render();
+        return _panel.Setup.Conditions[^1];
+    }
+
+    private void Click(Control control)
+    {
+        var center = control.TranslatePoint(new Point(control.Bounds.Width / 2, control.Bounds.Height / 2), _window);
+        Assert.NotNull(center);
+        _window.MouseDown(center.Value, MouseButton.Left);
+        _window.MouseUp(center.Value, MouseButton.Left);
+        Render();
+    }
+
+    private void Render()
+    {
+        Dispatcher.UIThread.RunJobs();
+        AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+        Dispatcher.UIThread.RunJobs();
+    }
+
+    private IEnumerable<T> FindAll<T>() where T : Control
+        => _window.GetVisualDescendants().OfType<T>().Where(control => control.IsEffectivelyVisible);
+}

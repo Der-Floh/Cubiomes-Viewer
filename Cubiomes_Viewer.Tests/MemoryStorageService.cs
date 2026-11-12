@@ -8,7 +8,7 @@ namespace Cubiomes_Viewer.Tests;
 internal sealed class MemoryStorageService : IStorageService
 {
     public IStorageProvider StorageProvider => throw new NotSupportedException("The tests have no storage provider.");
-    public bool CanOpenFiles => false;
+    public bool CanOpenFiles => true;
     public bool CanOpenFolders => false;
     public bool CanSaveFiles => true;
 
@@ -17,6 +17,9 @@ internal sealed class MemoryStorageService : IStorageService
 
     public FilePickerSaveOptions? LastSaveOptions { get; private set; }
     public byte[]? SavedContent { get; private set; }
+
+    /// <summary>What the open picker hands back, as if the user chose a file with it; nothing behaves as if they closed the picker.</summary>
+    public byte[]? ContentToOpen { get; set; }
 
     public Task<IReadOnlyList<IStorageFile>> OpenFilePickerAsync(FilePickerOpenOptions options)
         => Task.FromResult<IReadOnlyList<IStorageFile>>([]);
@@ -33,6 +36,8 @@ internal sealed class MemoryStorageService : IStorageService
         SavedContent = content.ToArray();
         return Task.FromResult(options.SuggestedFileName);
     }
+
+    public Task<byte[]?> OpenFileAsync(FilePickerOpenOptions options) => Task.FromResult(ContentToOpen);
 
     public Task<IStorageFile?> TryGetFileFromPathAsync(string absolutePath) => Task.FromResult<IStorageFile?>(null);
 }

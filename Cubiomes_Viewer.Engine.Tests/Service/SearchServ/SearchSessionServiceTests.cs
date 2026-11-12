@@ -173,6 +173,37 @@ public sealed class SearchSessionServiceTests : IDisposable
         Assert.Equal(SearchState.Paused, search.State);
     }
 
+    [Fact]
+    public async Task Import_ExportedSession_OpensTheSameSetupAndSearchElsewhere()
+    {
+        using var exporting = CreateServices(new FileSystemAppDataStore(_directory));
+        var source = exporting.GetRequiredService<ISearchSessionService>();
+        await source.LoadAsync(TestContext.Current.CancellationToken);
+        source.Setup = _setup;
+        await exporting.GetRequiredService<ISeedSearchService>().StartAsync(_setup with { MaxResults = 2 }, TestContext.Current.CancellationToken);
+        var exported = source.Export();
+
+        using var importing = CreateServices(new FileSystemAppDataStore(Path.Combine(_directory, "other")));
+        var target = importing.GetRequiredService<ISearchSessionService>();
+        await target.LoadAsync(TestContext.Current.CancellationToken);
+        target.Import(exported);
+
+        Assert.Equal(source.CreateSession(), target.CreateSession());
+        Assert.Equal(SearchState.Finished, importing.GetRequiredService<ISeedSearchService>().State);
+    }
+
+    [Fact]
+    public async Task Import_ContentThatIsNoSession_ThrowsAndKeepsTheSession()
+    {
+        using var services = CreateServices(new FileSystemAppDataStore(_directory));
+        var sessions = services.GetRequiredService<ISearchSessionService>();
+        await sessions.LoadAsync(TestContext.Current.CancellationToken);
+        sessions.Setup = _setup;
+
+        Assert.Throws<FormatException>(() => sessions.Import("{ not json"u8));
+        Assert.Equal(_setup, sessions.Setup);
+    }
+
     private static async Task<IReadOnlyList<long>> SearchWithoutStoppingAsync(SearchSetup setup)
     {
         using var services = CreateServices(new FakeRepository());
