@@ -1,7 +1,7 @@
 namespace Cubiomes_Viewer.Data;
 
-/// <summary>Which seeds an analysis looks at.</summary>
-public enum AnalysisSeeds
+/// <summary>Which seeds an analysis or an export covers.</summary>
+public enum SeedScope
 {
     /// <summary>The seed the map shows.</summary>
     ThisSeed,

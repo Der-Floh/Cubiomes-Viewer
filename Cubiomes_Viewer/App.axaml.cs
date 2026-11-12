@@ -142,6 +142,7 @@ public sealed partial class App : Application
         services.AddTransient<LayersPanelView>();
         services.AddTransient<SearchPanelView>();
         services.AddTransient<AnalysisPanelView>();
+        services.AddTransient<ExportView>();
         services.AddTransient<SettingsView>();
 
         // view models
@@ -165,6 +166,7 @@ public sealed partial class App : Application
         services.AddSingleton<StructureAnalysisViewModel>();
         services.AddSingleton<LocationAnalysisViewModel>();
         services.AddSingleton<AnalysisPanelViewModel>();
+        services.AddSingleton<ExportViewModel>();
         services.AddSingleton<WorldSettingsViewModel>();
         services.AddSingleton<SettingsViewModel>();
         services.AddTransient<SelfTestViewModel>();

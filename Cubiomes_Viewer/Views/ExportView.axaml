@@ -1,0 +1,57 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Cubiomes_Viewer.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="320" d:DesignHeight="800"
+             x:Class="Cubiomes_Viewer.Views.ExportView"
+             x:DataType="vm:ExportViewModel">
+
+    <ScrollViewer>
+        <StackPanel Classes="panel">
+            <TextBlock Classes="title" Text="{Binding Title}"/>
+            <TextBlock Classes="damp" Text="{Binding Hint}" TextWrapping="Wrap"/>
+            <TextBlock Classes="condition-title" Text="{Binding LayerText}" TextWrapping="Wrap"/>
+
+            <StackPanel Classes="form">
+                <TextBlock Classes="field-label" Text="{Binding SeedsLabel}"/>
+                <ComboBox Classes="fill" ItemsSource="{Binding SeedChoices}" SelectedItem="{Binding SelectedSeeds}"/>
+
+                <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto">
+                    <TextBlock Classes="field-label" Text="{Binding FromLabel}"/>
+                    <Button Grid.Column="1" Classes="compact" HorizontalAlignment="Right" Content="{Binding UseVisibleAreaLabel}" Command="{Binding UseVisibleAreaCommand}"/>
+                    <NumericUpDown Grid.Row="1" Classes="plain" Value="{Binding FromX}" Minimum="{Binding MinCoordinate}" Maximum="{Binding MaxCoordinate}"/>
+                    <NumericUpDown Grid.Row="1" Grid.Column="1" Classes="plain" Value="{Binding FromZ}" Minimum="{Binding MinCoordinate}" Maximum="{Binding MaxCoordinate}"/>
+                    <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Classes="field-label" Text="{Binding ToLabel}"/>
+                    <NumericUpDown Grid.Row="3" Classes="plain" Value="{Binding ToX}" Minimum="{Binding MinCoordinate}" Maximum="{Binding MaxCoordinate}"/>
+                    <NumericUpDown Grid.Row="3" Grid.Column="1" Classes="plain" Value="{Binding ToZ}" Minimum="{Binding MinCoordinate}" Maximum="{Binding MaxCoordinate}"/>
+                </Grid>
+
+                <TextBlock Classes="field-label" Text="{Binding ScaleLabel}"/>
+                <ComboBox Classes="fill" ItemsSource="{Binding Scales}" SelectedItem="{Binding SelectedScale}"/>
+
+                <CheckBox Content="{Binding TilesLabel}" IsChecked="{Binding UseTiles}"/>
+                <Grid Classes="pair" ColumnDefinitions="*,*" IsVisible="{Binding UseTiles}">
+                    <TextBlock Classes="field-label" Text="{Binding TileSizeLabel}"/>
+                    <NumericUpDown Grid.Column="1" Value="{Binding TileSize}" Minimum="{Binding MinTileSize}" Maximum="{Binding MaxTileSize}" Increment="64" FormatString="0"/>
+                </Grid>
+
+                <TextBlock Text="{Binding SummaryText}" TextWrapping="Wrap" IsVisible="{Binding !HasProblems}"/>
+                <ItemsControl ItemsSource="{Binding Problems}" IsVisible="{Binding HasProblems}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="x:String">
+                            <TextBlock Classes="problem" Text="{Binding}"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <WrapPanel Classes="card-actions">
+                    <Button Classes="accent" Content="{Binding ExportLabel}" Command="{Binding ExportCommand}" IsVisible="{Binding !IsRunning}"/>
+                    <Button Content="{Binding StopLabel}" Command="{Binding StopCommand}" IsVisible="{Binding IsRunning}"/>
+                </WrapPanel>
+                <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap"/>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+
+</UserControl>

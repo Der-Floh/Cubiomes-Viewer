@@ -37,6 +37,19 @@ internal sealed class MemoryStorageService : IStorageService
         return Task.FromResult(options.SuggestedFileName);
     }
 
+    public async Task<string?> SaveFileAsync(FilePickerSaveOptions options, Func<Stream, Task> writeAsync)
+    {
+        LastSaveOptions = options;
+        if (IsSaveCancelled)
+            return null;
+
+        using var stream = new MemoryStream();
+        SavedContent = null;
+        await writeAsync(stream);
+        SavedContent = stream.ToArray();
+        return options.SuggestedFileName;
+    }
+
     public Task<byte[]?> OpenFileAsync(FilePickerOpenOptions options) => Task.FromResult(ContentToOpen);
 
     public Task<IStorageFile?> TryGetFileFromPathAsync(string absolutePath) => Task.FromResult<IStorageFile?>(null);

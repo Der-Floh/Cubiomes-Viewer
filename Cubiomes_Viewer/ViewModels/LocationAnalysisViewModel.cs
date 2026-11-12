@@ -77,7 +77,7 @@ public sealed partial class LocationAnalysisViewModel : AnalysisTabViewModel
 
     /// <summary>The definition the seeds belong to: the one that found them, or the one set up for the map's version.</summary>
     private SearchDefinition GetDefinition()
-        => Scope.SelectedSeeds?.Value == AnalysisSeeds.FoundSeeds && _search.Setup is { } setup ? setup.Definition : _searchSession.Setup.Definition;
+        => Scope.SelectedSeeds?.Value == SeedScope.FoundSeeds && _search.Setup is { } setup ? setup.Definition : _searchSession.Setup.Definition;
 
     private void AddLandmarks(WorldKey world, WorldLandmarks landmarks, List<AnalysisRow> rows, CsvTable table)
     {

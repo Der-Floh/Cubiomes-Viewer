@@ -129,7 +129,7 @@ public sealed class AnalysisPanelViewModelTests : IDisposable
         var offeredBefore = _panel.Scope.SeedChoices.Count;
 
         await search.StartAsync(setup, TestContext.Current.CancellationToken);
-        _panel.Scope.SelectedSeeds = _panel.Scope.SeedChoices.Single(choice => choice.Value == AnalysisSeeds.FoundSeeds);
+        _panel.Scope.SelectedSeeds = _panel.Scope.SeedChoices.Single(choice => choice.Value == SeedScope.FoundSeeds);
 
         Assert.Equal(1, offeredBefore);
         Assert.Equal("The found seeds (3)", _panel.Scope.SelectedSeeds.Display);

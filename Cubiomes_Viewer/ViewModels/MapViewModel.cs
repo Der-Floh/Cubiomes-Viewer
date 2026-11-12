@@ -26,7 +26,7 @@ public sealed partial class MapViewModel : ViewModelBase
     public string GeneratingLabel { get; } = "Generating...";
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ScaleText))]
+    [NotifyPropertyChangedFor(nameof(ScaleText), nameof(Viewport))]
     public partial MapCamera Camera { get; set; } = MapCamera.Default;
 
     [ObservableProperty]
@@ -91,6 +91,14 @@ public sealed partial class MapViewModel : ViewModelBase
 
     [ObservableProperty]
     public partial bool IsGenerating { get; set; }
+
+    /// <summary>The size of the map on screen in pixels; set by the view that shows it.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Viewport))]
+    public partial (double Width, double Height) ViewSize { get; set; }
+
+    /// <summary>What the map shows right now: its camera on a view of <see cref="ViewSize"/>.</summary>
+    public MapViewport Viewport => new(Camera, ViewSize.Width, ViewSize.Height);
 
     public string ScaleText => Camera.BlocksPerPixel >= 1
         ? string.Create(CultureInfo.InvariantCulture, $"1 px = {Camera.BlocksPerPixel:0.##} blocks")

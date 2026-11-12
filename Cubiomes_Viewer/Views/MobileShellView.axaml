@@ -38,6 +38,9 @@
             <ListBoxItem ToolTip.Tip="{Binding AnalysisLabel}">
                 <PathIcon Data="{StaticResource AnalysisIcon}"/>
             </ListBoxItem>
+            <ListBoxItem ToolTip.Tip="{Binding ExportLabel}">
+                <PathIcon Data="{StaticResource ExportIcon}"/>
+            </ListBoxItem>
             <ListBoxItem ToolTip.Tip="{Binding SettingsLabel}">
                 <PathIcon Data="{StaticResource SettingsIcon}"/>
             </ListBoxItem>

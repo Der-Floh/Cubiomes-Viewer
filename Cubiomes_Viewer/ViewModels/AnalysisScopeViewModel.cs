@@ -32,7 +32,7 @@ public sealed partial class AnalysisScopeViewModel : ObservableObject
     public decimal MaxSizeValue { get; } = MaxSize;
 
     [ObservableProperty]
-    public partial ComboChoice<AnalysisSeeds>? SelectedSeeds { get; set; }
+    public partial ComboChoice<SeedScope>? SelectedSeeds { get; set; }
 
     [ObservableProperty]
     public partial decimal? CenterX { get; set; } = 0;
@@ -46,7 +46,7 @@ public sealed partial class AnalysisScopeViewModel : ObservableObject
     [ObservableProperty]
     public partial decimal? Size { get; set; } = DefaultSize;
 
-    public ObservableCollection<ComboChoice<AnalysisSeeds>> SeedChoices { get; } = [];
+    public ObservableCollection<ComboChoice<SeedScope>> SeedChoices { get; } = [];
 
     public ObservableCollection<ComboChoice<AreaShape>> Shapes { get; } =
     [
@@ -78,7 +78,7 @@ public sealed partial class AnalysisScopeViewModel : ObservableObject
     /// <summary>The worlds to analyse in a dimension: the one on the map, or the first found seeds in the version they were found in.</summary>
     public IReadOnlyList<WorldKey> GetWorlds(Dimension dimension)
     {
-        if (SelectedSeeds?.Value != AnalysisSeeds.FoundSeeds || _search.Setup is not { } setup)
+        if (SelectedSeeds?.Value != SeedScope.FoundSeeds || _search.Setup is not { } setup)
             return [_session.Key with { Dimension = dimension }];
 
         return [.. _search.Results.Take(MaxSeeds).Select(seed => setup.Definition.GetWorld(seed, dimension))];
@@ -99,14 +99,14 @@ public sealed partial class AnalysisScopeViewModel : ObservableObject
             return;
 
         _shownFound = found;
-        var wanted = SelectedSeeds?.Value ?? AnalysisSeeds.ThisSeed;
+        var wanted = SelectedSeeds?.Value ?? SeedScope.ThisSeed;
         SeedChoices.Clear();
-        SeedChoices.Add(new ComboChoice<AnalysisSeeds> { Display = "The seed on the map", Value = AnalysisSeeds.ThisSeed });
+        SeedChoices.Add(new ComboChoice<SeedScope> { Display = "The seed on the map", Value = SeedScope.ThisSeed });
 
         if (found > 0)
         {
             var count = Math.Min(found, MaxSeeds).ToString("N0", CultureInfo.InvariantCulture);
-            SeedChoices.Add(new ComboChoice<AnalysisSeeds> { Display = found > MaxSeeds ? $"The first {count} found seeds" : $"The found seeds ({count})", Value = AnalysisSeeds.FoundSeeds });
+            SeedChoices.Add(new ComboChoice<SeedScope> { Display = found > MaxSeeds ? $"The first {count} found seeds" : $"The found seeds ({count})", Value = SeedScope.FoundSeeds });
         }
 
         SelectedSeeds = SeedChoices.FirstOrDefault(choice => choice.Value == wanted) ?? SeedChoices[0];

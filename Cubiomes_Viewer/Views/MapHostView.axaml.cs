@@ -56,6 +56,7 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
 
         Map.HoverChanged += OnHoverChanged;
         Map.Clicked += OnMapClicked;
+        Map.SizeChanged += OnMapSizeChanged;
         // The context flyout handles the bubbling event before other handlers see it, so listen while it tunnels.
         Map.AddHandler(ContextRequestedEvent, OnContextRequested, RoutingStrategies.Tunnel);
         _map.NavigationRequested += OnNavigationRequested;
@@ -74,6 +75,7 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
 
         Map.HoverChanged -= OnHoverChanged;
         Map.Clicked -= OnMapClicked;
+        Map.SizeChanged -= OnMapSizeChanged;
         Map.RemoveHandler(ContextRequestedEvent, OnContextRequested);
         _map.NavigationRequested -= OnNavigationRequested;
         _map.PropertyChanged -= OnMapPropertyChanged;
@@ -82,6 +84,8 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
     }
 
     private void OnHoverChanged(object? sender, MapHoverEventArgs e) => _map.SetHover(e.Position);
+
+    private void OnMapSizeChanged(object? sender, SizeChangedEventArgs e) => _map.ViewSize = (e.NewSize.Width, e.NewSize.Height);
 
     private void OnMapClicked(object? sender, MapClickEventArgs e)
     {

@@ -17,6 +17,7 @@ public sealed partial class MainViewModel : ViewModelBase
     public string LayersLabel { get; } = "Layers";
     public string SearchLabel { get; } = "Search";
     public string AnalysisLabel { get; } = "Analysis";
+    public string ExportLabel { get; } = "Export";
     public string SettingsLabel { get; } = "Settings";
 
     public WorldBarViewModel WorldBar { get; }
@@ -41,19 +42,25 @@ public sealed partial class MainViewModel : ViewModelBase
     private readonly ISeedHistoryService _seedHistory;
     private bool _isInitialized;
 
-    public MainViewModel(WorldBarViewModel worldBar, MapViewModel map, LayersPanelViewModel layersPanel, SearchPanelViewModel searchPanel, AnalysisPanelViewModel analysisPanel, SettingsViewModel settingsPanel, WorldSession session, ISettingsService settingsService, ISeedHistoryService seedHistory, INotificationService notificationService) : base(notificationService)
+    public MainViewModel(WorldBarViewModel worldBar, MapViewModel map, LayersPanelViewModel layersPanel, SearchPanelViewModel searchPanel, AnalysisPanelViewModel analysisPanel, ExportViewModel exportPanel, SettingsViewModel settingsPanel, WorldSession session, ISettingsService settingsService, ISeedHistoryService seedHistory, INotificationService notificationService) : base(notificationService)
     {
         WorldBar = worldBar;
         Map = map;
         _layersPanel = layersPanel;
         _searchPanel = searchPanel;
         _settingsPanel = settingsPanel;
-        _panels = [layersPanel, searchPanel, analysisPanel, settingsPanel];
+        _panels = [layersPanel, searchPanel, analysisPanel, exportPanel, settingsPanel];
         _session = session;
         _settingsService = settingsService;
         _seedHistory = seedHistory;
 
         Initialization = RunGuardedAsync(InitializeAsync);
+    }
+
+    partial void OnSelectedPanelIndexChanged(int value)
+    {
+        if (CurrentPanel is IOpenablePanel panel)
+            panel.OnOpened();
     }
 
     private async Task InitializeAsync()

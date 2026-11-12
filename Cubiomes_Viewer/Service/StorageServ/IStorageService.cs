@@ -18,6 +18,13 @@ public interface IStorageService
     Task<string?> SaveFileAsync(FilePickerSaveOptions options, ReadOnlyMemory<byte> content);
 
     /// <summary>
+    /// Lets the user choose where to save a file and lets <paramref name="writeAsync"/> write it there, which suits
+    /// content too large to hold in memory. A file that could not be written to the end is removed again.
+    /// Returns the name of the saved file, or <see langword="null"/> when they cancel.
+    /// </summary>
+    Task<string?> SaveFileAsync(FilePickerSaveOptions options, Func<Stream, Task> writeAsync);
+
+    /// <summary>
     /// Lets the user choose a file and reads it. Returns its content, or <see langword="null"/> when they cancel.
     /// </summary>
     Task<byte[]?> OpenFileAsync(FilePickerOpenOptions options);

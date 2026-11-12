@@ -54,6 +54,48 @@ public sealed class StorageService : IStorageService
         return file.Name;
     }
 
+    public async Task<string?> SaveFileAsync(FilePickerSaveOptions options, Func<Stream, Task> writeAsync)
+    {
+        ArgumentNullException.ThrowIfNull(writeAsync);
+
+        _logger.LogDebug("Opening save picker: title={Title}", options.Title);
+        using var file = await StorageProvider.SaveFilePickerAsync(options);
+        if (file is null)
+        {
+            _logger.LogDebug("Save picker was closed without choosing a file");
+            return null;
+        }
+
+        var isComplete = false;
+        try
+        {
+            await using (var stream = await file.OpenWriteAsync())
+                await writeAsync(stream);
+            isComplete = true;
+        }
+        finally
+        {
+            if (!isComplete)
+                await TryDeleteAsync(file);
+        }
+
+        _logger.LogDebug("Saved {File}", file.Name);
+        return file.Name;
+    }
+
+    /// <summary>Removes a file left incomplete; failing to do so must not hide why it is incomplete.</summary>
+    private async Task TryDeleteAsync(IStorageFile file)
+    {
+        try
+        {
+            await file.DeleteAsync();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException or InvalidOperationException)
+        {
+            _logger.LogWarning(ex, "Could not remove the incomplete file {File}", file.Name);
+        }
+    }
+
     public async Task<byte[]?> OpenFileAsync(FilePickerOpenOptions options)
     {
         var files = await OpenFilePickerAsync(options);
