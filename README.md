@@ -54,6 +54,16 @@ Seeds are scanned in batches on the compute workers, in the version and biome si
 
 The seeds come from a range, from a list, from structure seeds, or from the quad-hut bases. A structure seed is the lower 48 bits of a seed, which alone decide where structures attempt to generate and where slime chunks are, so the quick pass looks at each structure seed once and only one it cannot rule out goes on with its 65,536 sister seeds; with 15 worker threads on Desktop that rules out about 68 million structure seeds a second. Workers may hand back part of a batch once they run out of time or have the matches the search still needs, and the search gives the rest to another batch. The quad-hut bases are the lower 48 bits of every seed that places four swamp huts, desert temples, jungle temples or igloos near the corner where four regions meet, each tried with all 65,536 upper halves, since only the biomes depend on those. The bases are found on the compute workers the first time a search needs them and kept in app data; the engine tests check them against the known totals: 74,474 ideal and 33,485 further classic constellations, 185,757 more with room for a 43-block drop and 462,029 more with all four huts in range of one point. Examples show what a search can look for, and any setup can be kept as a preset of your own.
 
+### Command line
+
+`Cubiomes_Viewer.Cli` builds `cubiomes-viewer-cli`, which runs a search saved with Save to file in the Search panel without the app, for example on a server:
+
+```bash
+dotnet run --project Cubiomes_Viewer.Cli -- --session search.json --out seeds.txt
+```
+
+It treats the session as the app's Search panel does after opening it: a stopped search whose setup is unchanged continues, any other one starts over, and `--reset` always starts over. Seeds go to the standard output, or with `--out` to a file, one per line as they are found; messages and progress go to the standard error, as a status line that updates in place in a terminal. The progress and the seeds are saved back into the session file every 10 seconds and when the search stops, so Ctrl+C stops it, running the same command again continues it, and opening the file in the app shows the search where the CLI left it. A session whose search finished lists its seeds without searching again. `--selftest` runs the checks of the app's self-test. The exit code is 0 when the search finished, 1 when it failed, 2 for invalid arguments and 130 when it was stopped before finishing. The CLI tests run example searches saved as session files through the CLI and through the app's search and compare the seeds, also across a stop and a second run.
+
 ### Analysis
 
 The Analysis panel looks more closely at the seed on the map, or at up to 1,000 found seeds in the version they were found in, in a square or circle around a point:

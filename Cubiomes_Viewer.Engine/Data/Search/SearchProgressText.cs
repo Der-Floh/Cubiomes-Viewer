@@ -1,8 +1,6 @@
 using System.Globalization;
 
-using Cubiomes_Viewer.Engine.Data.Search;
-
-namespace Cubiomes_Viewer.Data;
+namespace Cubiomes_Viewer.Engine.Data.Search;
 
 /// <summary>Says in words where a search stands and how far it has come.</summary>
 public static class SearchProgressText
