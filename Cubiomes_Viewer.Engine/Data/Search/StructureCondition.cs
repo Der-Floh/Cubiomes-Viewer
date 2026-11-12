@@ -6,4 +6,7 @@ namespace Cubiomes_Viewer.Engine.Data.Search;
 public sealed record StructureCondition : SearchCondition
 {
     public required StructureType Type { get; init; }
+
+    /// <summary>What the structures have to have besides their type; only the full pass can tell.</summary>
+    public StructureTrait Trait { get; init; } = StructureTrait.None;
 }

@@ -1,5 +1,6 @@
 using Cubiomes_Viewer.Engine.Data.Search;
 using Cubiomes_Viewer.Engine.Data.Worlds;
+using Cubiomes_Viewer.Engine.Extensions;
 
 namespace Cubiomes_Viewer.Engine.Tests.Service.ConditionServ;
 
@@ -109,6 +110,46 @@ public sealed class StructureConditionEvaluatorTests : IDisposable
 
         Assert.NotEmpty(expected);
         Assert.Equal(expected, matches);
+    }
+
+    [Theory]
+    [InlineData(StructureType.EndCity, StructureTrait.EndShip, Dimension.End, 3000)]
+    [InlineData(StructureType.Village, StructureTrait.Abandoned, Dimension.Overworld, Side)]
+    [InlineData(StructureType.Igloo, StructureTrait.Basement, Dimension.Overworld, 4096)]
+    [InlineData(StructureType.RuinedPortal, StructureTrait.Giant, Dimension.Overworld, Side)]
+    public void Evaluate_Trait_KeepsTheStructuresTheGeneratorDescribesWithIt(StructureType type, StructureTrait trait, Dimension dimension, int side)
+    {
+        var withTrait = 0;
+        var without = 0;
+        for (long seed = 0; seed < 40; seed++)
+        {
+            var condition = new StructureCondition { Id = 1, Type = type, Trait = trait, Area = SearchArea.Square(side) };
+            var generator = _bench.GetGenerator(Version, seed, dimension);
+            var structures = generator.FindStructures(type, condition.Area.ToBlocks(ConditionTestBench.Origin));
+            var expected = structures.Where(position => trait.IsIn(generator.DescribeStructure(type, position))).ToList();
+
+            var (status, matches) = _bench.Evaluate(condition, Version, seed, SearchPass.Full);
+
+            Assert.Equal(expected.Count > 0 ? MatchStatus.Matched : MatchStatus.Failed, status);
+            Assert.Equal(expected, matches);
+            withTrait += expected.Count;
+            without += structures.Length - expected.Count;
+        }
+
+        Assert.True(withTrait > 0, "No structure had the trait.");
+        Assert.True(without > 0, "Every structure had the trait.");
+    }
+
+    [Theory]
+    [InlineData(StructureType.EndCity, StructureTrait.Abandoned, "End city has no such kind.")]
+    [InlineData(StructureType.Village, (StructureTrait)99, "Village has no such kind.")]
+    public void Validate_TraitTheTypeCannotHave_IsAProblem(StructureType type, StructureTrait trait, string expected)
+    {
+        var condition = new StructureCondition { Id = 1, Type = type, Trait = trait };
+
+        var problems = TestEngine.CreateConditionValidator().Validate(ConditionTestBench.Define(Version, condition));
+
+        Assert.Equal(expected, Assert.Single(problems).Message);
     }
 
     [Fact]

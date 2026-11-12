@@ -9,6 +9,7 @@ using Avalonia.VisualTree;
 
 using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Search;
+using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.SearchServ;
 using Cubiomes_Viewer.ViewModels;
 using Cubiomes_Viewer.Views;
@@ -76,8 +77,9 @@ public sealed class SearchPanelViewTests : IDisposable
     public void ConditionHeader_Clicked_FoldsTheEditorAwayAndBack()
     {
         var condition = Add<StructureCondition>();
+        var fields = Assert.IsType<StructureFieldsViewModel>(condition.Fields);
         var header = FindAll<ToggleButton>().Single(button => button.Classes.Contains(ConditionHeaderClass));
-        var typeChoice = FindAll<ComboBox>().Single(box => box.DataContext is StructureFieldsViewModel);
+        var typeChoice = FindAll<ComboBox>().Single(box => ReferenceEquals(box.ItemsSource, fields.Types));
         Assert.True(typeChoice.IsEffectivelyVisible);
 
         Click(header);
@@ -87,6 +89,21 @@ public sealed class SearchPanelViewTests : IDisposable
         Assert.Equal((false, false), folded);
         Assert.True(condition.IsExpanded);
         Assert.True(typeChoice.IsEffectivelyVisible);
+    }
+
+    [AvaloniaFact]
+    public void KindChoice_ShownOnlyForStructuresThatComeInKinds()
+    {
+        var fields = Assert.IsType<StructureFieldsViewModel>(Add<StructureCondition>().Fields);
+
+        fields.SelectedType = fields.Types.Single(choice => choice.Value == StructureType.Village);
+        Render();
+        var forVillages = IsKindChoiceShown(fields);
+        fields.SelectedType = fields.Types.Single(choice => choice.Value == StructureType.DesertPyramid);
+        Render();
+
+        Assert.True(forVillages);
+        Assert.False(IsKindChoiceShown(fields));
     }
 
     [AvaloniaFact]
@@ -125,6 +142,8 @@ public sealed class SearchPanelViewTests : IDisposable
         Render();
         return _panel.Setup.Conditions[^1];
     }
+
+    private bool IsKindChoiceShown(StructureFieldsViewModel fields) => FindAll<ComboBox>().Any(box => ReferenceEquals(box.ItemsSource, fields.Traits));
 
     private static void Click(Control control) => HeadlessInput.Click(control);
 

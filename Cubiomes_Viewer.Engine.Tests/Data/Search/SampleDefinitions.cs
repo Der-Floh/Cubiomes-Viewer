@@ -14,7 +14,7 @@ internal static class SampleDefinitions
         LargeBiomes = true,
         Conditions =
         [
-            new StructureCondition { Id = 1, Type = StructureType.Village, Area = SearchArea.Circle(500), Count = 2, Anchor = MatchAnchor.Nearest },
+            new StructureCondition { Id = 1, Type = StructureType.Village, Trait = StructureTrait.Abandoned, Area = SearchArea.Circle(500), Count = 2, Anchor = MatchAnchor.Nearest },
             new BiomeCondition { Id = 2, RelativeTo = 1, Biomes = BiomeSet.Of(1, 129), Match = BiomeMatch.All, Dimension = Dimension.Overworld, Scale = 4, Y = 80 },
             new SpawnCondition { Id = 3, Area = SearchArea.Rectangle(-10, -20, 30, 40) },
             new StrongholdCondition { Id = 4, Count = 0 },

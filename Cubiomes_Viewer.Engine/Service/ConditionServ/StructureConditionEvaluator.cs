@@ -1,5 +1,6 @@
 using Cubiomes_Viewer.Engine.Data.Search;
 using Cubiomes_Viewer.Engine.Data.Worlds;
+using Cubiomes_Viewer.Engine.Extensions;
 using Cubiomes_Viewer.Engine.Service.StructureServ;
 
 namespace Cubiomes_Viewer.Engine.Service.ConditionServ;
@@ -42,6 +43,9 @@ public sealed class StructureConditionEvaluator : ConditionEvaluator<StructureCo
         }
 
         var name = _structureCatalog.GetInfo(condition.Type).Name;
+        if (!Enum.IsDefined(condition.Trait) || !condition.Trait.AppliesTo(condition.Type))
+            yield return $"{name} has no such kind.";
+
         if (!_structureFinder.TryGetPlacement(condition.Type, definition.Version, out var placement))
             yield return $"{name} does not generate in this version.";
         else if (CountRegionsAtMost(condition.Area, placement) > MaxRegions)
@@ -55,13 +59,16 @@ public sealed class StructureConditionEvaluator : ConditionEvaluator<StructureCo
 
         var area = condition.Area.ToBlocks(reference);
         var found = context.GetPositions(checked((int)placement.CountRegions(area)));
-        var count = pass == SearchPass.Quick
+        var generator = pass == SearchPass.Quick ? null : context.GetGenerator(placement.Dimension);
+        var count = generator is null
             ? _structureFinder.FindAttempts(condition.Type, context.Version, context.Seed, area, found)
-            : context.GetGenerator(placement.Dimension).FindStructures(condition.Type, area, found);
+            : generator.FindStructures(condition.Type, area, found);
 
         foreach (var position in found[..count])
         {
-            if (condition.Area.Contains(reference, position))
+            if (!condition.Area.Contains(reference, position))
+                continue;
+            if (generator is null || condition.Trait == StructureTrait.None || condition.Trait.IsIn(generator.DescribeStructure(condition.Type, position)))
                 matches.Add(position);
         }
 

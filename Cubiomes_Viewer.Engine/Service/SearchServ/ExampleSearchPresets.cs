@@ -55,6 +55,15 @@ public static class ExampleSearchPresets
         },
         new()
         {
+            Name = "End ship for an elytra",
+            Description = "An end city with an end ship, where the elytra waits, within 2,000 blocks of the middle of the End.",
+            Setup = new SearchSetup
+            {
+                Definition = Define(new StructureCondition { Id = 1, Type = StructureType.EndCity, Trait = StructureTrait.EndShip, Area = SearchArea.Circle(2000) }),
+            },
+        },
+        new()
+        {
             Name = "Stronghold close to the origin",
             Description = "A stronghold within 1,500 blocks of the world origin, for an early trip to the End.",
             Setup = new SearchSetup

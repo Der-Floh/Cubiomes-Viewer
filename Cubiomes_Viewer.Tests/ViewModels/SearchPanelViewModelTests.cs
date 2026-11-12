@@ -70,6 +70,25 @@ public sealed class SearchPanelViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void StructureTrait_OfferedForTheChosenTypeOnly_AndDroppedWithAnotherType()
+    {
+        var structure = Add<StructureCondition>();
+        var fields = Assert.IsType<StructureFieldsViewModel>(structure.Fields);
+
+        fields.SelectedType = fields.Types.Single(choice => choice.Value == StructureType.EndCity);
+        var endCityTraits = fields.Traits.Select(choice => choice.Display).ToList();
+        fields.SelectedTrait = fields.Traits.Single(choice => choice.Value == StructureTrait.EndShip);
+        var withShip = (structure.Header, structure.Summary, Assert.IsType<StructureCondition>(Assert.Single(Setup.Setup.Definition.Conditions)).Trait);
+        fields.SelectedType = fields.Types.Single(choice => choice.Value == StructureType.DesertPyramid);
+
+        Assert.Equal(["Any", "With an end ship"], endCityTraits);
+        Assert.Equal(("1 · End city", "with an end ship · within 512 blocks of the world origin", StructureTrait.EndShip), withShip);
+        Assert.False(fields.HasTraits);
+        Assert.Equal(StructureTrait.None, Assert.IsType<StructureCondition>(Assert.Single(Setup.Setup.Definition.Conditions)).Trait);
+        Assert.True(Setup.IsValid);
+    }
+
+    [AvaloniaFact]
     public void AddCondition_QuadHuts_OffersTheHutsAndHowCloseTheyHaveToBe()
     {
         var quad = Add<QuadHutCondition>();
