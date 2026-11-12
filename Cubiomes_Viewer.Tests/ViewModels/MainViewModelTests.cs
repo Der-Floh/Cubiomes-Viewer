@@ -47,7 +47,7 @@ public sealed class MainViewModelTests : IDisposable
         Assert.Equal(session.Key, main.Map.World);
         Assert.False(main.Map.ShowGrid);
         Assert.False(main.Map.SmoothMotion);
-        Assert.Equal([262L, 1L], main.WorldBar.RecentSeeds.Select(choice => choice.Value));
+        Assert.Equal([262L, 1L], main.WorldBar.RecentSeeds.Select(recent => recent.Seed));
         Assert.Equal("262", main.WorldBar.SeedText);
     }
 

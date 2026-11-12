@@ -18,7 +18,18 @@
                 <Button Classes="icon" Command="{Binding RandomSeedCommand}" ToolTip.Tip="{Binding RandomSeedLabel}">
                     <PathIcon Data="{StaticResource DiceIcon}"/>
                 </Button>
-                <ComboBox ItemsSource="{Binding RecentSeeds}" SelectedItem="{Binding SelectedRecentSeed}" PlaceholderText="{Binding RecentSeedsPlaceholder}" VerticalAlignment="Center"/>
+                <DropDownButton Content="{Binding RecentSeedsLabel}" IsEnabled="{Binding HasRecentSeeds}" VerticalAlignment="Center">
+                    <DropDownButton.Flyout>
+                        <MenuFlyout ItemsSource="{Binding RecentSeeds}" Placement="BottomEdgeAlignedLeft">
+                            <MenuFlyout.ItemContainerTheme>
+                                <ControlTheme TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}" x:DataType="vm:RecentSeedViewModel">
+                                    <Setter Property="Header" Value="{Binding Display}"/>
+                                    <Setter Property="Command" Value="{Binding OpenCommand}"/>
+                                </ControlTheme>
+                            </MenuFlyout.ItemContainerTheme>
+                        </MenuFlyout>
+                    </DropDownButton.Flyout>
+                </DropDownButton>
                 <TextBlock Classes="field-label" Text="{Binding SeedHint}"/>
             </WrapPanel>
 

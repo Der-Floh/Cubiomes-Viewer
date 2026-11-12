@@ -46,6 +46,22 @@ public sealed class SearchPanelViewTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void AddConditionMenu_ItemClicked_AddsThatKindAndTheMenuStaysReadyForTheNext()
+    {
+        var addButton = FindAll<DropDownButton>().Single(button => Equals(button.Content, _panel.Setup.AddConditionLabel));
+
+        var kinds = HeadlessInput.OpenMenu(addButton);
+        Click(kinds.Single(item => Equals(item.Header, "Slime chunks")));
+        var afterFirst = (Count: _panel.Setup.Conditions.Count, IsOpen: addButton.Flyout?.IsOpen);
+        Click(HeadlessInput.OpenMenu(addButton).Single(item => Equals(item.Header, "Biome")));
+
+        Assert.Equal(_panel.Setup.ConditionKinds.Select(kind => kind.Name), kinds.Select(item => item.Header));
+        Assert.Equal((1, false), (afterFirst.Count, afterFirst.IsOpen));
+        Assert.Equal(["1 · Slime chunks", "2 · Biome"], _panel.Setup.Conditions.Select(condition => condition.Header));
+        Assert.Equal(_panel.Setup.AddConditionLabel, addButton.Content);
+    }
+
+    [AvaloniaFact]
     public void ConditionHeader_Clicked_FoldsTheEditorAwayAndBack()
     {
         var condition = Add<StructureCondition>();
@@ -99,21 +115,9 @@ public sealed class SearchPanelViewTests : IDisposable
         return _panel.Setup.Conditions[^1];
     }
 
-    private void Click(Control control)
-    {
-        var center = control.TranslatePoint(new Point(control.Bounds.Width / 2, control.Bounds.Height / 2), _window);
-        Assert.NotNull(center);
-        _window.MouseDown(center.Value, MouseButton.Left);
-        _window.MouseUp(center.Value, MouseButton.Left);
-        Render();
-    }
+    private static void Click(Control control) => HeadlessInput.Click(control);
 
-    private void Render()
-    {
-        Dispatcher.UIThread.RunJobs();
-        AvaloniaHeadlessPlatform.ForceRenderTimerTick();
-        Dispatcher.UIThread.RunJobs();
-    }
+    private static void Render() => HeadlessInput.Render();
 
     private IEnumerable<T> FindAll<T>() where T : Control
         => _window.GetVisualDescendants().OfType<T>().Where(control => control.IsEffectivelyVisible);

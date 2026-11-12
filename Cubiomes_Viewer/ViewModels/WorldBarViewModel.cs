@@ -20,7 +20,7 @@ public sealed partial class WorldBarViewModel : ViewModelBase
 
     public string SeedPlaceholder { get; } = "Seed (empty for random)";
     public string RandomSeedLabel { get; } = "Random seed";
-    public string RecentSeedsPlaceholder { get; } = "Recent";
+    public string RecentSeedsLabel { get; } = "Recent";
     public string LargeBiomesLabel { get; } = "Large biomes";
     public string SampleHeightLabel { get; } = "Y";
     public string GoToLabel { get; } = "Go to coordinates";
@@ -52,7 +52,7 @@ public sealed partial class WorldBarViewModel : ViewModelBase
     public partial decimal? SampleHeight { get; set; }
 
     [ObservableProperty]
-    public partial ComboChoice<long>? SelectedRecentSeed { get; set; }
+    public partial bool HasRecentSeeds { get; set; }
 
     [ObservableProperty]
     public partial decimal? GoToX { get; set; } = 0;
@@ -71,7 +71,8 @@ public sealed partial class WorldBarViewModel : ViewModelBase
         new() { Display = "End", Value = Dimension.End },
     ];
 
-    public ObservableCollection<ComboChoice<long>> RecentSeeds { get; } = [];
+    /// <summary>The recently opened seeds, newest first.</summary>
+    public ObservableCollection<RecentSeedViewModel> RecentSeeds { get; } = [];
 
     public MapViewModel Map { get; }
 
@@ -114,15 +115,6 @@ public sealed partial class WorldBarViewModel : ViewModelBase
             _session.SampleHeight = (int)height;
     }
 
-    partial void OnSelectedRecentSeedChanged(ComboChoice<long>? value)
-    {
-        if (value is null)
-            return;
-
-        OpenSeed(new SeedParseResult(value.Value, SeedKind.Numeric));
-        SelectedRecentSeed = null;
-    }
-
     [RelayCommand]
     public void ApplySeed() => OpenSeed(_seedParser.Parse(SeedText));
 
@@ -131,6 +123,8 @@ public sealed partial class WorldBarViewModel : ViewModelBase
 
     [RelayCommand]
     public void GoTo() => Map.GoTo((double)(GoToX ?? 0), (double)(GoToZ ?? 0));
+
+    private void OpenRecentSeed(long seed) => OpenSeed(new SeedParseResult(seed, SeedKind.Numeric));
 
     private void OpenSeed(SeedParseResult result)
     {
@@ -164,11 +158,25 @@ public sealed partial class WorldBarViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsLargeBiomesAvailable));
     }
 
+    /// <summary>
+    /// Shows the history in the entries there are and only adds or removes entries at the end, so that an entry
+    /// being clicked stays in its menu, which then closes as usual.
+    /// </summary>
     private void ShowRecentSeeds()
     {
-        RecentSeeds.Clear();
-        foreach (var seed in _seedHistory.Seeds)
-            RecentSeeds.Add(new ComboChoice<long> { Display = FormatSeed(seed), Value = seed });
+        var seeds = _seedHistory.Seeds;
+        while (RecentSeeds.Count > seeds.Count)
+            RecentSeeds.RemoveAt(RecentSeeds.Count - 1);
+
+        for (var index = 0; index < seeds.Count; index++)
+        {
+            if (index < RecentSeeds.Count)
+                RecentSeeds[index].Seed = seeds[index];
+            else
+                RecentSeeds.Add(new RecentSeedViewModel(seeds[index], OpenRecentSeed));
+        }
+
+        HasRecentSeeds = RecentSeeds.Count > 0;
     }
 
     private static string FormatSeed(long seed) => seed.ToString(CultureInfo.InvariantCulture);

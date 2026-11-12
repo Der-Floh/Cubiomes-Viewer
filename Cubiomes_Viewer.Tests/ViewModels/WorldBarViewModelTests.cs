@@ -89,18 +89,29 @@ public sealed class WorldBarViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
-    public void SelectedRecentSeed_Chosen_ReopensTheSeedAndClearsTheSelection()
+    public void RecentSeed_Opened_ReopensTheSeedAndMovesItToTheFront()
     {
         _viewModel.SeedText = "1";
         _viewModel.ApplySeedCommand.Execute(null);
         _viewModel.SeedText = "2";
         _viewModel.ApplySeedCommand.Execute(null);
 
-        _viewModel.SelectedRecentSeed = _viewModel.RecentSeeds.Single(choice => choice.Value == 1);
+        _viewModel.RecentSeeds.Single(recent => recent.Seed == 1).OpenCommand.Execute(null);
 
         Assert.Equal(1, _session.Seed);
-        Assert.Null(_viewModel.SelectedRecentSeed);
-        Assert.Equal(1, _viewModel.RecentSeeds[0].Value);
+        Assert.Equal("1", _viewModel.SeedText);
+        Assert.Equal([1L, 2L], _viewModel.RecentSeeds.Select(recent => recent.Seed));
+    }
+
+    [AvaloniaFact]
+    public void RecentSeeds_NoneOpenedYet_CannotBeChosenFrom()
+    {
+        Assert.Empty(_viewModel.RecentSeeds);
+        Assert.False(_viewModel.HasRecentSeeds);
+
+        _viewModel.RandomSeedCommand.Execute(null);
+
+        Assert.True(_viewModel.HasRecentSeeds);
     }
 
     [AvaloniaFact]
