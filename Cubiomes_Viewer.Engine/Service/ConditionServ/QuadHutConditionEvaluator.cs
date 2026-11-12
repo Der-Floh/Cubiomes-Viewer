@@ -64,12 +64,12 @@ public sealed class QuadHutConditionEvaluator : ConditionEvaluator<QuadHutCondit
         var (x0, z0) = (FloorDivide(blocks.X, size) - 1, FloorDivide(blocks.Z, size) - 1);
         var (x1, z1) = (FloorDivide(blocks.Right - 1, size), FloorDivide(blocks.Bottom - 1, size));
         var quads = context.GetQuads((x1 - x0 + 1) * (z1 - z0 + 1));
-        var count = _quadFinder.FindQuads(condition.Type, context.Version, context.Seed, x0, z0, x1, z1, quads);
+        var count = _quadFinder.FindQuads(condition.Type, context.Version, context.Rules, context.Seed, x0, z0, x1, z1, quads);
 
         Span<BlockPos> huts = stackalloc BlockPos[StructureFinderExtensions.StructuresPerQuad];
         foreach (var quad in quads[..count])
         {
-            if (quad.Quality > condition.Quality || !_structureFinder.TryGetQuadPositions(condition.Type, context.Version, context.Seed, quad, huts))
+            if (quad.Quality > condition.Quality || !_structureFinder.TryGetQuadPositions(condition.Type, context.Version, context.Rules, context.Seed, quad, huts))
                 continue;
 
             var middle = BlockPos.MiddleOf(huts);

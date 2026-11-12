@@ -110,9 +110,9 @@ public sealed class AnalysisServiceTests : IDisposable
         var structureFinder = new CubiomesStructureFinder();
         var bases = new ulong[4096];
         var count = quadFinder.ScanQuadHutBases(IdealLowBits, 0, 1 << 22, bases);
-        var lower = quadFinder.GetSeedOfBase(StructureType.SwampHut, McVersion.V1_16_5, bases[0], AroundTheOrigin, AroundTheOrigin);
+        var lower = quadFinder.GetSeedOfBase(StructureType.SwampHut, McVersion.V1_16_5, StructureRules.Default, bases[0], AroundTheOrigin, AroundTheOrigin);
         var world = new WorldKey(lower, McVersion.V1_16_5, Dimension.Overworld, new SearchDefinition().Flags);
-        BlockPos[] huts = [.. new[] { (-1, -1), (0, -1), (-1, 0), (0, 0) }.Select(region => structureFinder.TryGetRegionPosition(StructureType.SwampHut, McVersion.V1_16_5, lower, region.Item1, region.Item2, out var hut) ? hut : default)];
+        BlockPos[] huts = [.. new[] { (-1, -1), (0, -1), (-1, 0), (0, 0) }.Select(region => structureFinder.TryGetRegionPosition(StructureType.SwampHut, McVersion.V1_16_5, StructureRules.Default, lower, region.Item1, region.Item2, out var hut) ? hut : default)];
         var generator = _bench.Open(new SearchDefinition { Version = McVersion.V1_16_5 }, lower).GetGenerator(Dimension.Overworld);
 
         var listing = Assert.Single(await _analysis.ListQuadsAsync([new QuadListRequest(world, StructureType.SwampHut, SearchArea.Square(2048), new BlockPos(0, 0))], cancellationToken: TestContext.Current.CancellationToken));

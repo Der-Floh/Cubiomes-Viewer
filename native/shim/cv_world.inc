@@ -9,6 +9,7 @@ struct cv_world
     BiomeNoise *octave_noise;
     int octave_parameter;
     int octave_count;
+    cv_rules rules;
 };
 
 /* The terrain noise of the dimension the world is applied to; valid for the Overworld and the End. */
@@ -98,6 +99,14 @@ int32_t cv_world_apply(cv_world *world, int32_t dim, uint64_t seed)
     world->is_seeded = 1;
     world->has_surface = 0;
     world->octave_parameter = -1;
+    return CV_OK;
+}
+
+int32_t cv_world_set_rules(cv_world *world, const cv_rules *rules)
+{
+    if (!world || !cv_are_valid_rules(rules))
+        return CV_ERR_ARGUMENT;
+    world->rules = rules ? *rules : cv_game_rules;
     return CV_OK;
 }
 

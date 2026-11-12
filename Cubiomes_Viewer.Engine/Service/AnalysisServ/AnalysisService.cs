@@ -55,8 +55,6 @@ public sealed class AnalysisService : IAnalysisService
 
     public IReadOnlyList<string> FindStructureProblems(StructureType type, McVersion version, SearchArea area)
     {
-        ArgumentNullException.ThrowIfNull(area);
-
         if (!_structureFinder.TryGetPlacement(type, version, out var placement))
             return [$"{DescribeType(type)} does not generate in this version."];
         return FindRegionProblems(area, placement);
@@ -115,8 +113,6 @@ public sealed class AnalysisService : IAnalysisService
 
     public IReadOnlyList<string> FindQuadProblems(StructureType type, McVersion version, SearchArea area)
     {
-        ArgumentNullException.ThrowIfNull(area);
-
         if (!_quadFinder.SupportsQuads(type, version) || !_structureFinder.TryGetPlacement(type, version, out var placement))
             return [$"{DescribeType(type)}s form no quads in this version."];
         return FindRegionProblems(area, placement);

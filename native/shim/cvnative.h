@@ -11,7 +11,7 @@
 #define CV_API
 #endif
 
-#define CV_ABI_VERSION 9
+#define CV_ABI_VERSION 10
 
 #define CV_BIOME_NONE 255
 #define CV_BIOME_COLOR_BYTES 768
@@ -28,6 +28,8 @@
 #define CV_LAYER_TEMPERATURE_CATEGORY 2
 #define CV_TEMPERATURE_SPECIAL 4
 #define CV_QUAD_OTHER 5
+#define CV_STRUCTURE_TYPES 25
+#define CV_RULES_NO_TERRAIN_ESTIMATE 1
 
 enum cv_status
 {
@@ -41,6 +43,15 @@ enum cv_status
 };
 
 typedef struct cv_world cv_world;
+
+/* How structures generate where a world differs from the game. Bit (1 << stype) of 'salted' replaces the salt of that
+   structure type with salts[stype]; flags are CV_RULES_*. Zeroed rules, like a null pointer, are the game's own. */
+typedef struct cv_rules
+{
+    uint32_t flags;
+    uint32_t salted;
+    int32_t salts[CV_STRUCTURE_TYPES];
+} cv_rules;
 
 /* How one structure generates. The box is the first piece, relative to the structure position; its size is 0 when unknown. */
 typedef struct cv_variant
@@ -78,6 +89,9 @@ CV_API cv_world *cv_world_create(int32_t mc, uint32_t flags);
 CV_API void cv_world_destroy(cv_world *world);
 CV_API int32_t cv_world_apply(cv_world *world, int32_t dim, uint64_t seed);
 
+/* The structure rules the functions taking this world follow; a null pointer restores the game's own. */
+CV_API int32_t cv_world_set_rules(cv_world *world, const cv_rules *rules);
+
 CV_API int32_t cv_biome_at(cv_world *world, int32_t scale, int32_t x, int32_t y, int32_t z, int32_t *biome);
 CV_API int32_t cv_gen_biomes_u8(cv_world *world, int32_t scale, int32_t x, int32_t z, int32_t sx, int32_t sz, int32_t y, uint8_t *out, int32_t capacity);
 
@@ -99,9 +113,14 @@ CV_API int32_t cv_gen_layer_u8(cv_world *world, int32_t layer, int32_t scale, in
 CV_API int32_t cv_height_supported(int32_t mc, int32_t dim);
 CV_API int32_t cv_gen_heights(cv_world *world, int32_t scale, int32_t x, int32_t z, int32_t sx, int32_t sz, int16_t *out, int32_t capacity);
 
-/* Structures: a result of 1 means yes or found, 0 means no; positions are block coordinates. */
+/* Structures: a result of 1 means yes or found, 0 means no; positions are block coordinates. Functions with a world
+   follow the rules of the world, the others the rules they are given. */
 CV_API int32_t cv_structure_config(int32_t stype, int32_t mc, int32_t *dimension, int32_t *region_blocks);
-CV_API int32_t cv_structure_pos(int32_t stype, int32_t mc, uint64_t seed, int32_t reg_x, int32_t reg_z, int32_t *x, int32_t *z);
+
+/* Writes the salt the game uses for a structure type and returns 1 when the type generates in the version and its
+   positions depend on the salt, 0 when they do not. */
+CV_API int32_t cv_structure_salt(int32_t stype, int32_t mc, int32_t *salt);
+CV_API int32_t cv_structure_pos(const cv_rules *rules, int32_t stype, int32_t mc, uint64_t seed, int32_t reg_x, int32_t reg_z, int32_t *x, int32_t *z);
 CV_API int32_t cv_structure_viable(cv_world *world, int32_t stype, int32_t x, int32_t z);
 
 /* Whether the biome rule of a structure type lets it generate in a biome; CV_ERR_UNSUPPORTED for a type without such a rule. */
@@ -112,7 +131,7 @@ CV_API int32_t cv_structures_in_area(cv_world *world, int32_t stype, int32_t x0,
 
 /* Like cv_structures_in_area, but without a world and without asking whether a structure can generate, so every
    structure of the seed is among the attempts. */
-CV_API int32_t cv_structure_attempts_in_area(int32_t stype, int32_t mc, uint64_t seed, int32_t x0, int32_t z0, int32_t x1, int32_t z1, int32_t *positions, int32_t capacity);
+CV_API int32_t cv_structure_attempts_in_area(const cv_rules *rules, int32_t stype, int32_t mc, uint64_t seed, int32_t x0, int32_t z0, int32_t x1, int32_t z1, int32_t *positions, int32_t capacity);
 
 /* Details of a structure found by cv_structures_in_area. cv_structure_variant returns 1 when a variant is known;
    cv_structure_pieces returns the number of pieces, which is 0 for types other than end cities and fortresses. */
@@ -137,8 +156,8 @@ CV_API int32_t cv_quad_supported(int32_t stype, int32_t mc);
 CV_API int32_t cv_quad_hut_low_bits(int32_t quality, uint64_t *values, int32_t capacity);
 CV_API int32_t cv_quad_hut_scan(uint64_t low20, uint32_t first_high, uint32_t count, uint64_t *bases, int32_t capacity);
 CV_API int32_t cv_quad_hut_base_info(uint64_t base, float *radius);
-CV_API int32_t cv_quad_seed_of_base(int32_t stype, int32_t mc, uint64_t base, int32_t reg_x, int32_t reg_z, uint64_t *seed);
-CV_API int32_t cv_quads_in_area(int32_t stype, int32_t mc, uint64_t seed, int32_t reg_x0, int32_t reg_z0, int32_t reg_x1, int32_t reg_z1, int32_t *quads, int32_t capacity);
+CV_API int32_t cv_quad_seed_of_base(const cv_rules *rules, int32_t stype, int32_t mc, uint64_t base, int32_t reg_x, int32_t reg_z, uint64_t *seed);
+CV_API int32_t cv_quads_in_area(const cv_rules *rules, int32_t stype, int32_t mc, uint64_t seed, int32_t reg_x0, int32_t reg_z0, int32_t reg_x1, int32_t reg_z1, int32_t *quads, int32_t capacity);
 
 #ifdef __cplusplus
 }

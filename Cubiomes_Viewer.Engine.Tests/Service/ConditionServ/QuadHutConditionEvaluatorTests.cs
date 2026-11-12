@@ -41,7 +41,7 @@ public sealed class QuadHutConditionEvaluatorTests : IDisposable
         var matched = 0;
         var tried = 0;
 
-        foreach (var lower in FindBases(IdealLowBits).Take(BasesTried).Select(value => _finder.GetSeedOfBase(StructureType.SwampHut, Version, value, AroundTheOrigin, AroundTheOrigin)))
+        foreach (var lower in FindBases(IdealLowBits).Take(BasesTried).Select(value => _finder.GetSeedOfBase(StructureType.SwampHut, Version, StructureRules.Default, value, AroundTheOrigin, AroundTheOrigin)))
         {
             var huts = GetHuts(lower);
             for (long upper = 0; upper < UpperBitsPerBase; upper++)
@@ -73,7 +73,7 @@ public sealed class QuadHutConditionEvaluatorTests : IDisposable
     [Fact]
     public void Evaluate_QuadOutsideTheArea_DoesNotCount()
     {
-        var seed = _finder.GetSeedOfBase(StructureType.SwampHut, Version, FindBase(IdealLowBits), 20, 20);
+        var seed = _finder.GetSeedOfBase(StructureType.SwampHut, Version, StructureRules.Default, FindBase(IdealLowBits), 20, 20);
 
         Assert.Equal(MatchStatus.Failed, _bench.Evaluate(Quad(QuadQuality.Ideal), Version, seed, SearchPass.Quick).Status);
         Assert.Equal(MatchStatus.Candidates, _bench.Evaluate(Quad(QuadQuality.Ideal), Version, seed, SearchPass.Quick, new BlockPos(20 * 512 + 512, 20 * 512 + 512)).Status);
@@ -109,7 +109,7 @@ public sealed class QuadHutConditionEvaluatorTests : IDisposable
         Assert.Equal("Villages form no quads in this version.", Assert.Single(problems).Message);
     }
 
-    private long MakeSeed(ulong lowBits) => _finder.GetSeedOfBase(StructureType.SwampHut, Version, FindBase(lowBits), AroundTheOrigin, AroundTheOrigin);
+    private long MakeSeed(ulong lowBits) => _finder.GetSeedOfBase(StructureType.SwampHut, Version, StructureRules.Default, FindBase(lowBits), AroundTheOrigin, AroundTheOrigin);
 
     private ulong FindBase(ulong lowBits) => FindBases(lowBits)[0];
 
@@ -126,7 +126,7 @@ public sealed class QuadHutConditionEvaluatorTests : IDisposable
         List<BlockPos> huts = [];
         foreach (var (x, z) in new[] { (-1, -1), (0, -1), (-1, 0), (0, 0) })
         {
-            Assert.True(_structureFinder.TryGetRegionPosition(StructureType.SwampHut, Version, seed, x, z, out var hut));
+            Assert.True(_structureFinder.TryGetRegionPosition(StructureType.SwampHut, Version, StructureRules.Default, seed, x, z, out var hut));
             huts.Add(hut);
         }
 

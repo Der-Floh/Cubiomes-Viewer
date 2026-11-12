@@ -32,19 +32,24 @@ public sealed class SeedSequenceFactory : ISeedSequenceFactory
         _ => throw new NotSupportedException($"Unsupported seed source: {source?.GetType().Name}"),
     };
 
-    public async Task<ISeedSequence> CreateAsync(SeedSource source, McVersion version, IProgress<double>? progress = null, CancellationToken cancellationToken = default) => source switch
+    public async Task<ISeedSequence> CreateAsync(SeedSource source, SearchDefinition definition, IProgress<double>? progress = null, CancellationToken cancellationToken = default)
     {
-        SeedRangeSource range => new SeedRangeSequence(range),
-        QuadHutSeedSource quad => await CreateQuadSequenceAsync(quad, version, progress, cancellationToken),
-        SeedListSource list => new SeedListSequence(list),
-        StructureSeedSource structureSeeds => new StructureSeedSequence(structureSeeds),
-        _ => throw new NotSupportedException($"Unsupported seed source: {source?.GetType().Name}"),
-    };
+        ArgumentNullException.ThrowIfNull(definition);
 
-    private async Task<ISeedSequence> CreateQuadSequenceAsync(QuadHutSeedSource source, McVersion version, IProgress<double>? progress, CancellationToken cancellationToken)
+        return source switch
+        {
+            SeedRangeSource range => new SeedRangeSequence(range),
+            QuadHutSeedSource quad => await CreateQuadSequenceAsync(quad, definition, progress, cancellationToken),
+            SeedListSource list => new SeedListSequence(list),
+            StructureSeedSource structureSeeds => new StructureSeedSequence(structureSeeds),
+            _ => throw new NotSupportedException($"Unsupported seed source: {source?.GetType().Name}"),
+        };
+    }
+
+    private async Task<ISeedSequence> CreateQuadSequenceAsync(QuadHutSeedSource source, SearchDefinition definition, IProgress<double>? progress, CancellationToken cancellationToken)
     {
         var bases = await _quadBases.GetBasesAsync(source.Quality, progress, cancellationToken);
-        return new QuadHutSeedSequence([.. bases.Select(value => _quadFinder.GetSeedOfBase(source.Type, version, value, source.RegionX, source.RegionZ))]);
+        return new QuadHutSeedSequence([.. bases.Select(value => _quadFinder.GetSeedOfBase(source.Type, definition.Version, definition.Rules, value, source.RegionX, source.RegionZ))]);
     }
 
     private static IEnumerable<string> ValidateRange(SeedRangeSource range)

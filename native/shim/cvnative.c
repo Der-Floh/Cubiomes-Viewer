@@ -1,5 +1,8 @@
 /* Single translation unit: the cubiomes sources followed by the cv_* API that the managed side binds to. */
 
+/* Routes every structure position cubiomes computes through getStructureConfig_override in cv_rules.inc. */
+#define STRUCT_CONFIG_OVERRIDE 1
+
 #if defined(_MSC_VER)
 #pragma warning(push, 0)
 #endif
@@ -20,6 +23,7 @@
 #include "cvnative.h"
 
 #include "cv_meta.inc"
+#include "cv_rules.inc"
 #include "cv_world.inc"
 #include "cv_structures.inc"
 #include "cv_landmarks.inc"

@@ -201,7 +201,7 @@ public sealed class CubiomesWorldGeneratorStructureTests
         {
             for (var regionX = FloorDivide(area.X, placement.RegionBlocks); regionX <= FloorDivide(area.Right - 1, placement.RegionBlocks); regionX++)
             {
-                if (_finder.TryGetRegionPosition(type, generator.Version, Seed, regionX, regionZ, out var position)
+                if (_finder.TryGetRegionPosition(type, generator.Version, StructureRules.Default, Seed, regionX, regionZ, out var position)
                     && area.Contains(position)
                     && generator.CanGenerateStructure(type, position))
                 {

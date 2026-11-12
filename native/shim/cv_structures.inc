@@ -16,7 +16,7 @@ static int cv_can_generate_at(cv_world *world, int32_t stype, Pos pos)
         return 0;
     if (stype == End_City)
         return isViableEndCityTerrain(generator, cv_surface(world), pos.x, pos.z) != 0;
-    return isViableStructureTerrain(stype, generator, pos.x, pos.z) != 0;
+    return !cv_estimates_terrain() || isViableStructureTerrain(stype, generator, pos.x, pos.z) != 0;
 }
 
 /* CV_OK when the world can answer questions about the structure type; 'config' is then filled. */
@@ -89,7 +89,7 @@ int32_t cv_structure_config(int32_t stype, int32_t mc, int32_t *dimension, int32
     return exists ? 1 : 0;
 }
 
-int32_t cv_structure_pos(int32_t stype, int32_t mc, uint64_t seed, int32_t reg_x, int32_t reg_z, int32_t *x, int32_t *z)
+static int32_t cv_find_structure_pos(int32_t stype, int32_t mc, uint64_t seed, int32_t reg_x, int32_t reg_z, int32_t *x, int32_t *z)
 {
     if (!cv_is_valid_structure(stype) || !cv_is_valid_mc(mc) || !x || !z)
         return CV_ERR_ARGUMENT;
@@ -101,7 +101,18 @@ int32_t cv_structure_pos(int32_t stype, int32_t mc, uint64_t seed, int32_t reg_x
     return found ? 1 : 0;
 }
 
-int32_t cv_structure_viable(cv_world *world, int32_t stype, int32_t x, int32_t z)
+int32_t cv_structure_pos(const cv_rules *rules, int32_t stype, int32_t mc, uint64_t seed, int32_t reg_x, int32_t reg_z, int32_t *x, int32_t *z)
+{
+    if (!cv_are_valid_rules(rules))
+        return CV_ERR_ARGUMENT;
+
+    const cv_rules *previous = cv_enter_rules(rules);
+    int32_t result = cv_find_structure_pos(stype, mc, seed, reg_x, reg_z, x, z);
+    cv_enter_rules(previous);
+    return result;
+}
+
+static int32_t cv_check_structure_viable(cv_world *world, int32_t stype, int32_t x, int32_t z)
 {
     StructureConfig config;
     int exists = 0;
@@ -113,6 +124,14 @@ int32_t cv_structure_viable(cv_world *world, int32_t stype, int32_t x, int32_t z
 
     Pos pos = {x, z};
     return cv_can_generate_at(world, stype, pos);
+}
+
+int32_t cv_structure_viable(cv_world *world, int32_t stype, int32_t x, int32_t z)
+{
+    const cv_rules *previous = cv_enter_rules(world ? &world->rules : NULL);
+    int32_t result = cv_check_structure_viable(world, stype, x, z);
+    cv_enter_rules(previous);
+    return result;
 }
 
 /* Collects the generation attempts of a structure type in [x0, x1) x [z0, z1), region by region.
@@ -152,7 +171,7 @@ static int32_t cv_collect_structures(cv_world *world, int32_t stype, int32_t mc,
     return count;
 }
 
-int32_t cv_structures_in_area(cv_world *world, int32_t stype, int32_t x0, int32_t z0, int32_t x1, int32_t z1, int32_t *positions, int32_t capacity)
+static int32_t cv_find_structures_in_area(cv_world *world, int32_t stype, int32_t x0, int32_t z0, int32_t x1, int32_t z1, int32_t *positions, int32_t capacity)
 {
     StructureConfig config;
     int exists = 0;
@@ -166,7 +185,15 @@ int32_t cv_structures_in_area(cv_world *world, int32_t stype, int32_t x0, int32_
     return cv_collect_structures(world, stype, generator->mc, generator->seed, &config, x0, z0, x1, z1, positions, capacity);
 }
 
-int32_t cv_structure_attempts_in_area(int32_t stype, int32_t mc, uint64_t seed, int32_t x0, int32_t z0, int32_t x1, int32_t z1, int32_t *positions, int32_t capacity)
+int32_t cv_structures_in_area(cv_world *world, int32_t stype, int32_t x0, int32_t z0, int32_t x1, int32_t z1, int32_t *positions, int32_t capacity)
+{
+    const cv_rules *previous = cv_enter_rules(world ? &world->rules : NULL);
+    int32_t result = cv_find_structures_in_area(world, stype, x0, z0, x1, z1, positions, capacity);
+    cv_enter_rules(previous);
+    return result;
+}
+
+static int32_t cv_find_attempts_in_area(int32_t stype, int32_t mc, uint64_t seed, int32_t x0, int32_t z0, int32_t x1, int32_t z1, int32_t *positions, int32_t capacity)
 {
     if (!cv_is_valid_structure(stype) || !cv_is_valid_mc(mc))
         return CV_ERR_ARGUMENT;
@@ -177,6 +204,17 @@ int32_t cv_structure_attempts_in_area(int32_t stype, int32_t mc, uint64_t seed, 
     if (!getStructureConfig(stype, mc, &config))
         return x1 <= x0 || z1 <= z0 || !positions || capacity < 0 ? CV_ERR_ARGUMENT : 0;
     return cv_collect_structures(NULL, stype, mc, seed, &config, x0, z0, x1, z1, positions, capacity);
+}
+
+int32_t cv_structure_attempts_in_area(const cv_rules *rules, int32_t stype, int32_t mc, uint64_t seed, int32_t x0, int32_t z0, int32_t x1, int32_t z1, int32_t *positions, int32_t capacity)
+{
+    if (!cv_are_valid_rules(rules))
+        return CV_ERR_ARGUMENT;
+
+    const cv_rules *previous = cv_enter_rules(rules);
+    int32_t result = cv_find_attempts_in_area(stype, mc, seed, x0, z0, x1, z1, positions, capacity);
+    cv_enter_rules(previous);
+    return result;
 }
 
 /* The managed side names these piece kinds; a changed order in cubiomes must not go unnoticed. */
@@ -201,7 +239,7 @@ static int cv_variant_biome(cv_world *world, int32_t stype, Pos pos)
     return -1;
 }
 
-int32_t cv_structure_variant(cv_world *world, int32_t stype, int32_t x, int32_t z, cv_variant *variant)
+static int32_t cv_find_structure_variant(cv_world *world, int32_t stype, int32_t x, int32_t z, cv_variant *variant)
 {
     StructureConfig config;
     int exists = 0;
@@ -239,6 +277,14 @@ int32_t cv_structure_variant(cv_world *world, int32_t stype, int32_t x, int32_t 
     variant->sy = found.sy;
     variant->sz = found.sz;
     return 1;
+}
+
+int32_t cv_structure_variant(cv_world *world, int32_t stype, int32_t x, int32_t z, cv_variant *variant)
+{
+    const cv_rules *previous = cv_enter_rules(world ? &world->rules : NULL);
+    int32_t result = cv_find_structure_variant(world, stype, x, z, variant);
+    cv_enter_rules(previous);
+    return result;
 }
 
 int32_t cv_structure_pieces(cv_world *world, int32_t stype, int32_t x, int32_t z, cv_piece *pieces, int32_t capacity)

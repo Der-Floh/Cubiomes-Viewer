@@ -18,10 +18,10 @@ static int cv_is_quad_type(int32_t stype)
     return stype == Swamp_Hut || stype == Desert_Pyramid || stype == Jungle_Pyramid || stype == Igloo;
 }
 
-/* Fills 'config' and returns 1 when the version has quads of the type. */
+/* Fills 'config', with the salt of the rules in use, and returns 1 when the version has quads of the type. */
 static int cv_quad_config(int32_t stype, int32_t mc, StructureConfig *config)
 {
-    if (!cv_is_quad_type(stype) || !getStructureConfig(stype, mc, config))
+    if (!cv_is_quad_type(stype) || !getStructureConfig_override(stype, mc, config))
         return 0;
     return config->regionSize == 32 && config->chunkRange == 24;
 }
@@ -105,7 +105,7 @@ int32_t cv_quad_hut_base_info(uint64_t base, float *radius)
     return *radius > 0 ? cv_quad_hut_class_of_base(base) : 0;
 }
 
-int32_t cv_quad_seed_of_base(int32_t stype, int32_t mc, uint64_t base, int32_t reg_x, int32_t reg_z, uint64_t *seed)
+static int32_t cv_find_seed_of_base(int32_t stype, int32_t mc, uint64_t base, int32_t reg_x, int32_t reg_z, uint64_t *seed)
 {
     StructureConfig config;
     if (!cv_is_valid_mc(mc) || base >> 48 || !seed)
@@ -117,9 +117,20 @@ int32_t cv_quad_seed_of_base(int32_t stype, int32_t mc, uint64_t base, int32_t r
     return CV_OK;
 }
 
+int32_t cv_quad_seed_of_base(const cv_rules *rules, int32_t stype, int32_t mc, uint64_t base, int32_t reg_x, int32_t reg_z, uint64_t *seed)
+{
+    if (!cv_are_valid_rules(rules))
+        return CV_ERR_ARGUMENT;
+
+    const cv_rules *previous = cv_enter_rules(rules);
+    int32_t result = cv_find_seed_of_base(stype, mc, base, reg_x, reg_z, seed);
+    cv_enter_rules(previous);
+    return result;
+}
+
 /* Writes, for each quad whose regions start in [reg_x0, reg_x1] x [reg_z0, reg_z1], its first region and its
    quality class (1 ideal, 2 classic, 3 normal, 4 barely, 5 other) as triples, and returns the number of quads. */
-int32_t cv_quads_in_area(int32_t stype, int32_t mc, uint64_t seed, int32_t reg_x0, int32_t reg_z0, int32_t reg_x1, int32_t reg_z1, int32_t *quads, int32_t capacity)
+static int32_t cv_find_quads_in_area(int32_t stype, int32_t mc, uint64_t seed, int32_t reg_x0, int32_t reg_z0, int32_t reg_x1, int32_t reg_z1, int32_t *quads, int32_t capacity)
 {
     StructureConfig config;
     int32_t found = 0;
@@ -151,4 +162,15 @@ int32_t cv_quads_in_area(int32_t stype, int32_t mc, uint64_t seed, int32_t reg_x
         }
     }
     return found;
+}
+
+int32_t cv_quads_in_area(const cv_rules *rules, int32_t stype, int32_t mc, uint64_t seed, int32_t reg_x0, int32_t reg_z0, int32_t reg_x1, int32_t reg_z1, int32_t *quads, int32_t capacity)
+{
+    if (!cv_are_valid_rules(rules))
+        return CV_ERR_ARGUMENT;
+
+    const cv_rules *previous = cv_enter_rules(rules);
+    int32_t result = cv_find_quads_in_area(stype, mc, seed, reg_x0, reg_z0, reg_x1, reg_z1, quads, capacity);
+    cv_enter_rules(previous);
+    return result;
 }

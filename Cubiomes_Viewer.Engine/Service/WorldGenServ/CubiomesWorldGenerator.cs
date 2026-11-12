@@ -17,10 +17,11 @@ public sealed class CubiomesWorldGenerator : IWorldGenerator
 
     public McVersion Version { get; }
     public GeneratorFlags Flags { get; }
+    public StructureRules Rules { get; }
 
     private readonly WorldHandle _world;
 
-    public CubiomesWorldGenerator(McVersion version, GeneratorFlags flags)
+    public CubiomesWorldGenerator(McVersion version, GeneratorFlags flags, StructureRules? rules = null)
     {
         var world = CubiomesNative.WorldCreate((int)version, (uint)flags);
         if (world == 0)
@@ -29,6 +30,14 @@ public sealed class CubiomesWorldGenerator : IWorldGenerator
         _world = new WorldHandle(world);
         Version = version;
         Flags = flags;
+        Rules = rules ?? StructureRules.Default;
+        ApplyRules();
+    }
+
+    private unsafe void ApplyRules()
+    {
+        var native = NativeRules.From(Rules);
+        CubiomesNativeException.ThrowIfError(CubiomesNative.WorldSetRules(World, &native), nameof(ApplyRules));
     }
 
     public void Apply(Dimension dimension, long seed)

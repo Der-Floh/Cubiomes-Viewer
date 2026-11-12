@@ -14,6 +14,9 @@ public interface IWorldGenerator : IDisposable
     McVersion Version { get; }
     GeneratorFlags Flags { get; }
 
+    /// <summary>How the structures of the generator's worlds generate.</summary>
+    StructureRules Rules { get; }
+
     void Apply(Dimension dimension, long seed);
 
     /// <summary>Returns the biome id at a scaled position, or <c>-1</c> when no biome exists there.</summary>

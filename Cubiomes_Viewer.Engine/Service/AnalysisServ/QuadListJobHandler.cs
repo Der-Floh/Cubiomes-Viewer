@@ -30,7 +30,7 @@ public sealed class QuadListJobHandler(IQuadFinder quadFinder, IStructureFinder 
         foreach (var quad in quads)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (quad.Quality > request.Worst || !structureFinder.TryGetQuadPositions(request.Type, version, request.World.Seed, quad, positions))
+            if (quad.Quality > request.Worst || !structureFinder.TryGetQuadPositions(request.Type, version, request.World.Rules, request.World.Seed, quad, positions))
                 continue;
 
             var middle = BlockPos.MiddleOf(positions);
@@ -48,7 +48,7 @@ public sealed class QuadListJobHandler(IQuadFinder quadFinder, IStructureFinder 
         var (x0, z0) = (FloorDivide(blocks.X, regionBlocks) - 1, FloorDivide(blocks.Z, regionBlocks) - 1);
         var (x1, z1) = (FloorDivide(blocks.Right - 1, regionBlocks), FloorDivide(blocks.Bottom - 1, regionBlocks));
         var quads = new QuadPosition[(x1 - x0 + 1) * (z1 - z0 + 1)];
-        var count = quadFinder.FindQuads(request.Type, request.World.Version, request.World.Seed, x0, z0, x1, z1, quads);
+        var count = quadFinder.FindQuads(request.Type, request.World.Version, request.World.Rules, request.World.Seed, x0, z0, x1, z1, quads);
         return quads.AsSpan(0, count);
     }
 

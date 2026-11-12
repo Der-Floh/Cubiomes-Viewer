@@ -4,5 +4,5 @@ namespace Cubiomes_Viewer.Engine.Service.WorldGenServ;
 
 public sealed class CubiomesWorldGeneratorFactory : IWorldGeneratorFactory
 {
-    public IWorldGenerator Create(McVersion version, GeneratorFlags flags) => new CubiomesWorldGenerator(version, flags);
+    public IWorldGenerator Create(McVersion version, GeneratorFlags flags, StructureRules? rules = null) => new CubiomesWorldGenerator(version, flags, rules);
 }

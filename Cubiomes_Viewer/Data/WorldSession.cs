@@ -36,7 +36,12 @@ public sealed partial class WorldSession : ObservableObject
     [ObservableProperty]
     public partial int Octaves { get; set; }
 
-    public WorldKey Key => new(Seed, Version, Dimension, GeneratorFlags.ForceOceanVariants | (LargeBiomes ? GeneratorFlags.LargeBiomes : GeneratorFlags.None));
+    /// <summary>How structures generate in the world, as the world settings say.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Key))]
+    public partial StructureRules Rules { get; set; } = StructureRules.Default;
+
+    public WorldKey Key => new(Seed, Version, Dimension, GeneratorFlags.ForceOceanVariants | (LargeBiomes ? GeneratorFlags.LargeBiomes : GeneratorFlags.None)) { Rules = Rules };
 
     public override string ToString() => $"{Seed} ({Version}, {Dimension})";
 }

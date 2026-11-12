@@ -150,7 +150,7 @@ public sealed class SelfTestService : ISelfTestService
         {
             for (var regionX = -2; regionX <= 2; regionX++)
             {
-                if (!_structureFinder.TryGetRegionPosition(StructureType.Village, _versionCatalog.Newest, VillageSeed, regionX, regionZ, out var position))
+                if (!_structureFinder.TryGetRegionPosition(StructureType.Village, _versionCatalog.Newest, StructureRules.Default, VillageSeed, regionX, regionZ, out var position))
                     continue;
 
                 found++;

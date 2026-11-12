@@ -51,11 +51,11 @@ internal static unsafe partial class CubiomesNative
 
     [LibraryImport(LibraryName, EntryPoint = "cv_quad_seed_of_base")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    internal static partial int QuadSeedOfBase(int structureType, int version, ulong baseSeed, int regionX, int regionZ, ulong* seed);
+    internal static partial int QuadSeedOfBase(NativeRules* rules, int structureType, int version, ulong baseSeed, int regionX, int regionZ, ulong* seed);
 
     [LibraryImport(LibraryName, EntryPoint = "cv_quads_in_area")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    internal static partial int QuadsInArea(int structureType, int version, ulong seed, int regionX0, int regionZ0, int regionX1, int regionZ1, int* quads, int capacity);
+    internal static partial int QuadsInArea(NativeRules* rules, int structureType, int version, ulong seed, int regionX0, int regionZ0, int regionX1, int regionZ1, int* quads, int capacity);
 
     [LibraryImport(LibraryName, EntryPoint = "cv_default_biome_colors")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
@@ -72,6 +72,10 @@ internal static unsafe partial class CubiomesNative
     [LibraryImport(LibraryName, EntryPoint = "cv_world_apply")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial int WorldApply(nint world, int dimension, ulong seed);
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_world_set_rules")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int WorldSetRules(nint world, NativeRules* rules);
 
     [LibraryImport(LibraryName, EntryPoint = "cv_biome_at")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
@@ -109,9 +113,13 @@ internal static unsafe partial class CubiomesNative
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial int StructureConfig(int structureType, int version, int* dimension, int* regionBlocks);
 
+    [LibraryImport(LibraryName, EntryPoint = "cv_structure_salt")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int StructureSalt(int structureType, int version, int* salt);
+
     [LibraryImport(LibraryName, EntryPoint = "cv_structure_pos")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    internal static partial int StructurePosition(int structureType, int version, ulong seed, int regionX, int regionZ, int* x, int* z);
+    internal static partial int StructurePosition(NativeRules* rules, int structureType, int version, ulong seed, int regionX, int regionZ, int* x, int* z);
 
     [LibraryImport(LibraryName, EntryPoint = "cv_structure_viable")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
@@ -127,7 +135,7 @@ internal static unsafe partial class CubiomesNative
 
     [LibraryImport(LibraryName, EntryPoint = "cv_structure_attempts_in_area")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    internal static partial int StructureAttemptsInArea(int structureType, int version, ulong seed, int x0, int z0, int x1, int z1, int* positions, int capacity);
+    internal static partial int StructureAttemptsInArea(NativeRules* rules, int structureType, int version, ulong seed, int x0, int z0, int x1, int z1, int* positions, int capacity);
 
     [LibraryImport(LibraryName, EntryPoint = "cv_structure_variant")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]

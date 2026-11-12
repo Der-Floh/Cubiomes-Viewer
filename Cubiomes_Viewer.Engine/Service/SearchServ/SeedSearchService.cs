@@ -173,7 +173,7 @@ public sealed class SeedSearchService : ISeedSearchService
         var progress = new PreparationProgress(this);
         try
         {
-            return await _sequenceFactory.CreateAsync(setup.Source, setup.Definition.Version, progress, cancellationToken);
+            return await _sequenceFactory.CreateAsync(setup.Source, setup.Definition, progress, cancellationToken);
         }
         finally
         {

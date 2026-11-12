@@ -15,8 +15,10 @@ public sealed class SearchSeedContext
     public long Seed { get; private set; }
     public McVersion Version { get; }
     public GeneratorFlags Flags { get; }
+    public StructureRules Rules { get; }
 
     private readonly IWorkerContext _workerContext;
+    private readonly SearchDefinition _definition;
     private BlockPos[] _positions = [];
     private QuadPosition[] _quads = [];
     private byte[] _bytes = [];
@@ -30,15 +32,17 @@ public sealed class SearchSeedContext
         ArgumentNullException.ThrowIfNull(definition);
 
         _workerContext = workerContext;
+        _definition = definition;
         Version = definition.Version;
         Flags = definition.Flags;
+        Rules = definition.Rules;
     }
 
     /// <summary>Moves on to another seed.</summary>
     public void Open(long seed) => Seed = seed;
 
     /// <summary>Returns the generator of one dimension of the world of the current seed.</summary>
-    public IWorldGenerator GetGenerator(Dimension dimension) => _workerContext.GetGenerator(new WorldKey(Seed, Version, dimension, Flags));
+    public IWorldGenerator GetGenerator(Dimension dimension) => _workerContext.GetGenerator(_definition.GetWorld(Seed, dimension));
 
     /// <summary>Lends a buffer for positions that stays valid until the next request.</summary>
     public Span<BlockPos> GetPositions(int count)

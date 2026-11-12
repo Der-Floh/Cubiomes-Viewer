@@ -61,7 +61,7 @@ public sealed class StructureConditionEvaluator : ConditionEvaluator<StructureCo
         var found = context.GetPositions(checked((int)placement.CountRegions(area)));
         var generator = pass == SearchPass.Quick ? null : context.GetGenerator(placement.Dimension);
         var count = generator is null
-            ? _structureFinder.FindAttempts(condition.Type, context.Version, context.Seed, area, found)
+            ? _structureFinder.FindAttempts(condition.Type, context.Version, context.Rules, context.Seed, area, found)
             : generator.FindStructures(condition.Type, area, found);
 
         foreach (var position in found[..count])

@@ -56,10 +56,10 @@ public sealed class CubiomesQuadFinderTests
     public void FindQuads_SeedMadeFromABase_FindsTheQuadWhereItWasPutAndItsHutsAreClose(StructureType type, int regionX, int regionZ)
     {
         var value = Scan(IdealLowBits)[0];
-        var seed = _finder.GetSeedOfBase(type, Version, value, regionX, regionZ);
+        var seed = _finder.GetSeedOfBase(type, Version, StructureRules.Default, value, regionX, regionZ);
         Span<QuadPosition> quads = stackalloc QuadPosition[64];
 
-        var count = _finder.FindQuads(type, Version, seed | UpperBits, regionX - 3, regionZ - 3, regionX + 3, regionZ + 3, quads);
+        var count = _finder.FindQuads(type, Version, StructureRules.Default, seed | UpperBits, regionX - 3, regionZ - 3, regionX + 3, regionZ + 3, quads);
 
         Assert.Contains(new QuadPosition(regionX, regionZ, QuadQuality.Ideal), quads[..count].ToArray());
         var huts = GetAttempts(type, seed, regionX, regionZ);
@@ -71,7 +71,7 @@ public sealed class CubiomesQuadFinderTests
     {
         Span<QuadPosition> quads = stackalloc QuadPosition[64];
 
-        Assert.Equal(0, _finder.FindQuads(StructureType.SwampHut, Version, 12345, -4, -4, 4, 4, quads));
+        Assert.Equal(0, _finder.FindQuads(StructureType.SwampHut, Version, StructureRules.Default, 12345, -4, -4, 4, 4, quads));
     }
 
     [Theory]
@@ -94,7 +94,7 @@ public sealed class CubiomesQuadFinderTests
         List<BlockPos> huts = [];
         foreach (var (x, z) in new[] { (regionX, regionZ), (regionX + 1, regionZ), (regionX, regionZ + 1), (regionX + 1, regionZ + 1) })
         {
-            Assert.True(_structureFinder.TryGetRegionPosition(type, Version, seed, x, z, out var position));
+            Assert.True(_structureFinder.TryGetRegionPosition(type, Version, StructureRules.Default, seed, x, z, out var position));
             huts.Add(position);
         }
 

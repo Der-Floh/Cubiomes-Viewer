@@ -80,7 +80,7 @@ public sealed partial class SearchSetupViewModel : ObservableObject
         ConditionKinds = [.. factory.Kinds.Select(kind => new ConditionKindViewModel(kind, AddCondition))];
         WorkerChoices = CreateWorkerChoices(search);
         SelectedWorkers = WorkerChoices[0];
-        Setup = new SearchSetup { Definition = new SearchDefinition { Version = session.Version, LargeBiomes = session.LargeBiomes } };
+        Setup = new SearchSetup { Definition = new SearchDefinition { Version = session.Version, LargeBiomes = session.LargeBiomes, Rules = session.Rules } };
         ShowVersion();
         Refresh();
         session.PropertyChanged += OnSessionChanged;
@@ -157,7 +157,7 @@ public sealed partial class SearchSetupViewModel : ObservableObject
 
     private void OnSessionChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is not (nameof(WorldSession.Version) or nameof(WorldSession.LargeBiomes)))
+        if (e.PropertyName is not (nameof(WorldSession.Version) or nameof(WorldSession.LargeBiomes) or nameof(WorldSession.Rules)))
             return;
 
         foreach (var condition in Conditions)
@@ -199,9 +199,10 @@ public sealed partial class SearchSetupViewModel : ObservableObject
     private void ShowVersion()
     {
         var name = _versionCatalog.GetName(_session.Version);
-        VersionText = _session.LargeBiomes
-            ? $"Searches {name} worlds with large biomes, as the map shows them."
-            : $"Searches {name} worlds, as the map shows them.";
+        var worlds = _session.LargeBiomes ? $"{name} worlds with large biomes" : $"{name} worlds";
+        VersionText = _session.Rules.IsDefault
+            ? $"Searches {worlds}, as the map shows them."
+            : $"Searches {worlds} with the changed structure rules of the world settings, as the map shows them.";
     }
 
     /// <summary>Rebuilds the setup from what is entered and shows what keeps it from running.</summary>
@@ -218,6 +219,7 @@ public sealed partial class SearchSetupViewModel : ObservableObject
         {
             Version = _session.Version,
             LargeBiomes = _session.LargeBiomes,
+            Rules = _session.Rules,
             Conditions = [.. Conditions.Select(condition => condition.ToCondition())],
         };
         Setup = new SearchSetup

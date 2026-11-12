@@ -81,8 +81,7 @@ public sealed partial class AnalysisScopeViewModel : ObservableObject
         if (SelectedSeeds?.Value != AnalysisSeeds.FoundSeeds || _search.Setup is not { } setup)
             return [_session.Key with { Dimension = dimension }];
 
-        var flags = setup.Definition.Flags;
-        return [.. _search.Results.Take(MaxSeeds).Select(seed => new WorldKey(seed, setup.Definition.Version, dimension, flags))];
+        return [.. _search.Results.Take(MaxSeeds).Select(seed => setup.Definition.GetWorld(seed, dimension))];
     }
 
     [RelayCommand]

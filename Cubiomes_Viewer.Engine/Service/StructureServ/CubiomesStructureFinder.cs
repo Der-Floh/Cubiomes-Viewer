@@ -19,22 +19,34 @@ public sealed class CubiomesStructureFinder : IStructureFinder
         return result > 0;
     }
 
-    public unsafe bool TryGetRegionPosition(StructureType type, McVersion version, long seed, int regionX, int regionZ, out BlockPos position)
+    public unsafe bool TryGetGameSalt(StructureType type, McVersion version, out int salt)
     {
+        int found;
+        var result = CubiomesNative.StructureSalt((int)type, (int)version, &found);
+        CubiomesNativeException.ThrowIfError(result, nameof(TryGetGameSalt));
+
+        salt = found;
+        return result > 0;
+    }
+
+    public unsafe bool TryGetRegionPosition(StructureType type, McVersion version, StructureRules rules, long seed, int regionX, int regionZ, out BlockPos position)
+    {
+        var native = NativeRules.From(rules);
         int x, z;
-        var result = CubiomesNative.StructurePosition((int)type, (int)version, unchecked((ulong)seed), regionX, regionZ, &x, &z);
+        var result = CubiomesNative.StructurePosition(&native, (int)type, (int)version, unchecked((ulong)seed), regionX, regionZ, &x, &z);
         CubiomesNativeException.ThrowIfError(result, nameof(TryGetRegionPosition));
 
         position = new BlockPos(x, z);
         return result > 0;
     }
 
-    public unsafe int FindAttempts(StructureType type, McVersion version, long seed, BlockArea area, Span<BlockPos> destination)
+    public unsafe int FindAttempts(StructureType type, McVersion version, StructureRules rules, long seed, BlockArea area, Span<BlockPos> destination)
     {
+        var native = NativeRules.From(rules);
         fixed (BlockPos* positions = destination)
         {
             var count = CubiomesNative.StructureAttemptsInArea(
-                (int)type, (int)version, unchecked((ulong)seed), area.X, area.Z, area.Right, area.Bottom, (int*)positions, destination.Length);
+                &native, (int)type, (int)version, unchecked((ulong)seed), area.X, area.Z, area.Right, area.Bottom, (int*)positions, destination.Length);
             return CubiomesNativeException.ThrowIfError(count, nameof(FindAttempts));
         }
     }

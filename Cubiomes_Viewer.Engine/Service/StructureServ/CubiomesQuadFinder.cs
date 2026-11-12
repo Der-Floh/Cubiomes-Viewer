@@ -41,18 +41,20 @@ public sealed class CubiomesQuadFinder : IQuadFinder
         return quality == 0 ? null : new QuadHutBase(value, (QuadQuality)quality, radius);
     }
 
-    public unsafe long GetSeedOfBase(StructureType type, McVersion version, ulong value, int regionX, int regionZ)
+    public unsafe long GetSeedOfBase(StructureType type, McVersion version, StructureRules rules, ulong value, int regionX, int regionZ)
     {
+        var native = NativeRules.From(rules);
         ulong seed;
-        CubiomesNativeException.ThrowIfError(CubiomesNative.QuadSeedOfBase((int)type, (int)version, value, regionX, regionZ, &seed), nameof(GetSeedOfBase));
+        CubiomesNativeException.ThrowIfError(CubiomesNative.QuadSeedOfBase(&native, (int)type, (int)version, value, regionX, regionZ, &seed), nameof(GetSeedOfBase));
         return (long)seed;
     }
 
-    public unsafe int FindQuads(StructureType type, McVersion version, long seed, int regionX0, int regionZ0, int regionX1, int regionZ1, Span<QuadPosition> destination)
+    public unsafe int FindQuads(StructureType type, McVersion version, StructureRules rules, long seed, int regionX0, int regionZ0, int regionX1, int regionZ1, Span<QuadPosition> destination)
     {
+        var native = NativeRules.From(rules);
         fixed (QuadPosition* quads = destination)
         {
-            var count = CubiomesNative.QuadsInArea((int)type, (int)version, unchecked((ulong)seed), regionX0, regionZ0, regionX1, regionZ1, (int*)quads, destination.Length);
+            var count = CubiomesNative.QuadsInArea(&native, (int)type, (int)version, unchecked((ulong)seed), regionX0, regionZ0, regionX1, regionZ1, (int*)quads, destination.Length);
             return CubiomesNativeException.ThrowIfError(count, nameof(FindQuads));
         }
     }

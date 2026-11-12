@@ -24,8 +24,8 @@ public sealed class CubiomesStructureFinderTests
     [MemberData(nameof(AllTypesAndVersions))]
     public void TryGetRegionPosition_AnyTypeAndVersion_IsDeterministic(StructureType type, McVersion version)
     {
-        var first = _finder.TryGetRegionPosition(type, version, Seed, 3, -2, out var firstPosition);
-        var second = _finder.TryGetRegionPosition(type, version, Seed, 3, -2, out var secondPosition);
+        var first = _finder.TryGetRegionPosition(type, version, StructureRules.Default, Seed, 3, -2, out var firstPosition);
+        var second = _finder.TryGetRegionPosition(type, version, StructureRules.Default, Seed, 3, -2, out var secondPosition);
 
         Assert.Equal(first, second);
         Assert.Equal(firstPosition, secondPosition);
@@ -34,8 +34,8 @@ public sealed class CubiomesStructureFinderTests
     [Fact]
     public void TryGetRegionPosition_Village_IgnoresUpperSeedBits()
     {
-        var found = _finder.TryGetRegionPosition(StructureType.Village, McVersion.V1_21_3, Seed, 1, 1, out var position);
-        var foundWithUpperBits = _finder.TryGetRegionPosition(StructureType.Village, McVersion.V1_21_3, Seed + UpperBitsOffset, 1, 1, out var positionWithUpperBits);
+        var found = _finder.TryGetRegionPosition(StructureType.Village, McVersion.V1_21_3, StructureRules.Default, Seed, 1, 1, out var position);
+        var foundWithUpperBits = _finder.TryGetRegionPosition(StructureType.Village, McVersion.V1_21_3, StructureRules.Default, Seed + UpperBitsOffset, 1, 1, out var positionWithUpperBits);
 
         Assert.True(found);
         Assert.True(foundWithUpperBits);
@@ -44,12 +44,12 @@ public sealed class CubiomesStructureFinderTests
 
     [Fact]
     public void TryGetRegionPosition_StructureNotInVersion_ReturnsFalse()
-        => Assert.False(_finder.TryGetRegionPosition(StructureType.TrialChambers, McVersion.V1_12_2, Seed, 0, 0, out _));
+        => Assert.False(_finder.TryGetRegionPosition(StructureType.TrialChambers, McVersion.V1_12_2, StructureRules.Default, Seed, 0, 0, out _));
 
     [Fact]
     public void TryGetRegionPosition_UnknownStructureType_ThrowsInvalidArgument()
     {
-        var exception = Assert.Throws<CubiomesNativeException>(() => _finder.TryGetRegionPosition((StructureType)999, McVersion.V1_21_3, Seed, 0, 0, out _));
+        var exception = Assert.Throws<CubiomesNativeException>(() => _finder.TryGetRegionPosition((StructureType)999, McVersion.V1_21_3, StructureRules.Default, Seed, 0, 0, out _));
 
         Assert.Equal(NativeStatus.InvalidArgument, exception.Status);
     }

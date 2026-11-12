@@ -15,14 +15,14 @@ public static class StructureFinderExtensions
         /// Writes where the four structures of a quad attempt to generate, region by region along x first; returns
         /// <see langword="false"/> when a region holds no attempt.
         /// </summary>
-        public bool TryGetQuadPositions(StructureType type, McVersion version, long seed, QuadPosition quad, Span<BlockPos> positions)
+        public bool TryGetQuadPositions(StructureType type, McVersion version, StructureRules rules, long seed, QuadPosition quad, Span<BlockPos> positions)
         {
             ArgumentNullException.ThrowIfNull(finder);
             ArgumentOutOfRangeException.ThrowIfLessThan(positions.Length, StructuresPerQuad);
 
             for (var index = 0; index < StructuresPerQuad; index++)
             {
-                if (!finder.TryGetRegionPosition(type, version, seed, quad.RegionX + index % 2, quad.RegionZ + index / 2, out positions[index]))
+                if (!finder.TryGetRegionPosition(type, version, rules, seed, quad.RegionX + index % 2, quad.RegionZ + index / 2, out positions[index]))
                     return false;
             }
 
