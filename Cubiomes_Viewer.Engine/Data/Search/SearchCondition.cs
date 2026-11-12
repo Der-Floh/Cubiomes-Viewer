@@ -14,6 +14,7 @@ namespace Cubiomes_Viewer.Engine.Data.Search;
 [JsonDerivedType(typeof(SlimeChunkCondition), "slimeChunks")]
 [JsonDerivedType(typeof(AnyOfCondition), "anyOf")]
 [JsonDerivedType(typeof(QuadHutCondition), "quadHuts")]
+[JsonDerivedType(typeof(ClimateCondition), "climate")]
 public abstract record SearchCondition
 {
     public const int MinId = 1;

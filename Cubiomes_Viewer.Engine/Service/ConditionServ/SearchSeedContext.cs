@@ -20,6 +20,7 @@ public sealed class SearchSeedContext
     private BlockPos[] _positions = [];
     private QuadPosition[] _quads = [];
     private byte[] _bytes = [];
+    private short[] _values = [];
 
     public SearchSeedContext(IWorkerContext workerContext, SearchDefinition definition)
     {
@@ -59,5 +60,13 @@ public sealed class SearchSeedContext
         if (_bytes.Length < count)
             _bytes = new byte[count];
         return _bytes.AsSpan(0, count);
+    }
+
+    /// <summary>Lends a buffer for sampled values that stays valid until the next request.</summary>
+    public Span<short> GetValues(int count)
+    {
+        if (_values.Length < count)
+            _values = new short[count];
+        return _values.AsSpan(0, count);
     }
 }

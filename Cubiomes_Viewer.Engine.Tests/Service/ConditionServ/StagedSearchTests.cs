@@ -1,4 +1,5 @@
 using Cubiomes_Viewer.Engine.Data.Biomes;
+using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Search;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.ConditionServ;
@@ -48,6 +49,10 @@ public sealed class StagedSearchTests : IDisposable
             Structure(4, StructureType.RuinedPortal, 500, relativeTo: 2)),
         ["a village with trial chambers nearby in 1.21"] = Define(Village(1, 1536), Structure(2, StructureType.TrialChambers, 700, relativeTo: 1)) with { Version = McVersion.V1_21_3 },
         ["a cherry grove in 1.21"] = Define(new BiomeCondition { Id = 1, Biomes = BiomeSet.Of(CherryGrove), Area = SearchArea.Circle(1024), Scale = 64 }) with { Version = McVersion.V1_21_3 },
+        ["far inland on average in 1.21"] = Define(new ClimateCondition { Id = 1, Parameter = ClimateParameter.Continentalness, Min = 0.3, Max = 1, Match = ClimateMatch.OnAverage, Area = SearchArea.Square(1024) }) with { Version = McVersion.V1_21_3 },
+        ["a village with a coast nearby in 1.21"] = Define(
+            Village(1, 1536),
+            new ClimateCondition { Id = 2, RelativeTo = 1, Parameter = ClimateParameter.Continentalness, Min = -0.19, Max = -0.11, Match = ClimateMatch.Somewhere, Area = SearchArea.Circle(256), Scale = 16 }) with { Version = McVersion.V1_21_3 },
     };
 
     private readonly ConditionTestBench _bench = new();

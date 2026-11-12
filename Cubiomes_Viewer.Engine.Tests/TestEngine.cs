@@ -22,6 +22,7 @@ internal static class TestEngine
         new StructureConditionEvaluator(new CubiomesStructureFinder(), CreateStructureCatalog()),
         new QuadHutConditionEvaluator(new CubiomesQuadFinder(), new CubiomesStructureFinder(), CreateStructureCatalog()),
         new BiomeConditionEvaluator(new BiomeCatalog()),
+        new ClimateConditionEvaluator(CreateLayerCatalog()),
         new SpawnConditionEvaluator(),
         new StrongholdConditionEvaluator(),
         new SlimeChunkConditionEvaluator(new CubiomesSlimeChunkFinder()),

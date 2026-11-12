@@ -10,7 +10,6 @@ namespace Cubiomes_Viewer.Engine.Service.ConditionServ;
 public sealed class BiomeConditionEvaluator : ConditionEvaluator<BiomeCondition>
 {
     private const int MaxSamples = 512 * 512;
-    private const int VerticalCellShift = 2;
     private const int SearchCost = 50;
     private static readonly int[] _scales = [1, 4, 16, 64, 256];
 
@@ -45,7 +44,7 @@ public sealed class BiomeConditionEvaluator : ConditionEvaluator<BiomeCondition>
 
         if (!_scales.Contains(condition.Scale))
             yield return $"The distance between samples must be one of {string.Join(", ", _scales)} blocks.";
-        else if (CountSamplesAtMost(condition) > MaxSamples)
+        else if (SampleGrid.CountAtMost(condition.Area, condition.Scale) > MaxSamples)
             yield return $"The area needs more than {MaxSamples} samples at {condition.Scale} blocks per sample; sample it more coarsely or make it smaller.";
     }
 
@@ -55,7 +54,7 @@ public sealed class BiomeConditionEvaluator : ConditionEvaluator<BiomeCondition>
             return MatchStatus.Unknown;
 
         var blocks = condition.Area.ToBlocks(reference);
-        var grid = GetSampleGrid(condition, blocks);
+        var grid = SampleGrid.Create(blocks, condition.Scale, condition.Y);
         var samples = context.GetBytes(grid.SampleCount);
         context.GetGenerator(condition.Dimension).GenerateBiomes(grid, samples);
 
@@ -80,7 +79,7 @@ public sealed class BiomeConditionEvaluator : ConditionEvaluator<BiomeCondition>
             if (biome == Constants.NoBiomeTileValue || !condition.Biomes.Contains(biome))
                 continue;
 
-            var position = GetSamplePosition(grid, index, blocks);
+            var position = SampleGrid.GetPosition(grid, index, blocks);
             if (!condition.Area.Contains(reference, position))
                 continue;
 
@@ -94,25 +93,4 @@ public sealed class BiomeConditionEvaluator : ConditionEvaluator<BiomeCondition>
         return found;
     }
 
-    private static BiomeArea GetSampleGrid(BiomeCondition condition, BlockArea blocks)
-    {
-        var (left, top) = (FloorDivide(blocks.X, condition.Scale), FloorDivide(blocks.Z, condition.Scale));
-        var (right, bottom) = (FloorDivide(blocks.Right - 1, condition.Scale), FloorDivide(blocks.Bottom - 1, condition.Scale));
-        var y = condition.Scale == 1 ? condition.Y : condition.Y >> VerticalCellShift;
-        return new BiomeArea(condition.Scale, left, top, right - left + 1, bottom - top + 1, y);
-    }
-
-    /// <summary>The middle of the part of a sample that lies in the rectangle of the area.</summary>
-    private static BlockPos GetSamplePosition(BiomeArea grid, int index, BlockArea blocks)
-    {
-        var (x, z) = (grid.X + index % grid.SizeX, grid.Z + index / grid.SizeX);
-        return new BlockPos(
-            Math.Clamp(x * grid.Scale + grid.Scale / 2, blocks.X, blocks.Right - 1),
-            Math.Clamp(z * grid.Scale + grid.Scale / 2, blocks.Z, blocks.Bottom - 1));
-    }
-
-    private static long CountSamplesAtMost(BiomeCondition condition)
-        => ((long)condition.Area.SizeX / condition.Scale + 2) * ((long)condition.Area.SizeZ / condition.Scale + 2);
-
-    private static int FloorDivide(int value, int divisor) => (int)Math.Floor(value / (double)divisor);
 }

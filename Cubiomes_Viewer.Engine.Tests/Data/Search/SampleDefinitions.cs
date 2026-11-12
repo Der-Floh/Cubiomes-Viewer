@@ -1,4 +1,5 @@
 using Cubiomes_Viewer.Engine.Data.Biomes;
+using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Search;
 using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Data.Worlds;
@@ -21,6 +22,7 @@ internal static class SampleDefinitions
             new AnyOfCondition { Id = 5 },
             new SlimeChunkCondition { Id = 6, RelativeTo = 5, Count = 12, Anchor = MatchAnchor.Center },
             new QuadHutCondition { Id = 7, Type = StructureType.Igloo, Quality = QuadQuality.Classic, Count = 2 },
+            new ClimateCondition { Id = 8, RelativeTo = 7, Parameter = ClimateParameter.Erosion, Min = -0.375, Max = 0.05, Match = ClimateMatch.OnAverage, Scale = 16, Y = -20, Count = 0 },
         ],
     };
 }

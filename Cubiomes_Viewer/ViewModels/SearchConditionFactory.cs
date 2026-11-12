@@ -1,6 +1,7 @@
 using Cubiomes_Viewer.Engine.Data.Search;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.ConditionServ;
+using Cubiomes_Viewer.Engine.Service.LayerServ;
 using Cubiomes_Viewer.Engine.Service.StructureServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
 
@@ -15,12 +16,14 @@ public sealed class SearchConditionFactory
     private readonly IConditionRegistry _registry;
     private readonly IStructureCatalog _structureCatalog;
     private readonly IBiomeCatalog _biomeCatalog;
+    private readonly ILayerCatalog _layerCatalog;
 
-    public SearchConditionFactory(IConditionRegistry registry, IStructureCatalog structureCatalog, IBiomeCatalog biomeCatalog)
+    public SearchConditionFactory(IConditionRegistry registry, IStructureCatalog structureCatalog, IBiomeCatalog biomeCatalog, ILayerCatalog layerCatalog)
     {
         _registry = registry;
         _structureCatalog = structureCatalog;
         _biomeCatalog = biomeCatalog;
+        _layerCatalog = layerCatalog;
     }
 
     public SearchConditionViewModel Create(SearchCondition condition, McVersion version, Action<SearchConditionViewModel> edited, Action<SearchConditionViewModel> removed)
@@ -31,6 +34,7 @@ public sealed class SearchConditionFactory
         StructureCondition structure => new StructureFieldsViewModel(structure, version, _structureCatalog, changed),
         QuadHutCondition quad => new QuadHutFieldsViewModel(quad, _structureCatalog, changed),
         BiomeCondition biome => new BiomeFieldsViewModel(biome, version, _biomeCatalog, changed),
+        ClimateCondition climate => new ClimateFieldsViewModel(climate, version, _layerCatalog, changed),
         _ => null,
     };
 }

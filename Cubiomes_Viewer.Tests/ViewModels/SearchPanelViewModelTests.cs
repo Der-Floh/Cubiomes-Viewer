@@ -2,6 +2,7 @@ using Avalonia.Controls.Notifications;
 using Avalonia.Headless.XUnit;
 
 using Cubiomes_Viewer.Data;
+using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Search;
 using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Data.Worlds;
@@ -190,6 +191,53 @@ public sealed class SearchPanelViewModelTests : IDisposable
 
         fields.Filter = "forest";
         Assert.Equal(["Crimson Forest", "Warped Forest"], fields.Biomes.Select(toggle => toggle.Name));
+    }
+
+    [AvaloniaFact]
+    public void ClimateFields_ParameterRangeAndMatch_GoIntoTheConditionAndItsSummary()
+    {
+        _session.Version = McVersion.V1_21_3;
+        var climate = Add<ClimateCondition>();
+        var fields = Assert.IsType<ClimateFieldsViewModel>(climate.Fields);
+
+        fields.SelectedParameter = fields.Parameters.Single(choice => choice.Value == ClimateParameter.Erosion);
+        fields.Min = -0.2m;
+        fields.Max = 0.45m;
+        fields.SelectedMatch = fields.Matches.Single(choice => choice.Value == ClimateMatch.OnAverage);
+
+        var condition = Assert.IsType<ClimateCondition>(Assert.Single(Setup.Setup.Definition.Conditions));
+        Assert.Equal(["Temperature", "Humidity", "Continentalness", "Erosion", "Depth", "Weirdness"], fields.Parameters.Select(choice => choice.Display));
+        Assert.Equal((ClimateParameter.Erosion, -0.2, 0.45, ClimateMatch.OnAverage), (condition.Parameter, condition.Min, condition.Max, condition.Match));
+        Assert.Equal("1 · Erosion", climate.Header);
+        Assert.StartsWith("-0.20 to 0.45 on average · ", climate.Summary, StringComparison.Ordinal);
+        Assert.False(fields.HasHeight);
+        Assert.True(Setup.IsValid);
+    }
+
+    [AvaloniaFact]
+    public void ClimateFields_Depth_IsSampledAtAHeight()
+    {
+        _session.Version = McVersion.V1_21_3;
+        var fields = Assert.IsType<ClimateFieldsViewModel>(Add<ClimateCondition>().Fields);
+
+        fields.SelectedParameter = fields.Parameters.Single(choice => choice.Value == ClimateParameter.Depth);
+        fields.Height = -32;
+
+        Assert.True(fields.HasHeight);
+        Assert.Equal(-32, Assert.IsType<ClimateCondition>(Assert.Single(Setup.Setup.Definition.Conditions)).Y);
+        Assert.NotEmpty(fields.ParameterHint);
+    }
+
+    [AvaloniaFact]
+    public void ClimateFields_VersionBeforeTheClimateNoise_OfferOnlyTheChosenParameterAndShowTheProblem()
+    {
+        _session.Version = McVersion.V1_16_5;
+        var climate = Add<ClimateCondition>();
+        var fields = Assert.IsType<ClimateFieldsViewModel>(climate.Fields);
+
+        Assert.Equal([ClimateParameter.Continentalness], fields.Parameters.Select(choice => choice.Value));
+        Assert.Equal(["This version has no continentalness to search for."], climate.Problems);
+        Assert.False(Setup.IsValid);
     }
 
     [AvaloniaFact]

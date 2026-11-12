@@ -59,6 +59,28 @@
             </StackPanel>
         </DataTemplate>
 
+        <DataTemplate x:DataType="vm:ClimateFieldsViewModel">
+            <StackPanel Classes="form">
+                <TextBlock Classes="field-label" Text="{Binding ParameterLabel}"/>
+                <ComboBox Classes="fill" ItemsSource="{Binding Parameters}" SelectedItem="{Binding SelectedParameter}"/>
+                <TextBlock Classes="damp" Text="{Binding ParameterHint}" TextWrapping="Wrap"/>
+                <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
+                    <TextBlock Classes="field-label" Text="{Binding MinLabel}"/>
+                    <NumericUpDown Grid.Row="1" Value="{Binding Min}" Minimum="{Binding MinValue}" Maximum="{Binding MaxValue}" Increment="0.05" FormatString="0.00"/>
+                    <TextBlock Grid.Column="1" Classes="field-label" Text="{Binding MaxLabel}"/>
+                    <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding Max}" Minimum="{Binding MinValue}" Maximum="{Binding MaxValue}" Increment="0.05" FormatString="0.00"/>
+                </Grid>
+                <TextBlock Classes="field-label" Text="{Binding MatchLabel}"/>
+                <ComboBox Classes="fill" ItemsSource="{Binding Matches}" SelectedItem="{Binding SelectedMatch}"/>
+                <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
+                    <TextBlock Classes="field-label" Text="{Binding ScaleLabel}"/>
+                    <ComboBox Grid.Row="1" Classes="fill" ItemsSource="{Binding Scales}" SelectedItem="{Binding SelectedScale}"/>
+                    <TextBlock Grid.Column="1" Classes="field-label" Text="{Binding HeightLabel}" IsVisible="{Binding HasHeight}"/>
+                    <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding Height}" Minimum="{Binding MinHeight}" Maximum="{Binding MaxHeight}" Increment="8" FormatString="0" IsVisible="{Binding HasHeight}"/>
+                </Grid>
+            </StackPanel>
+        </DataTemplate>
+
         <DataTemplate x:DataType="vm:SearchConditionViewModel">
             <Border Classes="condition" Classes.problem="{Binding HasProblems}">
                 <StackPanel Classes="form">

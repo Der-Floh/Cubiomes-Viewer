@@ -8,6 +8,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 
 using Cubiomes_Viewer.Data;
+using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Search;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.SearchServ;
@@ -107,6 +108,20 @@ public sealed class SearchPanelViewTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void ClimateHeight_ShownOnlyForTheDepth()
+    {
+        _services.GetRequiredService<WorldSession>().Version = McVersion.V1_21_3;
+        var fields = Assert.IsType<ClimateFieldsViewModel>(Add<ClimateCondition>().Fields);
+        var withoutHeight = IsHeightShown(fields);
+
+        fields.SelectedParameter = fields.Parameters.Single(choice => choice.Value == ClimateParameter.Depth);
+        Render();
+
+        Assert.False(withoutHeight);
+        Assert.True(IsHeightShown(fields));
+    }
+
+    [AvaloniaFact]
     public void RemoveButton_Clicked_RemovesTheCondition()
     {
         Add<StructureCondition>();
@@ -144,6 +159,8 @@ public sealed class SearchPanelViewTests : IDisposable
     }
 
     private bool IsKindChoiceShown(StructureFieldsViewModel fields) => FindAll<ComboBox>().Any(box => ReferenceEquals(box.ItemsSource, fields.Traits));
+
+    private bool IsHeightShown(ClimateFieldsViewModel fields) => FindAll<TextBlock>().Any(text => text.DataContext == fields && text.Text == fields.HeightLabel);
 
     private static void Click(Control control) => HeadlessInput.Click(control);
 
