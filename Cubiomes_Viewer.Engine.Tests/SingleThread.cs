@@ -1,5 +1,3 @@
-using System.Collections.Concurrent;
-
 namespace Cubiomes_Viewer.Engine.Tests;
 
 /// <summary>
@@ -11,7 +9,7 @@ internal static class SingleThread
     public static void Run(Func<Task> action)
     {
         var previous = SynchronizationContext.Current;
-        using var pump = new Pump();
+        var pump = new Pump();
         SynchronizationContext.SetSynchronizationContext(pump);
         try
         {
@@ -26,20 +24,48 @@ internal static class SingleThread
         }
     }
 
-    private sealed class Pump : SynchronizationContext, IDisposable
+    /// <summary>Once the test is over the thread takes no more work, as when an app closes, so later posts are dropped.</summary>
+    private sealed class Pump : SynchronizationContext
     {
-        private readonly BlockingCollection<(SendOrPostCallback Callback, object? State)> _posted = [];
+        private readonly Queue<(SendOrPostCallback Callback, object? State)> _posted = [];
+        private readonly object _gate = new();
+        private bool _completed;
 
-        public override void Post(SendOrPostCallback d, object? state) => _posted.Add((d, state));
+        public override void Post(SendOrPostCallback d, object? state)
+        {
+            lock (_gate)
+            {
+                if (_completed)
+                    return;
+
+                _posted.Enqueue((d, state));
+                Monitor.Pulse(_gate);
+            }
+        }
 
         public void Run()
         {
-            foreach (var (callback, state) in _posted.GetConsumingEnumerable())
-                callback(state);
+            while (TryTake(out var item))
+                item.Callback(item.State);
         }
 
-        public void Complete() => _posted.CompleteAdding();
+        public void Complete()
+        {
+            lock (_gate)
+            {
+                _completed = true;
+                Monitor.PulseAll(_gate);
+            }
+        }
 
-        public void Dispose() => _posted.Dispose();
+        private bool TryTake(out (SendOrPostCallback Callback, object? State) item)
+        {
+            lock (_gate)
+            {
+                while (_posted.Count == 0 && !_completed)
+                    Monitor.Wait(_gate);
+                return _posted.TryDequeue(out item);
+            }
+        }
     }
 }

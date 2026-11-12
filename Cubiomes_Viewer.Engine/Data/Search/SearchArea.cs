@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 using Cubiomes_Viewer.Engine.Data.Worlds;
 
 namespace Cubiomes_Viewer.Engine.Data.Search;
@@ -12,9 +14,13 @@ public readonly record struct SearchArea(int MinX, int MinZ, int MaxX, int MaxZ,
     /// <summary>The furthest a corner may lie from the reference point, so that chains of relative conditions stay inside the range of block coordinates.</summary>
     public const int MaxOffset = 10_000_000;
 
+    [JsonIgnore]
     public int SizeX => MaxX - MinX + 1;
+
+    [JsonIgnore]
     public int SizeZ => MaxZ - MinZ + 1;
 
+    [JsonIgnore]
     public AreaShape Shape
     {
         get

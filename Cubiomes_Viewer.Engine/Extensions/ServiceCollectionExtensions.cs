@@ -6,6 +6,7 @@ using Cubiomes_Viewer.Engine.Data.Search;
 using Cubiomes_Viewer.Engine.Data.SelfTests;
 using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Repository.AppDataRepo;
+using Cubiomes_Viewer.Engine.Repository.SessionRepo;
 using Cubiomes_Viewer.Engine.Repository.SettingsRepo;
 using Cubiomes_Viewer.Engine.Service.ComputeServ;
 using Cubiomes_Viewer.Engine.Service.ConditionServ;
@@ -36,6 +37,7 @@ public static class ServiceCollectionExtensions
         // repositories
         services.AddSingleton<IAppDataStore, FileSystemAppDataStore>();
         services.AddSingleton<ISettingsRepository, SettingsRepository>();
+        services.AddSingleton<ISearchSessionRepository, SearchSessionRepository>();
 
         // world generation
         services.AddSingleton<IWorldGeneratorFactory, CubiomesWorldGeneratorFactory>();
@@ -74,6 +76,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISeedMatcher, SeedMatcher>();
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<ISeedSearchService, SeedSearchService>();
+        services.AddSingleton<ISearchSessionService, SearchSessionService>();
 
         // services
         services.AddSingleton<ITileColorizer, TileColorizer>();

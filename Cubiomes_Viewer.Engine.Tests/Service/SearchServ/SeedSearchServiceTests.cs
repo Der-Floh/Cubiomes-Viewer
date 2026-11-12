@@ -16,7 +16,7 @@ public sealed class SeedSearchServiceTests : IDisposable
     private const long FirstSeed = -150_000;
     private const long LastSeed = 149_999;
 
-    private static readonly SearchDefinition _slimeChunks = ConditionTestBench.Define(Version, new SlimeChunkCondition { Id = 1, Area = SearchArea.Square(144), Count = 17 });
+    private static readonly SearchDefinition _slimeChunks = SearchRuns.SlimeChunks;
 
     private readonly ServiceProvider _services = CreateServices();
     private readonly ISeedSearchService _search;
@@ -83,7 +83,7 @@ public sealed class SeedSearchServiceTests : IDisposable
         var setup = new SearchSetup { Definition = _slimeChunks, FirstSeed = FirstSeed, LastSeed = LastSeed, MaxResults = 10_000 };
         var expected = FindByHand(setup);
 
-        await StartAndStopAtTheFirstProgressAsync(_search, setup);
+        await SearchRuns.StartAndStopAtTheFirstProgressAsync(_search, setup);
         var paused = _search.Progress;
         await _search.ResumeAsync(TestContext.Current.CancellationToken);
 
@@ -98,7 +98,7 @@ public sealed class SeedSearchServiceTests : IDisposable
     {
         var setup = new SearchSetup { Definition = _slimeChunks, FirstSeed = FirstSeed, LastSeed = LastSeed, MaxResults = 10_000 };
         var expected = FindByHand(setup);
-        await StartAndStopAtTheFirstProgressAsync(_search, setup);
+        await SearchRuns.StartAndStopAtTheFirstProgressAsync(_search, setup);
         var snapshot = Assert.IsType<SearchSnapshot>(_search.CreateSnapshot());
 
         using var services = CreateServices();
@@ -145,7 +145,7 @@ public sealed class SeedSearchServiceTests : IDisposable
     [Fact]
     public async Task StartAsync_WhileASearchIsRunning_Throws()
     {
-        var setup = new SearchSetup { Definition = ConditionTestBench.Define(Version, new SlimeChunkCondition { Id = 1, Area = SearchArea.Square(144), Count = 81 }) };
+        var setup = new SearchSetup { Definition = SearchRuns.Never };
         using var stopping = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
 
         var running = _search.StartAsync(setup, stopping.Token);
@@ -168,28 +168,6 @@ public sealed class SeedSearchServiceTests : IDisposable
         Assert.Empty(_search.Results);
         Assert.Null(_search.Setup);
         Assert.Equal(default, _search.Progress);
-    }
-
-    private static async Task StartAndStopAtTheFirstProgressAsync(ISeedSearchService search, SearchSetup setup)
-    {
-        using var stopping = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
-        search.Changed += StopOnceSeedsWereScanned;
-        try
-        {
-            await search.StartAsync(setup, stopping.Token);
-        }
-        finally
-        {
-            search.Changed -= StopOnceSeedsWereScanned;
-        }
-
-        Assert.Equal(SearchState.Paused, search.State);
-
-        void StopOnceSeedsWereScanned(object? sender, EventArgs e)
-        {
-            if (search.Progress.Scanned > 0)
-                stopping.Cancel();
-        }
     }
 
     private List<long> FindByHand(SearchSetup setup)
