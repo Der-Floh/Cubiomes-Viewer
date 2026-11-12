@@ -64,6 +64,16 @@ The Analysis panel looks more closely at the seed on the map, or at up to 1,000 
 
 Every list can be saved as a CSV file, and choosing a line opens its seed at that place on the map.
 
+### Export
+
+The Export panel saves the layer the map shows, as the Layers panel sets it up, with one pixel per sample: biomes and every other layer, at any scale the layer has, over an area that starts as the visible one. Biome layers are written as PNG images whose palette index is the biome id, with the id of no biome transparent, so tools can read the biomes back from the file; other layers are written in colour. An export of the found seeds, or one cut into tiles, becomes a ZIP archive named after the seeds and tiles. Rows are generated on the compute workers and written as they are ready, so even 32,768-pixel images need little memory, and stopping removes the half-written file. The engine tests compare exported pixels with the generator and pin the content of ten exports of fixed worlds by their hashes.
+
+### Colours, world settings and preferences
+
+The Layers panel paints biomes in their default colours or in a colour map of your own. Its editor lists the biomes of the version on the map with a colour picker each, shows every change on the map at once, and keeps it only when saved; maps can be exported to and imported from JSON files that write colours as `#rrggbb`. Exports use the colours the map shows.
+
+Settings → World generation offers the experimental versions (Beta 1.7, Beta 1.8, 1.0 and the 1.21 Winter Drop, which the generator supports less completely), switches off the terrain estimate that leaves out desert pyramids, jungle temples and woodland mansions on low land from 1.18 on, and replaces the salt of any structure type, as servers and data packs can. Replaced salts reach the map, searches and analysis alike; the engine tests check that a salt raised by some amount moves structures exactly as raising the seed by that amount does. Settings also set the grid spacing and how it widens when zoomed out, the marker size, how far out each structure type is marked, whether the last world and search open at start, whether the Desktop window keeps its size and position, and the separator of CSV files. On the desktop, the button below the rail moves the map into a window of its own, for a second screen.
+
 ### Diagnostics
 
 Settings → Diagnostics → Run self-test checks the native generator against reference values and measures tile throughput on the compute workers of the current platform. Reference numbers from Release builds, for 64 biome tiles of 128×128 samples at 1:4 in 1.21: 180–200 tiles/s on 16 Desktop worker threads, 75–105 tiles/s on 6 Web Workers depending on what else the machine is doing, and about 20 tiles/s when the browser falls back to the main thread. The same button checks structures with their variants and pieces, strongholds, End gateways, the spawn point, slime chunks and the other map layers (climate parameters, rivers, ocean temperatures and surface heights) against values recorded from the Windows build, which is how other platforms prove they generate identical worlds. The published worker bundle is 6.8 MB (2.1 MB with Brotli).
