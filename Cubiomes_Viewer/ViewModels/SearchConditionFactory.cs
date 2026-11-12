@@ -29,6 +29,7 @@ public sealed class SearchConditionFactory
     private IConditionFields? CreateFields(SearchCondition condition, McVersion version, Action changed) => condition switch
     {
         StructureCondition structure => new StructureFieldsViewModel(structure, version, _structureCatalog, changed),
+        QuadHutCondition quad => new QuadHutFieldsViewModel(quad, _structureCatalog, changed),
         BiomeCondition biome => new BiomeFieldsViewModel(biome, version, _biomeCatalog, changed),
         _ => null,
     };

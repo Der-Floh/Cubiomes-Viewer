@@ -1,4 +1,5 @@
 using Cubiomes_Viewer.Engine.Data.Search;
+using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.ComputeServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
@@ -17,6 +18,7 @@ public sealed class SearchSeedContext
 
     private readonly IWorkerContext _workerContext;
     private BlockPos[] _positions = [];
+    private QuadPosition[] _quads = [];
     private byte[] _bytes = [];
 
     public SearchSeedContext(IWorkerContext workerContext, SearchDefinition definition)
@@ -41,6 +43,14 @@ public sealed class SearchSeedContext
         if (_positions.Length < count)
             _positions = new BlockPos[count];
         return _positions.AsSpan(0, count);
+    }
+
+    /// <summary>Lends a buffer for quads that stays valid until the next request.</summary>
+    public Span<QuadPosition> GetQuads(int count)
+    {
+        if (_quads.Length < count)
+            _quads = new QuadPosition[count];
+        return _quads.AsSpan(0, count);
     }
 
     /// <summary>Lends a buffer for bytes that stays valid until the next request.</summary>

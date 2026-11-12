@@ -18,6 +18,7 @@ internal static class TestEngine
     public static ConditionRegistry CreateConditionRegistry() => new(
     [
         new StructureConditionEvaluator(new CubiomesStructureFinder(), CreateStructureCatalog()),
+        new QuadHutConditionEvaluator(new CubiomesQuadFinder(), new CubiomesStructureFinder(), CreateStructureCatalog()),
         new BiomeConditionEvaluator(new BiomeCatalog()),
         new SpawnConditionEvaluator(),
         new StrongholdConditionEvaluator(),

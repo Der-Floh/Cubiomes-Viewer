@@ -13,6 +13,7 @@ namespace Cubiomes_Viewer.Engine.Data.Search;
 [JsonDerivedType(typeof(StrongholdCondition), "stronghold")]
 [JsonDerivedType(typeof(SlimeChunkCondition), "slimeChunks")]
 [JsonDerivedType(typeof(AnyOfCondition), "anyOf")]
+[JsonDerivedType(typeof(QuadHutCondition), "quadHuts")]
 public abstract record SearchCondition
 {
     public const int MinId = 1;

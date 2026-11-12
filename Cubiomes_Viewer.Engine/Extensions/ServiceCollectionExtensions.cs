@@ -67,6 +67,7 @@ public static class ServiceCollectionExtensions
 
         // seed search
         services.AddSingleton<IConditionEvaluator, StructureConditionEvaluator>();
+        services.AddSingleton<IConditionEvaluator, QuadHutConditionEvaluator>();
         services.AddSingleton<IConditionEvaluator, BiomeConditionEvaluator>();
         services.AddSingleton<IConditionEvaluator, SpawnConditionEvaluator>();
         services.AddSingleton<IConditionEvaluator, StrongholdConditionEvaluator>();

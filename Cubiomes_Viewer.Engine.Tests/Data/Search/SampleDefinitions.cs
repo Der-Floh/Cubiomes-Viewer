@@ -1,5 +1,6 @@
 using Cubiomes_Viewer.Engine.Data.Biomes;
 using Cubiomes_Viewer.Engine.Data.Search;
+using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 
 namespace Cubiomes_Viewer.Engine.Tests.Data.Search;
@@ -19,6 +20,7 @@ internal static class SampleDefinitions
             new StrongholdCondition { Id = 4, Count = 0 },
             new AnyOfCondition { Id = 5 },
             new SlimeChunkCondition { Id = 6, RelativeTo = 5, Count = 12, Anchor = MatchAnchor.Center },
+            new QuadHutCondition { Id = 7, Type = StructureType.Igloo, Quality = QuadQuality.Classic, Count = 2 },
         ],
     };
 }

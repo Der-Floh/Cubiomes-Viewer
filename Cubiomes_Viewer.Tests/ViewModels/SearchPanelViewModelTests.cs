@@ -3,6 +3,7 @@ using Avalonia.Headless.XUnit;
 
 using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Search;
+using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Repository.SessionRepo;
 using Cubiomes_Viewer.Engine.Service.SearchServ;
@@ -65,6 +66,23 @@ public sealed class SearchPanelViewModelTests : IDisposable
         Assert.Equal("1 · Pillager outpost", village.Header);
         Assert.Equal("at least 2 · within a radius of 300 blocks around the world origin", village.Summary);
         Assert.Equal(new StructureCondition { Id = 1, Type = StructureType.Outpost, Area = SearchArea.Circle(300), Count = 2 }, Assert.Single(Setup.Setup.Definition.Conditions));
+    }
+
+    [AvaloniaFact]
+    public void AddCondition_QuadHuts_OffersTheHutsAndHowCloseTheyHaveToBe()
+    {
+        var quad = Add<QuadHutCondition>();
+        var fields = Assert.IsType<QuadHutFieldsViewModel>(quad.Fields);
+
+        fields.SelectedQuality = fields.Qualities.Single(choice => choice.Value == QuadQuality.Classic);
+        fields.SelectedType = fields.Types.Single(choice => choice.Value == StructureType.Igloo);
+
+        Assert.Equal(["Swamp hut", "Desert pyramid", "Jungle temple", "Igloo"], fields.Types.Select(choice => choice.Display));
+        Assert.Equal("1 · Quad igloos", quad.Header);
+        Assert.Equal("classic or better · within 1,024 blocks of the world origin", quad.Summary);
+        Assert.True(Setup.IsValid);
+        var condition = Assert.IsType<QuadHutCondition>(Assert.Single(Setup.Setup.Definition.Conditions));
+        Assert.Equal((StructureType.Igloo, QuadQuality.Classic), (condition.Type, condition.Quality));
     }
 
     [AvaloniaFact]

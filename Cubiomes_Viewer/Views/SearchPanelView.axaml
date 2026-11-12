@@ -21,6 +21,15 @@
             </StackPanel>
         </DataTemplate>
 
+        <DataTemplate x:DataType="vm:QuadHutFieldsViewModel">
+            <StackPanel Classes="form">
+                <TextBlock Classes="field-label" Text="{Binding TypeLabel}"/>
+                <ComboBox Classes="fill" ItemsSource="{Binding Types}" SelectedItem="{Binding SelectedType}"/>
+                <TextBlock Classes="field-label" Text="{Binding QualityLabel}"/>
+                <ComboBox Classes="fill" ItemsSource="{Binding Qualities}" SelectedItem="{Binding SelectedQuality}"/>
+            </StackPanel>
+        </DataTemplate>
+
         <DataTemplate x:DataType="vm:BiomeToggleViewModel">
             <CheckBox Content="{Binding Name}" IsChecked="{Binding IsChecked}"/>
         </DataTemplate>
