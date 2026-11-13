@@ -42,6 +42,12 @@ public sealed class TileLayer : IMapLayer
     private readonly UiThreadCoalescer _invalidation;
     private byte[] _pixels = [];
 
+    /// <summary>
+    /// The last content whose tiles covered the view. While the tiles of another height or octave limit of the same layer
+    /// load, it is drawn beneath them, so that stepping through heights does not blank the map.
+    /// </summary>
+    private MapContent? _standIn;
+
     public TileLayer(IMapTileService tileService, ITileColorizer colorizer, ITileBitmapService bitmapService)
     {
         _tileService = tileService;
@@ -72,8 +78,8 @@ public sealed class TileLayer : IMapLayer
 
         List<TileRequest> requests = [];
         if (TilePyramid.GetCoarserScale(metrics, fineScale) is { } coarseScale)
-            requests.AddRange(GetRequests(scene, metrics, coarseScale));
-        requests.AddRange(GetRequests(scene, metrics, fineScale));
+            requests.AddRange(GetRequests(scene.Content, scene, metrics, coarseScale));
+        requests.AddRange(GetRequests(scene.Content, scene, metrics, fineScale));
 
         _tileService.SetVisibleTiles(requests);
     }
@@ -85,23 +91,41 @@ public sealed class TileLayer : IMapLayer
 
         var metrics = TileMetrics.For(scene.Content.World, scene.Content.Layer);
         var fineScale = TilePyramid.SelectScale(metrics, scene.Viewport.BlocksPerPixel);
+        var coarseScale = TilePyramid.GetCoarserScale(metrics, fineScale);
 
-        if (TilePyramid.GetCoarserScale(metrics, fineScale) is { } coarseScale)
-            DrawLevel(context, scene, metrics, coarseScale);
-        DrawLevel(context, scene, metrics, fineScale);
+        if (_standIn is { } standIn && standIn != scene.Content && IsVariantOf(standIn, scene.Content))
+            DrawContent(context, scene, standIn, metrics, fineScale, coarseScale);
+
+        if (DrawContent(context, scene, scene.Content, metrics, fineScale, coarseScale))
+            _standIn = scene.Content;
     }
 
-    private static IEnumerable<TileRequest> GetRequests(MapScene scene, TileMetrics metrics, int scale)
+    private static IEnumerable<TileRequest> GetRequests(MapContent content, MapScene scene, TileMetrics metrics, int scale)
         => TilePyramid.GetVisibleTiles(metrics, scale, scene.Viewport)
-            .Select(scene.Content.GetRequest);
+            .Select(content.GetRequest);
 
-    private void DrawLevel(DrawingContext context, MapScene scene, TileMetrics metrics, int scale)
+    /// <summary>Contents of the same layer of the same world share their tile grid and differ only in height or octave limit.</summary>
+    private static bool IsVariantOf(MapContent standIn, MapContent content) => standIn.World == content.World && standIn.Layer == content.Layer;
+
+    /// <summary>Draws the coarser level and then the level that fits the zoom; returns whether the latter covered the view.</summary>
+    private bool DrawContent(DrawingContext context, MapScene scene, MapContent content, TileMetrics metrics, int fineScale, int? coarseScale)
+    {
+        if (coarseScale is { } coarse)
+            DrawLevel(context, scene, content, metrics, coarse);
+        return DrawLevel(context, scene, content, metrics, fineScale);
+    }
+
+    private bool DrawLevel(DrawingContext context, MapScene scene, MapContent content, TileMetrics metrics, int scale)
     {
         var tileBlocks = TilePyramid.GetTileBlocks(metrics, scale);
-        foreach (var request in GetRequests(scene, metrics, scale))
+        var isComplete = true;
+        foreach (var request in GetRequests(content, scene, metrics, scale))
         {
             if (GetBitmap(request) is not { } bitmap)
+            {
+                isComplete = false;
                 continue;
+            }
 
             var (left, top) = scene.Viewport.ToScreen(request.Tile.X * tileBlocks, request.Tile.Z * tileBlocks);
             var (right, bottom) = scene.Viewport.ToScreen((request.Tile.X + 1) * tileBlocks, (request.Tile.Z + 1) * tileBlocks);
@@ -109,6 +133,8 @@ public sealed class TileLayer : IMapLayer
                 new Point(scene.Snap(left), scene.Snap(top)),
                 new Point(scene.Snap(right), scene.Snap(bottom))));
         }
+
+        return isComplete;
     }
 
     private Bitmap? GetBitmap(TileRequest request)

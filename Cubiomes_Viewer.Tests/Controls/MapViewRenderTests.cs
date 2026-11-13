@@ -1,12 +1,9 @@
-using System.Runtime.InteropServices;
-
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
-using Avalonia.Platform;
 using Avalonia.Threading;
 
 using Cubiomes_Viewer.Controls;
@@ -30,8 +27,8 @@ public sealed class MapViewRenderTests
     private const int MushroomFieldsBiomeId = 14;
     private const int SampleHeight = 63;
     private const int ViewSize = 256;
-    private const int BytesPerPixel = 4;
     private const int MarkerFillOffset = 9;
+    private const int FlagAboveCentre = 2;
     private const int MeasuredBlocks = 80;
     private const int LabelBackingOffset = 13;
     private const int BackingOnWhite = 51;
@@ -57,7 +54,7 @@ public sealed class MapViewRenderTests
 
         Assert.NotNull(frame);
         var expected = App.Services.GetRequiredService<IBiomeCatalog>().DefaultPalette[MushroomFieldsBiomeId];
-        Assert.Equal(expected, ReadPixel(frame, ViewSize / 2 + 8, ViewSize / 2 + 8));
+        Assert.Equal(expected, FramePixels.Read(frame, ViewSize / 2 + 8, ViewSize / 2 + 8));
     }
 
     [AvaloniaFact]
@@ -80,11 +77,11 @@ public sealed class MapViewRenderTests
         Assert.NotNull(frame);
         var values = Assert.IsType<LayerValues>(App.Services.GetRequiredService<ILayerCatalog>().GetInfo(LayerMode.Temperature, world.Version, world.Dimension).Values);
         Assert.True(App.Services.GetRequiredService<IMapTileService>().TryGetCachedValue(content, 8, 8, out var stored));
-        Assert.Equal(values.Ramp.GetColor(values.ToValue(stored)), ReadPixel(frame, ViewSize / 2 + 8, ViewSize / 2 + 8));
+        Assert.Equal(values.Ramp.GetColor(values.ToValue(stored)), FramePixels.Read(frame, ViewSize / 2 + 8, ViewSize / 2 + 8));
     }
 
     [AvaloniaFact]
-    public async Task Render_LandmarksShown_DrawsTheSpawnMarkerAtTheSpawnPoint()
+    public async Task Render_LandmarksShown_DrawsTheSpawnMarkerWithItsGlyphAtTheSpawnPoint()
     {
         var world = new WorldKey(262, McVersion.V1_21_3, Dimension.Overworld, GeneratorFlags.None);
         var landmarkService = App.Services.GetRequiredService<IWorldLandmarkService>();
@@ -103,7 +100,8 @@ public sealed class MapViewRenderTests
 
         Assert.NotNull(frame);
         var fill = Assert.IsAssignableFrom<ISolidColorBrush>(App.Services.GetRequiredService<IMapStyleService>().Spawn.Fill).Color;
-        Assert.Equal(new RgbColor(fill.R, fill.G, fill.B), ReadPixel(frame, ViewSize / 2 - MarkerFillOffset, ViewSize / 2));
+        Assert.Equal(new RgbColor(fill.R, fill.G, fill.B), FramePixels.Read(frame, ViewSize / 2 - MarkerFillOffset, ViewSize / 2));
+        Assert.Equal(new RgbColor(255, 255, 255), FramePixels.Read(frame, ViewSize / 2, ViewSize / 2 - FlagAboveCentre));
     }
 
     [AvaloniaFact]
@@ -124,8 +122,8 @@ public sealed class MapViewRenderTests
 
         Assert.NotNull(frame);
         var line = App.Services.GetRequiredService<IMapStyleService>().MeasureColor;
-        Assert.Equal(new RgbColor(line.R, line.G, line.B), ReadPixel(frame, ViewSize / 2, ViewSize / 2));
-        var backing = ReadPixel(frame, ViewSize / 2 + MeasuredBlocks / 2, ViewSize / 2 - LabelBackingOffset);
+        Assert.Equal(new RgbColor(line.R, line.G, line.B), FramePixels.Read(frame, ViewSize / 2, ViewSize / 2));
+        var backing = FramePixels.Read(frame, ViewSize / 2 + MeasuredBlocks / 2, ViewSize / 2 - LabelBackingOffset);
         Assert.InRange(backing.Red, BackingOnWhite - ColourTolerance, BackingOnWhite + ColourTolerance);
         Assert.InRange(backing.Green, BackingOnWhite - ColourTolerance, BackingOnWhite + ColourTolerance);
         Assert.InRange(backing.Blue, BackingOnWhite - ColourTolerance, BackingOnWhite + ColourTolerance);
@@ -168,18 +166,5 @@ public sealed class MapViewRenderTests
             Assert.True(DateTime.UtcNow < deadline, "The map did not generate its tiles in time.");
             await Task.Delay(10, TestContext.Current.CancellationToken);
         }
-    }
-
-    private static RgbColor ReadPixel(WriteableBitmap bitmap, int x, int y)
-    {
-        using var buffer = bitmap.Lock();
-        var offset = y * buffer.RowBytes + x * BytesPerPixel;
-        var first = Marshal.ReadByte(buffer.Address, offset);
-        var green = Marshal.ReadByte(buffer.Address, offset + 1);
-        var third = Marshal.ReadByte(buffer.Address, offset + 2);
-
-        return buffer.Format == PixelFormat.Bgra8888
-            ? new RgbColor(third, green, first)
-            : new RgbColor(first, green, third);
     }
 }
