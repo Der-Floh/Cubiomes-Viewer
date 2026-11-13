@@ -15,15 +15,20 @@ namespace Cubiomes_Viewer.Engine.Service.ExportServ;
 
 public sealed class MapExportService : IMapExportService
 {
-    /// <summary>Wider or higher images open in few viewers; larger areas are exported as tiles.</summary>
-    public const int MaxImageSide = 32_768;
-    public const long MaxPixelsPerWorld = 1L << 30;
+    /// <summary>Wider or higher images open in few programs; tiles open everywhere.</summary>
+    public const int WidelyReadableSide = 32_768;
+    public const long LargePixelCount = 1L << 30;
+    public const long LargeMemoryBytes = 1L << 30;
     public const int MinTileSize = 16;
     public const int MaxTileSize = 4096;
 
     private const int JobsPerWorker = 2;
     private const int RgbBytes = 3;
     private const int BgraBytes = 4;
+    private const int ViewerBytesPerPixel = 4;
+    private const int BiomeBytesPerSample = 1;
+    private const int ColourBytesPerSample = sizeof(short) + RgbBytes + BgraBytes;
+    private const double BytesPerGigabyte = 1L << 30;
 
     private static readonly JobPriority _priority = new(JobPriorityClass.Background);
 
@@ -63,6 +68,28 @@ public sealed class MapExportService : IMapExportService
             return ["The area has to lie within the 30 million blocks around the origin."];
 
         return FindSizeProblems(request);
+    }
+
+    public IReadOnlyList<string> FindWarnings(MapExportRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (FindProblems(request).Count > 0)
+            return [];
+
+        var layout = request.GetLayout();
+        List<string> warnings = [];
+        if (request.TileSize is null && (layout.Width > WidelyReadableSide || layout.Height > WidelyReadableSide))
+            warnings.Add(Format($"Many programs cannot open images wider or higher than {WidelyReadableSide:N0} pixels; cut into tiles, the export opens everywhere."));
+        if (layout.PixelCount > LargePixelCount)
+            warnings.Add(Format($"With {layout.PixelCount:N0} pixels per seed, the export takes long, and opening the image needs about {layout.PixelCount * ViewerBytesPerPixel / BytesPerGigabyte:N1} GB of memory."));
+
+        var samples = TileMetrics.For(request.Worlds[0], request.Layer).TileSamples;
+        var memory = (long)layout.Width * samples * (request.Layer.HasBiomeSamples ? BiomeBytesPerSample : ColourBytesPerSample);
+        if (memory > LargeMemoryBytes)
+            warnings.Add(Format($"While it runs, the export holds about {memory / BytesPerGigabyte:N1} GB of memory for each band of rows it writes."));
+
+        return warnings;
     }
 
     public async Task ExportAsync(MapExportRequest request, Stream destination, IProgress<double>? progress = null, CancellationToken cancellationToken = default)
@@ -105,17 +132,14 @@ public sealed class MapExportService : IMapExportService
 
     private static IReadOnlyList<string> FindSizeProblems(MapExportRequest request)
     {
-        var layout = request.GetLayout();
         if (request.TileSize is { } tileSize && (tileSize < MinTileSize || tileSize > MaxTileSize))
-            return [string.Create(CultureInfo.InvariantCulture, $"Tiles can be from {MinTileSize} to {MaxTileSize:N0} pixels wide.")];
-        if (layout.PixelCount > MaxPixelsPerWorld)
-            return [string.Create(CultureInfo.InvariantCulture, $"An export can have at most {MaxPixelsPerWorld:N0} pixels per seed; choose a coarser scale or a smaller area.")];
-        if (request.TileSize is null && (layout.Width > MaxImageSide || layout.Height > MaxImageSide))
-            return [string.Create(CultureInfo.InvariantCulture, $"An image can be at most {MaxImageSide:N0} pixels wide and high; cut it into tiles or choose a coarser scale.")];
+            return [Format($"Tiles can be from {MinTileSize} to {MaxTileSize:N0} pixels wide.")];
         return [];
     }
 
-    private static string DescribeScale(int scale) => string.Create(CultureInfo.InvariantCulture, $"1:{scale}");
+    private static string DescribeScale(int scale) => Format($"1:{scale}");
+
+    private static string Format(FormattableString text) => text.ToString(CultureInfo.InvariantCulture);
 
     private IImageRowSink CreateArchiveSink(ZipArchive archive, MapExportRequest request, WorldKey world, MapImageLayout layout)
     {

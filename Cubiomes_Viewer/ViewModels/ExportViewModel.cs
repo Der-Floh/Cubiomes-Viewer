@@ -92,6 +92,9 @@ public sealed partial class ExportViewModel : ViewModelBase, IOpenablePanel
     public partial bool HasProblems { get; set; }
 
     [ObservableProperty]
+    public partial bool HasWarnings { get; set; }
+
+    [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(ExportCommand), nameof(StopCommand))]
     public partial bool IsRunning { get; set; }
 
@@ -103,6 +106,9 @@ public sealed partial class ExportViewModel : ViewModelBase, IOpenablePanel
 
     /// <summary>What keeps the export from being made.</summary>
     public ObservableCollection<string> Problems { get; } = [];
+
+    /// <summary>What is worth knowing about a large export; it can still be made.</summary>
+    public ObservableCollection<string> Warnings { get; } = [];
 
     private readonly MapViewModel _map;
     private readonly ISeedSearchService _search;
@@ -318,6 +324,11 @@ public sealed partial class ExportViewModel : ViewModelBase, IOpenablePanel
             Problems.Add(problem);
 
         HasProblems = Problems.Count > 0;
+        Warnings.Clear();
+        foreach (var warning in _export.FindWarnings(request))
+            Warnings.Add(warning);
+
+        HasWarnings = Warnings.Count > 0;
         SummaryText = HasProblems ? string.Empty : Describe(request);
         ExportLabel = request.IsArchive ? SaveArchiveLabel : SaveImageLabel;
         ExportCommand.NotifyCanExecuteChanged();

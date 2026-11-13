@@ -13,6 +13,9 @@ public interface IMapExportService
     /// <summary>Lists what keeps an export from being made; nothing when it can be.</summary>
     IReadOnlyList<string> FindProblems(MapExportRequest request);
 
+    /// <summary>Lists what is worth knowing about a large export before it starts, such as programs that cannot open it; none of it keeps it from being made.</summary>
+    IReadOnlyList<string> FindWarnings(MapExportRequest request);
+
     /// <summary>
     /// Writes the export into <paramref name="destination"/>, which receives only asynchronous writes. Rows of
     /// samples are generated on the compute workers and written as they come, so memory stays small for any size.

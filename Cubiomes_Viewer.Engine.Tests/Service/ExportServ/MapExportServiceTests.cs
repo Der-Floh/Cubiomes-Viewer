@@ -164,7 +164,7 @@ public sealed class MapExportServiceTests : IDisposable
     [Theory]
     [InlineData(McVersion.V1_12_2, 1024, 0, 2000, null, "This layer can be exported at 1:1, 1:4, 1:16, 1:64, 1:256 only.")]
     [InlineData(McVersion.V1_21_3, 4, 0, 0, null, "The area is empty.")]
-    [InlineData(McVersion.V1_21_3, 1, 0, 40_000, null, "An image can be at most 32,768 pixels wide and high; cut it into tiles or choose a coarser scale.")]
+    [InlineData(McVersion.V1_21_3, 1, 0, 40_000, null, null)]
     [InlineData(McVersion.V1_21_3, 1, 0, 40_000, 512, null)]
     [InlineData(McVersion.V1_21_3, 4, 0, 2000, 8, "Tiles can be from 16 to 4,096 pixels wide.")]
     [InlineData(McVersion.V1_21_3, 1, 29_999_000, 2000, null, "The area has to lie within the 30 million blocks around the origin.")]
@@ -174,6 +174,33 @@ public sealed class MapExportServiceTests : IDisposable
 
         Assert.Equal(expected is null ? [] : [expected], _export.FindProblems(request));
     }
+
+    [Fact]
+    public void FindWarnings_ImageWiderThanMostProgramsOpen_WarnsButLetsItBeMade()
+    {
+        var request = new MapExportRequest { Worlds = [World(1, McVersion.V1_21_3, Dimension.Overworld)], Area = new BlockArea(0, 0, 40_000, 2000), Scale = 1 };
+
+        Assert.Empty(_export.FindProblems(request));
+        Assert.Contains("cannot open images wider or higher than 32,768 pixels", Assert.Single(_export.FindWarnings(request)), StringComparison.Ordinal);
+        Assert.Empty(_export.FindWarnings(request with { TileSize = 512 }));
+    }
+
+    [Fact]
+    public void FindWarnings_HugeExport_NamesItsPixelsAndTheMemoryItNeeds()
+    {
+        var request = new MapExportRequest { Worlds = [World(1, McVersion.V1_21_3, Dimension.Overworld)], Area = new BlockArea(-15_000_000, 0, 30_000_000, 1000), Scale = 1, TileSize = 4096 };
+
+        var warnings = _export.FindWarnings(request);
+
+        Assert.Empty(_export.FindProblems(request));
+        Assert.Equal(2, warnings.Count);
+        Assert.Contains("30,000,000,000 pixels per seed", warnings[0], StringComparison.Ordinal);
+        Assert.Contains("GB of memory for each band of rows", warnings[1], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void FindWarnings_ExportThatOpensEverywhere_HasNone()
+        => Assert.Empty(_export.FindWarnings(Request(World(262, McVersion.V1_21_3, Dimension.Overworld), LayerMode.Biomes, 4)));
 
     [Fact]
     public void FindProblems_LayerTheWorldLacks_IsAProblem()

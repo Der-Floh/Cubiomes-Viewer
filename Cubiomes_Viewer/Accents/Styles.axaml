@@ -308,6 +308,18 @@
         <Setter Property="FontSize" Value="12"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
     </Style>
+    <Style Selector="TextBlock.warning">
+        <Setter Property="Foreground" Value="{DynamicResource WarningColor}"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+    </Style>
+    <Style Selector="ItemsControl.warnings">
+        <Setter Property="ItemsPanel">
+            <ItemsPanelTemplate>
+                <StackPanel Spacing="4"/>
+            </ItemsPanelTemplate>
+        </Setter>
+    </Style>
     <Style Selector="Border.choice-list">
         <Setter Property="MaxHeight" Value="200"/>
         <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>

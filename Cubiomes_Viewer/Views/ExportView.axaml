@@ -44,6 +44,13 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
+                <ItemsControl Classes="warnings" ItemsSource="{Binding Warnings}" IsVisible="{Binding HasWarnings}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="x:String">
+                            <TextBlock Classes="warning" Text="{Binding}"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
 
                 <WrapPanel Classes="card-actions">
                     <Button Classes="accent" Content="{Binding ExportLabel}" Command="{Binding ExportCommand}" IsVisible="{Binding !IsRunning}"/>

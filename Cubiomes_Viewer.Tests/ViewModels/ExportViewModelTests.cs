@@ -97,13 +97,14 @@ public sealed class ExportViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
-    public void AreaTooLarge_IsAProblemThatKeepsTheExportFromStarting()
+    public void AreaWiderThanMostProgramsOpen_IsAWarningThatLetsTheExportStart()
     {
         SetArea(0, 0, 99_999, 99, scale: 1);
 
-        Assert.True(_export.HasProblems);
-        Assert.Contains("cut it into tiles", Assert.Single(_export.Problems), StringComparison.Ordinal);
-        Assert.False(_export.ExportCommand.CanExecute(null));
+        Assert.False(_export.HasProblems);
+        Assert.True(_export.HasWarnings);
+        Assert.Contains("cut into tiles", Assert.Single(_export.Warnings), StringComparison.Ordinal);
+        Assert.True(_export.ExportCommand.CanExecute(null));
     }
 
     [AvaloniaFact]
