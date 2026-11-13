@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 
 using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Maps;
+using Cubiomes_Viewer.Engine.Service.AppDataServ;
 using Cubiomes_Viewer.Engine.Service.SeedServ;
 using Cubiomes_Viewer.Engine.Service.SettingsServ;
 using Cubiomes_Viewer.Service.NotificationServ;
@@ -23,6 +24,7 @@ public sealed partial class MainViewModel : ViewModelBase
     public string SettingsLabel { get; } = "Settings";
     public string MapWindowHint { get; } = "The map is in its own window.";
     public string DockMapLabel { get; } = "Bring the map back";
+    public string UnreadableTitle { get; } = "Stored data could not be read";
 
     public WorldBarViewModel WorldBar { get; }
     public MapViewModel Map { get; }
@@ -55,9 +57,11 @@ public sealed partial class MainViewModel : ViewModelBase
     private readonly ISettingsService _settingsService;
     private readonly ISeedHistoryService _seedHistory;
     private readonly ISeedParser _seedParser;
+    private readonly IUnreadableDataService _unreadable;
+    private readonly INotificationService _notifications;
     private bool _isInitialized;
 
-    public MainViewModel(WorldBarViewModel worldBar, MapViewModel map, LayersPanelViewModel layersPanel, SearchPanelViewModel searchPanel, AnalysisPanelViewModel analysisPanel, ExportViewModel exportPanel, SettingsViewModel settingsPanel, WorldSession session, ISettingsService settingsService, ISeedHistoryService seedHistory, ISeedParser seedParser, IWindowService windowService, INotificationService notificationService) : base(notificationService)
+    public MainViewModel(WorldBarViewModel worldBar, MapViewModel map, LayersPanelViewModel layersPanel, SearchPanelViewModel searchPanel, AnalysisPanelViewModel analysisPanel, ExportViewModel exportPanel, SettingsViewModel settingsPanel, WorldSession session, ISettingsService settingsService, ISeedHistoryService seedHistory, ISeedParser seedParser, IUnreadableDataService unreadable, IWindowService windowService, INotificationService notificationService) : base(notificationService)
     {
         CanUndockMap = windowService.HasWindows;
         WorldBar = worldBar;
@@ -70,6 +74,8 @@ public sealed partial class MainViewModel : ViewModelBase
         _settingsService = settingsService;
         _seedHistory = seedHistory;
         _seedParser = seedParser;
+        _unreadable = unreadable;
+        _notifications = notificationService;
 
         Initialization = RunGuardedAsync(InitializeAsync);
     }
@@ -98,7 +104,15 @@ public sealed partial class MainViewModel : ViewModelBase
         _isInitialized = true;
 
         await _searchPanel.LoadAsync(restore);
+        ShowUnreadableCopies();
         _ = _settingsPanel.Updates.CheckAtStartAsync();
+    }
+
+    private void ShowUnreadableCopies()
+    {
+        var copies = _unreadable.CopyKeys;
+        if (copies.Count > 0)
+            _notifications.ShowWarning(UnreadableTitle, $"The app goes on without it and kept a copy as {string.Join(", ", copies)}. A newer version of the app may have written it.");
     }
 
     /// <summary>Opens the version, dimension and layer of last time, and also its seed and place on the map when the session is restored.</summary>

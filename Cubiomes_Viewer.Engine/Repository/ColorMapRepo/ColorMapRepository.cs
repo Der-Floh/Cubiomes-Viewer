@@ -4,8 +4,6 @@ using Cubiomes_Viewer.Engine.Data;
 using Cubiomes_Viewer.Engine.Data.Colors;
 using Cubiomes_Viewer.Engine.Repository.AppDataRepo;
 
-using Microsoft.Extensions.Logging;
-
 namespace Cubiomes_Viewer.Engine.Repository.ColorMapRepo;
 
 public sealed class ColorMapRepository : IColorMapRepository
@@ -13,12 +11,10 @@ public sealed class ColorMapRepository : IColorMapRepository
     public const string StorageKey = "color-maps.json";
 
     private readonly IAppDataStore _store;
-    private readonly ILogger<ColorMapRepository> _logger;
 
-    public ColorMapRepository(IAppDataStore store, ILogger<ColorMapRepository> logger)
+    public ColorMapRepository(IAppDataStore store)
     {
         _store = store;
-        _logger = logger;
     }
 
     public async Task<IReadOnlyList<BiomeColorMap>> LoadAsync(CancellationToken cancellationToken = default)
@@ -33,8 +29,7 @@ public sealed class ColorMapRepository : IColorMapRepository
         }
         catch (FormatException ex)
         {
-            _logger.LogWarning(ex, "The stored colour maps are unreadable; starting without them");
-            return [];
+            throw new UnreadableDataException(StorageKey, content, ex.Message, ex);
         }
     }
 

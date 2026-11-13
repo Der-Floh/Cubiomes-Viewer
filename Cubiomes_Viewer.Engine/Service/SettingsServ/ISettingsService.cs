@@ -4,7 +4,7 @@ namespace Cubiomes_Viewer.Engine.Service.SettingsServ;
 
 /// <summary>
 /// Holds the live settings object and persists it shortly after changes. Nothing is saved before a successful
-/// <see cref="LoadAsync"/>, so stored settings that could not be read are never overwritten with defaults.
+/// <see cref="LoadAsync"/>, and stored settings that cannot be read are copied aside before the defaults replace them.
 /// </summary>
 public interface ISettingsService
 {

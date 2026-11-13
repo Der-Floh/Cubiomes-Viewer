@@ -7,8 +7,6 @@ using Cubiomes_Viewer.Engine.Repository.AppDataRepo;
 using Cubiomes_Viewer.Engine.Repository.SessionRepo;
 using Cubiomes_Viewer.Engine.Tests.Data.Search;
 
-using Microsoft.Extensions.Logging.Abstractions;
-
 namespace Cubiomes_Viewer.Engine.Tests.Repository;
 
 public sealed class SearchSessionRepositoryTests : IDisposable
@@ -20,7 +18,7 @@ public sealed class SearchSessionRepositoryTests : IDisposable
     public SearchSessionRepositoryTests()
     {
         _store = new FileSystemAppDataStore(_directory);
-        _repository = new SearchSessionRepository(_store, NullLogger<SearchSessionRepository>.Instance);
+        _repository = new SearchSessionRepository(_store);
     }
 
     public void Dispose()
@@ -75,11 +73,14 @@ public sealed class SearchSessionRepositoryTests : IDisposable
     ];
 
     [Fact]
-    public async Task LoadAsync_CorruptContent_ReturnsNothing()
+    public async Task LoadAsync_CorruptContent_ThrowsWithTheContent()
     {
-        await _store.WriteAsync(SearchSessionRepository.StorageKey, Encoding.UTF8.GetBytes("{ not json"), TestContext.Current.CancellationToken);
+        var content = Encoding.UTF8.GetBytes("{ not json");
+        await _store.WriteAsync(SearchSessionRepository.StorageKey, content, TestContext.Current.CancellationToken);
 
-        Assert.Null(await _repository.LoadAsync(TestContext.Current.CancellationToken));
+        var exception = await Assert.ThrowsAsync<UnreadableDataException>(() => _repository.LoadAsync(TestContext.Current.CancellationToken));
+
+        Assert.Equal(content, exception.Content.ToArray());
     }
 
     [Fact]

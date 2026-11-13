@@ -2,7 +2,9 @@ using System.Globalization;
 
 using Cubiomes_Viewer.Engine.Data.Biomes;
 using Cubiomes_Viewer.Engine.Data.Colors;
+using Cubiomes_Viewer.Engine.Repository.AppDataRepo;
 using Cubiomes_Viewer.Engine.Repository.ColorMapRepo;
+using Cubiomes_Viewer.Engine.Service.AppDataServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
 
 namespace Cubiomes_Viewer.Engine.Service.ColorMapServ;
@@ -11,12 +13,14 @@ public sealed class ColorMapService : IColorMapService
 {
     private readonly IColorMapRepository _repository;
     private readonly IBiomeCatalog _biomeCatalog;
+    private readonly IUnreadableDataService _unreadable;
     private List<BiomeColorMap> _maps = [];
 
-    public ColorMapService(IColorMapRepository repository, IBiomeCatalog biomeCatalog)
+    public ColorMapService(IColorMapRepository repository, IBiomeCatalog biomeCatalog, IUnreadableDataService unreadable)
     {
         _repository = repository;
         _biomeCatalog = biomeCatalog;
+        _unreadable = unreadable;
     }
 
     public IReadOnlyList<BiomeColorMap> Maps => _maps;
@@ -24,13 +28,12 @@ public sealed class ColorMapService : IColorMapService
     public BiomePalette DefaultPalette => _biomeCatalog.DefaultPalette;
 
     public async Task LoadAsync(CancellationToken cancellationToken = default)
-        => _maps = Sort(await _repository.LoadAsync(cancellationToken));
+        => _maps = Sort(await ReadAsync(cancellationToken));
 
     public Task SaveAsync(BiomeColorMap map, string? previousName = null, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(map);
-        if (string.IsNullOrWhiteSpace(map.Name) || map.Name.Length > BiomeColorMap.MaxNameLength)
-            throw new ArgumentException($"A colour map needs a name of at most {BiomeColorMap.MaxNameLength} characters.", nameof(map));
+        ThrowIfBadlyNamed(map);
 
         _maps = Sort([.. _maps.Where(stored => !IsNamed(stored, map.Name) && !IsNamed(stored, previousName)), map]);
         return _repository.SaveAsync(_maps, cancellationToken);
@@ -50,6 +53,7 @@ public sealed class ColorMapService : IColorMapService
         foreach (var map in _repository.Deserialize(content.Span))
         {
             var stored = map with { Name = GetFreeName(map.Name) };
+            ThrowIfBadlyNamed(stored);
             _maps = Sort([.. _maps, stored]);
             imported.Add(stored);
         }
@@ -62,14 +66,39 @@ public sealed class ColorMapService : IColorMapService
 
     public string GetFreeName(string wanted)
     {
-        var name = wanted.Trim();
-        if (name.Length > BiomeColorMap.MaxNameLength)
-            name = name[..BiomeColorMap.MaxNameLength];
+        ArgumentNullException.ThrowIfNull(wanted);
 
+        var trimmed = wanted.Trim();
+        var name = Shorten(trimmed, BiomeColorMap.MaxNameLength);
         for (var number = 2; _maps.Any(stored => IsNamed(stored, name)); number++)
-            name = string.Create(CultureInfo.InvariantCulture, $"{wanted.Trim()} {number}");
+        {
+            var suffix = string.Create(CultureInfo.InvariantCulture, $" {number}");
+            name = Shorten(trimmed, BiomeColorMap.MaxNameLength - suffix.Length).TrimEnd() + suffix;
+        }
+
         return name;
     }
+
+    private async Task<IReadOnlyList<BiomeColorMap>> ReadAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await _repository.LoadAsync(cancellationToken);
+        }
+        catch (UnreadableDataException ex)
+        {
+            await _unreadable.KeepAsync(ex, cancellationToken);
+            return [];
+        }
+    }
+
+    private static void ThrowIfBadlyNamed(BiomeColorMap map)
+    {
+        if (string.IsNullOrWhiteSpace(map.Name) || map.Name.Length > BiomeColorMap.MaxNameLength)
+            throw new ArgumentException($"A colour map needs a name of at most {BiomeColorMap.MaxNameLength} characters.", nameof(map));
+    }
+
+    private static string Shorten(string text, int maxLength) => text.Length > maxLength ? text[..maxLength] : text;
 
     private static bool IsNamed(BiomeColorMap map, string? name) => string.Equals(map.Name, name, StringComparison.OrdinalIgnoreCase);
 

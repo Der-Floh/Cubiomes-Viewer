@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices.JavaScript;
+
 using Avalonia;
 using Avalonia.Browser;
 using Avalonia.Logging;
@@ -26,6 +28,10 @@ internal sealed partial class Program
 
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>();
+
+    /// <summary>Called by the page when it is hidden, as a closed tab never runs the delayed saves.</summary>
+    [JSExport]
+    internal static Task FlushStoredStateAsync() => App.FlushStoredStateAsync();
 
     private static void ConfigureBrowserServices(IServiceCollection services)
     {

@@ -36,6 +36,29 @@ public sealed class SettingsViewModelTests : IDisposable
     public void Dispose() => _services.Dispose();
 
     [AvaloniaFact]
+    public async Task ViewModels_BuiltAfterTheSettingsAreLoaded_KeepTheStoredChoices()
+    {
+        using var services = TestServices.Create();
+        var stored = new AppSettings
+        {
+            Appearance = { Theme = AppTheme.Dark, MarkerStyle = MarkerStyle.Clean, UiZoom = 150 },
+            Map = { GridMultiplier = 10, MarkerSize = MarkerSize.Large, ColorMap = "Mine" },
+            Export = { CsvSeparator = CsvSeparator.Semicolon },
+        };
+        await services.GetRequiredService<ISettingsRepository>().SaveAsync(stored, TestContext.Current.CancellationToken);
+        var settingsService = services.GetRequiredService<ISettingsService>();
+        await settingsService.LoadAsync(TestContext.Current.CancellationToken);
+
+        _ = services.GetRequiredService<SettingsViewModel>();
+        _ = services.GetRequiredService<BiomeColorsViewModel>();
+
+        var current = settingsService.Current;
+        Assert.Equal((AppTheme.Dark, MarkerStyle.Clean, 150), (current.Appearance.Theme, current.Appearance.MarkerStyle, current.Appearance.UiZoom));
+        Assert.Equal((10, MarkerSize.Large, "Mine"), (current.Map.GridMultiplier, current.Map.MarkerSize, current.Map.ColorMap));
+        Assert.Equal(CsvSeparator.Semicolon, current.Export.CsvSeparator);
+    }
+
+    [AvaloniaFact]
     public void GridAndMarkers_Changed_ReachTheMapAndAreStored()
     {
         _settings.GridSpacing = 100;

@@ -1,10 +1,12 @@
 using Cubiomes_Viewer.Engine.Data.Search;
+using Cubiomes_Viewer.Engine.Repository.AppDataRepo;
 
 namespace Cubiomes_Viewer.Engine.Repository.SessionRepo;
 
 public interface ISearchSessionRepository
 {
-    /// <summary>Loads the stored session; a missing or unreadable one yields <see langword="null"/>.</summary>
+    /// <summary>Loads the stored session; a missing one yields <see langword="null"/>.</summary>
+    /// <exception cref="UnreadableDataException">The stored session cannot be read, or a newer version wrote it.</exception>
     Task<SearchSession?> LoadAsync(CancellationToken cancellationToken = default);
 
     Task SaveAsync(SearchSession session, CancellationToken cancellationToken = default);

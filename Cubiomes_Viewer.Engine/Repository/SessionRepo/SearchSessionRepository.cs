@@ -3,8 +3,6 @@ using System.Text.Json;
 using Cubiomes_Viewer.Engine.Data.Search;
 using Cubiomes_Viewer.Engine.Repository.AppDataRepo;
 
-using Microsoft.Extensions.Logging;
-
 namespace Cubiomes_Viewer.Engine.Repository.SessionRepo;
 
 public sealed class SearchSessionRepository : ISearchSessionRepository
@@ -14,12 +12,10 @@ public sealed class SearchSessionRepository : ISearchSessionRepository
     private const string NotASessionMessage = "This is not a search session of Cubiomes Viewer.";
 
     private readonly IAppDataStore _store;
-    private readonly ILogger<SearchSessionRepository> _logger;
 
-    public SearchSessionRepository(IAppDataStore store, ILogger<SearchSessionRepository> logger)
+    public SearchSessionRepository(IAppDataStore store)
     {
         _store = store;
-        _logger = logger;
     }
 
     public async Task<SearchSession?> LoadAsync(CancellationToken cancellationToken = default)
@@ -34,8 +30,7 @@ public sealed class SearchSessionRepository : ISearchSessionRepository
         }
         catch (FormatException ex)
         {
-            _logger.LogWarning(ex, "The stored search session is unreadable; starting without one");
-            return null;
+            throw new UnreadableDataException(StorageKey, content, ex.Message, ex);
         }
     }
 

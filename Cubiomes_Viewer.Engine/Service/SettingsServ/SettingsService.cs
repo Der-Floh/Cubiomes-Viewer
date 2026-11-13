@@ -1,5 +1,7 @@
 using Cubiomes_Viewer.Engine.Data.Settings;
+using Cubiomes_Viewer.Engine.Repository.AppDataRepo;
 using Cubiomes_Viewer.Engine.Repository.SettingsRepo;
+using Cubiomes_Viewer.Engine.Service.AppDataServ;
 
 using Microsoft.Extensions.Logging;
 
@@ -12,13 +14,16 @@ public sealed class SettingsService : ISettingsService
     public AppSettings Current { get; private set; } = new();
 
     private readonly ISettingsRepository _repository;
+    private readonly IUnreadableDataService _unreadable;
     private readonly ILogger<SettingsService> _logger;
     private CancellationTokenSource? _pendingSave;
+    private Task _saving = Task.CompletedTask;
     private bool _isLoaded;
 
-    public SettingsService(ISettingsRepository repository, ILogger<SettingsService> logger)
+    public SettingsService(ISettingsRepository repository, IUnreadableDataService unreadable, ILogger<SettingsService> logger)
     {
         _repository = repository;
+        _unreadable = unreadable;
         _logger = logger;
     }
 
@@ -26,11 +31,11 @@ public sealed class SettingsService : ISettingsService
     {
         try
         {
-            Current = await _repository.LoadAsync(cancellationToken);
+            Current = await ReadAsync(cancellationToken);
             _isLoaded = true;
             _logger.LogDebug("Settings loaded: schema={SchemaVersion}", Current.SchemaVersion);
         }
-        catch (IOException ex)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             _logger.LogWarning(ex, "Settings could not be loaded; the defaults are used and changes are not saved");
         }
@@ -47,11 +52,28 @@ public sealed class SettingsService : ISettingsService
         _ = SaveAfterDelayAsync(pending);
     }
 
-    public Task FlushAsync(CancellationToken cancellationToken = default)
+    public async Task FlushAsync(CancellationToken cancellationToken = default)
     {
         _pendingSave?.Cancel();
         _pendingSave = null;
-        return _isLoaded ? _repository.SaveAsync(Current, cancellationToken) : Task.CompletedTask;
+        if (!_isLoaded)
+            return;
+
+        await Task.WhenAny(_saving).ConfigureAwait(false);
+        await _repository.SaveAsync(Current, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<AppSettings> ReadAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await _repository.LoadAsync(cancellationToken);
+        }
+        catch (UnreadableDataException ex)
+        {
+            await _unreadable.KeepAsync(ex, cancellationToken);
+            return new AppSettings();
+        }
     }
 
     private async Task SaveAfterDelayAsync(CancellationTokenSource pending)
@@ -62,13 +84,14 @@ public sealed class SettingsService : ISettingsService
             if (_pendingSave == pending)
                 _pendingSave = null;
 
-            await _repository.SaveAsync(Current, CancellationToken.None);
+            _saving = _repository.SaveAsync(Current, CancellationToken.None);
+            await _saving;
         }
         catch (OperationCanceledException)
         {
             // A newer save request or a flush superseded this one.
         }
-        catch (IOException ex)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             _logger.LogWarning(ex, "Settings could not be saved");
         }

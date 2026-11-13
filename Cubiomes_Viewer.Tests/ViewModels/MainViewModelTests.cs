@@ -1,9 +1,11 @@
+using Avalonia.Controls.Notifications;
 using Avalonia.Headless.XUnit;
 
 using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Settings;
 using Cubiomes_Viewer.Engine.Data.Worlds;
+using Cubiomes_Viewer.Engine.Repository.AppDataRepo;
 using Cubiomes_Viewer.Engine.Repository.SettingsRepo;
 using Cubiomes_Viewer.Engine.Service.SettingsServ;
 using Cubiomes_Viewer.Service.NotificationServ;
@@ -109,6 +111,22 @@ public sealed class MainViewModelTests : IDisposable
         Assert.Equal(AppTheme.Dark, settings.Appearance.Theme);
         Assert.Equal(512, settings.Map.CacheMegabytes);
         Assert.False(main.Map.SmoothMotion);
+    }
+
+    [AvaloniaFact]
+    public async Task Initialization_UnreadableStoredSettings_StartsWithTheDefaultsAndNamesTheCopy()
+    {
+        var store = _services.GetRequiredService<IAppDataStore>();
+        await store.WriteAsync(SettingsRepository.StorageKey, "{ \"appearance\": { \"theme\": \"Sepia\" } }"u8.ToArray(), TestContext.Current.CancellationToken);
+
+        var main = _services.GetRequiredService<MainViewModel>();
+        await main.Initialization;
+
+        Assert.Empty(Notifications.Errors);
+        Assert.Equal(AppTheme.System, _services.GetRequiredService<ISettingsService>().Current.Appearance.Theme);
+        var warning = Assert.Single(Notifications.Notifications, notification => notification.Type == NotificationType.Warning);
+        Assert.Equal(main.UnreadableTitle, warning.Title);
+        Assert.Contains("settings.unreadable-", warning.Message, StringComparison.Ordinal);
     }
 
     private RecordingNotificationService Notifications => (RecordingNotificationService)_services.GetRequiredService<INotificationService>();

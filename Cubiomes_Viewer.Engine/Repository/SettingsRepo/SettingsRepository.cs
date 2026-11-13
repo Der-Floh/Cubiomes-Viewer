@@ -3,8 +3,6 @@ using System.Text.Json;
 using Cubiomes_Viewer.Engine.Data.Settings;
 using Cubiomes_Viewer.Engine.Repository.AppDataRepo;
 
-using Microsoft.Extensions.Logging;
-
 namespace Cubiomes_Viewer.Engine.Repository.SettingsRepo;
 
 public sealed class SettingsRepository : ISettingsRepository
@@ -12,29 +10,16 @@ public sealed class SettingsRepository : ISettingsRepository
     public const string StorageKey = "settings.json";
 
     private readonly IAppDataStore _store;
-    private readonly ILogger<SettingsRepository> _logger;
 
-    public SettingsRepository(IAppDataStore store, ILogger<SettingsRepository> logger)
+    public SettingsRepository(IAppDataStore store)
     {
         _store = store;
-        _logger = logger;
     }
 
     public async Task<AppSettings> LoadAsync(CancellationToken cancellationToken = default)
     {
         var content = await _store.ReadAsync(StorageKey, cancellationToken).ConfigureAwait(false);
-        if (content is null)
-            return new AppSettings();
-
-        try
-        {
-            return JsonSerializer.Deserialize(content, SettingsJsonContext.Default.AppSettings) ?? new AppSettings();
-        }
-        catch (JsonException ex)
-        {
-            _logger.LogWarning(ex, "The stored settings are unreadable; using defaults");
-            return new AppSettings();
-        }
+        return content is null ? new AppSettings() : Deserialize(content);
     }
 
     public Task SaveAsync(AppSettings settings, CancellationToken cancellationToken = default)
@@ -43,5 +28,24 @@ public sealed class SettingsRepository : ISettingsRepository
 
         var content = JsonSerializer.SerializeToUtf8Bytes(settings, SettingsJsonContext.Default.AppSettings);
         return _store.WriteAsync(StorageKey, content, cancellationToken);
+    }
+
+    private static AppSettings Deserialize(byte[] content)
+    {
+        AppSettings? settings;
+        try
+        {
+            settings = JsonSerializer.Deserialize(content, SettingsJsonContext.Default.AppSettings);
+        }
+        catch (Exception ex) when (ex is JsonException or NotSupportedException)
+        {
+            throw new UnreadableDataException(StorageKey, content, "The stored settings are not settings of Cubiomes Viewer.", ex);
+        }
+
+        if (settings is null)
+            throw new UnreadableDataException(StorageKey, content, "The stored settings are empty.");
+        if (settings.SchemaVersion > AppSettings.CurrentSchemaVersion)
+            throw new UnreadableDataException(StorageKey, content, "The stored settings were written by a newer version of Cubiomes Viewer.");
+        return settings;
     }
 }

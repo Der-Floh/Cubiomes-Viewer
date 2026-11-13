@@ -101,7 +101,10 @@ public sealed partial class BiomeColorsViewModel : ViewModelBase
     public async Task LoadAsync()
     {
         await _colorMaps.LoadAsync();
-        ShowChoices(_settingsService.Current.Map.ColorMap);
+        var stored = _settingsService.Current.Map.ColorMap;
+        ShowChoices(stored);
+        if (SelectedMap?.Value != stored)
+            StoreSelectedMap();
         ApplySelected();
     }
 
@@ -124,15 +127,11 @@ public sealed partial class BiomeColorsViewModel : ViewModelBase
         if (!string.Equals(name, _editedName, StringComparison.OrdinalIgnoreCase) && _colorMaps.Maps.Any(map => string.Equals(map.Name, name, StringComparison.OrdinalIgnoreCase)))
             throw new InvalidOperationException($"There is a colour map called '{name}' already.");
 
-        var listed = _allEntries.Select(entry => entry.Biome).ToHashSet();
-        var map = new BiomeColorMap
-        {
-            Name = name,
-            Colors = [.. _editedColors.Where(color => !listed.Contains(color.Biome)), .. _allEntries.Where(entry => entry.IsChanged).Select(entry => new BiomeColor(entry.Biome, entry.RgbColor))],
-        };
+        var map = new BiomeColorMap { Name = name, Colors = [.. GetEditedColors()] };
         await _colorMaps.SaveAsync(map, _editedName);
         StopEditing();
         ShowChoices(map.Name);
+        StoreSelectedMap();
         ApplySelected();
         _notifications.ShowSuccess(SavedTitle, map.Name);
     });
@@ -159,6 +158,7 @@ public sealed partial class BiomeColorsViewModel : ViewModelBase
         await _colorMaps.DeleteAsync(map.Name);
         StopEditing();
         ShowChoices(null);
+        StoreSelectedMap();
         ApplySelected();
     });
 
@@ -175,6 +175,7 @@ public sealed partial class BiomeColorsViewModel : ViewModelBase
 
         StopEditing();
         ShowChoices(imported[0].Name);
+        StoreSelectedMap();
         ApplySelected();
         _notifications.ShowSuccess(ImportedTitle, string.Join(", ", imported.Select(map => map.Name)));
     }, browserFireAndForget: true);
@@ -197,8 +198,7 @@ public sealed partial class BiomeColorsViewModel : ViewModelBase
 
         StopEditing();
         ApplySelected();
-        _settingsService.Current.Map.ColorMap = value?.Value;
-        _settingsService.RequestSave();
+        StoreSelectedMap();
     }
 
     partial void OnFilterChanged(string value) => ShowEntries();
@@ -208,9 +208,16 @@ public sealed partial class BiomeColorsViewModel : ViewModelBase
         if (e.PropertyName != nameof(WorldSession.Version) || !IsEditing)
             return;
 
-        var colors = _allEntries.Select(entry => new BiomeColor(entry.Biome, entry.RgbColor)).ToList();
-        _allEntries = CreateEntries(_colorMaps.DefaultPalette.With([.. _editedColors, .. colors]));
+        _editedColors = GetEditedColors();
+        _allEntries = CreateEntries(_colorMaps.DefaultPalette.With(_editedColors));
         ShowEntries();
+    }
+
+    /// <summary>The colours of the map being edited: those of biomes the listed version lacks, and the listed ones changed from their defaults.</summary>
+    private List<BiomeColor> GetEditedColors()
+    {
+        var listed = _allEntries.Select(entry => entry.Biome).ToHashSet();
+        return [.. _editedColors.Where(color => !listed.Contains(color.Biome)), .. _allEntries.Where(entry => entry.IsChanged).Select(entry => new BiomeColor(entry.Biome, entry.RgbColor))];
     }
 
     private void StartEditing(string name, string? editedName, IReadOnlyList<BiomeColor> colors)
@@ -304,7 +311,10 @@ public sealed partial class BiomeColorsViewModel : ViewModelBase
         {
             _isShowing = false;
         }
+    }
 
+    private void StoreSelectedMap()
+    {
         _settingsService.Current.Map.ColorMap = SelectedMap?.Value;
         _settingsService.RequestSave();
     }

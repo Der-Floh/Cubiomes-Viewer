@@ -163,13 +163,16 @@ public sealed partial class SettingsViewModel : ViewModelBase
         Updates = updates;
         SelfTest = selfTest;
         CanRememberWindow = windowService.HasWindows;
-        SelectedTheme = Themes[0];
-        SelectedMarkerStyle = MarkerStyles[0];
-        SelectedUiZoom = UiZooms[0];
-        SelectedGridMultiplier = GridMultipliers[0];
-        SelectedMarkerSize = MarkerSizes[1];
-        SelectedCsvSeparator = CsvSeparators[0];
-        ShowZoomLimits([]);
+        ShowWithoutStoring(() =>
+        {
+            SelectedTheme = Themes[0];
+            SelectedMarkerStyle = MarkerStyles[0];
+            SelectedUiZoom = UiZooms[0];
+            SelectedGridMultiplier = GridMultipliers[0];
+            SelectedMarkerSize = MarkerSizes[1];
+            SelectedCsvSeparator = CsvSeparators[0];
+            ShowZoomLimits([]);
+        });
     }
 
     /// <summary>Shows and applies the stored settings; called once they are loaded.</summary>
@@ -179,26 +182,21 @@ public sealed partial class SettingsViewModel : ViewModelBase
         Updates.ShowSettings();
 
         var settings = _settingsService.Current;
-        _isShowingSettings = true;
-        try
+        ShowWithoutStoring(() =>
         {
-            SelectedTheme = Themes.First(choice => choice.Value == settings.Appearance.Theme);
+            SelectedTheme = Themes.FirstOrDefault(choice => choice.Value == settings.Appearance.Theme) ?? Themes[0];
             SelectedMarkerStyle = MarkerStyles.FirstOrDefault(choice => choice.Value == settings.Appearance.MarkerStyle) ?? MarkerStyles[0];
             SelectedUiZoom = UiZooms.FirstOrDefault(choice => choice.Value == settings.Appearance.UiZoom) ?? UiZooms[0];
             SmoothMotion = settings.Map.SmoothMotion;
-            CacheMegabytes = Math.Clamp(settings.Map.CacheMegabytes, MapSettings.MinCacheMegabytes, MapSettings.MaxCacheMegabytes);
-            GridSpacing = Math.Clamp(settings.Map.GridSpacing, 1, MaxGridSpacing);
+            CacheMegabytes = ClampCacheMegabytes(settings.Map.CacheMegabytes);
+            GridSpacing = ClampGridSpacing(settings.Map.GridSpacing);
             SelectedGridMultiplier = GridMultipliers.FirstOrDefault(choice => choice.Value == settings.Map.GridMultiplier) ?? GridMultipliers[0];
             SelectedMarkerSize = MarkerSizes.FirstOrDefault(choice => choice.Value == settings.Map.MarkerSize) ?? MarkerSizes[1];
             RestoreLastSession = settings.Session.RestoreLastSession;
             RememberWindow = settings.Session.RememberWindow;
             SelectedCsvSeparator = CsvSeparators.FirstOrDefault(choice => choice.Value == settings.Export.CsvSeparator) ?? CsvSeparators[0];
             ShowZoomLimits(settings.Map.ZoomLimits);
-        }
-        finally
-        {
-            _isShowingSettings = false;
-        }
+        });
 
         Apply();
     }
@@ -251,6 +249,20 @@ public sealed partial class SettingsViewModel : ViewModelBase
     private string DescribeDimension(StructureInfo structure)
         => _structureFinder.TryGetPlacement(structure.Type, _versionCatalog.Newest, out var placement) ? placement.Dimension.ToString() : string.Empty;
 
+    /// <summary>Shows values without storing them, as they are either the stored ones or defaults standing in until those are loaded.</summary>
+    private void ShowWithoutStoring(Action show)
+    {
+        _isShowingSettings = true;
+        try
+        {
+            show();
+        }
+        finally
+        {
+            _isShowingSettings = false;
+        }
+    }
+
     private void Store(Action<AppSettings> change)
     {
         if (_isShowingSettings)
@@ -264,16 +276,20 @@ public sealed partial class SettingsViewModel : ViewModelBase
     private void Apply()
     {
         var settings = _settingsService.Current;
-        _themeService.Apply(settings.Appearance.Theme);
-        _map.MarkerStyle = settings.Appearance.MarkerStyle;
-        _uiZoomService.Apply(UiZooms.Any(choice => choice.Value == settings.Appearance.UiZoom) ? settings.Appearance.UiZoom : AppearanceSettings.DefaultUiZoom);
+        _themeService.Apply(SelectedTheme?.Value ?? AppTheme.System);
+        _map.MarkerStyle = SelectedMarkerStyle?.Value ?? MarkerStyle.Blocky;
+        _uiZoomService.Apply(SelectedUiZoom?.Value ?? AppearanceSettings.DefaultUiZoom);
         _map.SmoothMotion = settings.Map.SmoothMotion;
-        _map.GridSpacing = settings.Map.GridSpacing;
-        _map.GridMultiplier = settings.Map.GridMultiplier;
-        _map.MarkerScale = GetMarkerScale(settings.Map.MarkerSize);
+        _map.GridSpacing = ClampGridSpacing(settings.Map.GridSpacing);
+        _map.GridMultiplier = SelectedGridMultiplier?.Value ?? MapSettings.DefaultGridMultiplier;
+        _map.MarkerScale = GetMarkerScale(SelectedMarkerSize?.Value ?? MarkerSize.Normal);
         _map.MarkerZoomLimits = settings.Map.ZoomLimits.GroupBy(limit => limit.Type).ToFrozenDictionary(group => group.Key, group => group.Last().MaxBlocksPerPixel);
-        _tileService.CacheBudgetBytes = settings.Map.CacheMegabytes * BytesPerMegabyte;
+        _tileService.CacheBudgetBytes = ClampCacheMegabytes(settings.Map.CacheMegabytes) * BytesPerMegabyte;
     }
+
+    private static int ClampCacheMegabytes(int megabytes) => Math.Clamp(megabytes, MapSettings.MinCacheMegabytes, MapSettings.MaxCacheMegabytes);
+
+    private static int ClampGridSpacing(int spacing) => Math.Clamp(spacing, 1, MaxGridSpacing);
 
     private static double GetMarkerScale(MarkerSize size) => size switch
     {

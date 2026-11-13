@@ -171,6 +171,20 @@ public sealed class BiomeColorsViewModelTests : IDisposable
         Assert.All(_colors.Entries, entry => Assert.Equal(entry.DefaultColor.ToDimmed(), entry.RgbColor));
     }
 
+    [AvaloniaFact]
+    public async Task VersionChanged_WhileEditing_KeepsTheEditsOfBiomesTheOtherVersionLacks()
+    {
+        const int CherryGrove = 185;
+        _colors.NewCommand.Execute(null);
+        _colors.Entries.Single(entry => entry.Biome == CherryGrove).Color = Color.FromRgb(_pink.Red, _pink.Green, _pink.Blue);
+
+        _services.GetRequiredService<WorldSession>().Version = McVersion.V1_16_5;
+        await _colors.SaveCommand.ExecuteAsync(null);
+
+        Assert.DoesNotContain(_colors.Entries, entry => entry.Biome == CherryGrove);
+        Assert.Contains(new BiomeColor(CherryGrove, _pink), Assert.Single(ColorMaps.Maps).Colors);
+    }
+
     private void SetPlains(RgbColor color)
         => _colors.Entries.Single(entry => entry.Biome == Plains).Color = Color.FromRgb(color.Red, color.Green, color.Blue);
 }

@@ -3,6 +3,7 @@ using System.Text;
 using Cubiomes_Viewer.Engine.Data.Search;
 using Cubiomes_Viewer.Engine.Repository.AppDataRepo;
 using Cubiomes_Viewer.Engine.Repository.PresetRepo;
+using Cubiomes_Viewer.Engine.Service.AppDataServ;
 using Cubiomes_Viewer.Engine.Service.SearchServ;
 using Cubiomes_Viewer.Engine.Tests.Data.Search;
 
@@ -14,11 +15,13 @@ public sealed class SearchPresetServiceTests : IDisposable
 {
     private readonly string _directory = Path.Combine(Path.GetTempPath(), "cubiomes-viewer-tests", Guid.NewGuid().ToString("N"));
     private readonly FileSystemAppDataStore _store;
+    private readonly UnreadableDataService _unreadable;
     private readonly SearchSetup _setup = new() { Definition = SampleDefinitions.CreateEveryKindOfCondition(), Source = new SeedListSource { Seeds = [1, 2] }, MaxResults = 9 };
 
     public SearchPresetServiceTests()
     {
         _store = new FileSystemAppDataStore(_directory);
+        _unreadable = new UnreadableDataService(_store, TimeProvider.System, NullLogger<UnreadableDataService>.Instance);
     }
 
     public void Dispose()
@@ -96,7 +99,8 @@ public sealed class SearchPresetServiceTests : IDisposable
 
         Assert.Empty(service.UserPresets);
         Assert.NotEmpty(service.Examples);
+        Assert.StartsWith("search-presets.unreadable-", Assert.Single(_unreadable.CopyKeys), StringComparison.Ordinal);
     }
 
-    private SearchPresetService CreateService() => new(new SearchPresetRepository(_store, NullLogger<SearchPresetRepository>.Instance));
+    private SearchPresetService CreateService() => new(new SearchPresetRepository(_store), _unreadable);
 }

@@ -4,8 +4,6 @@ using Cubiomes_Viewer.Engine.Data.Search;
 using Cubiomes_Viewer.Engine.Repository.AppDataRepo;
 using Cubiomes_Viewer.Engine.Repository.SessionRepo;
 
-using Microsoft.Extensions.Logging.Abstractions;
-
 namespace Cubiomes_Viewer.Cli.Tests;
 
 /// <summary>
@@ -22,7 +20,7 @@ internal static class FixtureSessions
 
     public static IReadOnlyList<string> Names { get; } = [SlimeChunks, "village-by-spawn", "mushroom-fields", "four-villages", "end-ship", "stronghold"];
 
-    private static readonly SearchSessionRepository _repository = new(new FileSystemAppDataStore(Path.GetTempPath()), NullLogger<SearchSessionRepository>.Instance);
+    private static readonly SearchSessionRepository _repository = new(new FileSystemAppDataStore(Path.GetTempPath()));
 
     public static string GetPath(string name) => Path.Combine(AppContext.BaseDirectory, Folder, name + Extension);
 

@@ -5,8 +5,6 @@ using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Repository.AppDataRepo;
 using Cubiomes_Viewer.Engine.Repository.SettingsRepo;
 
-using Microsoft.Extensions.Logging.Abstractions;
-
 namespace Cubiomes_Viewer.Engine.Tests.Repository;
 
 public sealed class SettingsRepositoryTests : IDisposable
@@ -18,7 +16,7 @@ public sealed class SettingsRepositoryTests : IDisposable
     public SettingsRepositoryTests()
     {
         _store = new FileSystemAppDataStore(_directory);
-        _repository = new SettingsRepository(_store, NullLogger<SettingsRepository>.Instance);
+        _repository = new SettingsRepository(_store);
     }
 
     public void Dispose()
@@ -73,14 +71,30 @@ public sealed class SettingsRepositoryTests : IDisposable
         Assert.Equal([3, 2, 1], loaded.View.RecentSeeds);
     }
 
-    [Fact]
-    public async Task LoadAsync_CorruptContent_FallsBackToDefaults()
+    [Theory]
+    [InlineData("{ not json")]
+    [InlineData("""{ "appearance": { "theme": "Sepia" } }""")]
+    [InlineData("null")]
+    public async Task LoadAsync_ContentItCannotRead_ThrowsWithTheContent(string stored)
     {
-        await _store.WriteAsync(SettingsRepository.StorageKey, Encoding.UTF8.GetBytes("{ not json"), TestContext.Current.CancellationToken);
+        var content = Encoding.UTF8.GetBytes(stored);
+        await _store.WriteAsync(SettingsRepository.StorageKey, content, TestContext.Current.CancellationToken);
 
-        var settings = await _repository.LoadAsync(TestContext.Current.CancellationToken);
+        var exception = await Assert.ThrowsAsync<UnreadableDataException>(() => _repository.LoadAsync(TestContext.Current.CancellationToken));
 
-        Assert.Equal(AppSettings.CurrentSchemaVersion, settings.SchemaVersion);
+        Assert.Equal(SettingsRepository.StorageKey, exception.Key);
+        Assert.Equal(content, exception.Content.ToArray());
+    }
+
+    [Fact]
+    public async Task LoadAsync_SettingsOfANewerVersion_Throws()
+    {
+        var content = Encoding.UTF8.GetBytes($$"""{ "schemaVersion": {{AppSettings.CurrentSchemaVersion + 1}} }""");
+        await _store.WriteAsync(SettingsRepository.StorageKey, content, TestContext.Current.CancellationToken);
+
+        var exception = await Assert.ThrowsAsync<UnreadableDataException>(() => _repository.LoadAsync(TestContext.Current.CancellationToken));
+
+        Assert.Contains("newer version", exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]

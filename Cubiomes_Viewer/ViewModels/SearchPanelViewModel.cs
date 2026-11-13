@@ -52,15 +52,17 @@ public sealed partial class SearchPanelViewModel : ViewModelBase
         presets.Opened += OnPresetOpened;
     }
 
-    /// <summary>Loads the stored session and the user's presets and shows them; called once the settings are loaded.</summary>
-    /// <summary>Loads the presets, and the search of last time when <paramref name="restoreSession"/> is set.</summary>
+    /// <summary>
+    /// Loads the presets and the stored session; called once the settings are loaded. The search of last time is shown
+    /// when <paramref name="restoreSession"/> is set, and replaced by an empty one otherwise, which is stored from then on.
+    /// </summary>
     public async Task LoadAsync(bool restoreSession = true)
     {
+        await _sessions.LoadAsync();
         if (restoreSession)
-        {
-            await _sessions.LoadAsync();
             ShowSession();
-        }
+        else
+            _sessions.Open(new SearchSession { Setup = Setup.Setup });
 
         await Presets.LoadAsync();
     }

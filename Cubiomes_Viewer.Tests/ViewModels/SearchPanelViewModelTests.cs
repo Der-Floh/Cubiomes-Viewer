@@ -628,6 +628,20 @@ public sealed class SearchPanelViewModelTests : IDisposable
         Assert.Equal([12L, 400L], _panel.Results.Seeds.Select(seed => seed.Value));
     }
 
+    [AvaloniaFact]
+    public async Task Load_WithoutRestoring_StartsEmptyAndStoresTheSearchFromThenOn()
+    {
+        var stored = new SearchSession { Setup = new SearchSetup { Definition = new SearchDefinition(), MaxResults = 3 } };
+        var repository = _services.GetRequiredService<ISearchSessionRepository>();
+        await repository.SaveAsync(stored, TestContext.Current.CancellationToken);
+
+        await _panel.LoadAsync(restoreSession: false);
+        Setup.MaxResults = 7;
+        await _services.GetRequiredService<ISearchSessionService>().FlushAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(7, (await repository.LoadAsync(TestContext.Current.CancellationToken))?.Setup.MaxResults);
+    }
+
     private SearchConditionViewModel Add<TCondition>() where TCondition : SearchCondition
     {
         Setup.ConditionKinds.Single(kind => kind.Descriptor.ConditionType == typeof(TCondition)).AddCommand.Execute(null);

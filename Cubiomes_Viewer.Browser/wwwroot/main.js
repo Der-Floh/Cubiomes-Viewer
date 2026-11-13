@@ -9,5 +9,11 @@ const dotnetRuntime = await dotnet
     .create();
 
 const config = dotnetRuntime.getConfig();
+const exports = await dotnetRuntime.getAssemblyExports(config.mainAssemblyName);
+
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden")
+        exports.Program.FlushStoredStateAsync().catch(error => console.error(error));
+});
 
 await dotnetRuntime.runMain(config.mainAssemblyName, [globalThis.location.href]);

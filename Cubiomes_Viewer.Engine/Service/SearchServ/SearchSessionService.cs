@@ -1,5 +1,7 @@
 using Cubiomes_Viewer.Engine.Data.Search;
+using Cubiomes_Viewer.Engine.Repository.AppDataRepo;
 using Cubiomes_Viewer.Engine.Repository.SessionRepo;
+using Cubiomes_Viewer.Engine.Service.AppDataServ;
 
 using Microsoft.Extensions.Logging;
 
@@ -26,14 +28,17 @@ public sealed class SearchSessionService : ISearchSessionService, IDisposable
 
     private readonly ISearchSessionRepository _repository;
     private readonly ISeedSearchService _search;
+    private readonly IUnreadableDataService _unreadable;
     private readonly ILogger<SearchSessionService> _logger;
     private CancellationTokenSource? _pendingSave;
+    private Task _saving = Task.CompletedTask;
     private bool _isLoaded;
 
-    public SearchSessionService(ISearchSessionRepository repository, ISeedSearchService search, ILogger<SearchSessionService> logger)
+    public SearchSessionService(ISearchSessionRepository repository, ISeedSearchService search, IUnreadableDataService unreadable, ILogger<SearchSessionService> logger)
     {
         _repository = repository;
         _search = search;
+        _unreadable = unreadable;
         _logger = logger;
         _search.Changed += OnSearchChanged;
     }
@@ -42,22 +47,26 @@ public sealed class SearchSessionService : ISearchSessionService, IDisposable
     {
         try
         {
-            var session = await _repository.LoadAsync(cancellationToken);
+            var session = await ReadAsync(cancellationToken);
             if (session is not null)
                 Adopt(session);
             _isLoaded = true;
         }
-        catch (IOException ex)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             _logger.LogWarning(ex, "The search session could not be loaded; the search starts empty and is not stored");
         }
     }
 
-    public Task FlushAsync(CancellationToken cancellationToken = default)
+    public async Task FlushAsync(CancellationToken cancellationToken = default)
     {
         _pendingSave?.Cancel();
         _pendingSave = null;
-        return _isLoaded ? _repository.SaveAsync(CreateSession(), cancellationToken) : Task.CompletedTask;
+        if (!_isLoaded)
+            return;
+
+        await Task.WhenAny(_saving).ConfigureAwait(false);
+        await _repository.SaveAsync(CreateSession(), cancellationToken).ConfigureAwait(false);
     }
 
     public SearchSession CreateSession() => new() { Setup = Setup, Search = _search.CreateSnapshot() };
@@ -80,6 +89,19 @@ public sealed class SearchSessionService : ISearchSessionService, IDisposable
     {
         _search.Changed -= OnSearchChanged;
         _pendingSave?.Cancel();
+    }
+
+    private async Task<SearchSession?> ReadAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await _repository.LoadAsync(cancellationToken);
+        }
+        catch (UnreadableDataException ex)
+        {
+            await _unreadable.KeepAsync(ex, cancellationToken);
+            return null;
+        }
     }
 
     private void Adopt(SearchSession session)
@@ -130,13 +152,14 @@ public sealed class SearchSessionService : ISearchSessionService, IDisposable
             if (_pendingSave == pending)
                 _pendingSave = null;
 
-            await _repository.SaveAsync(CreateSession(), CancellationToken.None);
+            _saving = _repository.SaveAsync(CreateSession(), CancellationToken.None);
+            await _saving;
         }
         catch (OperationCanceledException)
         {
             // A newer save request or a flush superseded this one.
         }
-        catch (IOException ex)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             _logger.LogWarning(ex, "The search session could not be saved");
         }

@@ -55,8 +55,14 @@ public sealed partial class App : Application
             desktop.MainWindow = Services.GetRequiredService<MainWindow>();
             desktop.Exit += (_, _) =>
             {
-                FlushStoredState();
-                Services.GetRequiredService<IUpdateService>().InstallOnExit();
+                try
+                {
+                    FlushStoredStateAsync().GetAwaiter().GetResult();
+                }
+                finally
+                {
+                    Services.GetRequiredService<IUpdateService>().InstallOnExit();
+                }
             };
         }
         else if (ApplicationLifetime is IActivityApplicationLifetime activity)
@@ -81,11 +87,30 @@ public sealed partial class App : Application
         Task.Run(() => settings.LoadAsync()).GetAwaiter().GetResult();
     }
 
-    /// <summary>Writes what is waiting to be stored, as the desktop app ends before delayed saves would run.</summary>
-    private static void FlushStoredState()
+    /// <summary>
+    /// Writes what is waiting to be stored, as the app can end before delayed saves would run. A store that cannot be
+    /// written does not keep the others from being written.
+    /// </summary>
+    public static async Task FlushStoredStateAsync()
     {
-        Services.GetRequiredService<ISettingsService>().FlushAsync().GetAwaiter().GetResult();
-        Services.GetRequiredService<ISearchSessionService>().FlushAsync().GetAwaiter().GetResult();
+        if (Services is null)
+            return;
+
+        var logger = Services.GetRequiredService<ILogger<App>>();
+        await FlushAsync(Services.GetRequiredService<ISettingsService>().FlushAsync, "settings", logger).ConfigureAwait(false);
+        await FlushAsync(Services.GetRequiredService<ISearchSessionService>().FlushAsync, "search session", logger).ConfigureAwait(false);
+    }
+
+    private static async Task FlushAsync(Func<CancellationToken, Task> flushAsync, string store, ILogger logger)
+    {
+        try
+        {
+            await flushAsync(CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            logger.LogError(ex, "The {Store} could not be stored", store);
+        }
     }
 
     private static void SetupGlobalExceptionHandlers()

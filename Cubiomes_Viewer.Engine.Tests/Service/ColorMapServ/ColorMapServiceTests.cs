@@ -5,6 +5,7 @@ using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Repository.AppDataRepo;
 using Cubiomes_Viewer.Engine.Repository.ColorMapRepo;
+using Cubiomes_Viewer.Engine.Service.AppDataServ;
 using Cubiomes_Viewer.Engine.Service.ColorMapServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
 
@@ -22,13 +23,15 @@ public sealed class ColorMapServiceTests : IDisposable
     private readonly string _directory = Path.Combine(Path.GetTempPath(), "cubiomes-viewer-tests", Guid.NewGuid().ToString("N"));
     private readonly FileSystemAppDataStore _store;
     private readonly ColorMapRepository _repository;
+    private readonly UnreadableDataService _unreadable;
     private readonly ColorMapService _service;
 
     public ColorMapServiceTests()
     {
         _store = new FileSystemAppDataStore(_directory);
-        _repository = new ColorMapRepository(_store, NullLogger<ColorMapRepository>.Instance);
-        _service = new ColorMapService(_repository, new BiomeCatalog());
+        _repository = new ColorMapRepository(_store);
+        _unreadable = new UnreadableDataService(_store, TimeProvider.System, NullLogger<UnreadableDataService>.Instance);
+        _service = new ColorMapService(_repository, new BiomeCatalog(), _unreadable);
     }
 
     public void Dispose()
@@ -63,7 +66,7 @@ public sealed class ColorMapServiceTests : IDisposable
     {
         await _service.SaveAsync(Map("Zebra", Plains, _pink), cancellationToken: TestContext.Current.CancellationToken);
         await _service.SaveAsync(Map("alpine", Desert, _pink), cancellationToken: TestContext.Current.CancellationToken);
-        var reloaded = new ColorMapService(_repository, new BiomeCatalog());
+        var reloaded = new ColorMapService(_repository, new BiomeCatalog(), _unreadable);
 
         await reloaded.LoadAsync(TestContext.Current.CancellationToken);
 
@@ -117,13 +120,32 @@ public sealed class ColorMapServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task Load_OfAnUnreadableStore_StartsWithoutMaps()
+    public async Task Load_OfAnUnreadableStore_StartsWithoutMapsAndKeepsACopy()
     {
-        await _store.WriteAsync(ColorMapRepository.StorageKey, Encoding.UTF8.GetBytes("{ broken"), TestContext.Current.CancellationToken);
+        var content = Encoding.UTF8.GetBytes("{ broken");
+        await _store.WriteAsync(ColorMapRepository.StorageKey, content, TestContext.Current.CancellationToken);
 
         await _service.LoadAsync(TestContext.Current.CancellationToken);
 
         Assert.Empty(_service.Maps);
+        var copyKey = Assert.Single(_unreadable.CopyKeys);
+        Assert.StartsWith("color-maps.unreadable-", copyKey, StringComparison.Ordinal);
+        Assert.Equal(content, await _store.ReadAsync(copyKey, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task Import_OfAMapWithTheLongestNameTwice_StoresNamesThatLoadAgain()
+    {
+        var file = _service.Export(Map(new string('x', BiomeColorMap.MaxNameLength), Plains, _pink));
+
+        await _service.ImportAsync(file, TestContext.Current.CancellationToken);
+        var second = await _service.ImportAsync(file, TestContext.Current.CancellationToken);
+        var reloaded = new ColorMapService(_repository, new BiomeCatalog(), _unreadable);
+        await reloaded.LoadAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal($"{new string('x', BiomeColorMap.MaxNameLength - 2)} 2", Assert.Single(second).Name);
+        Assert.Equal(2, reloaded.Maps.Count);
+        Assert.Empty(_unreadable.CopyKeys);
     }
 
     [Fact]
