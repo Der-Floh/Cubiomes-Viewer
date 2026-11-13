@@ -16,6 +16,6 @@ public sealed record MapSelection(string Name, MapMarker? Marker, BlockPos Posit
     {
         ArgumentNullException.ThrowIfNull(pin);
 
-        return new MapSelection(PinName, null, new BlockPos(pin.X, pin.Z), Pin: pin);
+        return new MapSelection(pin.Name ?? PinName, null, new BlockPos(pin.X, pin.Z), Pin: pin);
     }
 }

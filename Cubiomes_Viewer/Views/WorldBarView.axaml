@@ -17,7 +17,7 @@
                     </TextBox.KeyBindings>
                 </TextBox>
                 <Button Classes="icon" Command="{Binding RandomSeedCommand}" ToolTip.Tip="{Binding RandomSeedLabel}">
-                    <controls:SvgIcon Path="{DynamicResource DiceIcon}"/>
+                    <controls:SvgIcon Source="{StaticResource DiceIcon}"/>
                 </Button>
                 <DropDownButton Content="{Binding RecentSeedsLabel}" IsEnabled="{Binding HasRecentSeeds}" VerticalAlignment="Center">
                     <DropDownButton.Flyout>
@@ -47,7 +47,7 @@
 
             <WrapPanel Classes="toolbar-group">
                 <Button Classes="icon" ToolTip.Tip="{Binding GoToLabel}">
-                    <controls:SvgIcon Path="{DynamicResource GoToIcon}"/>
+                    <controls:SvgIcon Source="{StaticResource GoToIcon}"/>
                     <Button.Flyout>
                         <Flyout>
                             <StackPanel Classes="flyout-form">
@@ -61,16 +61,16 @@
                     </Button.Flyout>
                 </Button>
                 <Button Classes="icon" Command="{Binding Map.GoToOriginCommand}" ToolTip.Tip="{Binding OriginLabel}">
-                    <controls:SvgIcon Path="{DynamicResource HomeIcon}"/>
+                    <controls:SvgIcon Source="{StaticResource HomeIcon}"/>
                 </Button>
                 <ToggleButton Classes="icon" IsChecked="{Binding Map.IsPlacingPin}" ToolTip.Tip="{Binding PlacePinLabel}">
-                    <controls:SvgIcon Path="{DynamicResource PinDropIcon}"/>
+                    <controls:SvgIcon Source="{StaticResource PinDropIcon}"/>
                 </ToggleButton>
                 <Button Classes="icon" Command="{Binding Map.ZoomOutCommand}" ToolTip.Tip="{Binding ZoomOutLabel}">
-                    <controls:SvgIcon Path="{DynamicResource MinusIcon}"/>
+                    <controls:SvgIcon Source="{StaticResource MinusIcon}"/>
                 </Button>
                 <Button Classes="icon" Command="{Binding Map.ZoomInCommand}" ToolTip.Tip="{Binding ZoomInLabel}">
-                    <controls:SvgIcon Path="{DynamicResource PlusIcon}"/>
+                    <controls:SvgIcon Source="{StaticResource PlusIcon}"/>
                 </Button>
             </WrapPanel>
         </WrapPanel>

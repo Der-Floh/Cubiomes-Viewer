@@ -14,6 +14,12 @@ public interface IPinService
 
     MapPin Add(long seed, Dimension dimension, BlockPos position);
 
+    /// <summary>Moves a pin to another block of its map.</summary>
+    void Move(MapPin pin, BlockPos position);
+
+    /// <summary>Names a pin; a name of nothing but white space takes the name away.</summary>
+    void Rename(MapPin pin, string? name);
+
     /// <summary>Shows the glyph of the named marker in the head of a pin, or nothing for <see langword="null"/>.</summary>
     void SetIcon(MapPin pin, string? icon);
 

@@ -29,6 +29,9 @@
         <Setter Property="Height" Value="20"/>
         <Setter Property="IsHitTestVisible" Value="False"/>
     </Style>
+    <Style Selector="Button:pressed controls|SvgIcon, Button:flyout-open controls|SvgIcon, ToggleButton:checked controls|SvgIcon, ToggleButton.filter.filtered controls|SvgIcon, ListBox.rail ListBoxItem:selected controls|SvgIcon">
+        <Setter Property="IsFilled" Value="True"/>
+    </Style>
 
     <Style Selector="controls|MapView">
         <Setter Property="Background" Value="{DynamicResource MapBackgroundColor}"/>
@@ -366,6 +369,19 @@
         <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="Margin" Value="8,0"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+    </Style>
+    <Style Selector="TextBox.callout-title">
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="4,0"/>
+        <Setter Property="Padding" Value="4,2"/>
+        <Setter Property="MinHeight" Value="0"/>
+        <Setter Property="MinWidth" Value="96"/>
+        <Setter Property="MaxLength" Value="64"/>
+    </Style>
+    <Style Selector="TextBox.callout-title:not(:focus):not(:pointerover) /template/ Border#PART_BorderElement">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
     </Style>
     <Style Selector="Button.card-close">
         <Setter Property="Padding" Value="4"/>

@@ -29,12 +29,14 @@
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
-                <TextBlock Grid.Column="1" Classes="callout-title" Text="{Binding Title}"/>
+                <TextBlock Grid.Column="1" Classes="callout-title" Text="{Binding Title}" IsVisible="{Binding !IsPin}"/>
+                <TextBox Grid.Column="1" Classes="callout-title" Text="{Binding PinName}" PlaceholderText="{Binding PinPlaceholder}" IsVisible="{Binding IsPin}"
+                         ToolTip.Tip="{Binding PinNameLabel}"/>
                 <Button Grid.Column="2" Classes="card-close" IsVisible="{Binding IsPin}" Command="{Binding RemovePinCommand}" ToolTip.Tip="{Binding RemovePinLabel}">
-                    <controls:SvgIcon Path="{DynamicResource DeleteIcon}"/>
+                    <controls:SvgIcon Source="{StaticResource DeleteIcon}"/>
                 </Button>
                 <Button Grid.Column="3" Classes="card-close" Command="{Binding CloseCommand}" ToolTip.Tip="{Binding CloseLabel}">
-                    <controls:SvgIcon Path="{DynamicResource CloseIcon}"/>
+                    <controls:SvgIcon Source="{StaticResource CloseIcon}"/>
                 </Button>
             </Grid>
 

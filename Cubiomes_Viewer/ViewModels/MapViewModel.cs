@@ -181,6 +181,13 @@ public sealed partial class MapViewModel : ViewModelBase
         Selection = MapSelection.ForPin(pin);
     }
 
+    /// <summary>Moves a pin to another block and keeps it picked.</summary>
+    public void MovePin(MapPin pin, BlockPos block)
+    {
+        _pinService.Move(pin, block);
+        Selection = MapSelection.ForPin(pin);
+    }
+
     /// <summary>Moves the Y level of the world by whole wheel steps, within the heights the world bar offers.</summary>
     public void StepSampleHeight(int steps)
         => _session.SampleHeight = Math.Clamp(_session.SampleHeight + steps * Constants.SampleHeightWheelStep, Constants.MinSampleHeight, Constants.MaxSampleHeight);

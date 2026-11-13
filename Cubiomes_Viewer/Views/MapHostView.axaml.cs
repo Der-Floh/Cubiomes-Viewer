@@ -10,6 +10,8 @@ using Cubiomes_Viewer.Controls;
 using Cubiomes_Viewer.Controls.Map;
 using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Maps;
+using Cubiomes_Viewer.Engine.Data.Settings;
+using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Service.MapStyleServ;
 using Cubiomes_Viewer.ViewModels;
 
@@ -17,13 +19,18 @@ namespace Cubiomes_Viewer.Views;
 
 public sealed partial class MapHostView : UserControl, IMapImageSource
 {
+    private const double PinDragSlop = 4;
+
     private readonly MapViewModel _map;
     private readonly MapMenuViewModel _menu;
     private readonly SelectionViewModel _selection;
     private readonly MapLayerSet _layers;
     private readonly IMapStyleService _styleService;
 
+    private PinDrag? _pinDrag;
+
     private Cursor PlacingCursor => field ??= new Cursor(StandardCursorType.Cross);
+    private Cursor MovingCursor => field ??= new Cursor(StandardCursorType.SizeAll);
 
     public MapHostView(MapHostViewModel viewModel, MapLayerSet layers, IMapStyleService styleService)
     {
@@ -67,6 +74,10 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
         Callout.SizeChanged += OnCalloutSizeChanged;
         // The context flyout handles the bubbling event before other handlers see it, so listen while it tunnels.
         Map.AddHandler(ContextRequestedEvent, OnContextRequested, RoutingStrategies.Tunnel);
+        Map.AddHandler(PointerPressedEvent, OnMapPointerPressed, RoutingStrategies.Tunnel);
+        Map.AddHandler(PointerMovedEvent, OnMapPointerMoved, RoutingStrategies.Tunnel);
+        Map.AddHandler(PointerReleasedEvent, OnMapPointerReleased, RoutingStrategies.Tunnel);
+        Map.PointerCaptureLost += OnMapPointerCaptureLost;
         _map.NavigationRequested += OnNavigationRequested;
         _map.PropertyChanged += OnMapPropertyChanged;
         _selection.PropertyChanged += OnSelectionPropertyChanged;
@@ -89,6 +100,11 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
         Map.PropertyChanged -= OnMapViewPropertyChanged;
         Callout.SizeChanged -= OnCalloutSizeChanged;
         Map.RemoveHandler(ContextRequestedEvent, OnContextRequested);
+        Map.RemoveHandler(PointerPressedEvent, OnMapPointerPressed);
+        Map.RemoveHandler(PointerMovedEvent, OnMapPointerMoved);
+        Map.RemoveHandler(PointerReleasedEvent, OnMapPointerReleased);
+        Map.PointerCaptureLost -= OnMapPointerCaptureLost;
+        _pinDrag = null;
         _map.NavigationRequested -= OnNavigationRequested;
         _map.PropertyChanged -= OnMapPropertyChanged;
         _selection.PropertyChanged -= OnSelectionPropertyChanged;
@@ -119,6 +135,63 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
         if (e.PointerType != PointerType.Mouse)
             _map.SetHover(e.Block);
     }
+
+    /// <summary>Takes a press on the picked pin before the map would start panning, so that dragging moves the pin.</summary>
+    private void OnMapPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        var position = e.GetPosition(Map);
+        if (_map.Selection?.Pin is not { } pin || !e.GetCurrentPoint(Map).Properties.IsLeftButtonPressed || !IsOverPickedPin(position))
+            return;
+
+        _pinDrag = new PinDrag(pin, e.Pointer, position, PinLayer.GetTip(Map.Viewport, pin) - position);
+        e.Pointer.Capture(Map);
+        Map.Focus();
+        e.Handled = true;
+    }
+
+    private void OnMapPointerMoved(object? sender, PointerEventArgs e)
+    {
+        var position = e.GetPosition(Map);
+        if (_pinDrag is not { } drag || e.Pointer != drag.Pointer)
+        {
+            if (_pinDrag is null && !_map.IsPlacingPin)
+                Map.Cursor = IsOverPickedPin(position) ? MovingCursor : null;
+            return;
+        }
+
+        e.Handled = true;
+        if (!drag.IsMoving && ((Vector)(position - drag.Start)).Length < PinDragSlop)
+            return;
+
+        drag.IsMoving = true;
+        Map.Cursor = MovingCursor;
+        var block = Map.GetBlockAt(position + drag.TipOffset);
+        if (block != new BlockPos(drag.Pin.X, drag.Pin.Z))
+            _map.MovePin(drag.Pin, block);
+    }
+
+    private void OnMapPointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        if (_pinDrag is not { } drag || e.Pointer != drag.Pointer)
+            return;
+
+        e.Handled = true;
+        _pinDrag = null;
+        e.Pointer.Capture(null);
+        ShowPinPlacing();
+    }
+
+    private void OnMapPointerCaptureLost(object? sender, PointerCaptureLostEventArgs e)
+    {
+        if (_pinDrag?.Pointer != e.Pointer)
+            return;
+
+        _pinDrag = null;
+        ShowPinPlacing();
+    }
+
+    private bool IsOverPickedPin(Point position)
+        => _map.Selection is { Pin: not null } picked && _layers.Selection.GetMarkerBounds(Map.Viewport, picked).Contains(position);
 
     private void OnContextRequested(object? sender, ContextRequestedEventArgs e)
     {
@@ -201,5 +274,15 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
         var position = CalloutPlacement.Place(Callout.DesiredSize, marker, Map.Bounds.Size);
         Canvas.SetLeft(Callout, position.X);
         Canvas.SetTop(Callout, position.Y);
+    }
+
+    /// <summary>A press on the picked pin: where it began and how far the tip of the pin lies from the pointer.</summary>
+    private sealed class PinDrag(MapPin pin, IPointer pointer, Point start, Vector tipOffset)
+    {
+        public MapPin Pin { get; } = pin;
+        public IPointer Pointer { get; } = pointer;
+        public Point Start { get; } = start;
+        public Vector TipOffset { get; } = tipOffset;
+        public bool IsMoving { get; set; }
     }
 }

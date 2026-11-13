@@ -90,6 +90,22 @@ public sealed class SelectionViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void PinName_Typed_NamesThePinAndShowsItWhenPickedAgain()
+    {
+        var pin = _services.GetRequiredService<IPinService>().Add(_map.World.Seed, _map.World.Dimension, _spawn);
+        _map.Selection = MapSelection.ForPin(pin);
+        Assert.Equal(string.Empty, _selection.PinName);
+
+        _selection.PinName = "Base camp ";
+        _map.Selection = null;
+        _map.Selection = MapSelection.ForPin(pin);
+
+        Assert.Equal("Base camp", pin.Name);
+        Assert.Equal("Base camp", _selection.PinName);
+        Assert.Equal("Base camp", _map.Selection.Name);
+    }
+
+    [AvaloniaFact]
     public void RemovePin_PickedPin_TakesItAwayAndClosesTheCallout()
     {
         var pins = _services.GetRequiredService<IPinService>();

@@ -14,6 +14,7 @@ using Cubiomes_Viewer.Controls;
 using Cubiomes_Viewer.Controls.Map;
 using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Colors;
+using Cubiomes_Viewer.Engine.Data.Settings;
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Data.Worlds;
@@ -133,6 +134,49 @@ public sealed class MapHostViewTests : IDisposable
         Click(new Point(head.Center.X, head.Top + head.Width / 2));
 
         Assert.NotNull(_map.Selection?.Pin);
+    }
+
+    [AvaloniaFact]
+    public async Task Drag_OnThePickedPin_MovesThePinInsteadOfTheMap()
+    {
+        var spawn = await ShowSpawnAtTheCenterAsync();
+        _map.IsPlacingPin = true;
+        Click(new Point(_center.X + PinOffset, _center.Y + PinOffset));
+        var pin = Assert.IsType<MapPin>(_map.Selection?.Pin);
+        var camera = _map.Camera;
+        var tip = new Point(_center.X + PinOffset + 0.5, _center.Y + PinOffset + 0.5);
+        var bounds = _services.GetRequiredService<IMapStyleService>().GetPinBounds(tip, SelectionLayer.Magnification);
+        var grab = new Point(bounds.Center.X, bounds.Top + bounds.Width / 2);
+        var drop = new Point(grab.X + DragDistance, grab.Y);
+
+        _window.MouseDown(grab, MouseButton.Left);
+        _window.MouseMove(drop);
+        _window.MouseUp(drop, MouseButton.Left);
+
+        Assert.Equal(camera, _map.Camera);
+        Assert.Equal((spawn.X + PinOffset + DragDistance, spawn.Z + PinOffset), (pin.X, pin.Z));
+        Assert.Same(pin, _map.Selection?.Pin);
+        Assert.Equal(new BlockPos(pin.X, pin.Z), _map.Selection?.Position);
+    }
+
+    [AvaloniaFact]
+    public async Task Drag_OnAPinThatIsNotPicked_MovesTheMap()
+    {
+        var spawn = await ShowSpawnAtTheCenterAsync();
+        _map.IsPlacingPin = true;
+        Click(new Point(_center.X + PinOffset, _center.Y + PinOffset));
+        var pin = Assert.IsType<MapPin>(_map.Selection?.Pin);
+        _map.Selection = null;
+        var tip = new Point(_center.X + PinOffset + 0.5, _center.Y + PinOffset + 0.5);
+        var head = _services.GetRequiredService<IMapStyleService>().GetPinBounds(tip);
+        var grab = new Point(head.Center.X, head.Top + head.Width / 2);
+
+        _window.MouseDown(grab, MouseButton.Left);
+        _window.MouseMove(new Point(grab.X + DragDistance, grab.Y));
+        _window.MouseUp(new Point(grab.X + DragDistance, grab.Y), MouseButton.Left);
+
+        Assert.Equal(spawn.X - DragDistance, _map.Camera.CenterX);
+        Assert.Equal((spawn.X + PinOffset, spawn.Z + PinOffset), (pin.X, pin.Z));
     }
 
     [AvaloniaFact]

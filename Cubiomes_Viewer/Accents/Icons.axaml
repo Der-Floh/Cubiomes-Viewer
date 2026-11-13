@@ -1,0 +1,21 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:controls="using:Cubiomes_Viewer.Controls">
+
+    <controls:SvgIconSource x:Key="LayersIcon" Outlined="/Assets/Icons/layers.svg" Filled="/Assets/Icons/layers_filled.svg"/>
+    <controls:SvgIconSource x:Key="SearchIcon" Outlined="/Assets/Icons/search.svg"/>
+    <controls:SvgIconSource x:Key="AnalysisIcon" Outlined="/Assets/Icons/bar_chart.svg"/>
+    <controls:SvgIconSource x:Key="ExportIcon" Outlined="/Assets/Icons/download.svg"/>
+    <controls:SvgIconSource x:Key="MapWindowIcon" Outlined="/Assets/Icons/open_in_new.svg"/>
+    <controls:SvgIconSource x:Key="SettingsIcon" Outlined="/Assets/Icons/settings.svg" Filled="/Assets/Icons/settings_filled.svg"/>
+    <controls:SvgIconSource x:Key="DiceIcon" Outlined="/Assets/Icons/casino.svg" Filled="/Assets/Icons/casino_filled.svg"/>
+    <controls:SvgIconSource x:Key="GoToIcon" Outlined="/Assets/Icons/my_location.svg" Filled="/Assets/Icons/my_location_filled.svg"/>
+    <controls:SvgIconSource x:Key="HomeIcon" Outlined="/Assets/Icons/home.svg" Filled="/Assets/Icons/home_filled.svg"/>
+    <controls:SvgIconSource x:Key="PinDropIcon" Outlined="/Assets/Icons/pin_drop.svg" Filled="/Assets/Icons/pin_drop_filled.svg"/>
+    <controls:SvgIconSource x:Key="PlusIcon" Outlined="/Assets/Icons/add.svg"/>
+    <controls:SvgIconSource x:Key="MinusIcon" Outlined="/Assets/Icons/remove.svg"/>
+    <controls:SvgIconSource x:Key="CloseIcon" Outlined="/Assets/Icons/close.svg"/>
+    <controls:SvgIconSource x:Key="DeleteIcon" Outlined="/Assets/Icons/delete.svg" Filled="/Assets/Icons/delete_filled.svg"/>
+    <controls:SvgIconSource x:Key="FilterIcon" Outlined="/Assets/Icons/filter_alt.svg" Filled="/Assets/Icons/filter_alt_filled.svg"/>
+
+</ResourceDictionary>

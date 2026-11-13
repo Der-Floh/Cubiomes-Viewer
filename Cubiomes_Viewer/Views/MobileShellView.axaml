@@ -31,19 +31,19 @@
                 </ItemsPanelTemplate>
             </ListBox.ItemsPanel>
             <ListBoxItem ToolTip.Tip="{Binding LayersLabel}">
-                <controls:SvgIcon Path="{DynamicResource LayersIcon}"/>
+                <controls:SvgIcon Source="{StaticResource LayersIcon}"/>
             </ListBoxItem>
             <ListBoxItem ToolTip.Tip="{Binding SearchLabel}">
-                <controls:SvgIcon Path="{DynamicResource SearchIcon}"/>
+                <controls:SvgIcon Source="{StaticResource SearchIcon}"/>
             </ListBoxItem>
             <ListBoxItem ToolTip.Tip="{Binding AnalysisLabel}">
-                <controls:SvgIcon Path="{DynamicResource AnalysisIcon}"/>
+                <controls:SvgIcon Source="{StaticResource AnalysisIcon}"/>
             </ListBoxItem>
             <ListBoxItem ToolTip.Tip="{Binding ExportLabel}">
-                <controls:SvgIcon Path="{DynamicResource ExportIcon}"/>
+                <controls:SvgIcon Source="{StaticResource ExportIcon}"/>
             </ListBoxItem>
             <ListBoxItem ToolTip.Tip="{Binding SettingsLabel}">
-                <controls:SvgIcon Path="{DynamicResource SettingsIcon}"/>
+                <controls:SvgIcon Source="{StaticResource SettingsIcon}"/>
             </ListBoxItem>
         </ListBox>
     </Grid>

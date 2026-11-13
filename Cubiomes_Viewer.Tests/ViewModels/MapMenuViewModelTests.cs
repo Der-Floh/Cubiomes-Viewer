@@ -2,6 +2,7 @@ using Avalonia.Headless.XUnit;
 
 using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Worlds;
+using Cubiomes_Viewer.Engine.Service.PinServ;
 using Cubiomes_Viewer.Engine.Service.SeedServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
 using Cubiomes_Viewer.Service.ClipboardServ;
@@ -42,6 +43,18 @@ public sealed class MapMenuViewModelTests : IDisposable
         Assert.Equal("Copy chunk (-19, 62)", _menu.CopyChunkLabel);
         Assert.Equal("Copy region file (r.-1.1.mca)", _menu.CopyRegionFileLabel);
         Assert.Equal("Copy seed (262)", _menu.CopySeedLabel);
+    }
+
+    [AvaloniaFact]
+    public void PlacePin_FromTheMenu_PutsAPinOnItsBlockAndPicksIt()
+    {
+        _session.Seed = 262;
+
+        _menu.PlacePinCommand.Execute(null);
+
+        var pin = Assert.Single(_services.GetRequiredService<IPinService>().GetPins(262, Dimension.Overworld));
+        Assert.Equal((_position.X, _position.Z), (pin.X, pin.Z));
+        Assert.Same(pin, _map.Selection?.Pin);
     }
 
     [AvaloniaFact]

@@ -129,7 +129,7 @@
                             </StackPanel>
                         </ToggleButton>
                         <Button Grid.Column="1" Classes="card-close" Command="{Binding RemoveCommand}" ToolTip.Tip="{Binding RemoveLabel}">
-                            <controls:SvgIcon Path="{DynamicResource CloseIcon}"/>
+                            <controls:SvgIcon Source="{StaticResource CloseIcon}"/>
                         </Button>
                     </Grid>
                     <ItemsControl ItemsSource="{Binding Problems}" ItemTemplate="{StaticResource ProblemTemplate}" IsVisible="{Binding HasProblems}"/>
@@ -197,7 +197,7 @@
                             <Grid ColumnDefinitions="*,Auto">
                                 <Button Classes="preset" Content="{Binding Name}" Command="{Binding OpenCommand}"/>
                                 <Button Grid.Column="1" Classes="card-close" Command="{Binding DeleteCommand}" ToolTip.Tip="{Binding DeleteLabel}">
-                                    <controls:SvgIcon Path="{DynamicResource CloseIcon}"/>
+                                    <controls:SvgIcon Source="{StaticResource CloseIcon}"/>
                                 </Button>
                             </Grid>
                         </DataTemplate>

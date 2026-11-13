@@ -15,8 +15,6 @@
             <TextBlock Classes="section" Text="{Binding AppearanceLabel}"/>
             <TextBlock Classes="field-label" Text="{Binding ThemeLabel}"/>
             <ComboBox ItemsSource="{Binding Themes}" SelectedItem="{Binding SelectedTheme}" HorizontalAlignment="Stretch"/>
-            <TextBlock Classes="field-label" Text="{Binding IconStyleLabel}"/>
-            <ComboBox ItemsSource="{Binding IconStyles}" SelectedItem="{Binding SelectedIconStyle}" HorizontalAlignment="Stretch"/>
             <TextBlock Classes="field-label" Text="{Binding MarkerStyleLabel}"/>
             <ComboBox ItemsSource="{Binding MarkerStyles}" SelectedItem="{Binding SelectedMarkerStyle}" HorizontalAlignment="Stretch"/>
             <TextBlock Classes="field-label" Text="{Binding UiZoomLabel}"/>

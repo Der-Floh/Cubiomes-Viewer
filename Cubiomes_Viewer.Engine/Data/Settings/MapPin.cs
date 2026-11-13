@@ -10,8 +10,11 @@ public sealed class MapPin
     public int X { get; set; }
     public int Z { get; set; }
 
+    /// <summary>The name the user gave the pin, or <see langword="null"/> while it has none.</summary>
+    public string? Name { get; set; }
+
     /// <summary>The name of the marker whose glyph the pin shows, such as a structure type's; <see langword="null"/> for a plain pin.</summary>
     public string? Icon { get; set; }
 
-    public override string ToString() => $"Pin {Icon ?? "plain"} at {X}, {Z} ({Dimension} of {Seed})";
+    public override string ToString() => $"Pin {Name ?? Icon ?? "plain"} at {X}, {Z} ({Dimension} of {Seed})";
 }

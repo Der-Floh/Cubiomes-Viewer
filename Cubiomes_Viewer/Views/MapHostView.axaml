@@ -30,6 +30,7 @@
                     <MenuItem Header="{Binding Menu.CopySeedLabel}" Command="{Binding Menu.CopySeedCommand}"/>
                     <Separator/>
                     <MenuItem Header="{Binding Menu.MeasureLabel}" Command="{Binding Menu.ToggleMeasuringCommand}"/>
+                    <MenuItem Header="{Binding Menu.PlacePinLabel}" Command="{Binding Menu.PlacePinCommand}"/>
                     <Separator/>
                     <MenuItem Header="{Binding Menu.OpenShadowSeedLabel}" Command="{Binding Menu.OpenShadowSeedCommand}"
                               ToolTip.Tip="{Binding Menu.ShadowSeedHint}" ToolTip.ShowOnDisabled="True"/>

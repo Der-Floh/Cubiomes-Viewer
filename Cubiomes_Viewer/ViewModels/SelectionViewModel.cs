@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Input;
 
 using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Compute;
+using Cubiomes_Viewer.Engine.Data.Settings;
 using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.ComputeServ;
@@ -28,6 +29,8 @@ public sealed partial class SelectionViewModel : ViewModelBase
     public string CloseLabel { get; } = "Close";
     public string LoadingLabel { get; } = "Reading details...";
     public string PinLookLabel { get; } = "Change the pin's icon";
+    public string PinNameLabel { get; } = "Name the pin";
+    public string PinPlaceholder { get; } = MapSelection.PinName;
     public string RemovePinLabel { get; } = "Remove pin";
     public string PlainPinLabel { get; } = "Plain pin";
     public string SpawnPinLabel { get; } = "World spawn";
@@ -51,6 +54,10 @@ public sealed partial class SelectionViewModel : ViewModelBase
     [ObservableProperty]
     public partial bool IsPin { get; set; }
 
+    /// <summary>The name of the picked pin as it is typed.</summary>
+    [ObservableProperty]
+    public partial string PinName { get; set; } = string.Empty;
+
     /// <summary>The look of the picked pin.</summary>
     [ObservableProperty]
     public partial PinLookChoice? SelectedPinLook { get; set; }
@@ -71,6 +78,7 @@ public sealed partial class SelectionViewModel : ViewModelBase
     private readonly IStructureCatalog _structureCatalog;
     private readonly IMapStyleService _styleService;
     private CancellationTokenSource? _loading;
+    private MapPin? _shownPin;
 
     public SelectionViewModel(MapViewModel map, IComputeService computeService, IStructureDescriptionService descriptionService, IPinService pinService, IStructureCatalog structureCatalog,
         IMapStyleService styleService, INotificationService notificationService) : base(notificationService)
@@ -98,6 +106,12 @@ public sealed partial class SelectionViewModel : ViewModelBase
         _map.Selection = null;
     }
 
+    partial void OnPinNameChanged(string value)
+    {
+        if (_map.Selection?.Pin is { } pin)
+            _pinService.Rename(pin, value);
+    }
+
     partial void OnSelectedPinLookChanged(PinLookChoice? value)
     {
         if (value is not null && _map.Selection?.Pin is { } pin)
@@ -119,6 +133,8 @@ public sealed partial class SelectionViewModel : ViewModelBase
         IsLoading = false;
         IsOpen = selection is not null;
         IsPin = selection?.Pin is not null;
+        var previousPin = _shownPin;
+        _shownPin = selection?.Pin;
         if (selection is null)
             return;
 
@@ -126,7 +142,7 @@ public sealed partial class SelectionViewModel : ViewModelBase
         Marker = selection.Marker;
         PositionText = BlockPosText.ToLocation(selection.Position);
         if (selection.Pin is { } pin)
-            SelectedPinLook = PinLooks.FirstOrDefault(choice => choice.Look == _styleService.GetPinLook(pin.Icon)) ?? PinLooks[0];
+            ShowPin(pin, keepTypedName: pin == previousPin);
         if (selection.Structure is { } type)
             _ = RunGuardedAsync(() => LoadDetailsAsync(selection, type, _map.World));
     }
@@ -160,6 +176,14 @@ public sealed partial class SelectionViewModel : ViewModelBase
 
             loading.Dispose();
         }
+    }
+
+    /// <summary>Shows the name and look of a pin; the name typed so far stays while the same pin is picked anew, as it is while it moves.</summary>
+    private void ShowPin(MapPin pin, bool keepTypedName)
+    {
+        if (!keepTypedName)
+            PinName = pin.Name ?? string.Empty;
+        SelectedPinLook = PinLooks.FirstOrDefault(choice => choice.Look == _styleService.GetPinLook(pin.Icon)) ?? PinLooks[0];
     }
 
     private List<PinLookChoice> CreatePinLooks()

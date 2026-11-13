@@ -28,6 +28,29 @@ public sealed class PinService : IPinService
         return pin;
     }
 
+    public void Move(MapPin pin, BlockPos position)
+    {
+        ArgumentNullException.ThrowIfNull(pin);
+
+        if (pin.X == position.X && pin.Z == position.Z)
+            return;
+
+        (pin.X, pin.Z) = (position.X, position.Z);
+        StoreChange();
+    }
+
+    public void Rename(MapPin pin, string? name)
+    {
+        ArgumentNullException.ThrowIfNull(pin);
+
+        var trimmed = string.IsNullOrWhiteSpace(name) ? null : name.Trim();
+        if (string.Equals(pin.Name, trimmed, StringComparison.Ordinal))
+            return;
+
+        pin.Name = trimmed;
+        StoreChange();
+    }
+
     public void SetIcon(MapPin pin, string? icon)
     {
         ArgumentNullException.ThrowIfNull(pin);

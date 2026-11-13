@@ -11,7 +11,6 @@ using Cubiomes_Viewer.Engine.Service.SettingsServ;
 using Cubiomes_Viewer.Engine.Service.StructureServ;
 using Cubiomes_Viewer.Engine.Service.TileServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
-using Cubiomes_Viewer.Service.IconStyleServ;
 using Cubiomes_Viewer.Service.ThemeServ;
 using Cubiomes_Viewer.Service.UiZoomServ;
 using Cubiomes_Viewer.Service.WindowServ;
@@ -29,7 +28,6 @@ public sealed partial class SettingsViewModel : ViewModelBase
     public string Title { get; } = "Settings";
     public string AppearanceLabel { get; } = "Appearance";
     public string ThemeLabel { get; } = "Theme";
-    public string IconStyleLabel { get; } = "Icons";
     public string MarkerStyleLabel { get; } = "Map markers";
     public string UiZoomLabel { get; } = "Interface size";
     public string MapLabel { get; } = "Map";
@@ -54,9 +52,6 @@ public sealed partial class SettingsViewModel : ViewModelBase
 
     [ObservableProperty]
     public partial ComboChoice<AppTheme>? SelectedTheme { get; set; }
-
-    [ObservableProperty]
-    public partial ComboChoice<IconStyle>? SelectedIconStyle { get; set; }
 
     [ObservableProperty]
     public partial ComboChoice<MarkerStyle>? SelectedMarkerStyle { get; set; }
@@ -96,12 +91,6 @@ public sealed partial class SettingsViewModel : ViewModelBase
         new() { Display = "Follow system", Value = AppTheme.System },
         new() { Display = "Light", Value = AppTheme.Light },
         new() { Display = "Dark", Value = AppTheme.Dark },
-    ];
-
-    public ObservableCollection<ComboChoice<IconStyle>> IconStyles { get; } =
-    [
-        new() { Display = "Outlined", Value = IconStyle.Outlined },
-        new() { Display = "Filled", Value = IconStyle.Filled },
     ];
 
     public ObservableCollection<ComboChoice<MarkerStyle>> MarkerStyles { get; } =
@@ -151,7 +140,6 @@ public sealed partial class SettingsViewModel : ViewModelBase
     private readonly MapViewModel _map;
     private readonly ISettingsService _settingsService;
     private readonly IThemeService _themeService;
-    private readonly IIconStyleService _iconStyleService;
     private readonly IUiZoomService _uiZoomService;
     private readonly IMapTileService _tileService;
     private readonly IStructureCatalog _structureCatalog;
@@ -160,13 +148,12 @@ public sealed partial class SettingsViewModel : ViewModelBase
     private bool _isShowingSettings;
 
     public SettingsViewModel(MapViewModel map, WorldSettingsViewModel world, UpdateViewModel updates, SelfTestViewModel selfTest, ISettingsService settingsService, IThemeService themeService,
-        IIconStyleService iconStyleService, IUiZoomService uiZoomService, IMapTileService tileService, IStructureCatalog structureCatalog, IStructureFinder structureFinder,
+        IUiZoomService uiZoomService, IMapTileService tileService, IStructureCatalog structureCatalog, IStructureFinder structureFinder,
         IVersionCatalog versionCatalog, IWindowService windowService)
     {
         _map = map;
         _settingsService = settingsService;
         _themeService = themeService;
-        _iconStyleService = iconStyleService;
         _uiZoomService = uiZoomService;
         _tileService = tileService;
         _structureCatalog = structureCatalog;
@@ -177,7 +164,6 @@ public sealed partial class SettingsViewModel : ViewModelBase
         SelfTest = selfTest;
         CanRememberWindow = windowService.HasWindows;
         SelectedTheme = Themes[0];
-        SelectedIconStyle = IconStyles[0];
         SelectedMarkerStyle = MarkerStyles[0];
         SelectedUiZoom = UiZooms[0];
         SelectedGridMultiplier = GridMultipliers[0];
@@ -197,7 +183,6 @@ public sealed partial class SettingsViewModel : ViewModelBase
         try
         {
             SelectedTheme = Themes.First(choice => choice.Value == settings.Appearance.Theme);
-            SelectedIconStyle = IconStyles.FirstOrDefault(choice => choice.Value == settings.Appearance.IconStyle) ?? IconStyles[0];
             SelectedMarkerStyle = MarkerStyles.FirstOrDefault(choice => choice.Value == settings.Appearance.MarkerStyle) ?? MarkerStyles[0];
             SelectedUiZoom = UiZooms.FirstOrDefault(choice => choice.Value == settings.Appearance.UiZoom) ?? UiZooms[0];
             SmoothMotion = settings.Map.SmoothMotion;
@@ -219,8 +204,6 @@ public sealed partial class SettingsViewModel : ViewModelBase
     }
 
     partial void OnSelectedThemeChanged(ComboChoice<AppTheme>? value) => Store(settings => settings.Appearance.Theme = value?.Value ?? AppTheme.System);
-
-    partial void OnSelectedIconStyleChanged(ComboChoice<IconStyle>? value) => Store(settings => settings.Appearance.IconStyle = value?.Value ?? IconStyle.Outlined);
 
     partial void OnSelectedMarkerStyleChanged(ComboChoice<MarkerStyle>? value) => Store(settings => settings.Appearance.MarkerStyle = value?.Value ?? MarkerStyle.Blocky);
 
@@ -282,7 +265,6 @@ public sealed partial class SettingsViewModel : ViewModelBase
     {
         var settings = _settingsService.Current;
         _themeService.Apply(settings.Appearance.Theme);
-        _iconStyleService.Apply(settings.Appearance.IconStyle);
         _map.MarkerStyle = settings.Appearance.MarkerStyle;
         _uiZoomService.Apply(UiZooms.Any(choice => choice.Value == settings.Appearance.UiZoom) ? settings.Appearance.UiZoom : AppearanceSettings.DefaultUiZoom);
         _map.SmoothMotion = settings.Map.SmoothMotion;
