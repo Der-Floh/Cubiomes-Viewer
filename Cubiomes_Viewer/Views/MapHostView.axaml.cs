@@ -12,6 +12,7 @@ using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Settings;
 using Cubiomes_Viewer.Engine.Data.Worlds;
+using Cubiomes_Viewer.Extensions;
 using Cubiomes_Viewer.Service.MapStyleServ;
 using Cubiomes_Viewer.ViewModels;
 
@@ -49,7 +50,7 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
 
     public byte[] CapturePng()
     {
-        var scaling = TopLevel.GetTopLevel(this)?.RenderScaling ?? 1;
+        var scaling = Map.GetPixelGrid().Scaling;
         var size = new PixelSize((int)Math.Ceiling(Map.Bounds.Width * scaling), (int)Math.Ceiling(Map.Bounds.Height * scaling));
         if (size.Width <= 0 || size.Height <= 0)
             throw new InvalidOperationException("The map is not visible, so there is nothing to save.");

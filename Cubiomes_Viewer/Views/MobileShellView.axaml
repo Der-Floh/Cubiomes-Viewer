@@ -14,6 +14,10 @@
 
         <Panel Grid.Row="1">
             <Panel Name="MapSlot"/>
+            <StackPanel Classes="map-away" IsVisible="{Binding IsMapUndocked}">
+                <TextBlock Classes="damp" Text="{Binding MapWindowHint}"/>
+                <Button Content="{Binding DockMapLabel}" Command="{Binding ToggleMapWindowCommand}"/>
+            </StackPanel>
 
             <Border Classes="hover-chip" IsVisible="{Binding Map.HoverText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                 <TextBlock Classes="status" Text="{Binding Map.HoverText}"/>

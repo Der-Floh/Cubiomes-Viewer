@@ -18,6 +18,9 @@ internal sealed class MemoryStorageService : IStorageService
     public FilePickerSaveOptions? LastSaveOptions { get; private set; }
     public byte[]? SavedContent { get; private set; }
 
+    /// <summary>The saved content read as text, without a byte-order mark it starts with.</summary>
+    public string? SavedText => SavedContent is null ? null : new StreamReader(new MemoryStream(SavedContent), detectEncodingFromByteOrderMarks: true).ReadToEnd();
+
     /// <summary>What the open picker hands back, as if the user chose a file with it; nothing behaves as if they closed the picker.</summary>
     public byte[]? ContentToOpen { get; set; }
 

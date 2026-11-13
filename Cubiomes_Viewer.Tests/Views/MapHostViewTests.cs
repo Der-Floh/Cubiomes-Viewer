@@ -205,6 +205,21 @@ public sealed class MapHostViewTests : IDisposable
     }
 
     [AvaloniaFact]
+    public async Task RightClick_DuringADrag_NeitherPicksAMarkerNorEndsTheDrag()
+    {
+        var spawn = await ShowSpawnAtTheCenterAsync();
+
+        _window.MouseDown(_center, MouseButton.Left);
+        _window.MouseDown(_center, MouseButton.Right, RawInputModifiers.LeftMouseButton);
+        _window.MouseUp(_center, MouseButton.Right, RawInputModifiers.LeftMouseButton);
+        _window.MouseMove(new Point(_center.X + DragDistance, _center.Y), RawInputModifiers.LeftMouseButton);
+        _window.MouseUp(new Point(_center.X + DragDistance, _center.Y), MouseButton.Left);
+
+        Assert.Null(_map.Selection);
+        Assert.Equal(spawn.X - DragDistance, _map.Camera.CenterX);
+    }
+
+    [AvaloniaFact]
     public async Task RightClick_OnTheMap_PointsTheContextMenuAtTheClickedBlock()
     {
         var spawn = await ShowSpawnAtTheCenterAsync();

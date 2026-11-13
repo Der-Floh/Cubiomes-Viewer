@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Threading;
 
 using Cubiomes_Viewer.Engine.Data.Settings;
 using Cubiomes_Viewer.Engine.Service.SettingsServ;
@@ -43,10 +44,13 @@ public sealed partial class MainWindow : Window
     {
         base.OnPropertyChanged(change);
         if (change.Property == ClientSizeProperty || change.Property == WindowStateProperty)
-            RememberNormalPlacement();
+            RememberNormalPlacementOnceSettled();
     }
 
-    private void OnPositionChanged(object? sender, PixelPointEventArgs e) => RememberNormalPlacement();
+    private void OnPositionChanged(object? sender, PixelPointEventArgs e) => RememberNormalPlacementOnceSettled();
+
+    /// <summary>Waits for the window state, as maximizing reports the new size and position before the new state.</summary>
+    private void RememberNormalPlacementOnceSettled() => Dispatcher.UIThread.Post(RememberNormalPlacement, DispatcherPriority.Background);
 
     /// <summary>Keeps the size and position the window has while it is neither maximized nor minimized.</summary>
     private void RememberNormalPlacement()

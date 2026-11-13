@@ -229,7 +229,7 @@ public sealed class MapView : Control
 
         var point = e.GetCurrentPoint(this);
         Focus();
-        if (e.Pointer.Type == PointerType.Mouse && !point.Properties.IsLeftButtonPressed)
+        if (e.Pointer.Type == PointerType.Mouse && point.Properties.PointerUpdateKind != PointerUpdateKind.LeftButtonPressed)
             return;
 
         e.Pointer.Capture(this);
@@ -274,15 +274,17 @@ public sealed class MapView : Control
     {
         base.OnPointerReleased(e);
 
+        if (e.Pointer.Type == PointerType.Mouse && e.InitialPressMouseButton != MouseButton.Left)
+            return;
         if (!_pointers.Remove(e.Pointer.Id))
             return;
 
         e.Pointer.Capture(null);
         if (_pointers.Count == 0)
         {
-            RaiseClickIfTapped(e);
+            var isTap = RaiseClickIfTapped(e);
             _gestures.EndDrag(GetTime(e));
-            if (SmoothMotion && _gestures.HasInertia)
+            if (SmoothMotion && _gestures.HasInertia && !isTap)
                 RequestFrame();
             else
                 _gestures.StopInertia();
@@ -399,14 +401,16 @@ public sealed class MapView : Control
 
     private void OnLayerInvalidated(object? sender, EventArgs e) => InvalidateVisual();
 
-    private void RaiseClickIfTapped(PointerReleasedEventArgs e)
+    /// <summary>Raises a click when the pointer stayed near where it went down; returns whether it did, as a tap does not glide on.</summary>
+    private bool RaiseClickIfTapped(PointerReleasedEventArgs e)
     {
         if (_tapStart is null)
-            return;
+            return false;
 
         _tapStart = null;
         var position = e.GetPosition(this);
         Clicked?.Invoke(this, new MapClickEventArgs(position, GetBlockAt(position), e.Pointer.Type));
+        return true;
     }
 
     private void RaiseHover(Point position)

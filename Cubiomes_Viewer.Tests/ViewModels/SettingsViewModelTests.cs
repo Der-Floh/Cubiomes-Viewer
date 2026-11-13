@@ -1,5 +1,3 @@
-using System.Text;
-
 using Avalonia.Headless.XUnit;
 
 using Cubiomes_Viewer.Data;
@@ -142,7 +140,7 @@ public sealed class SettingsViewModelTests : IDisposable
         await biomes.SaveCommand.ExecuteAsync(null);
 
         var storage = (MemoryStorageService)_services.GetRequiredService<IStorageService>();
-        Assert.StartsWith("Seed;Biome;Samples;Share;", Encoding.UTF8.GetString(Assert.IsType<byte[]>(storage.SavedContent)), StringComparison.Ordinal);
+        Assert.StartsWith("Seed;Biome;Samples;Share;", Assert.IsType<string>(storage.SavedText), StringComparison.Ordinal);
     }
 
     [AvaloniaFact]

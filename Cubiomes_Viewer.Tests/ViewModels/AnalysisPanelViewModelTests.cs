@@ -1,5 +1,3 @@
-using System.Text;
-
 using Avalonia.Headless.XUnit;
 
 using Cubiomes_Viewer.Data;
@@ -81,7 +79,7 @@ public sealed class AnalysisPanelViewModelTests : IDisposable
         await Biomes.SaveCommand.ExecuteAsync(null);
 
         Assert.NotNull(Storage.SavedContent);
-        var lines = Encoding.UTF8.GetString(Storage.SavedContent).Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
+        var lines = Assert.IsType<string>(Storage.SavedText).Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
         Assert.Equal("biomes.csv", Storage.LastSaveOptions?.SuggestedFileName);
         Assert.Equal("Seed,Biome,Samples,Share,Nearest X,Nearest Z,Distance", lines[0]);
         Assert.Equal(Biomes.Rows.Count + 1, lines.Length);

@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
-using System.Text;
 
 using Avalonia.Platform.Storage;
 
@@ -115,7 +114,7 @@ public abstract partial class AnalysisTabViewModel : ViewModelBase
             return;
 
         var options = new FilePickerSaveOptions { Title = SaveLabel, SuggestedFileName = FileName, DefaultExtension = "csv", FileTypeChoices = [_csvFiles] };
-        if (await _storage.SaveFileAsync(options, Encoding.UTF8.GetBytes(_csv.Write(_table, _settingsService.Current.Export.CsvSeparator))) is { } name)
+        if (await _storage.SaveFileAsync(options, _csv.Write(_table, _settingsService.Current.Export.CsvSeparator)) is { } name)
             _notifications.ShowSuccess($"Saved {name}.");
     }, browserFireAndForget: true);
 

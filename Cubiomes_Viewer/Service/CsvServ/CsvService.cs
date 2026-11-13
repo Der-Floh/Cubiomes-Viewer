@@ -1,4 +1,4 @@
-using System.Globalization;
+using System.Text;
 
 using CsvHelper;
 
@@ -11,11 +11,15 @@ public sealed class CsvService : ICsvService
     /// <summary>The line break RFC 4180 ends records with.</summary>
     private const string LineBreak = "\r\n";
 
-    public string Write(CsvTable table, CsvSeparator separator)
+    /// <summary>UTF-8 with a byte-order mark, without which Excel reads the file in the code page of the machine.</summary>
+    private static readonly UTF8Encoding _encoding = new(encoderShouldEmitUTF8Identifier: true);
+
+    public byte[] Write(CsvTable table, CsvSeparator separator)
     {
         ArgumentNullException.ThrowIfNull(table);
 
-        using var text = new StringWriter(CultureInfo.InvariantCulture);
+        using var content = new MemoryStream();
+        using (var text = new StreamWriter(content, _encoding, leaveOpen: true))
         using (var csv = CsvWriter.Create(text, new CsvWriterOptions { Separator = ToCharacter(separator), NewLine = LineBreak }, leaveOpen: true))
         {
             WriteRecord(csv, table.Header);
@@ -23,7 +27,7 @@ public sealed class CsvService : ICsvService
                 WriteRecord(csv, row);
         }
 
-        return text.ToString();
+        return content.ToArray();
     }
 
     private static char ToCharacter(CsvSeparator separator) => separator switch
