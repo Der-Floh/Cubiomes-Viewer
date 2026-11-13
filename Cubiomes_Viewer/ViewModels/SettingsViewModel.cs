@@ -109,6 +109,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     public ObservableCollection<StructureZoomLimitViewModel> ZoomLimits { get; } = [];
 
     public WorldSettingsViewModel World { get; }
+    public UpdateViewModel Updates { get; }
     public SelfTestViewModel SelfTest { get; }
 
     private readonly MapViewModel _map;
@@ -120,7 +121,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     private readonly IVersionCatalog _versionCatalog;
     private bool _isShowingSettings;
 
-    public SettingsViewModel(MapViewModel map, WorldSettingsViewModel world, SelfTestViewModel selfTest, ISettingsService settingsService, IThemeService themeService, IMapTileService tileService,
+    public SettingsViewModel(MapViewModel map, WorldSettingsViewModel world, UpdateViewModel updates, SelfTestViewModel selfTest, ISettingsService settingsService, IThemeService themeService, IMapTileService tileService,
         IStructureCatalog structureCatalog, IStructureFinder structureFinder, IVersionCatalog versionCatalog, IWindowService windowService)
     {
         _map = map;
@@ -131,6 +132,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         _structureFinder = structureFinder;
         _versionCatalog = versionCatalog;
         World = world;
+        Updates = updates;
         SelfTest = selfTest;
         CanRememberWindow = windowService.HasWindows;
         SelectedTheme = Themes[0];
@@ -144,6 +146,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     public void ShowSettings()
     {
         World.ShowSettings();
+        Updates.ShowSettings();
 
         var settings = _settingsService.Current;
         _isShowingSettings = true;

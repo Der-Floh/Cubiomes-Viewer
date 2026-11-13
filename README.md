@@ -4,6 +4,19 @@ A cross-platform Minecraft Java Edition seed finder and biome map viewer for Des
 
 The project is in early development and has no release yet.
 
+## Installing
+
+Each release on [GitHub](https://github.com/Der-Floh/Cubiomes-Viewer/releases) carries:
+
+- Windows (x64 and ARM64): a setup and a portable zip. The setup is also on winget as `Der_Floh.CubiomesViewer`.
+- Linux (x64): an AppImage.
+- macOS (Apple Silicon and Intel): an installer package and a zipped app. Neither is signed, so macOS blocks the first start until it is allowed in System Settings → Privacy & Security → Open Anyway.
+- The command-line search for each of these systems, as a zip on Windows and a `.tar.gz` elsewhere.
+
+The [web version](https://der-floh.github.io/Cubiomes-Viewer) needs no installation.
+
+Installed desktop copies keep themselves up to date. When the app starts it looks for a newer release on GitHub, downloads it in the background and installs it when the app closes; Settings → Updates shows the version, checks on request, restarts into a downloaded update right away and turns the check at start off.
+
 ## Building
 
 Requirements:
@@ -32,6 +45,12 @@ dotnet run --project Cubiomes_Viewer.Desktop
 ```bash
 dotnet run --project Cubiomes_Viewer.Browser
 ```
+
+### Releases
+
+Publishing a release on GitHub runs `.github/workflows/publish.yml`. The tag sets the version, such as `v1.2.0`; a prerelease tag such as `v1.2.0-beta.1` makes a prerelease, which installed copies do not update to. The workflow publishes the desktop app self-contained for win-x64, win-arm64, linux-x64, osx-arm64 and osx-x64 with the `release` publish profile and packs each with Velopack as `CubiomesViewer`, with one update channel per runtime and no deltas. It installs and uninstalls each Windows setup, publishes the CLI for the same runtimes, uploads everything to the release together with the update feeds the installed apps read (`releases.<runtime>.json` and the `.nupkg` files), and then updates the winget package, whose first version has to be submitted by hand. `pages.yml` publishes the web version to GitHub Pages with each release. CI runs the engine and CLI tests on Windows, Linux and macOS, so a platform that generates different worlds fails the golden tests, and it runs the UI tests on Windows, publishes the web version and installs a Windows setup.
+
+Release packages can be tried before they are published: pack two versions into one folder with `vpk pack` and the options `publish.yml` uses, install the older one with its setup and start it with the environment variable `CUBIOMES_VIEWER_UPDATE_FEED` set to that folder. It then updates from the folder instead of from GitHub.
 
 ### Browser workers and storage
 

@@ -1,0 +1,5 @@
+<Project>
+  <Target Name="RestoreCubiomesSources" BeforeTargets="BeforeBuild" Condition="'$(DesignTimeBuild)' != 'true' And !Exists('$(MSBuildThisFileDirectory)cubiomes\generator.c')">
+    <Exec Command="git submodule update --init" WorkingDirectory="$(MSBuildThisFileDirectory).." />
+  </Target>
+</Project>

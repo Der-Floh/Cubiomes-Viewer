@@ -77,6 +77,20 @@
             <TextBlock Classes="field-label" Text="{Binding CsvSeparatorLabel}"/>
             <ComboBox Classes="fill" ItemsSource="{Binding CsvSeparators}" SelectedItem="{Binding SelectedCsvSeparator}"/>
 
+            <TextBlock Classes="section" Text="{Binding Updates.Title}"/>
+            <StackPanel Classes="form" DataContext="{Binding Updates}" x:DataType="vm:UpdateViewModel">
+                <TextBlock Text="{Binding VersionText}"/>
+                <StackPanel Classes="form" IsVisible="{Binding CanUpdate}">
+                    <CheckBox Content="{Binding CheckAtStartLabel}" IsChecked="{Binding CheckAtStart}"/>
+                    <TextBlock Classes="damp" Text="{Binding CheckAtStartHint}" TextWrapping="Wrap"/>
+                    <WrapPanel Classes="card-actions">
+                        <Button Classes="accent" Content="{Binding RestartLabel}" Command="{Binding RestartCommand}" IsVisible="{Binding IsReady}"/>
+                        <Button Content="{Binding CheckLabel}" Command="{Binding CheckCommand}" IsVisible="{Binding !IsReady}"/>
+                    </WrapPanel>
+                    <TextBlock Classes="damp" Text="{Binding StatusText}" TextWrapping="Wrap" IsVisible="{Binding StatusText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                </StackPanel>
+            </StackPanel>
+
             <Expander Classes="section-content" Header="{Binding DiagnosticsLabel}" HorizontalAlignment="Stretch">
                 <views:SelfTestView DataContext="{Binding SelfTest}"/>
             </Expander>

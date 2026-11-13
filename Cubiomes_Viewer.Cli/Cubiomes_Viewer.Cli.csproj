@@ -20,4 +20,10 @@
   </ItemGroup>
 
   <Import Project="..\native\CvNative.Desktop.targets" />
+
+  <Target Name="StripPdbsFromPublish" AfterTargets="ComputeResolvedFilesToPublishList">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="'%(Extension)' == '.pdb'" />
+    </ItemGroup>
+  </Target>
 </Project>

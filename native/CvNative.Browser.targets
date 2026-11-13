@@ -1,4 +1,6 @@
 <Project>
+  <Import Project="$(MSBuildThisFileDirectory)CvNative.Sources.targets" />
+
   <PropertyGroup>
     <WasmBuildNative>true</WasmBuildNative>
     <!-- The WASM SDK compiles .c NativeFileReference items in its emcc link command, so compiler flags go through the link flags. -->
@@ -13,7 +15,7 @@
   </ItemGroup>
 
   <!-- The WASM SDK relinks only when cvnative.c itself is newer, so a change to a file it includes is passed on to it. -->
-  <Target Name="RefreshCvNativeUnit" BeforeTargets="BeforeBuild" Inputs="@(CvNativeIncludedSource)" Outputs="$(MSBuildThisFileDirectory)shim\cvnative.c">
+  <Target Name="RefreshCvNativeUnit" BeforeTargets="BeforeBuild" DependsOnTargets="RestoreCubiomesSources" Inputs="@(CvNativeIncludedSource)" Outputs="$(MSBuildThisFileDirectory)shim\cvnative.c">
     <Touch Files="$(MSBuildThisFileDirectory)shim\cvnative.c" />
   </Target>
 

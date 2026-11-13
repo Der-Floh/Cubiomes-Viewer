@@ -1,4 +1,6 @@
 <Project>
+  <Import Project="$(MSBuildThisFileDirectory)CvNative.Sources.targets" />
+
   <PropertyGroup>
     <CvNativeRoot>$(MSBuildThisFileDirectory)</CvNativeRoot>
     <CvNativeRid>$(RuntimeIdentifier)</CvNativeRid>
@@ -13,10 +15,6 @@
     <CvNativeSource Include="$(CvNativeRoot)shim\**\*" />
     <CvNativeSource Include="$(CvNativeRoot)cubiomes\**\*.c;$(CvNativeRoot)cubiomes\**\*.h" />
   </ItemGroup>
-
-  <Target Name="RestoreCubiomesSources" Condition="'$(DesignTimeBuild)' != 'true' And !Exists('$(CvNativeRoot)cubiomes\generator.c')">
-    <Exec Command="git submodule update --init" WorkingDirectory="$(CvNativeRoot).." />
-  </Target>
 
   <Target Name="BuildCvNative" DependsOnTargets="RestoreCubiomesSources" Condition="'$(DesignTimeBuild)' != 'true'" Inputs="@(CvNativeSource)" Outputs="$(CvNativeLibraryPath)">
     <Exec Condition="$([MSBuild]::IsOSPlatform('Windows'))" Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(CvNativeRoot)build.ps1&quot; -Rid $(CvNativeRid)" />

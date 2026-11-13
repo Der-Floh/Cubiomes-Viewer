@@ -11,4 +11,5 @@ public sealed class AppSettings
     public SessionSettings Session { get; set; } = new();
     public ExportSettings Export { get; set; } = new();
     public ViewSettings View { get; set; } = new();
+    public UpdateSettings Update { get; set; } = new();
 }

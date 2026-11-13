@@ -15,6 +15,7 @@ using Cubiomes_Viewer.Service.StructureDescriptionServ;
 using Cubiomes_Viewer.Service.ThemeServ;
 using Cubiomes_Viewer.Service.TileBitmapServ;
 using Cubiomes_Viewer.Service.TopLevelServ;
+using Cubiomes_Viewer.Service.UpdateServ;
 using Cubiomes_Viewer.Service.WindowServ;
 using Cubiomes_Viewer.ViewModels;
 using Cubiomes_Viewer.Views;
@@ -50,7 +51,11 @@ public sealed partial class App : Application
         {
             LoadSettingsBeforeTheWindowOpens();
             desktop.MainWindow = Services.GetRequiredService<MainWindow>();
-            desktop.Exit += (_, _) => FlushStoredState();
+            desktop.Exit += (_, _) =>
+            {
+                FlushStoredState();
+                Services.GetRequiredService<IUpdateService>().InstallOnExit();
+            };
         }
         else if (ApplicationLifetime is IActivityApplicationLifetime activity)
         {
@@ -133,6 +138,7 @@ public sealed partial class App : Application
         services.AddSingleton<IClipboardService, ClipboardService>();
         services.AddSingleton<IStructureDescriptionService, StructureDescriptionService>();
         services.AddSingleton<IWindowService, WindowService>();
+        services.AddSingleton<IUpdateService, NoUpdateService>();
         services.AddSingleton<WorldSession>();
 
         // map layers
@@ -182,6 +188,7 @@ public sealed partial class App : Application
         services.AddSingleton<AnalysisPanelViewModel>();
         services.AddSingleton<ExportViewModel>();
         services.AddSingleton<WorldSettingsViewModel>();
+        services.AddSingleton<UpdateViewModel>();
         services.AddSingleton<SettingsViewModel>();
         services.AddTransient<SelfTestViewModel>();
 

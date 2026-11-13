@@ -98,6 +98,7 @@ public sealed partial class MainViewModel : ViewModelBase
         _isInitialized = true;
 
         await _searchPanel.LoadAsync(restore);
+        _ = _settingsPanel.Updates.CheckAtStartAsync();
     }
 
     /// <summary>Opens the version, dimension and layer of last time, and also its seed and place on the map when the session is restored.</summary>

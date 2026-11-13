@@ -1,0 +1,339 @@
+name: Publish Release
+
+on:
+  release:
+    types: [published]
+
+concurrency:
+  group: publish-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: "true"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
+  AUTHOR: Der_Floh
+  PACKAGE_NAME: CubiomesViewer
+  APP_TITLE: Cubiomes Viewer
+  MAC_BUNDLE_ID: io.github.der-floh.cubiomesviewer
+  DESKTOP_PROJECT: Cubiomes_Viewer.Desktop/Cubiomes_Viewer.Desktop.csproj
+  DESKTOP_EXE: Cubiomes_Viewer.Desktop
+  CLI_PROJECT: Cubiomes_Viewer.Cli/Cubiomes_Viewer.Cli.csproj
+  CLI_NAME: cubiomes-viewer-cli
+  ICON_PNG: Cubiomes_Viewer/Assets/icon-x256.png
+
+jobs:
+  version:
+    name: Resolve version
+    runs-on: ubuntu-latest
+
+    permissions: {}
+
+    outputs:
+      value: ${{ steps.version.outputs.value }}
+
+    steps:
+      - name: Resolve version
+        id: version
+        uses: Der-Floh/Der-Floh/.github/actions/resolve-version@v1
+        with:
+          tag: ${{ github.event.release.tag_name }}
+
+  windows:
+    name: Pack ${{ matrix.runtime }}
+    needs: version
+    runs-on: windows-latest
+
+    strategy:
+      matrix:
+        runtime: [win-x64, win-arm64]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          submodules: true
+
+      - name: Setup .NET
+        uses: Der-Floh/Der-Floh/.github/actions/setup-dotnet@v1
+
+      - name: Publish
+        id: publish
+        uses: Der-Floh/Der-Floh/.github/actions/dotnet-publish@v1
+        with:
+          project-path: ${{ env.DESKTOP_PROJECT }}
+          runtime: ${{ matrix.runtime }}
+          version: ${{ needs.version.outputs.value }}
+          publish-profile: release
+
+      - name: Pack
+        uses: Der-Floh/Der-Floh/.github/actions/velopack-pack@v1
+        with:
+          project-path: ${{ env.DESKTOP_PROJECT }}
+          publish-dir: ${{ steps.publish.outputs.dir }}
+          runtime: ${{ matrix.runtime }}
+          version: ${{ needs.version.outputs.value }}
+          author: ${{ env.AUTHOR }}
+          package-name: ${{ env.PACKAGE_NAME }}
+          splash-image: ${{ env.ICON_PNG }}
+          output-dir: artifacts
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-${{ matrix.runtime }}
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 3
+
+  verify-windows:
+    name: Verify ${{ matrix.runtime }}
+    needs: [version, windows]
+    runs-on: ${{ endsWith(matrix.runtime, 'arm64') && 'windows-11-arm' || 'windows-latest' }}
+
+    permissions: {}
+
+    strategy:
+      matrix:
+        runtime: [win-x64, win-arm64]
+
+    steps:
+      - name: Download packages
+        uses: actions/download-artifact@v8
+        with:
+          name: release-${{ matrix.runtime }}
+          path: artifacts
+
+      - name: Verify installer
+        uses: Der-Floh/Der-Floh/.github/actions/verify-velopack@v1
+        with:
+          setup-path: artifacts/${{ env.PACKAGE_NAME }}-${{ matrix.runtime }}-Setup.exe
+          package-name: ${{ env.PACKAGE_NAME }}
+          version: ${{ needs.version.outputs.value }}
+
+  linux:
+    name: Pack linux-x64
+    needs: version
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          submodules: true
+
+      - name: Setup .NET
+        uses: Der-Floh/Der-Floh/.github/actions/setup-dotnet@v1
+
+      - name: Publish
+        id: publish
+        uses: Der-Floh/Der-Floh/.github/actions/dotnet-publish@v1
+        with:
+          project-path: ${{ env.DESKTOP_PROJECT }}
+          runtime: linux-x64
+          version: ${{ needs.version.outputs.value }}
+          publish-profile: release
+
+      - name: Install vpk
+        run: |
+          version="$(sed -n 's/.*Include="Velopack" Version="\([^"]*\)".*/\1/p' Directory.Packages.props)"
+          dotnet tool install vpk --version "$version" --tool-path "$RUNNER_TEMP/vpk"
+
+      - name: Pack
+        env:
+          VERSION: ${{ needs.version.outputs.value }}
+          PUBLISH_DIR: ${{ steps.publish.outputs.dir }}
+        run: >
+          "$RUNNER_TEMP/vpk/vpk" pack
+          --packId "$PACKAGE_NAME" --packVersion "$VERSION" --packDir "$PUBLISH_DIR"
+          --mainExe "$DESKTOP_EXE" --packTitle "$APP_TITLE" --packAuthors "$AUTHOR"
+          --runtime linux-x64 --channel linux-x64 --icon "$ICON_PNG" --categories Utility
+          --delta None --outputDir artifacts
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-linux-x64
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 3
+
+  macos:
+    name: Pack ${{ matrix.runtime }}
+    needs: version
+    runs-on: macos-latest
+
+    strategy:
+      matrix:
+        runtime: [osx-arm64, osx-x64]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          submodules: true
+
+      - name: Setup .NET
+        uses: Der-Floh/Der-Floh/.github/actions/setup-dotnet@v1
+
+      - name: Publish
+        id: publish
+        uses: Der-Floh/Der-Floh/.github/actions/dotnet-publish@v1
+        with:
+          project-path: ${{ env.DESKTOP_PROJECT }}
+          runtime: ${{ matrix.runtime }}
+          version: ${{ needs.version.outputs.value }}
+          publish-profile: release
+
+      - name: Make the app icon
+        run: |
+          iconset="$RUNNER_TEMP/AppIcon.iconset"
+          mkdir -p "$iconset"
+          for size in 16 32 128 256 512; do
+            sips -z "$size" "$size" "$ICON_PNG" --out "$iconset/icon_${size}x${size}.png" > /dev/null
+            sips -z "$((size * 2))" "$((size * 2))" "$ICON_PNG" --out "$iconset/icon_${size}x${size}@2x.png" > /dev/null
+          done
+          iconutil -c icns "$iconset" -o "$RUNNER_TEMP/AppIcon.icns"
+
+      - name: Install vpk
+        run: |
+          version="$(sed -n 's/.*Include="Velopack" Version="\([^"]*\)".*/\1/p' Directory.Packages.props)"
+          dotnet tool install vpk --version "$version" --tool-path "$RUNNER_TEMP/vpk"
+
+      - name: Pack
+        env:
+          VERSION: ${{ needs.version.outputs.value }}
+          PUBLISH_DIR: ${{ steps.publish.outputs.dir }}
+          RUNTIME: ${{ matrix.runtime }}
+        run: >
+          "$RUNNER_TEMP/vpk/vpk" pack
+          --packId "$PACKAGE_NAME" --packVersion "$VERSION" --packDir "$PUBLISH_DIR"
+          --mainExe "$DESKTOP_EXE" --packTitle "$APP_TITLE" --packAuthors "$AUTHOR"
+          --runtime "$RUNTIME" --channel "$RUNTIME" --icon "$RUNNER_TEMP/AppIcon.icns" --bundleId "$MAC_BUNDLE_ID"
+          --delta None --outputDir artifacts
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-${{ matrix.runtime }}
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 3
+
+  cli:
+    name: CLI ${{ matrix.runtime }}
+    needs: version
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        include:
+          - runtime: win-x64
+            os: windows-latest
+          - runtime: win-arm64
+            os: windows-latest
+          - runtime: linux-x64
+            os: ubuntu-latest
+          - runtime: osx-arm64
+            os: macos-latest
+          - runtime: osx-x64
+            os: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          submodules: true
+
+      - name: Setup .NET
+        uses: Der-Floh/Der-Floh/.github/actions/setup-dotnet@v1
+
+      - name: Publish
+        id: publish
+        uses: Der-Floh/Der-Floh/.github/actions/dotnet-publish@v1
+        with:
+          project-path: ${{ env.CLI_PROJECT }}
+          runtime: ${{ matrix.runtime }}
+          version: ${{ needs.version.outputs.value }}
+          publish-profile: release
+
+      - name: Zip
+        if: runner.os == 'Windows'
+        uses: Der-Floh/Der-Floh/.github/actions/zip@v1
+        with:
+          path: ${{ steps.publish.outputs.dir }}
+          archive: artifacts/${{ env.CLI_NAME }}-${{ matrix.runtime }}.zip
+          folder-name: ${{ env.CLI_NAME }}
+
+      - name: Archive with file permissions
+        if: runner.os != 'Windows'
+        env:
+          PUBLISH_DIR: ${{ steps.publish.outputs.dir }}
+          RUNTIME: ${{ matrix.runtime }}
+        run: |
+          staging="$RUNNER_TEMP/cli-archive"
+          mkdir -p "$staging" artifacts
+          cp -R "$PUBLISH_DIR" "$staging/$CLI_NAME"
+          tar -czf "artifacts/$CLI_NAME-$RUNTIME.tar.gz" -C "$staging" "$CLI_NAME"
+
+      - name: Upload archive
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-cli-${{ matrix.runtime }}
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 3
+
+  release:
+    name: Upload to release
+    needs: [verify-windows, linux, macos, cli]
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+
+    steps:
+      - name: Download packages
+        uses: actions/download-artifact@v8
+        with:
+          pattern: release-*
+          path: artifacts
+          merge-multiple: true
+
+      - name: Upload to release
+        uses: softprops/action-gh-release@v3
+        with:
+          fail_on_unmatched_files: true
+          files: ./artifacts/*
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: |
+            ./artifacts/*.exe
+            ./artifacts/*.zip
+            ./artifacts/*.tar.gz
+            ./artifacts/*.AppImage
+            ./artifacts/*.pkg
+            ./artifacts/*.nupkg
+
+  winget:
+    name: WinGet
+    needs: release
+    if: ${{ !github.event.release.prerelease }}
+
+    permissions:
+      contents: read
+
+    uses: Der-Floh/Der-Floh/.github/workflows/app-publish-winget.yml@v1
+    with:
+      tag: ${{ github.event.release.tag_name }}
+      author: Der_Floh
+      package-name: CubiomesViewer
+      runtimes: '["win-x64", "win-arm64"]'
+    secrets:
+      WINGET_CREATE_GITHUB_TOKEN: ${{ secrets.WINGET_CREATE_GITHUB_TOKEN }}

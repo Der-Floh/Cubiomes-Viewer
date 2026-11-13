@@ -1,0 +1,122 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: "true"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
+  PACKAGE_NAME: CubiomesViewer
+  DESKTOP_PROJECT: Cubiomes_Viewer.Desktop/Cubiomes_Viewer.Desktop.csproj
+
+jobs:
+  test:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          submodules: true
+
+      - name: Setup .NET
+        uses: Der-Floh/Der-Floh/.github/actions/setup-dotnet@v1
+
+      - name: Test engine
+        run: dotnet test Cubiomes_Viewer.Engine.Tests -c Release -clp:ForceConsoleColor
+
+      - name: Test CLI
+        run: dotnet test Cubiomes_Viewer.Cli.Tests -c Release -clp:ForceConsoleColor
+
+      - name: Test UI
+        if: runner.os == 'Windows'
+        run: dotnet test Cubiomes_Viewer.Tests -c Release -clp:ForceConsoleColor
+
+  browser:
+    name: Publish web
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          submodules: true
+
+      - name: Setup .NET
+        uses: Der-Floh/Der-Floh/.github/actions/setup-dotnet@v1
+
+      - name: Install wasm-tools
+        run: dotnet workload install wasm-tools
+
+      - name: Publish
+        run: dotnet publish Cubiomes_Viewer.Browser -c Release -o publish-output -clp:ForceConsoleColor
+
+      - name: Check the worker was published with the app
+        run: test -f publish-output/wwwroot/worker/worker.js
+
+  package:
+    name: Package win-x64
+    runs-on: windows-latest
+
+    env:
+      PREVIEW_VERSION: 0.0.1
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          submodules: true
+
+      - name: Setup .NET
+        uses: Der-Floh/Der-Floh/.github/actions/setup-dotnet@v1
+
+      - name: Publish
+        id: publish
+        uses: Der-Floh/Der-Floh/.github/actions/dotnet-publish@v1
+        with:
+          project-path: ${{ env.DESKTOP_PROJECT }}
+          runtime: win-x64
+          version: ${{ env.PREVIEW_VERSION }}
+          publish-profile: release
+
+      - name: Pack
+        id: pack
+        uses: Der-Floh/Der-Floh/.github/actions/velopack-pack@v1
+        with:
+          project-path: ${{ env.DESKTOP_PROJECT }}
+          publish-dir: ${{ steps.publish.outputs.dir }}
+          runtime: win-x64
+          version: ${{ env.PREVIEW_VERSION }}
+          author: Der_Floh
+          package-name: ${{ env.PACKAGE_NAME }}
+          splash-image: Cubiomes_Viewer/Assets/icon-x256.png
+          output-dir: artifacts
+
+      - name: Verify installer
+        uses: Der-Floh/Der-Floh/.github/actions/verify-velopack@v1
+        with:
+          setup-path: ${{ steps.pack.outputs.setup-path }}
+          package-name: ${{ env.PACKAGE_NAME }}
+          version: ${{ env.PREVIEW_VERSION }}
+
+  automerge:
+    needs: [test, browser, package]
+    permissions:
+      contents: write
+      pull-requests: write
+    uses: Der-Floh/Der-Floh/.github/workflows/dependabot-automerge.yml@v1
