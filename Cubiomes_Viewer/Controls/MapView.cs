@@ -377,7 +377,17 @@ public sealed class MapView : Control
     private MapZoomLimits ZoomLimits => new(TileMetrics.MinBlocksPerPixel, TileMetrics.For(World, Layer).MaxBlocksPerPixel);
 
     private MapScene CreateScene()
-        => new(World, MapContent.For(World, Layer, SampleHeight, Octaves), Viewport, TopLevel.GetTopLevel(this)?.RenderScaling ?? 1);
+        => new(World, MapContent.For(World, Layer, SampleHeight, Octaves), Viewport, GetDeviceScaling());
+
+    /// <summary>Device pixels per unit of the map: the screen's scaling times any scale around the map, such as the interface size.</summary>
+    private double GetDeviceScaling()
+    {
+        if (TopLevel.GetTopLevel(this) is not { } topLevel)
+            return 1;
+
+        var transformScale = this.TransformToVisual(topLevel) is { } transform ? transform.M11 : 1;
+        return topLevel.RenderScaling * transformScale;
+    }
 
     private void AttachLayer(IMapLayer layer)
     {

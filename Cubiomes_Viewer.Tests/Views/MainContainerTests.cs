@@ -1,7 +1,10 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.Media;
 using Avalonia.VisualTree;
 
+using Cubiomes_Viewer.Service.UiZoomServ;
 using Cubiomes_Viewer.Service.WindowServ;
 using Cubiomes_Viewer.ViewModels;
 using Cubiomes_Viewer.Views;
@@ -55,6 +58,44 @@ public sealed class MainContainerTests : IDisposable
         Assert.Same(_window, TopLevel.GetTopLevel(_map));
         Assert.False(mapWindow.IsVisible);
         Assert.Equal("Open the map in its own window", _main.MapWindowLabel);
+    }
+
+    [AvaloniaFact]
+    public void UiZoom_Doubled_ScalesTheShellsAndFallsBackToTheCompactOneWhenThePanelsNoLongerFit()
+    {
+        var zoom = _services.GetRequiredService<IUiZoomService>();
+        var desktop = _window.GetVisualDescendants().OfType<DesktopShellView>().Single();
+        var mobile = _window.GetVisualDescendants().OfType<MobileShellView>().Single();
+        Assert.True(desktop.IsVisible);
+
+        zoom.Apply(200);
+        HeadlessInput.Render();
+
+        var scale = Assert.IsType<ScaleTransform>(_window.GetVisualDescendants().OfType<LayoutTransformControl>().First().LayoutTransform);
+        Assert.Equal((2.0, 2.0), (scale.ScaleX, scale.ScaleY));
+        Assert.True(mobile.IsVisible);
+        Assert.False(desktop.IsVisible);
+
+        zoom.Apply(100);
+        HeadlessInput.Render();
+
+        Assert.True(desktop.IsVisible);
+        Assert.False(mobile.IsVisible);
+    }
+
+    [AvaloniaFact]
+    public void UiZoom_Raised_ScalesTheOpenListOfAComboBoxToo()
+    {
+        _services.GetRequiredService<IUiZoomService>().Apply(150);
+        HeadlessInput.Render();
+        var combo = _window.GetVisualDescendants().OfType<ComboBox>().First(box => box.IsEffectivelyVisible);
+
+        combo.IsDropDownOpen = true;
+        HeadlessInput.Render();
+
+        var item = Assert.IsAssignableFrom<Control>(combo.ContainerFromIndex(0));
+        Assert.Equal(1.5, item.TransformToVisual(_window)?.M11);
+        combo.IsDropDownOpen = false;
     }
 
     [AvaloniaFact]

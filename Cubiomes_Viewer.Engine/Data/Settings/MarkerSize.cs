@@ -6,4 +6,5 @@ public enum MarkerSize
     Small,
     Normal,
     Large,
+    VeryLarge,
 }

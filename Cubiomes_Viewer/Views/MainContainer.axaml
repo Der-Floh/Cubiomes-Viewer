@@ -7,8 +7,10 @@
              AttachedToVisualTree="UserControl_AttachedToVisualTree"
              SizeChanged="UserControl_SizeChanged">
 
-    <Panel Name="ShellHost">
-        <WindowNotificationManager Name="MainWindowNotificationManager"/>
-    </Panel>
+    <LayoutTransformControl Name="Zoom">
+        <Panel Name="ShellHost">
+            <WindowNotificationManager Name="MainWindowNotificationManager"/>
+        </Panel>
+    </LayoutTransformControl>
 
 </UserControl>

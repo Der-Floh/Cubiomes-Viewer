@@ -16,6 +16,7 @@ using Cubiomes_Viewer.Service.StructureDescriptionServ;
 using Cubiomes_Viewer.Service.ThemeServ;
 using Cubiomes_Viewer.Service.TileBitmapServ;
 using Cubiomes_Viewer.Service.TopLevelServ;
+using Cubiomes_Viewer.Service.UiZoomServ;
 using Cubiomes_Viewer.Service.UpdateServ;
 using Cubiomes_Viewer.Service.WindowServ;
 using Cubiomes_Viewer.ViewModels;
@@ -135,6 +136,7 @@ public sealed partial class App : Application
         services.AddSingleton<INotificationService, NotificationService>();
         services.AddSingleton<IThemeService, ThemeService>();
         services.AddSingleton<IIconStyleService, IconStyleService>();
+        services.AddSingleton<IUiZoomService, UiZoomService>();
         services.AddSingleton<ITileBitmapService, TileBitmapService>();
         services.AddSingleton<IMapStyleService, MapStyleService>();
         services.AddSingleton<IClipboardService, ClipboardService>();

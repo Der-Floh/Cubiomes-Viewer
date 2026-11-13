@@ -13,9 +13,11 @@
         MinHeight="300" MinWidth="300"
         WindowStartupLocation="CenterScreen">
 
-    <Grid RowDefinitions="*,Auto">
-        <Panel Name="MapSlot"/>
-        <views:StatusBarView Grid.Row="1"/>
-    </Grid>
+    <LayoutTransformControl Name="Zoom">
+        <Grid RowDefinitions="*,Auto">
+            <Panel Name="MapSlot"/>
+            <views:StatusBarView Grid.Row="1"/>
+        </Grid>
+    </LayoutTransformControl>
 
 </Window>

@@ -13,6 +13,7 @@ using Cubiomes_Viewer.Engine.Repository.SessionRepo;
 using Cubiomes_Viewer.Engine.Repository.SettingsRepo;
 using Cubiomes_Viewer.Engine.Service.SettingsServ;
 using Cubiomes_Viewer.Service.StorageServ;
+using Cubiomes_Viewer.Service.UiZoomServ;
 using Cubiomes_Viewer.ViewModels;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -64,6 +65,29 @@ public sealed class SettingsViewModelTests : IDisposable
 
         Assert.Equal(IconStyle.Outlined, Stored.Appearance.IconStyle);
         Assert.Equal("/Assets/Icons/home.svg", GetIcon("HomeIcon"));
+    }
+
+    [AvaloniaFact]
+    public void MarkerSize_VeryLarge_DrawsMarkersLargerThanLargeAndIsStored()
+    {
+        _settings.SelectedMarkerSize = _settings.MarkerSizes.Single(choice => choice.Value == MarkerSize.Large);
+        var large = _map.MarkerScale;
+
+        _settings.SelectedMarkerSize = _settings.MarkerSizes.Single(choice => choice.Value == MarkerSize.VeryLarge);
+
+        Assert.True(_map.MarkerScale > large);
+        Assert.Equal(MarkerSize.VeryLarge, Stored.Map.MarkerSize);
+        Assert.Equal(["Small", "Normal", "Large", "Very large"], _settings.MarkerSizes.Select(choice => choice.Display));
+    }
+
+    [AvaloniaFact]
+    public void UiZoom_Chosen_ScalesTheInterfaceAndIsStored()
+    {
+        _settings.SelectedUiZoom = _settings.UiZooms.Single(choice => choice.Value == 150);
+
+        Assert.Equal(1.5, _services.GetRequiredService<IUiZoomService>().Scale);
+        Assert.Equal(150, Stored.Appearance.UiZoom);
+        Assert.Equal(["100 %", "125 %", "150 %", "200 %"], _settings.UiZooms.Select(choice => choice.Display));
     }
 
     [AvaloniaFact]

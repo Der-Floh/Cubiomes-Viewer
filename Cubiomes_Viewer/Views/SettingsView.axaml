@@ -19,6 +19,8 @@
             <ComboBox ItemsSource="{Binding IconStyles}" SelectedItem="{Binding SelectedIconStyle}" HorizontalAlignment="Stretch"/>
             <TextBlock Classes="field-label" Text="{Binding MarkerStyleLabel}"/>
             <ComboBox ItemsSource="{Binding MarkerStyles}" SelectedItem="{Binding SelectedMarkerStyle}" HorizontalAlignment="Stretch"/>
+            <TextBlock Classes="field-label" Text="{Binding UiZoomLabel}"/>
+            <ComboBox ItemsSource="{Binding UiZooms}" SelectedItem="{Binding SelectedUiZoom}" HorizontalAlignment="Stretch"/>
 
             <TextBlock Classes="section" Text="{Binding MapLabel}"/>
             <CheckBox Content="{Binding SmoothMotionLabel}" IsChecked="{Binding SmoothMotion}"/>

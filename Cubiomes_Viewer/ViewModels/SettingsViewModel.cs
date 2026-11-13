@@ -13,6 +13,7 @@ using Cubiomes_Viewer.Engine.Service.TileServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
 using Cubiomes_Viewer.Service.IconStyleServ;
 using Cubiomes_Viewer.Service.ThemeServ;
+using Cubiomes_Viewer.Service.UiZoomServ;
 using Cubiomes_Viewer.Service.WindowServ;
 
 namespace Cubiomes_Viewer.ViewModels;
@@ -22,6 +23,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     private const long BytesPerMegabyte = 1024 * 1024;
     private const double SmallMarkerScale = 0.75;
     private const double LargeMarkerScale = 1.35;
+    private const double VeryLargeMarkerScale = 1.8;
     private const int MaxGridSpacing = 1_000_000;
 
     public string Title { get; } = "Settings";
@@ -29,6 +31,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     public string ThemeLabel { get; } = "Theme";
     public string IconStyleLabel { get; } = "Icons";
     public string MarkerStyleLabel { get; } = "Map markers";
+    public string UiZoomLabel { get; } = "Interface size";
     public string MapLabel { get; } = "Map";
     public string SmoothMotionLabel { get; } = "Smooth motion";
     public string CacheLabel { get; } = "Tile cache (MB)";
@@ -57,6 +60,9 @@ public sealed partial class SettingsViewModel : ViewModelBase
 
     [ObservableProperty]
     public partial ComboChoice<MarkerStyle>? SelectedMarkerStyle { get; set; }
+
+    [ObservableProperty]
+    public partial ComboChoice<int>? SelectedUiZoom { get; set; }
 
     [ObservableProperty]
     public partial bool SmoothMotion { get; set; } = true;
@@ -104,6 +110,14 @@ public sealed partial class SettingsViewModel : ViewModelBase
         new() { Display = "Clean", Value = MarkerStyle.Clean },
     ];
 
+    public ObservableCollection<ComboChoice<int>> UiZooms { get; } =
+    [
+        new() { Display = "100 %", Value = AppearanceSettings.DefaultUiZoom },
+        new() { Display = "125 %", Value = 125 },
+        new() { Display = "150 %", Value = 150 },
+        new() { Display = "200 %", Value = 200 },
+    ];
+
     public ObservableCollection<ComboChoice<int>> GridMultipliers { get; } =
     [
         new() { Display = "2 (doubling)", Value = 2 },
@@ -117,6 +131,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         new() { Display = "Small", Value = MarkerSize.Small },
         new() { Display = "Normal", Value = MarkerSize.Normal },
         new() { Display = "Large", Value = MarkerSize.Large },
+        new() { Display = "Very large", Value = MarkerSize.VeryLarge },
     ];
 
     public ObservableCollection<ComboChoice<CsvSeparator>> CsvSeparators { get; } =
@@ -137,6 +152,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     private readonly ISettingsService _settingsService;
     private readonly IThemeService _themeService;
     private readonly IIconStyleService _iconStyleService;
+    private readonly IUiZoomService _uiZoomService;
     private readonly IMapTileService _tileService;
     private readonly IStructureCatalog _structureCatalog;
     private readonly IStructureFinder _structureFinder;
@@ -144,12 +160,14 @@ public sealed partial class SettingsViewModel : ViewModelBase
     private bool _isShowingSettings;
 
     public SettingsViewModel(MapViewModel map, WorldSettingsViewModel world, UpdateViewModel updates, SelfTestViewModel selfTest, ISettingsService settingsService, IThemeService themeService,
-        IIconStyleService iconStyleService, IMapTileService tileService, IStructureCatalog structureCatalog, IStructureFinder structureFinder, IVersionCatalog versionCatalog, IWindowService windowService)
+        IIconStyleService iconStyleService, IUiZoomService uiZoomService, IMapTileService tileService, IStructureCatalog structureCatalog, IStructureFinder structureFinder,
+        IVersionCatalog versionCatalog, IWindowService windowService)
     {
         _map = map;
         _settingsService = settingsService;
         _themeService = themeService;
         _iconStyleService = iconStyleService;
+        _uiZoomService = uiZoomService;
         _tileService = tileService;
         _structureCatalog = structureCatalog;
         _structureFinder = structureFinder;
@@ -161,6 +179,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         SelectedTheme = Themes[0];
         SelectedIconStyle = IconStyles[0];
         SelectedMarkerStyle = MarkerStyles[0];
+        SelectedUiZoom = UiZooms[0];
         SelectedGridMultiplier = GridMultipliers[0];
         SelectedMarkerSize = MarkerSizes[1];
         SelectedCsvSeparator = CsvSeparators[0];
@@ -180,6 +199,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
             SelectedTheme = Themes.First(choice => choice.Value == settings.Appearance.Theme);
             SelectedIconStyle = IconStyles.FirstOrDefault(choice => choice.Value == settings.Appearance.IconStyle) ?? IconStyles[0];
             SelectedMarkerStyle = MarkerStyles.FirstOrDefault(choice => choice.Value == settings.Appearance.MarkerStyle) ?? MarkerStyles[0];
+            SelectedUiZoom = UiZooms.FirstOrDefault(choice => choice.Value == settings.Appearance.UiZoom) ?? UiZooms[0];
             SmoothMotion = settings.Map.SmoothMotion;
             CacheMegabytes = Math.Clamp(settings.Map.CacheMegabytes, MapSettings.MinCacheMegabytes, MapSettings.MaxCacheMegabytes);
             GridSpacing = Math.Clamp(settings.Map.GridSpacing, 1, MaxGridSpacing);
@@ -203,6 +223,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
     partial void OnSelectedIconStyleChanged(ComboChoice<IconStyle>? value) => Store(settings => settings.Appearance.IconStyle = value?.Value ?? IconStyle.Outlined);
 
     partial void OnSelectedMarkerStyleChanged(ComboChoice<MarkerStyle>? value) => Store(settings => settings.Appearance.MarkerStyle = value?.Value ?? MarkerStyle.Blocky);
+
+    partial void OnSelectedUiZoomChanged(ComboChoice<int>? value) => Store(settings => settings.Appearance.UiZoom = value?.Value ?? AppearanceSettings.DefaultUiZoom);
 
     partial void OnSmoothMotionChanged(bool value) => Store(settings => settings.Map.SmoothMotion = value);
 
@@ -262,6 +284,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         _themeService.Apply(settings.Appearance.Theme);
         _iconStyleService.Apply(settings.Appearance.IconStyle);
         _map.MarkerStyle = settings.Appearance.MarkerStyle;
+        _uiZoomService.Apply(UiZooms.Any(choice => choice.Value == settings.Appearance.UiZoom) ? settings.Appearance.UiZoom : AppearanceSettings.DefaultUiZoom);
         _map.SmoothMotion = settings.Map.SmoothMotion;
         _map.GridSpacing = settings.Map.GridSpacing;
         _map.GridMultiplier = settings.Map.GridMultiplier;
@@ -275,6 +298,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         MarkerSize.Small => SmallMarkerScale,
         MarkerSize.Normal => 1,
         MarkerSize.Large => LargeMarkerScale,
+        MarkerSize.VeryLarge => VeryLargeMarkerScale,
         _ => throw new NotSupportedException($"Unsupported marker size: {size}"),
     };
 }

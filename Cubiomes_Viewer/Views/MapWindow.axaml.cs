@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Media;
 
 namespace Cubiomes_Viewer.Views;
 
@@ -12,4 +13,7 @@ public sealed partial class MapWindow : Window
     {
         InitializeComponent();
     }
+
+    /// <summary>Scales the window's content by the interface size, as the main window's is.</summary>
+    public void ShowZoom(double scale) => Zoom.LayoutTransform = new ScaleTransform(scale, scale);
 }
