@@ -41,6 +41,9 @@ public sealed class MapView : Control
     /// <summary>Raised when the map is clicked or tapped without being dragged.</summary>
     public event EventHandler<MapClickEventArgs>? Clicked;
 
+    /// <summary>Raised when the wheel turns while Shift is held: turning it as if to zoom in lowers the Y level.</summary>
+    public event EventHandler<MapHeightStepEventArgs>? HeightStepped;
+
     public IBrush? Background
     {
         get => GetValue(BackgroundProperty);
@@ -92,6 +95,9 @@ public sealed class MapView : Control
     private Point? _tapStart;
     private Point _pinchCenter;
     private double _pinchDistance;
+
+    /// <summary>Turns of the wheel with Shift that do not add up to a whole step yet, as trackpads send them.</summary>
+    private double _heightWheel;
     private Navigation? _navigation;
     private TimeSpan? _lastFrameTime;
     private bool _isFrameRequested;
@@ -311,12 +317,32 @@ public sealed class MapView : Control
         base.OnPointerWheelChanged(e);
 
         var position = e.GetPosition(this);
+        if (e.KeyModifiers.HasFlag(KeyModifiers.Shift))
+            StepHeight(e.Delta);
+        else
+            ZoomAt(position, e.Delta.Y);
+        RaiseHover(position);
+        e.Handled = true;
+    }
+
+    private void ZoomAt(Point position, double wheelDelta)
+    {
         _navigation = null;
         _gestures.StopInertia();
         SetCurrentValue(CameraProperty, MapGestureController.ZoomAt(
-            Viewport, position.X, position.Y, Math.Pow(MapGestureController.WheelZoomStep, e.Delta.Y), ZoomLimits));
-        RaiseHover(position);
-        e.Handled = true;
+            Viewport, position.X, position.Y, Math.Pow(MapGestureController.WheelZoomStep, wheelDelta), ZoomLimits));
+    }
+
+    /// <summary>Some systems turn the wheel into a horizontal one while Shift is held, so either direction counts.</summary>
+    private void StepHeight(Vector wheelDelta)
+    {
+        _heightWheel += wheelDelta.Y != 0 ? wheelDelta.Y : wheelDelta.X;
+        var notches = (int)Math.Truncate(_heightWheel);
+        if (notches == 0)
+            return;
+
+        _heightWheel -= notches;
+        HeightStepped?.Invoke(this, new MapHeightStepEventArgs(-notches));
     }
 
     protected override void OnKeyDown(KeyEventArgs e)

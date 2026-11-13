@@ -158,6 +158,10 @@ public sealed partial class MapViewModel : ViewModelBase
 
     public void GoTo(double blockX, double blockZ) => Navigate(Camera with { CenterX = blockX, CenterZ = blockZ });
 
+    /// <summary>Moves the Y level of the world by whole wheel steps, within the heights the world bar offers.</summary>
+    public void StepSampleHeight(int steps)
+        => _session.SampleHeight = Math.Clamp(_session.SampleHeight + steps * Constants.SampleHeightWheelStep, Constants.MinSampleHeight, Constants.MaxSampleHeight);
+
     public void SetHover(BlockPos? position)
     {
         HoverPosition = position;

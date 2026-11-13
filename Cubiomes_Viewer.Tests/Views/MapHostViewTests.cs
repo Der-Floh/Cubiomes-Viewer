@@ -145,6 +145,53 @@ public sealed class MapHostViewTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void Wheel_TurnedToZoomInWithShift_LowersTheYLevelByABiomeCellInsteadOfZooming()
+    {
+        _session.SampleHeight = 64;
+        var camera = _map.Camera;
+
+        _window.MouseWheel(_center, new Vector(0, 1), RawInputModifiers.Shift);
+
+        Assert.Equal(64 - Constants.SampleHeightWheelStep, _session.SampleHeight);
+        Assert.Equal(camera, _map.Camera);
+    }
+
+    [AvaloniaFact]
+    public void Wheel_TurnedToZoomOutWithShiftAsAHorizontalWheel_RaisesTheYLevelUpToTheHighest()
+    {
+        _session.SampleHeight = Constants.MaxSampleHeight - 1;
+
+        _window.MouseWheel(_center, new Vector(-1, 0), RawInputModifiers.Shift);
+
+        Assert.Equal(Constants.MaxSampleHeight, _session.SampleHeight);
+    }
+
+    [AvaloniaFact]
+    public void Wheel_WithShiftInSmallTurns_MovesTheYLevelOnceTheyAddUpToANotch()
+    {
+        _session.SampleHeight = 64;
+
+        _window.MouseWheel(_center, new Vector(0, 0.5), RawInputModifiers.Shift);
+        var afterHalf = _session.SampleHeight;
+        _window.MouseWheel(_center, new Vector(0, 0.5), RawInputModifiers.Shift);
+
+        Assert.Equal(64, afterHalf);
+        Assert.Equal(64 - Constants.SampleHeightWheelStep, _session.SampleHeight);
+    }
+
+    [AvaloniaFact]
+    public void Wheel_WithoutShift_ZoomsAndKeepsTheYLevel()
+    {
+        _session.SampleHeight = 64;
+        var blocksPerPixel = _map.Camera.BlocksPerPixel;
+
+        _window.MouseWheel(_center, new Vector(0, 1));
+
+        Assert.True(_map.Camera.BlocksPerPixel < blocksPerPixel);
+        Assert.Equal(64, _session.SampleHeight);
+    }
+
+    [AvaloniaFact]
     public async Task Hover_OverALayerOfNumbers_ShowsItsValueAndItsLegend()
     {
         _session.Layer = LayerMode.Continentalness;

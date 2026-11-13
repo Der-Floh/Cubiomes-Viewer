@@ -11,4 +11,7 @@ public static class Constants
 
     public const int MinSampleHeight = -64;
     public const int MaxSampleHeight = 320;
+
+    /// <summary>How far one notch of the wheel with Shift moves the Y level: one biome cell.</summary>
+    public const int SampleHeightWheelStep = 4;
 }
