@@ -21,14 +21,15 @@
     <ProjectReference Include="..\Cubiomes_Viewer\Cubiomes_Viewer.csproj" />
   </ItemGroup>
 
-  <!-- Dev builds serve the worker under /worker/ through this reference. On publish the WASM SDK would merge
-       the worker's assemblies into this app's boot manifest, so the worker is published separately and copied instead. -->
+  <!-- Dev builds serve the worker under /worker/ through this reference, and every restore includes it, since the
+       WASM SDK's nested publish builds it too. On publish the WASM SDK would merge the worker's assemblies into this
+       app's boot manifest, so the worker is published separately and copied instead. -->
   <PropertyGroup>
     <WorkerProject>..\Cubiomes_Viewer.Browser.Worker\Cubiomes_Viewer.Browser.Worker.csproj</WorkerProject>
     <WorkerPublishDir>$(MSBuildProjectDirectory)\$(BaseIntermediateOutputPath)worker-publish\$(Configuration)\</WorkerPublishDir>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(_IsPublishing)' != 'true'">
+  <ItemGroup Condition="'$(_IsPublishing)' != 'true' Or '$(MSBuildIsRestoring)' == 'true'">
     <ProjectReference Include="$(WorkerProject)" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
