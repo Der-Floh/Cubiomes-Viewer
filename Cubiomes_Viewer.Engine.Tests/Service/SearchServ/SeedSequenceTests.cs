@@ -51,15 +51,15 @@ public sealed class SeedSequenceTests
     }
 
     [Fact]
-    public void List_Batches_CarryTheirSeedsInTheOrderOfTheList()
+    public void List_Batches_CarryEachSeedOnceInTheOrderOfTheList()
     {
         var sequence = new SeedListSequence(new SeedListSource { Seeds = [9, -3, 9, 7, 100] });
 
-        var batch = Assert.IsType<SearchBatchJob>(sequence.CreateBatch(_definition, 1, 3));
-        var last = Assert.IsType<SearchBatchJob>(sequence.CreateBatch(_definition, 4, 3));
+        var batch = Assert.IsType<SearchBatchJob>(sequence.CreateBatch(_definition, 1, 2));
+        var last = Assert.IsType<SearchBatchJob>(sequence.CreateBatch(_definition, 3, 3));
 
-        Assert.Equal((UInt128)5, sequence.Count);
-        Assert.Equal([-3L, 9, 7], Assert.IsType<long[]>(batch.Seeds));
+        Assert.Equal((UInt128)4, sequence.Count);
+        Assert.Equal([-3L, 7], Assert.IsType<long[]>(batch.Seeds));
         Assert.Equal(-3, batch.GetSeed(0));
         Assert.Equal([100L], Assert.IsType<long[]>(last.Seeds));
     }

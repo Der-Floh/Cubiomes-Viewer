@@ -42,7 +42,7 @@ public sealed class AnalysisEnvelopeTests
     public void StructureAndQuadListings_RoundTripThroughTheEnvelope()
     {
         var details = new StructureDetails { Type = StructureType.Village, Position = new BlockPos(16, 32), Variant = new StructureVariant { IsAbandoned = true, Size = 3, Biome = 1, Rotation = 2 }, Pieces = [] };
-        var structures = new StructureListing { Type = StructureType.Village, Entries = [new StructureEntry(new BlockPos(16, 32), details), new StructureEntry(new BlockPos(-8, 4), null)] };
+        var structures = new StructureListing { Type = StructureType.Village, Dimension = Dimension.Overworld, Entries = [new StructureEntry(new BlockPos(16, 32), details), new StructureEntry(new BlockPos(-8, 4), null)] };
         var quads = new QuadListing { Type = StructureType.SwampHut, Entries = [new QuadEntry(QuadQuality.Ideal, new BlockPos(1, 2), [new BlockPos(0, 0), new BlockPos(1, 0), new BlockPos(0, 1), new BlockPos(1, 1)], 3)] };
 
         var restoredStructures = RoundTrip(structures);
@@ -59,7 +59,7 @@ public sealed class AnalysisEnvelopeTests
     [Fact]
     public void ConditionLocations_RoundTripThroughTheEnvelope()
     {
-        var locations = new ConditionLocations { Seed = long.MaxValue, IsMatch = true, Places = [new ConditionPlace(1, new BlockPos(3, 4)), new ConditionPlace(7, new BlockPos(-5, 6))] };
+        var locations = new ConditionLocations { Seed = long.MaxValue, IsMatch = true, Places = [new ConditionPlace(1, new BlockPos(3, 4), Dimension.Overworld), new ConditionPlace(7, new BlockPos(-5, 6), Dimension.Nether)] };
 
         var restored = RoundTrip(locations);
 

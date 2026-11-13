@@ -3,7 +3,7 @@ using Cubiomes_Viewer.Engine.Data.Search;
 
 namespace Cubiomes_Viewer.Engine.Service.SearchServ;
 
-/// <summary>The seeds of a list in its order; each batch carries its seeds to the worker.</summary>
+/// <summary>The seeds of a list in its order, each seed once; each batch carries its seeds to the worker.</summary>
 public sealed class SeedListSequence : ISeedSequence
 {
     public UInt128 Count => (UInt128)_seeds.Length;
@@ -15,7 +15,7 @@ public sealed class SeedListSequence : ISeedSequence
     public SeedListSequence(SeedListSource source)
     {
         ArgumentNullException.ThrowIfNull(source);
-        _seeds = [.. source.Seeds];
+        _seeds = [.. source.Seeds.Distinct()];
     }
 
     public long GetSeed(UInt128 position) => _seeds[(int)position];

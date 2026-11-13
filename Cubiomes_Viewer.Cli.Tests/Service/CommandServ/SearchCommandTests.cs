@@ -143,6 +143,21 @@ public sealed class SearchCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task StoppedSession_WithAnotherWorkerCountInItsSetup_StillContinues()
+    {
+        var setup = FixtureSessions.Read(FixtureSessions.GetPath(FixtureSessions.SlimeChunks)).Setup;
+        var session = WriteStoppedSession(setup with { Workers = 0 }, setup with { Workers = 999 });
+        var app = await AppSearch.RunAsync(FixtureSessions.GetPath(FixtureSessions.SlimeChunks), AppData, Token);
+
+        var result = await CliRun.RunAsync(AppData, ["--session", session], cancellationToken: Token);
+
+        long[] expected = [0, 1, 2, .. app.Seeds.Take(setup.MaxResults - 3)];
+        Assert.Equal(ExitCodes.Success, result.ExitCode);
+        Assert.DoesNotContain("setup changed", result.Messages);
+        Assert.Equal(expected, result.Seeds);
+    }
+
+    [Fact]
     public async Task Reset_StoppedSession_StartsOver()
     {
         var setup = FixtureSessions.Read(FixtureSessions.GetPath(FixtureSessions.SlimeChunks)).Setup;

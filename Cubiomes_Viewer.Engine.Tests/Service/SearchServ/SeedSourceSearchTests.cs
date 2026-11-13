@@ -48,8 +48,35 @@ public sealed class SeedSourceSearchTests : IDisposable
 
         Assert.NotEmpty(expected);
         Assert.Equal(expected, _search.Results);
-        Assert.Equal(seeds.Length, _search.Progress.Scanned);
+        Assert.Equal((UInt128)seeds.Length, _search.Progress.Scanned);
         Assert.Equal(SearchState.Finished, _search.State);
+    }
+
+    [Fact]
+    public async Task StartAsync_SeedListWithRepeats_TestsAndReportsEachSeedOnce()
+    {
+        long[] seeds = [.. Enumerable.Range(0, 40_000).Select(index => (long)index * 7919 - 100_000)];
+        var setup = new SearchSetup { Definition = SearchRuns.SlimeChunks, Source = new SeedListSource { Seeds = [.. seeds, .. seeds] }, MaxResults = 10_000 };
+
+        await _search.StartAsync(setup, TestContext.Current.CancellationToken);
+
+        Assert.NotEmpty(_search.Results);
+        Assert.Equal(_search.Results.Distinct(), _search.Results);
+        Assert.Equal((UInt128)seeds.Length, _search.Progress.Scanned);
+    }
+
+    [Fact]
+    public void Restore_StructureSeedPositionBeyondTheRangeOfALong_IsKept()
+    {
+        var definition = ConditionTestBench.Define(Version, new StructureCondition { Id = 1, Type = StructureType.DesertPyramid, Area = SearchArea.Square(512) });
+        var setup = new SearchSetup { Definition = definition, Source = new StructureSeedSource { FirstStructureSeed = 0, LastStructureSeed = (1L << 48) - 1 } };
+        var scanned = (UInt128)long.MaxValue + 12_345;
+
+        _search.Restore(new SearchSnapshot { Setup = setup, Scanned = scanned, Results = [] });
+
+        Assert.Equal(SearchState.Paused, _search.State);
+        Assert.Equal(scanned, _search.Progress.Scanned);
+        Assert.Equal(scanned, _search.CreateSnapshot()?.Scanned);
     }
 
     [Fact]

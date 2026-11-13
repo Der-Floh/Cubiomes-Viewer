@@ -42,6 +42,8 @@ public sealed class BiomePatchConditionEvaluator : ConditionEvaluator<BiomePatch
         return (int)Math.Max(1, Math.Ceiling((double)condition.MinChunks * BlocksPerChunk / ((long)condition.Scale * condition.Scale)));
     }
 
+    protected override Dimension GetDimension(BiomePatchCondition condition, McVersion version) => condition.Dimension;
+
     protected override IEnumerable<string> Validate(BiomePatchCondition condition, SearchDefinition definition)
     {
         foreach (var problem in BiomeProblems.Find(condition.Biomes, condition.Dimension, definition.Version, _biomeCatalog))

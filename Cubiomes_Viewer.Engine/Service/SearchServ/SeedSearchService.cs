@@ -83,6 +83,16 @@ public sealed class SeedSearchService : ISeedSearchService
         return RunAsync(setup, cancellationToken);
     }
 
+    public Task ResumeAsync(SearchSetup setup, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(setup);
+        if (State != SearchState.Paused || !setup.SearchesLike(Setup))
+            throw new InvalidOperationException("No search of this setup is paused.");
+
+        Setup = setup;
+        return RunAsync(setup, cancellationToken);
+    }
+
     public SearchSnapshot? CreateSnapshot()
     {
         if (Setup is not { } setup)
@@ -101,11 +111,10 @@ public sealed class SeedSearchService : ISeedSearchService
     public void Restore(SearchSnapshot snapshot)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
-        ArgumentOutOfRangeException.ThrowIfNegative(snapshot.Scanned);
         ThrowIfRunning();
         Validate(snapshot.Setup);
 
-        Adopt(snapshot.Setup, (UInt128)snapshot.Scanned, snapshot.NextSeed, snapshot.Results);
+        Adopt(snapshot.Setup, snapshot.Scanned, snapshot.NextSeed, snapshot.Results);
         SetState(snapshot.IsFinished || _results.Count >= snapshot.Setup.MaxResults ? SearchState.Finished : SearchState.Paused);
     }
 
@@ -285,7 +294,7 @@ public sealed class SeedSearchService : ISeedSearchService
     {
         var speed = GetSpeed();
         var nextSeed = _sequence is { } sequence ? GetNextSeed(setup, sequence) : Progress.NextSeed;
-        Progress = new SearchProgress((long)UInt128.Min(_scanned, (UInt128)long.MaxValue), nextSeed, speed, GetRemaining(speed), Progress.Preparing);
+        Progress = new SearchProgress(_scanned, nextSeed, speed, GetRemaining(speed), Progress.Preparing);
         _lastProgressTimestamp = _timeProvider.GetTimestamp();
     }
 
@@ -322,7 +331,7 @@ public sealed class SeedSearchService : ISeedSearchService
         _speedSamples.Clear();
         _scanned = _scheduled = scanned;
         _batchSeeds = FirstBatchSeeds;
-        Progress = new SearchProgress((long)UInt128.Min(scanned, (UInt128)long.MaxValue), nextSeed, 0, null);
+        Progress = new SearchProgress(scanned, nextSeed, 0, null);
     }
 
     private void Validate(SearchSetup setup)

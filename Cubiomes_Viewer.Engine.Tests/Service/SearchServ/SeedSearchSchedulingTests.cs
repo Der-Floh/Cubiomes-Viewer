@@ -39,7 +39,7 @@ public sealed class SeedSearchSchedulingTests
         await _search.StartAsync(setup, TestContext.Current.CancellationToken);
 
         Assert.Equal(Enumerable.Range(-5, 256).Select(index => index * (long)MatchEvery), _search.Results);
-        Assert.Equal(255_001, _search.Progress.Scanned);
+        Assert.Equal((UInt128)255_001, _search.Progress.Scanned);
         Assert.Equal(SearchState.Finished, _search.State);
         Assert.True(_compute.AnsweredOutOfOrder > 0);
     });
@@ -53,7 +53,7 @@ public sealed class SeedSearchSchedulingTests
         await _search.StartAsync(setup, TestContext.Current.CancellationToken);
 
         Assert.Equal(Enumerable.Range(-5, 256).Select(index => index * (long)MatchEvery), _search.Results);
-        Assert.Equal(255_001, _search.Progress.Scanned);
+        Assert.Equal((UInt128)255_001, _search.Progress.Scanned);
         Assert.Equal(SearchState.Finished, _search.State);
         Assert.Equal(255_001, _compute.Tested);
         Assert.True(_compute.BatchSizes.Sum() > 255_001);
@@ -68,7 +68,7 @@ public sealed class SeedSearchSchedulingTests
 
         Assert.Equal(Enumerable.Range(1, 12).Select(index => index * (long)MatchEvery), _search.Results);
         Assert.Null(_search.Progress.NextSeed);
-        Assert.Equal(12 * MatchEvery, _search.Progress.Scanned);
+        Assert.Equal((UInt128)(12 * MatchEvery), _search.Progress.Scanned);
         Assert.Equal(SearchState.Finished, _search.State);
     });
 
@@ -109,7 +109,7 @@ public sealed class SeedSearchSchedulingTests
         var halfway = reports.First(progress => progress.Scanned >= 500_000);
         var remaining = Assert.NotNull(halfway.Remaining);
         Assert.Equal(SeedsPerMillisecond * 1000, halfway.SeedsPerSecond, tolerance: 1);
-        Assert.Equal((1_000_000 - halfway.Scanned) / (SeedsPerMillisecond * 1000), remaining.TotalSeconds, tolerance: 0.01);
+        Assert.Equal((1_000_000 - (double)halfway.Scanned) / (SeedsPerMillisecond * 1000), remaining.TotalSeconds, tolerance: 0.01);
         Assert.Null(reports[^1].Remaining);
         Assert.All(reports.Zip(reports.Skip(1)), pair => Assert.True(pair.First.Scanned <= pair.Second.Scanned));
     });
@@ -152,7 +152,7 @@ public sealed class SeedSearchSchedulingTests
 
         await _search.StartAsync(setup, TestContext.Current.CancellationToken);
 
-        Assert.Equal(2501, _search.Progress.Scanned);
+        Assert.Equal((UInt128)2501, _search.Progress.Scanned);
         Assert.Null(_search.Progress.NextSeed);
         Assert.Equal(SearchState.Finished, _search.State);
         Assert.Equal([9223372036854774000, 9223372036854775000], _search.Results);

@@ -21,7 +21,12 @@ public abstract class ConditionEvaluator<TCondition> : IConditionEvaluator where
         return Evaluate(Cast(condition), reference, context, pass, matches);
     }
 
+    public Dimension GetDimension(SearchCondition condition, McVersion version) => GetDimension(Cast(condition), version);
+
     protected abstract IEnumerable<string> Validate(TCondition condition, SearchDefinition definition);
+
+    /// <summary>Most kinds look in the Overworld; the others say where they look.</summary>
+    protected virtual Dimension GetDimension(TCondition condition, McVersion version) => Dimension.Overworld;
 
     protected abstract MatchStatus Evaluate(TCondition condition, BlockPos reference, SearchSeedContext context, SearchPass pass, List<BlockPos> matches);
 

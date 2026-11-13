@@ -15,7 +15,7 @@ public sealed class StructureListJobHandler(IStructureFinder structureFinder) : 
 
         var request = job.Request;
         if (!structureFinder.TryGetPlacement(request.Type, request.World.Version, out var placement))
-            return new StructureListing { Type = request.Type, Entries = [] };
+            return new StructureListing { Type = request.Type, Dimension = request.World.Dimension, Entries = [] };
 
         var generator = context.GetGenerator(request.World with { Dimension = placement.Dimension });
         var positions = generator.FindStructures(request.Type, request.Area.ToBlocks(request.Reference))
@@ -31,6 +31,6 @@ public sealed class StructureListJobHandler(IStructureFinder structureFinder) : 
             entries.Add(new StructureEntry(position, request.Describe ? generator.DescribeStructure(request.Type, position) : null));
         }
 
-        return new StructureListing { Type = request.Type, Entries = [.. entries] };
+        return new StructureListing { Type = request.Type, Dimension = placement.Dimension, Entries = [.. entries] };
     }
 }

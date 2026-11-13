@@ -97,7 +97,7 @@ public sealed partial class LocationAnalysisViewModel : AnalysisTabViewModel
     {
         var conditions = definition.Conditions.ToDictionary(condition => condition.Id);
         foreach (var place in locations.Places.OrderBy(place => place.ConditionId).ThenBy(place => place.Position.SquaredDistanceTo(Scope.Reference)))
-            Add(world, Format($"{place.ConditionId} · {Describe(conditions[place.ConditionId])}"), place.Position, locations.IsMatch, rows, table);
+            Add(world with { Dimension = place.Dimension }, Format($"{place.ConditionId} · {Describe(conditions[place.ConditionId])}"), place.Position, locations.IsMatch, rows, table);
     }
 
     private void Add(WorldKey world, string name, BlockPos position, bool? meetsConditions, List<AnalysisRow> rows, CsvTable table)

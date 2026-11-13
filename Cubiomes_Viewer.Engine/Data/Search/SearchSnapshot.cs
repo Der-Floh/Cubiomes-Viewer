@@ -5,7 +5,7 @@ public sealed record SearchSnapshot
 {
     public required SearchSetup Setup { get; init; }
 
-    public required long Scanned { get; init; }
+    public required UInt128 Scanned { get; init; }
 
     /// <summary>The seed the search continues with, or <see langword="null"/> when it is finished or not known yet.</summary>
     public long? NextSeed { get; init; }

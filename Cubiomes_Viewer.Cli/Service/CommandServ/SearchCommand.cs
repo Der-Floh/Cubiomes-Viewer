@@ -82,7 +82,7 @@ public sealed class SearchCommand : ISearchCommand
         }
     }
 
-    private bool IsLastSearch(SearchSetup setup, SearchState state) => _search.State == state && _search.Setup == setup;
+    private bool IsLastSearch(SearchSetup setup, SearchState state) => _search.State == state && setup.SearchesLike(_search.Setup);
 
     private async Task<int> ShowFinishedAsync(string? outputPath)
     {

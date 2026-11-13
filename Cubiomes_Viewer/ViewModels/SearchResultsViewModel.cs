@@ -80,7 +80,7 @@ public sealed partial class SearchResultsViewModel : ViewModelBase
     private void ShowSeeds()
     {
         var found = _search.Results;
-        if (found.Count < Seeds.Count || (Seeds.Count > 0 && found[0] != Seeds[0].Value))
+        if (!StartsWithTheShownSeeds(found))
             Seeds.Clear();
 
         for (var index = Seeds.Count; index < found.Count; index++)
@@ -88,5 +88,19 @@ public sealed partial class SearchResultsViewModel : ViewModelBase
 
         HasSeeds = Seeds.Count > 0;
         Title = HasSeeds ? $"Found seeds ({Seeds.Count.ToString("N0", CultureInfo.InvariantCulture)})" : "Found seeds";
+    }
+
+    private bool StartsWithTheShownSeeds(IReadOnlyList<long> found)
+    {
+        if (found.Count < Seeds.Count)
+            return false;
+
+        for (var index = 0; index < Seeds.Count; index++)
+        {
+            if (found[index] != Seeds[index].Value)
+                return false;
+        }
+
+        return true;
     }
 }

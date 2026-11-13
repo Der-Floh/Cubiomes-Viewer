@@ -8,6 +8,9 @@ public sealed class StructureListing
 {
     public required StructureType Type { get; init; }
 
+    /// <summary>The dimension the structures generate in.</summary>
+    public required Dimension Dimension { get; init; }
+
     public required StructureEntry[] Entries { get; init; }
 }
 

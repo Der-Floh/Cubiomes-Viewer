@@ -1,5 +1,6 @@
 using System.Globalization;
 
+using Cubiomes_Viewer.Engine.Data;
 using Cubiomes_Viewer.Engine.Data.Analysis;
 using Cubiomes_Viewer.Engine.Data.Compute;
 using Cubiomes_Viewer.Engine.Data.Search;
@@ -48,8 +49,10 @@ public sealed class AnalysisService : IAnalysisService
             return [$"The distance between samples must be one of {string.Join(", ", _scales)} blocks."];
 
         var grid = CreateGrid(request);
-        return (long)grid.SizeX * grid.SizeZ > MaxBiomeSamples
-            ? [string.Create(CultureInfo.InvariantCulture, $"The area needs more than {MaxBiomeSamples:N0} samples at {request.Scale} blocks per sample; sample it more coarsely or make it smaller.")]
+        if ((long)grid.SizeX * grid.SizeZ > MaxBiomeSamples)
+            return [string.Create(CultureInfo.InvariantCulture, $"The area needs more than {MaxBiomeSamples:N0} samples at {request.Scale} blocks per sample; sample it more coarsely or make it smaller.")];
+        return grid.SizeX > Constants.MaxAreaSideSamples
+            ? [string.Create(CultureInfo.InvariantCulture, $"The area may be at most {Constants.MaxAreaSideSamples:N0} samples wide at {request.Scale} blocks per sample; sample it more coarsely or make it narrower.")]
             : [];
     }
 
@@ -129,7 +132,7 @@ public sealed class AnalysisService : IAnalysisService
     private static IEnumerable<BiomeCensusJob> SplitIntoBands(BiomeCensusRequest request)
     {
         var grid = CreateGrid(request);
-        var rowsPerBand = Math.Max(1, SamplesPerJob / grid.SizeX);
+        var rowsPerBand = Math.Clamp(SamplesPerJob / grid.SizeX, 1, Constants.MaxAreaSideSamples);
         for (var row = 0; row < grid.SizeZ; row += rowsPerBand)
             yield return new BiomeCensusJob(request, row, Math.Min(rowsPerBand, grid.SizeZ - row));
     }

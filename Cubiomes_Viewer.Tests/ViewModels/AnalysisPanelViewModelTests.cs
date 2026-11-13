@@ -106,6 +106,50 @@ public sealed class AnalysisPanelViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void Structures_UntilChosenInTheTab_AreTheOnesOnTheMap()
+    {
+        _map.VisibleStructures = new HashSet<StructureType> { StructureType.Fortress, StructureType.Bastion };
+
+        Assert.Equal(["Bastion remnant", "Nether fortress"], Structures.Types.Where(toggle => toggle.IsChecked).Select(toggle => toggle.Name).Order());
+
+        Structures.Types.Single(toggle => toggle.Name == "Village").IsChecked = true;
+        _map.VisibleStructures = new HashSet<StructureType> { StructureType.Monument };
+
+        Assert.Equal(["Bastion remnant", "Nether fortress", "Village"], Structures.Types.Where(toggle => toggle.IsChecked).Select(toggle => toggle.Name).Order());
+    }
+
+    [AvaloniaFact]
+    public async Task Structures_OfTheNetherAndTheEnd_OpenTheDimensionTheyAreIn()
+    {
+        foreach (var toggle in Structures.Types)
+            toggle.IsChecked = toggle.Name is "Village" or "Nether fortress" or "End city";
+        _panel.Scope.Size = 4096;
+
+        await Structures.RunCommand.ExecuteAsync(null);
+
+        Assert.Empty(Notifications.Errors);
+        Assert.Equal(["End city", "Nether fortress", "Village"], Structures.Rows.Select(row => row.Title).Distinct().Order());
+        Assert.All(Structures.Rows, row => Assert.Equal(row.Title switch { "End city" => Dimension.End, "Nether fortress" => Dimension.Nether, _ => Dimension.Overworld }, row.World.Dimension));
+    }
+
+    [AvaloniaFact]
+    public async Task Locations_ConditionsInTheNether_OpenTheNether()
+    {
+        _services.GetRequiredService<ISearchSessionService>().Setup = new SearchSetup
+        {
+            Definition = new SearchDefinition { Version = McVersion.V1_16_5, Conditions = [new StructureCondition { Id = 1, Type = StructureType.Fortress, Area = SearchArea.Square(4096) }] },
+        };
+
+        await Locations.RunCommand.ExecuteAsync(null);
+
+        Assert.Empty(Notifications.Errors);
+        Assert.Equal(Dimension.Overworld, Locations.Rows.Single(row => row.Title == "World spawn").World.Dimension);
+        var fortresses = Locations.Rows.Where(row => row.Title == "1 · Nether fortress").ToList();
+        Assert.NotEmpty(fortresses);
+        Assert.All(fortresses, row => Assert.Equal(Dimension.Nether, row.World.Dimension));
+    }
+
+    [AvaloniaFact]
     public async Task Locations_SpawnAndTheSearchConditions_AreListed()
     {
         _services.GetRequiredService<ISearchSessionService>().Setup = new SearchSetup

@@ -1,3 +1,6 @@
+using System.Globalization;
+
+using Cubiomes_Viewer.Engine.Data;
 using Cubiomes_Viewer.Engine.Data.Search;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 
@@ -26,16 +29,20 @@ internal static class SampleGrid
     }
 
     /// <summary>The most samples an area can need, wherever it lies.</summary>
-    public static long CountAtMost(SearchArea area, int scale) => ((long)area.SizeX / scale + 2) * ((long)area.SizeZ / scale + 2);
+    public static long CountAtMost(SearchArea area, int scale) => SideAtMost(area.SizeX, scale) * SideAtMost(area.SizeZ, scale);
 
-    /// <summary>What keeps an area from being sampled every so many blocks: a spacing it does not offer, or too many samples.</summary>
+    /// <summary>What keeps an area from being sampled every so many blocks: a spacing it does not offer, too many samples, or too many along a side.</summary>
     public static IEnumerable<string> FindProblems(SearchArea area, int scale, int[] scales, int maxSamples)
     {
         if (!scales.Contains(scale))
             yield return $"The distance between samples must be one of {string.Join(", ", scales)} blocks.";
         else if (CountAtMost(area, scale) > maxSamples)
             yield return $"The area needs more than {maxSamples} samples at {scale} blocks per sample; sample it more coarsely or make it smaller.";
+        else if (Math.Max(SideAtMost(area.SizeX, scale), SideAtMost(area.SizeZ, scale)) > Constants.MaxAreaSideSamples)
+            yield return string.Create(CultureInfo.InvariantCulture, $"The area may be at most {Constants.MaxAreaSideSamples:N0} samples long on each side at {scale} blocks per sample; sample it more coarsely or make it narrower.");
     }
+
+    private static long SideAtMost(int size, int scale) => (long)size / scale + 2;
 
     private static int FloorDivide(int value, int divisor) => (int)Math.Floor(value / (double)divisor);
 }

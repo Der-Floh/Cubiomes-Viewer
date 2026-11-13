@@ -58,7 +58,7 @@ public sealed partial class SearchRunViewModel : ViewModelBase
     private Task StartAsync() => RunGuardedAsync(() => RunAsync(cancellationToken => _search.StartAsync(_setup.Setup, cancellationToken)));
 
     [RelayCommand(CanExecute = nameof(CanContinue))]
-    private Task ContinueAsync() => RunGuardedAsync(() => RunAsync(_search.ResumeAsync));
+    private Task ContinueAsync() => RunGuardedAsync(() => RunAsync(cancellationToken => _search.ResumeAsync(_setup.Setup, cancellationToken)));
 
     [RelayCommand(CanExecute = nameof(IsRunning))]
     private void Stop() => _stopping?.Cancel();
@@ -99,7 +99,7 @@ public sealed partial class SearchRunViewModel : ViewModelBase
     {
         var state = _search.State;
         IsRunning = state == SearchState.Running;
-        CanContinue = state == SearchState.Paused && _search.Setup == _setup.Setup;
+        CanContinue = state == SearchState.Paused && _setup.Setup.SearchesLike(_search.Setup);
         IsStartShown = !IsRunning && !CanContinue;
         HasSearch = state != SearchState.Idle;
         StatusText = SearchProgressText.DescribeState(state, _search.Progress, _search.Results.Count, _search.Setup?.MaxResults ?? 0, CanContinue);

@@ -12,8 +12,28 @@ public sealed class SeedServiceTests
     [InlineData("  262 ", 262L)]
     [InlineData("-9223372036854775808", long.MinValue)]
     [InlineData("+17", 17L)]
+    [InlineData("9223372036854775807", long.MaxValue)]
+    [InlineData("\t-42\n", -42L)]
+    [InlineData("\u0001262\u001f", 262L)]
+    [InlineData("１２３４５", 12345L)]
+    [InlineData("-٣٤", -34L)]
     public void Parse_Number_IsUsedAsSeed(string text, long expected)
         => Assert.Equal(new SeedParseResult(expected, SeedKind.Numeric), _parser.Parse(text));
+
+    [Theory]
+    [InlineData("12345　")]
+    [InlineData(" 262")]
+    [InlineData("²")]
+    [InlineData("-")]
+    [InlineData("+-1")]
+    [InlineData("1_000")]
+    public void Parse_TextJavaDoesNotReadAsANumber_IsHashedAsItIs(string text)
+    {
+        var result = _parser.Parse(text);
+
+        Assert.Equal(SeedKind.Text, result.Kind);
+        Assert.Equal(text.Aggregate(0, (hash, character) => unchecked(31 * hash + character)), result.Seed);
+    }
 
     [Theory]
     [InlineData("hello", 99162322L)]

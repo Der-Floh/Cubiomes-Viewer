@@ -36,7 +36,7 @@ public static class SearchProgressText
         if (state == SearchState.Running && progress.Preparing is { } share)
             return string.Create(CultureInfo.InvariantCulture, $"{share * 100:0} % prepared · this happens once, the result is kept");
 
-        List<string> parts = [$"{Count(progress.Scanned, "seed")} scanned"];
+        List<string> parts = [$"{Count((double)progress.Scanned, "seed")} scanned"];
         if (state == SearchState.Running && progress.SeedsPerSecond > 0)
             parts.Add($"{FormatNumber(progress.SeedsPerSecond)} per second");
         if (state == SearchState.Running && progress.Remaining is { } remaining)

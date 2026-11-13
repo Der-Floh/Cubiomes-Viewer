@@ -14,6 +14,9 @@ public interface IConditionEvaluator
     /// <summary>Lists what keeps a condition of this kind from being searched in the version of the definition.</summary>
     IEnumerable<string> Validate(SearchCondition condition, SearchDefinition definition);
 
+    /// <summary>The dimension a condition of this kind looks in, in a version; the places it finds lie there.</summary>
+    Dimension GetDimension(SearchCondition condition, McVersion version);
+
     /// <summary>
     /// Looks for the matches of a condition around a reference point in the seed of the context, using only what the
     /// pass may use, and adds the places it found to <paramref name="matches"/>. The last pass always decides.

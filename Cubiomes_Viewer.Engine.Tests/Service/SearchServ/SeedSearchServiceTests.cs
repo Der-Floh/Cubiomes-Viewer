@@ -44,7 +44,7 @@ public sealed class SeedSearchServiceTests : IDisposable
         Assert.NotEmpty(expected);
         Assert.Equal(expected, _search.Results);
         Assert.Equal(SearchState.Finished, _search.State);
-        Assert.Equal(LastSeed - FirstSeed + 1, _search.Progress.Scanned);
+        Assert.Equal((UInt128)(LastSeed - FirstSeed + 1), _search.Progress.Scanned);
     }
 
     [Fact]
@@ -74,7 +74,7 @@ public sealed class SeedSearchServiceTests : IDisposable
         Assert.Equal(7, expected.Count);
         Assert.Equal(expected, _search.Results);
         Assert.Equal(SearchState.Finished, _search.State);
-        Assert.Equal(expected[^1] - FirstSeed + 1, _search.Progress.Scanned);
+        Assert.Equal((UInt128)(expected[^1] - FirstSeed + 1), _search.Progress.Scanned);
         Assert.Null(_search.Progress.NextSeed);
     }
 
@@ -88,8 +88,8 @@ public sealed class SeedSearchServiceTests : IDisposable
         var paused = _search.Progress;
         await _search.ResumeAsync(TestContext.Current.CancellationToken);
 
-        Assert.InRange(paused.Scanned, 1, LastSeed - FirstSeed);
-        Assert.Equal((long?)(FirstSeed + paused.Scanned), paused.NextSeed);
+        Assert.InRange(paused.Scanned, (UInt128)1, (UInt128)(LastSeed - FirstSeed));
+        Assert.Equal((long?)(FirstSeed + (long)paused.Scanned), paused.NextSeed);
         Assert.Equal(SearchState.Finished, _search.State);
         Assert.Equal(expected, _search.Results);
     }

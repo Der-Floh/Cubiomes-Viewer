@@ -167,6 +167,7 @@ public sealed class AnalysisServiceTests : IDisposable
 
         Assert.Equal(["The distance between samples must be one of 1, 4, 16, 64, 256 blocks."], _analysis.FindBiomeProblems(new BiomeCensusRequest(world, SearchArea.Square(100), _reference, 8, 64)));
         Assert.Equal(["The area needs more than 16,777,216 samples at 4 blocks per sample; sample it more coarsely or make it smaller."], _analysis.FindBiomeProblems(new BiomeCensusRequest(world, SearchArea.Square(20_000), _reference, 4, 64)));
+        Assert.Equal(["The area may be at most 4,096 samples wide at 4 blocks per sample; sample it more coarsely or make it narrower."], _analysis.FindBiomeProblems(new BiomeCensusRequest(world, SearchArea.Rectangle(0, 0, 20_000, 400), _reference, 4, 64)));
         Assert.Equal(["Trial chambers does not generate in this version."], _analysis.FindStructureProblems(StructureType.TrialChambers, McVersion.V1_16_5, SearchArea.Square(1000)));
         Assert.Equal(["Villages form no quads in this version."], _analysis.FindQuadProblems(StructureType.Village, McVersion.V1_16_5, SearchArea.Square(1000)));
         Assert.Empty(_analysis.FindStructureProblems(StructureType.Village, McVersion.V1_16_5, SearchArea.Square(100_000)));

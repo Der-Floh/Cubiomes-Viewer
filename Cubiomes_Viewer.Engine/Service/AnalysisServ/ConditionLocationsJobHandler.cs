@@ -1,6 +1,7 @@
 using Cubiomes_Viewer.Engine.Data.Analysis;
 using Cubiomes_Viewer.Engine.Data.Compute;
 using Cubiomes_Viewer.Engine.Data.Search;
+using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.ComputeServ;
 using Cubiomes_Viewer.Engine.Service.ConditionServ;
 
@@ -21,16 +22,17 @@ public sealed class ConditionLocationsJobHandler(ISearchPlanCompiler planCompile
         var isMatch = seedMatcher.Evaluate(plan, seedContext, SearchPass.Full) == SearchOutcome.Passed;
 
         List<ConditionPlace> places = [];
-        Collect(plan.Roots, places);
+        Collect(plan.Roots, job.Definition.Version, places);
         return new ConditionLocations { Seed = job.Seed, IsMatch = isMatch, Places = [.. places.OrderBy(place => place.ConditionId)] };
     }
 
-    private static void Collect(IReadOnlyList<PlanNode> nodes, List<ConditionPlace> places)
+    private static void Collect(IReadOnlyList<PlanNode> nodes, McVersion version, List<ConditionPlace> places)
     {
         foreach (var node in nodes)
         {
-            places.AddRange(node.Matches.Select(position => new ConditionPlace(node.Condition.Id, position)));
-            Collect(node.Children, places);
+            var dimension = node.Evaluator.GetDimension(node.Condition, version);
+            places.AddRange(node.Matches.Select(position => new ConditionPlace(node.Condition.Id, position, dimension)));
+            Collect(node.Children, version, places);
         }
     }
 }

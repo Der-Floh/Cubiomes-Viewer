@@ -39,6 +39,10 @@ public interface ISeedSearchService
     /// <exception cref="InvalidOperationException">No search is paused.</exception>
     Task ResumeAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>Continues the paused search with the workers of a setup that searches like it.</summary>
+    /// <exception cref="InvalidOperationException">No search is paused that searches like <paramref name="setup"/>.</exception>
+    Task ResumeAsync(SearchSetup setup, CancellationToken cancellationToken = default);
+
     /// <summary>Describes the search so that it can be stored, or returns <see langword="null"/> when there is none.</summary>
     SearchSnapshot? CreateSnapshot();
 

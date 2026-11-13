@@ -116,6 +116,17 @@ public sealed class SearchSessionRepositoryTests : IDisposable
         Assert.Contains("newer version", exception.Message, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Deserialize_PositionBeyondTheRangeOfALong_ReadsBackTheSame()
+    {
+        var session = CreateSession();
+        var far = new SearchSession { Setup = session.Setup, Search = session.Search! with { Scanned = UInt128.MaxValue } };
+
+        var read = _repository.Deserialize(_repository.Serialize(far));
+
+        Assert.Equal(UInt128.MaxValue, read.Search?.Scanned);
+    }
+
     private static SearchSession CreateSession()
     {
         var setup = new SearchSetup { Definition = SampleDefinitions.CreateEveryKindOfCondition() with { Rules = new StructureRules { EstimateTerrain = false, Salts = [new StructureSalt(StructureType.Village, -9)] } }, Source = new SeedRangeSource { FirstSeed = -5_000_000_000, LastSeed = 7 }, MaxResults = 250, Workers = 3 };

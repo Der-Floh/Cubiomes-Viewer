@@ -16,4 +16,5 @@ public sealed class ConditionLocations
     public required ConditionPlace[] Places { get; init; }
 }
 
-public readonly record struct ConditionPlace(int ConditionId, BlockPos Position);
+/// <summary>A place a condition found, in the dimension the condition looks in.</summary>
+public readonly record struct ConditionPlace(int ConditionId, BlockPos Position, Dimension Dimension);

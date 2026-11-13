@@ -35,6 +35,8 @@ public sealed class BiomeConditionEvaluator : ConditionEvaluator<BiomeCondition>
         _biomeCatalog = biomeCatalog;
     }
 
+    protected override Dimension GetDimension(BiomeCondition condition, McVersion version) => condition.Dimension;
+
     protected override IEnumerable<string> Validate(BiomeCondition condition, SearchDefinition definition)
     {
         var sampling = condition.Match == BiomeMatch.Share ? ValidateShare(condition) : SampleGrid.FindProblems(condition.Area, condition.Scale, _scales, MaxGridSamples);

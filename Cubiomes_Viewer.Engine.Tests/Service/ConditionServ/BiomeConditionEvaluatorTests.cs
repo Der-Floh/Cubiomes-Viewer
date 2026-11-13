@@ -192,6 +192,16 @@ public sealed class BiomeConditionEvaluatorTests : IDisposable
         Assert.Equal([expected], problems.Select(problem => problem.Message));
     }
 
+    [Fact]
+    public void Validate_AreaWithASideLongerThanTheGeneratorMakes_IsAProblem()
+    {
+        var condition = Biomes(SearchArea.Rectangle(0, 0, 511, 99_999), 16, BiomeSet.Of(Plains));
+
+        var problems = TestEngine.CreateConditionValidator().Validate(ConditionTestBench.Define(McVersion.V1_21_3, condition));
+
+        Assert.Equal(["The area may be at most 4,096 samples long on each side at 16 blocks per sample; sample it more coarsely or make it narrower."], problems.Select(problem => problem.Message));
+    }
+
     /// <summary>How many of the first random points of a condition have one of its biomes, asked one point at a time.</summary>
     private int CountHits(BiomeCondition condition, McVersion version, long seed, int samples)
     {

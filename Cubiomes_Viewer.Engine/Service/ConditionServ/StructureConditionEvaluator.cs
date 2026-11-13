@@ -34,6 +34,9 @@ public sealed class StructureConditionEvaluator : ConditionEvaluator<StructureCo
         _structureCatalog = structureCatalog;
     }
 
+    protected override Dimension GetDimension(StructureCondition condition, McVersion version)
+        => _structureFinder.TryGetPlacement(condition.Type, version, out var placement) ? placement.Dimension : Dimension.Overworld;
+
     protected override IEnumerable<string> Validate(StructureCondition condition, SearchDefinition definition)
     {
         if (_structureCatalog.Structures.All(structure => structure.Type != condition.Type))

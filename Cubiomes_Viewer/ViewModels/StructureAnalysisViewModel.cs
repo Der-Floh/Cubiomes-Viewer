@@ -56,7 +56,9 @@ public sealed partial class StructureAnalysisViewModel : AnalysisTabViewModel
     private readonly IMapStyleService _styleService;
     private readonly IStructureDescriptionService _descriptions;
     private readonly WorldSession _session;
-    private readonly HashSet<StructureType> _chosen;
+    private readonly MapViewModel _map;
+    private readonly HashSet<StructureType> _chosen = [];
+    private bool _isChosenHere;
 
     public StructureAnalysisViewModel(AnalysisScopeViewModel scope, IAnalysisService analysis, IStructureCatalog structureCatalog, IMapStyleService styleService, IStructureDescriptionService descriptions, WorldSession session, MapViewModel map, ISeedHistoryService seedHistory, IStorageService storage, ICsvService csv, ISettingsService settingsService, INotificationService notifications)
         : base(scope, session, map, seedHistory, storage, csv, settingsService, notifications)
@@ -66,15 +68,20 @@ public sealed partial class StructureAnalysisViewModel : AnalysisTabViewModel
         _styleService = styleService;
         _descriptions = descriptions;
         _session = session;
-        _chosen = map.VisibleStructures.Count > 0 ? [.. map.VisibleStructures] : [StructureType.Village];
+        _map = map;
         QuadTypes = [.. QuadChoices.CreateTypeChoices(structureCatalog)];
         SelectedQuadType = QuadTypes[0];
         SelectedQuadQuality = QuadQualities[^1];
-        ShowTypes();
+        ChooseTheMapsStructures();
         session.PropertyChanged += (_, args) =>
         {
             if (args.PropertyName == nameof(WorldSession.Version))
                 ShowTypes();
+        };
+        map.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(MapViewModel.VisibleStructures) && !_isChosenHere)
+                ChooseTheMapsStructures();
         };
     }
 
@@ -106,17 +113,18 @@ public sealed partial class StructureAnalysisViewModel : AnalysisTabViewModel
     /// <summary>The structures of each world, nearest first over all types.</summary>
     private IEnumerable<(WorldKey, AnalysisRow, string[])> CreateEntries(IReadOnlyList<StructureListRequest> requests, IReadOnlyList<StructureListing> listings)
         => requests.Zip(listings)
-            .SelectMany(pair => pair.Second.Entries.Select(entry => (Request: pair.First, Entry: entry)))
+            .SelectMany(pair => pair.Second.Entries.Select(entry => (Request: pair.First, pair.Second.Dimension, Entry: entry)))
             .GroupBy(item => item.Request.World)
             .SelectMany(group => group.OrderBy(item => item.Entry.Position.SquaredDistanceTo(item.Request.Reference)))
-            .Select(item => CreateEntry(item.Request, item.Entry));
+            .Select(item => CreateEntry(item.Request, item.Dimension, item.Entry));
 
-    private (WorldKey, AnalysisRow, string[]) CreateEntry(StructureListRequest request, StructureEntry entry)
+    /// <summary>A structure as a line that opens the dimension the structure generates in.</summary>
+    private (WorldKey, AnalysisRow, string[]) CreateEntry(StructureListRequest request, Dimension dimension, StructureEntry entry)
     {
         var name = _structureCatalog.GetInfo(request.Type).Name;
         var details = entry.Details is { } known ? string.Join(", ", _descriptions.Describe(known, request.World.Version)) : string.Empty;
         var position = DescribePosition(entry.Position, request.Reference);
-        var row = new AnalysisRow(name, details.Length > 0 ? $"{position} · {details}" : position, request.World, entry.Position);
+        var row = new AnalysisRow(name, details.Length > 0 ? $"{position} · {details}" : position, request.World with { Dimension = dimension }, entry.Position);
         return (request.World, row, [Format($"{request.World.Seed}"), name, Format($"{entry.Position.X}"), Format($"{entry.Position.Z}"), Format($"{entry.Position.DistanceTo(request.Reference):0.#}"), details]);
     }
 
@@ -139,8 +147,17 @@ public sealed partial class StructureAnalysisViewModel : AnalysisTabViewModel
             Types.Add(new MarkerToggleViewModel(info.Name, _styleService.GetStructureMarker(info.Type), _chosen.Contains(info.Type), isChosen => Choose(info.Type, isChosen)));
     }
 
+    /// <summary>Chooses the structures the map shows, which load after this tab is made, until types are chosen here.</summary>
+    private void ChooseTheMapsStructures()
+    {
+        _chosen.Clear();
+        _chosen.UnionWith(_map.VisibleStructures.Count > 0 ? _map.VisibleStructures : [StructureType.Village]);
+        ShowTypes();
+    }
+
     private void Choose(StructureType type, bool isChosen)
     {
+        _isChosenHere = true;
         if (isChosen)
             _chosen.Add(type);
         else

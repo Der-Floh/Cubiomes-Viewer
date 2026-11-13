@@ -629,6 +629,36 @@ public sealed class SearchPanelViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
+    public async Task Initialization_StoredSearchWithMoreWorkersThanThisMachineHas_CanContinue()
+    {
+        var setup = new SearchSetup
+        {
+            Definition = new SearchDefinition { Version = McVersion.V1_21_3, Conditions = [new StructureCondition { Id = 1, Type = StructureType.Village }] },
+            Source = new SeedRangeSource { FirstSeed = 10, LastSeed = 99_999 },
+            Workers = 999,
+        };
+        var stored = new SearchSession { Setup = setup, Search = new SearchSnapshot { Setup = setup, Scanned = 490, NextSeed = 500, Results = [12, 400] } };
+        await _services.GetRequiredService<ISearchSessionRepository>().SaveAsync(stored, TestContext.Current.CancellationToken);
+
+        await _services.GetRequiredService<MainViewModel>().Initialization;
+
+        Assert.True(_panel.Run.CanContinue);
+        Assert.Equal("Stopped before seed 500.", _panel.Run.StatusText);
+    }
+
+    [AvaloniaFact]
+    public void Results_OfAnotherSearchThatStartsWithTheSameSeed_ReplaceTheShownOnes()
+    {
+        var setup = new SearchSetup { Definition = new SearchDefinition { Version = McVersion.V1_21_3, Conditions = [new StructureCondition { Id = 1, Type = StructureType.Village }] } };
+        var sessions = _services.GetRequiredService<ISearchSessionService>();
+        sessions.Open(new SearchSession { Setup = setup, Search = new SearchSnapshot { Setup = setup, Scanned = 500, NextSeed = 500, Results = [100, 250, 400] } });
+
+        sessions.Open(new SearchSession { Setup = setup, Search = new SearchSnapshot { Setup = setup, Scanned = 2500, NextSeed = 2500, Results = [100, 900, 1300, 2000] } });
+
+        Assert.Equal([100L, 900L, 1300L, 2000L], _panel.Results.Seeds.Select(seed => seed.Value));
+    }
+
+    [AvaloniaFact]
     public async Task Load_WithoutRestoring_StartsEmptyAndStoresTheSearchFromThenOn()
     {
         var stored = new SearchSession { Setup = new SearchSetup { Definition = new SearchDefinition(), MaxResults = 3 } };

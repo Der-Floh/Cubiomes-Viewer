@@ -176,6 +176,8 @@ public sealed class SeedMatcherTests
         public List<BlockPos> References { get; } = [];
         public List<SearchPass> Passes { get; } = [];
 
+        public Dimension GetDimension(SearchCondition condition, McVersion version) => Dimension.Overworld;
+
         private readonly Func<BlockPos, SearchPass, MatchStatus> _script;
         private readonly BlockPos[] _matches;
 
