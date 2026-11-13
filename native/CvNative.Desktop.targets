@@ -4,6 +4,7 @@
   <PropertyGroup>
     <CvNativeRoot>$(MSBuildThisFileDirectory)</CvNativeRoot>
     <CvNativeRid>$(RuntimeIdentifier)</CvNativeRid>
+    <CvNativeRid Condition="'$(CvNativeRid)' == ''">$(NETCoreSdkPortableRuntimeIdentifier)</CvNativeRid>
     <CvNativeRid Condition="'$(CvNativeRid)' == ''">$(NETCoreSdkRuntimeIdentifier)</CvNativeRid>
     <CvNativeLibraryFile Condition="$(CvNativeRid.StartsWith('win-'))">cvnative.dll</CvNativeLibraryFile>
     <CvNativeLibraryFile Condition="$(CvNativeRid.StartsWith('linux-'))">libcvnative.so</CvNativeLibraryFile>

@@ -15,6 +15,7 @@ $NativeRoot = $PSScriptRoot
 $Source = Join-Path $NativeRoot 'shim\cvnative.c'
 $OutputDirectory = Join-Path $NativeRoot "bin\$Rid"
 $ObjectDirectory = Join-Path $NativeRoot "obj\$Rid"
+$Output = Join-Path $OutputDirectory "$LibraryName.dll"
 
 function Assert-SupportedRid {
     if (-not $MsvcArchitectures.ContainsKey($Rid)) {
@@ -28,6 +29,18 @@ function Assert-Sources {
     }
 }
 
+function Test-UpToDate {
+    if (-not (Test-Path $Output)) {
+        return $false
+    }
+
+    $built = (Get-Item $Output).LastWriteTimeUtc
+    $sources = @(Get-ChildItem (Join-Path $NativeRoot 'shim') -File -Recurse) +
+        @(Get-ChildItem (Join-Path $NativeRoot 'cubiomes') -File -Recurse -Include '*.c', '*.h') +
+        @(Get-Item $PSCommandPath)
+    return -not ($sources | Where-Object { $_.LastWriteTimeUtc -gt $built })
+}
+
 function Find-VisualStudio {
     $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
     if (-not (Test-Path $vswhere)) {
@@ -37,8 +50,7 @@ function Find-VisualStudio {
 }
 
 function Invoke-Clang {
-    $output = Join-Path $OutputDirectory "$LibraryName.dll"
-    & clang "--target=$($ClangTargets[$Rid])" @ClangFlags -shared -o $output $Source
+    & clang "--target=$($ClangTargets[$Rid])" @ClangFlags -shared -o $Output $Source
     if ($LASTEXITCODE -ne 0) {
         throw "clang failed with exit code $LASTEXITCODE."
     }
@@ -47,15 +59,19 @@ function Invoke-Clang {
 function Invoke-Msvc {
     param([string]$VisualStudioPath)
 
-    $vcvars = Join-Path $VisualStudioPath 'VC\Auxiliary\Build\vcvarsall.bat'
+    # cmd.exe reads a batch file in the console's code page but keeps the environment in Unicode, so paths go through it.
+    $env:CV_VCVARS = Join-Path $VisualStudioPath 'VC\Auxiliary\Build\vcvarsall.bat'
+    $env:CV_SOURCE = $Source
+    $env:CV_OBJECTS = "$ObjectDirectory\\"
+    $env:CV_OUTPUT = $Output
+    $env:CV_IMPORT_LIBRARY = Join-Path $ObjectDirectory "$LibraryName.lib"
     $script = Join-Path $ObjectDirectory 'build.cmd'
-    $compile = "cl $($MsvcFlags -join ' ') /Fo`"$ObjectDirectory\\`" /Fe`"$OutputDirectory\$LibraryName.dll`" `"$Source`" /link /IMPLIB:`"$ObjectDirectory\$LibraryName.lib`""
     Set-Content -Path $script -Encoding ascii -Value @(
         '@echo off',
         'set "PATH=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer;%PATH%"',
-        "call `"$vcvars`" $($MsvcArchitectures[$Rid]) >nul",
+        "call `"%CV_VCVARS%`" $($MsvcArchitectures[$Rid]) >nul",
         'where cl >nul 2>nul || (echo cl.exe was not found after vcvarsall & exit /b 1)',
-        "$compile || exit /b 1"
+        "cl $($MsvcFlags -join ' ') /Fo`"%CV_OBJECTS%`" /Fe`"%CV_OUTPUT%`" `"%CV_SOURCE%`" /link /IMPLIB:`"%CV_IMPORT_LIBRARY%`" || exit /b 1"
     )
 
     & cmd.exe /d /c $script
@@ -64,21 +80,44 @@ function Invoke-Msvc {
     }
 }
 
+function Invoke-Build {
+    if (Get-Command clang -ErrorAction SilentlyContinue) {
+        Write-Host "Building $LibraryName for $Rid with clang"
+        Invoke-Clang
+    }
+    else {
+        $visualStudio = Find-VisualStudio
+        if (-not $visualStudio) {
+            throw 'No C compiler found. Install LLVM (clang) or the Visual Studio C++ build tools.'
+        }
+        Write-Host "Building $LibraryName for $Rid with MSVC ($visualStudio)"
+        Invoke-Msvc -VisualStudioPath $visualStudio
+    }
+
+    Write-Host "Built $Output"
+}
+
 Assert-SupportedRid
 Assert-Sources
 New-Item -ItemType Directory -Force $OutputDirectory, $ObjectDirectory | Out-Null
 
-if (Get-Command clang -ErrorAction SilentlyContinue) {
-    Write-Host "Building $LibraryName for $Rid with clang"
-    Invoke-Clang
-}
-else {
-    $visualStudio = Find-VisualStudio
-    if (-not $visualStudio) {
-        throw 'No C compiler found. Install LLVM (clang) or the Visual Studio C++ build tools.'
+$lock = [System.Threading.Mutex]::new($false, "Local\cvnative-build-$Rid")
+try {
+    try {
+        [void]$lock.WaitOne()
     }
-    Write-Host "Building $LibraryName for $Rid with MSVC ($visualStudio)"
-    Invoke-Msvc -VisualStudioPath $visualStudio
-}
+    catch [System.Threading.AbandonedMutexException] {
+        # A build that was stopped left the lock behind; this one holds it now.
+    }
 
-Write-Host "Built $(Join-Path $OutputDirectory "$LibraryName.dll")"
+    if (Test-UpToDate) {
+        Write-Host "$Output is up to date"
+    }
+    else {
+        Invoke-Build
+    }
+}
+finally {
+    $lock.ReleaseMutex()
+    $lock.Dispose()
+}

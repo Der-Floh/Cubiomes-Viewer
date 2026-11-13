@@ -7,6 +7,7 @@ max_glibc="2.28"
 native_root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 library="$native_root/bin/linux-x64/libcvnative.so"
 
+rm -f "$library"
 docker run --rm --user "$(id -u):$(id -g)" --env CC=gcc \
     --volume "$(dirname "$native_root"):/src" --workdir /src "$image" bash native/build.sh linux-x64
 
