@@ -68,6 +68,9 @@ public sealed partial class MapViewModel : ViewModelBase
     [ObservableProperty]
     public partial double MarkerScale { get; set; } = 1;
 
+    [ObservableProperty]
+    public partial MarkerStyle MarkerStyle { get; set; }
+
     /// <summary>How far out structure types are marked where it differs from their defaults, in blocks per pixel.</summary>
     [ObservableProperty]
     public partial IReadOnlyDictionary<StructureType, double> MarkerZoomLimits { get; set; } = FrozenDictionary<StructureType, double>.Empty;

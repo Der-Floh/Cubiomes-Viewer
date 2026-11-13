@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Media;
 
+using Cubiomes_Viewer.Engine.Data.Settings;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 
 namespace Cubiomes_Viewer.Service.MapStyleServ;
@@ -13,6 +14,9 @@ public interface IMapStyleService
 
     /// <summary>How much larger or smaller than normal markers are drawn.</summary>
     double MarkerScale { get; set; }
+
+    /// <summary>Which set of glyphs the markers show; changing it swaps the glyph of every marker given out.</summary>
+    MarkerStyle MarkerStyle { get; set; }
 
     MapMarker Spawn { get; }
     MapMarker Stronghold { get; }

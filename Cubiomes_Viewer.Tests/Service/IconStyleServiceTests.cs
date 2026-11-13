@@ -13,6 +13,8 @@ public sealed class IconStyleServiceTests
 {
     private const string OutlinedIcons = "Accents/IconsOutlined.axaml";
     private const string FilledIcons = "Accents/IconsFilled.axaml";
+    private const string BlockyMarkers = "Accents/MarkersBlocky.axaml";
+    private const string CleanMarkers = "Accents/MarkersClean.axaml";
 
     private static readonly Uri _assetBaseUri = new("avares://Cubiomes_Viewer/");
 
@@ -25,7 +27,7 @@ public sealed class IconStyleServiceTests
             service.Apply(IconStyle.Filled);
             Assert.Equal("/Assets/Icons/layers_filled.svg", GetIcon("LayersIcon"));
             Assert.Equal("/Assets/Icons/search.svg", GetIcon("SearchIcon"));
-            Assert.Equal("/Assets/Icons/Markers/village.svg", GetIcon("VillageIcon"));
+            Assert.Equal("/Assets/Icons/Markers/Blocky/village.svg", GetIcon("VillageIcon"));
         }
         finally
         {
@@ -36,9 +38,10 @@ public sealed class IconStyleServiceTests
     }
 
     [AvaloniaTheory]
-    [InlineData("Accents/Icons.axaml")]
     [InlineData(OutlinedIcons)]
     [InlineData(FilledIcons)]
+    [InlineData(BlockyMarkers)]
+    [InlineData(CleanMarkers)]
     public void Icons_OfEachDictionary_NameSvgFilesThatExist(string dictionary)
     {
         string[] paths = [.. Load(dictionary).Values.OfType<string>().Where(value => value.EndsWith(".svg", StringComparison.Ordinal))];
@@ -48,9 +51,10 @@ public sealed class IconStyleServiceTests
     }
 
     [AvaloniaFact]
-    public void ButtonIcons_OfBothStyles_HaveTheSameNames()
+    public void Icons_OfBothStyles_HaveTheSameNames()
     {
         Assert.Equal(GetKeys(OutlinedIcons), GetKeys(FilledIcons));
+        Assert.Equal(GetKeys(BlockyMarkers), GetKeys(CleanMarkers));
     }
 
     private static string?[] GetKeys(string dictionary) => [.. Load(dictionary).Keys.Select(key => key as string).Order(StringComparer.Ordinal)];

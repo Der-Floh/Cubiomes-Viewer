@@ -3,7 +3,9 @@ using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Avalonia.Svg.Skia;
 
+using Cubiomes_Viewer.Engine.Data.Settings;
 using Cubiomes_Viewer.Engine.Data.Worlds;
+using Cubiomes_Viewer.Extensions;
 
 namespace Cubiomes_Viewer.Service.MapStyleServ;
 
@@ -11,6 +13,7 @@ public sealed class MapStyleService : IMapStyleService
 {
     private const string IconKeySuffix = "Icon";
     private const string MarkerColorKeyPrefix = "Marker.";
+    private const string MarkerStyleKey = "MarkerStyle";
     private const string SpawnKey = "Spawn";
     private const string StrongholdKey = "Stronghold";
     private const string GlyphColorKey = "Marker.Glyph";
@@ -28,15 +31,29 @@ public sealed class MapStyleService : IMapStyleService
 
     public double MarkerScale { get; set; } = 1;
 
-    public MapMarker Spawn => field ??= CreateMarker(SpawnKey);
-    public MapMarker Stronghold => field ??= CreateMarker(StrongholdKey);
+    public MarkerStyle MarkerStyle
+    {
+        get;
+        set
+        {
+            if (field == value)
+                return;
+
+            field = value;
+            Application.Current?.UseStyleDictionary(MarkerStyleKey, value.ToString(), GetSource(value));
+            foreach (var (name, marker) in _markers)
+                marker.Glyph = CreateGlyph(GetResource<string>(name + IconKeySuffix));
+        }
+    }
+
+    public MapMarker Spawn => GetMarker(SpawnKey);
+    public MapMarker Stronghold => GetMarker(StrongholdKey);
     public Color SlimeChunkColor => _slimeChunkColor ??= GetResource<Color>(SlimeChunkColorKey);
     public Color MeasureColor => _measureColor ??= GetResource<Color>(MeasureColorKey);
     public Color OutlineColor => _outlineColor ??= GetResource<Color>(OutlineColorKey);
     public Color SelectionColor => _selectionColor ??= GetResource<Color>(SelectionColorKey);
 
-    private readonly Dictionary<StructureType, MapMarker> _structureMarkers = [];
-    private readonly Dictionary<Dimension, MapMarker> _dimensionMarkers = [];
+    private readonly Dictionary<string, MapMarker> _markers = new(StringComparer.Ordinal);
     private Color? _slimeChunkColor;
     private Color? _measureColor;
     private Color? _outlineColor;
@@ -46,27 +63,9 @@ public sealed class MapStyleService : IMapStyleService
     private IPen OutlinePen => field ??= new ImmutablePen(new ImmutableSolidColorBrush(OutlineColor));
     private Color? _glyphColor;
 
-    public MapMarker GetStructureMarker(StructureType type)
-    {
-        if (!_structureMarkers.TryGetValue(type, out var marker))
-        {
-            marker = CreateMarker(type.ToString());
-            _structureMarkers.Add(type, marker);
-        }
+    public MapMarker GetStructureMarker(StructureType type) => GetMarker(type.ToString());
 
-        return marker;
-    }
-
-    public MapMarker GetDimensionMarker(Dimension dimension)
-    {
-        if (!_dimensionMarkers.TryGetValue(dimension, out var marker))
-        {
-            marker = CreateMarker(dimension.ToString());
-            _dimensionMarkers.Add(dimension, marker);
-        }
-
-        return marker;
-    }
+    public MapMarker GetDimensionMarker(Dimension dimension) => GetMarker(dimension.ToString());
 
     public void DrawMarker(DrawingContext context, MapMarker marker, Point center)
     {
@@ -80,10 +79,29 @@ public sealed class MapStyleService : IMapStyleService
         context.DrawImage(marker.Glyph, new Rect(center.X - glyphSize / 2, center.Y - glyphSize / 2, glyphSize, glyphSize));
     }
 
+    /// <summary>Returns the marker of a structure type, landmark or dimension by the name its resources are keyed with.</summary>
+    private MapMarker GetMarker(string name)
+    {
+        if (!_markers.TryGetValue(name, out var marker))
+        {
+            marker = CreateMarker(name);
+            _markers.Add(name, marker);
+        }
+
+        return marker;
+    }
+
     private MapMarker CreateMarker(string name)
         => new(CreateGlyph(GetResource<string>(name + IconKeySuffix)), new ImmutableSolidColorBrush(GetResource<Color>(MarkerColorKeyPrefix + name)));
 
     private SvgImage CreateGlyph(string path) => new() { Source = SvgSource.Load(path, _assetBaseUri), CurrentColor = GlyphColor };
+
+    private static string GetSource(MarkerStyle style) => style switch
+    {
+        MarkerStyle.Blocky => "Accents/MarkersBlocky.axaml",
+        MarkerStyle.Clean => "Accents/MarkersClean.axaml",
+        _ => throw new NotSupportedException($"Unsupported marker style: {style}"),
+    };
 
     private static T GetResource<T>(string key)
     {

@@ -116,7 +116,7 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
             case nameof(MapViewModel.Layer) or nameof(MapViewModel.HeightStyle) or nameof(MapViewModel.PotentialStructure) or nameof(MapViewModel.BiomeColors)
                 or nameof(MapViewModel.ShowGrid) or nameof(MapViewModel.ShowSlimeChunks) or nameof(MapViewModel.ShowGatewayLinks)
                 or nameof(MapViewModel.ShowSpawn) or nameof(MapViewModel.ShowStrongholds) or nameof(MapViewModel.VisibleStructures) or nameof(MapViewModel.HiddenStructureOptions)
-                or nameof(MapViewModel.GridSpacing) or nameof(MapViewModel.GridMultiplier) or nameof(MapViewModel.MarkerScale) or nameof(MapViewModel.MarkerZoomLimits):
+                or nameof(MapViewModel.GridSpacing) or nameof(MapViewModel.GridMultiplier) or nameof(MapViewModel.MarkerScale) or nameof(MapViewModel.MarkerStyle) or nameof(MapViewModel.MarkerZoomLimits):
                 ShowOverlays();
                 Map.Refresh();
                 break;
@@ -142,6 +142,7 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
         _layers.Grid.BaseSpacing = _map.GridSpacing;
         _layers.Grid.Multiplier = _map.GridMultiplier;
         _styleService.MarkerScale = _map.MarkerScale;
+        _styleService.MarkerStyle = _map.MarkerStyle;
         _layers.SlimeChunks.IsVisible = _map.ShowSlimeChunks;
         _layers.Gateways.IsVisible = _map.ShowGatewayLinks;
         _layers.Landmarks.ShowSpawn = _map.ShowSpawn;

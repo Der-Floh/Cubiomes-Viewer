@@ -28,6 +28,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     public string AppearanceLabel { get; } = "Appearance";
     public string ThemeLabel { get; } = "Theme";
     public string IconStyleLabel { get; } = "Icons";
+    public string MarkerStyleLabel { get; } = "Map markers";
     public string MapLabel { get; } = "Map";
     public string SmoothMotionLabel { get; } = "Smooth motion";
     public string CacheLabel { get; } = "Tile cache (MB)";
@@ -53,6 +54,9 @@ public sealed partial class SettingsViewModel : ViewModelBase
 
     [ObservableProperty]
     public partial ComboChoice<IconStyle>? SelectedIconStyle { get; set; }
+
+    [ObservableProperty]
+    public partial ComboChoice<MarkerStyle>? SelectedMarkerStyle { get; set; }
 
     [ObservableProperty]
     public partial bool SmoothMotion { get; set; } = true;
@@ -92,6 +96,12 @@ public sealed partial class SettingsViewModel : ViewModelBase
     [
         new() { Display = "Outlined", Value = IconStyle.Outlined },
         new() { Display = "Filled", Value = IconStyle.Filled },
+    ];
+
+    public ObservableCollection<ComboChoice<MarkerStyle>> MarkerStyles { get; } =
+    [
+        new() { Display = "Blocky", Value = MarkerStyle.Blocky },
+        new() { Display = "Clean", Value = MarkerStyle.Clean },
     ];
 
     public ObservableCollection<ComboChoice<int>> GridMultipliers { get; } =
@@ -150,6 +160,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         CanRememberWindow = windowService.HasWindows;
         SelectedTheme = Themes[0];
         SelectedIconStyle = IconStyles[0];
+        SelectedMarkerStyle = MarkerStyles[0];
         SelectedGridMultiplier = GridMultipliers[0];
         SelectedMarkerSize = MarkerSizes[1];
         SelectedCsvSeparator = CsvSeparators[0];
@@ -168,6 +179,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         {
             SelectedTheme = Themes.First(choice => choice.Value == settings.Appearance.Theme);
             SelectedIconStyle = IconStyles.FirstOrDefault(choice => choice.Value == settings.Appearance.IconStyle) ?? IconStyles[0];
+            SelectedMarkerStyle = MarkerStyles.FirstOrDefault(choice => choice.Value == settings.Appearance.MarkerStyle) ?? MarkerStyles[0];
             SmoothMotion = settings.Map.SmoothMotion;
             CacheMegabytes = Math.Clamp(settings.Map.CacheMegabytes, MapSettings.MinCacheMegabytes, MapSettings.MaxCacheMegabytes);
             GridSpacing = Math.Clamp(settings.Map.GridSpacing, 1, MaxGridSpacing);
@@ -189,6 +201,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
     partial void OnSelectedThemeChanged(ComboChoice<AppTheme>? value) => Store(settings => settings.Appearance.Theme = value?.Value ?? AppTheme.System);
 
     partial void OnSelectedIconStyleChanged(ComboChoice<IconStyle>? value) => Store(settings => settings.Appearance.IconStyle = value?.Value ?? IconStyle.Outlined);
+
+    partial void OnSelectedMarkerStyleChanged(ComboChoice<MarkerStyle>? value) => Store(settings => settings.Appearance.MarkerStyle = value?.Value ?? MarkerStyle.Blocky);
 
     partial void OnSmoothMotionChanged(bool value) => Store(settings => settings.Map.SmoothMotion = value);
 
@@ -247,6 +261,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         var settings = _settingsService.Current;
         _themeService.Apply(settings.Appearance.Theme);
         _iconStyleService.Apply(settings.Appearance.IconStyle);
+        _map.MarkerStyle = settings.Appearance.MarkerStyle;
         _map.SmoothMotion = settings.Map.SmoothMotion;
         _map.GridSpacing = settings.Map.GridSpacing;
         _map.GridMultiplier = settings.Map.GridMultiplier;

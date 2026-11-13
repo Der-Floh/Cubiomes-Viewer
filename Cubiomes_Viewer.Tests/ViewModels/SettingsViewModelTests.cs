@@ -67,6 +67,15 @@ public sealed class SettingsViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void MarkerStyle_Clean_ReachesTheMapAndIsStored()
+    {
+        _settings.SelectedMarkerStyle = _settings.MarkerStyles.Single(choice => choice.Value == MarkerStyle.Clean);
+
+        Assert.Equal(MarkerStyle.Clean, _map.MarkerStyle);
+        Assert.Equal(MarkerStyle.Clean, Stored.Appearance.MarkerStyle);
+    }
+
+    [AvaloniaFact]
     public void ZoomLimit_Changed_ReachesTheMapAndOnlyChangedOnesAreStored()
     {
         var village = _settings.ZoomLimits.Single(limit => limit.Type == StructureType.Village);
