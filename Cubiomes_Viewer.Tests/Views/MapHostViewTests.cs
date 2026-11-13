@@ -11,13 +11,17 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 
 using Cubiomes_Viewer.Controls;
+using Cubiomes_Viewer.Controls.Map;
 using Cubiomes_Viewer.Data;
+using Cubiomes_Viewer.Engine.Data.Colors;
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Data.Worlds;
+using Cubiomes_Viewer.Engine.Service.PinServ;
 using Cubiomes_Viewer.Engine.Service.StructureServ;
 using Cubiomes_Viewer.Engine.Service.TileServ;
 using Cubiomes_Viewer.Service.MapStyleServ;
+using Cubiomes_Viewer.Tests.Controls;
 using Cubiomes_Viewer.ViewModels;
 using Cubiomes_Viewer.Views;
 
@@ -29,10 +33,9 @@ public sealed class MapHostViewTests : IDisposable
 {
     private const int ViewSize = 256;
     private const int BytesPerPixel = 4;
-    private const int SelectionRingRadius = 16;
     private const int DragDistance = 40;
-    private const int AntialiasingTolerance = 24;
-    private const string CardTitleClass = "card-title";
+    private const int PinOffset = 40;
+    private const string CalloutTitleClass = "callout-title";
     private const string LegendTitleClass = "legend-title";
     private static readonly Point _center = new(ViewSize / 2, ViewSize / 2);
 
@@ -60,38 +63,88 @@ public sealed class MapHostViewTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task Click_OnTheSpawnMarker_PicksItAndShowsItsCardAndARing()
+    public async Task Click_OnTheSpawnMarker_PicksItDrawsItLargerAndShowsItsCalloutAboveIt()
     {
+        var styleService = _services.GetRequiredService<IMapStyleService>();
         var spawn = await ShowSpawnAtTheCenterAsync();
+        var beyondTheNormalBadge = (int)(_center.X + styleService.MarkerSize / 2 + 2);
 
         Click(_center);
-        Dispatcher.UIThread.RunJobs();
-        AvaloniaHeadlessPlatform.ForceRenderTimerTick();
-        using var frame = _window.CaptureRenderedFrame();
+        var frame = CaptureFrame();
 
-        Assert.Equal(new MapSelection("World spawn", _services.GetRequiredService<IMapStyleService>().Spawn, spawn), _map.Selection);
-        var title = GetCardTitle();
+        Assert.Equal(new MapSelection("World spawn", styleService.Spawn, spawn), _map.Selection);
+        var title = GetCalloutTitle();
         Assert.True(title.IsEffectivelyVisible);
         Assert.Equal("World spawn", title.Text);
-        Assert.NotNull(frame);
-        var ring = _services.GetRequiredService<IMapStyleService>().SelectionColor;
-        var (red, green, blue) = ReadPixel(frame, ViewSize / 2 + SelectionRingRadius, ViewSize / 2);
-        Assert.InRange(red, ring.R - AntialiasingTolerance, ring.R);
-        Assert.InRange(green, ring.G - AntialiasingTolerance, ring.G);
-        Assert.InRange(blue, ring.B - AntialiasingTolerance, ring.B);
+        Assert.Equal(ToRgb(styleService.Spawn.Fill), FramePixels.Read(frame, beyondTheNormalBadge, (int)_center.Y));
+
+        var callout = GetCallout().Bounds;
+        Assert.True(callout.Bottom <= _center.Y - styleService.MarkerSize * SelectionLayer.Magnification / 2 - CalloutPlacement.Gap + 0.5, $"The callout reaches down to {callout.Bottom}.");
+        Assert.InRange(callout.Center.X, _center.X - 1, _center.X + 1);
     }
 
     [AvaloniaFact]
-    public async Task Click_BesideTheMarkers_ClosesTheCard()
+    public async Task Click_BesideTheMarkers_ClosesTheCallout()
     {
         await ShowSpawnAtTheCenterAsync();
         Click(_center);
+        var beside = new Point(ViewSize / 4, ViewSize * 3 / 4);
+        Assert.Null(_host.GetVisualDescendants().OfType<MapView>().Single().HitTestMarker(beside));
 
-        Click(new Point(ViewSize / 4, ViewSize / 4));
+        Click(beside);
         Dispatcher.UIThread.RunJobs();
 
         Assert.Null(_map.Selection);
-        Assert.False(GetCardTitle().IsEffectivelyVisible);
+        Assert.False(GetCalloutTitle().IsEffectivelyVisible);
+    }
+
+    [AvaloniaFact]
+    public async Task PinToggle_ThenAClick_PutsAPinOnTheClickedBlockAndPicksIt()
+    {
+        var spawn = await ShowSpawnAtTheCenterAsync();
+        _map.IsPlacingPin = true;
+
+        Click(new Point(_center.X + PinOffset, _center.Y + PinOffset));
+        var frame = CaptureFrame();
+
+        var pin = Assert.Single(_services.GetRequiredService<IPinService>().GetPins(_map.World.Seed, _map.World.Dimension));
+        Assert.Equal(new BlockPos(spawn.X + PinOffset, spawn.Z + PinOffset), new BlockPos(pin.X, pin.Z));
+        Assert.False(_map.IsPlacingPin);
+        Assert.Same(pin, _map.Selection?.Pin);
+        Assert.Equal(MapSelection.PinName, GetCalloutTitle().Text);
+
+        var styleService = _services.GetRequiredService<IMapStyleService>();
+        var bounds = styleService.GetPinBounds(new Point(_center.X + PinOffset + 1, _center.Y + PinOffset + 1), SelectionLayer.Magnification);
+        var headCenter = new Point(bounds.Center.X, bounds.Top + bounds.Width / 2);
+        Assert.Equal(ToRgb(styleService.PlainPin.Fill), FramePixels.Read(frame, (int)(headCenter.X + bounds.Width * 0.42), (int)headCenter.Y));
+        Assert.Equal(new RgbColor(255, 255, 255), FramePixels.Read(frame, (int)(headCenter.X + bounds.Width * 0.2), (int)headCenter.Y));
+    }
+
+    [AvaloniaFact]
+    public async Task Click_OnAPin_PicksIt()
+    {
+        await ShowSpawnAtTheCenterAsync();
+        _map.IsPlacingPin = true;
+        Click(new Point(_center.X + PinOffset, _center.Y + PinOffset));
+        _map.Selection = null;
+
+        var tip = new Point(_center.X + PinOffset + 0.5, _center.Y + PinOffset + 0.5);
+        var head = _services.GetRequiredService<IMapStyleService>().GetPinBounds(tip);
+        Click(new Point(head.Center.X, head.Top + head.Width / 2));
+
+        Assert.NotNull(_map.Selection?.Pin);
+    }
+
+    [AvaloniaFact]
+    public void PinToggle_On_ShowsACrosshairOverTheMap()
+    {
+        var map = _host.GetVisualDescendants().OfType<MapView>().Single();
+
+        _map.IsPlacingPin = true;
+        Assert.NotNull(map.Cursor);
+
+        _map.IsPlacingPin = false;
+        Assert.Null(map.Cursor);
     }
 
     [AvaloniaFact]
@@ -313,8 +366,23 @@ public sealed class MapHostViewTests : IDisposable
         return _map.HoverText;
     }
 
-    private TextBlock GetCardTitle()
-        => _host.GetVisualDescendants().OfType<TextBlock>().Single(text => text.Classes.Contains(CardTitleClass));
+    private WriteableBitmap CaptureFrame()
+    {
+        Dispatcher.UIThread.RunJobs();
+        AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+        return Assert.IsType<WriteableBitmap>(_window.CaptureRenderedFrame(), exactMatch: false);
+    }
+
+    private TextBlock GetCalloutTitle()
+        => _host.GetVisualDescendants().OfType<TextBlock>().Single(text => text.Classes.Contains(CalloutTitleClass));
+
+    private SelectionCalloutView GetCallout() => _host.GetVisualDescendants().OfType<SelectionCalloutView>().Single();
+
+    private static RgbColor ToRgb(Avalonia.Media.IBrush brush)
+    {
+        var color = Assert.IsAssignableFrom<Avalonia.Media.ISolidColorBrush>(brush).Color;
+        return new RgbColor(color.R, color.G, color.B);
+    }
 
     private static (int Red, int Green, int Blue) ReadPixel(WriteableBitmap bitmap, int x, int y)
     {

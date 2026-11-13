@@ -1,0 +1,53 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:controls="using:Cubiomes_Viewer.Controls"
+             xmlns:data="using:Cubiomes_Viewer.Data"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Cubiomes_Viewer.ViewModels"
+             xmlns:views="using:Cubiomes_Viewer.Views"
+             mc:Ignorable="d" d:DesignWidth="260" d:DesignHeight="90"
+             x:Class="Cubiomes_Viewer.Views.SelectionCalloutView"
+             x:DataType="vm:SelectionViewModel">
+
+    <Border Classes="callout" IsVisible="{Binding IsOpen}">
+        <StackPanel Classes="callout">
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                <Panel IsVisible="{Binding !IsPin}" VerticalAlignment="Center">
+                    <views:MarkerBadgeView DataContext="{Binding Marker}"/>
+                </Panel>
+                <ComboBox Classes="pin-look" IsVisible="{Binding IsPin}" ItemsSource="{Binding PinLooks}" SelectedItem="{Binding SelectedPinLook}"
+                          ToolTip.Tip="{Binding PinLookLabel}">
+                    <ComboBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="5"/>
+                        </ItemsPanelTemplate>
+                    </ComboBox.ItemsPanel>
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="data:PinLookChoice">
+                            <controls:PinIcon Fill="{Binding Look.Fill}" Glyph="{Binding Look.Glyph}" ToolTip.Tip="{Binding Display}"/>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <TextBlock Grid.Column="1" Classes="callout-title" Text="{Binding Title}"/>
+                <Button Grid.Column="2" Classes="card-close" IsVisible="{Binding IsPin}" Command="{Binding RemovePinCommand}" ToolTip.Tip="{Binding RemovePinLabel}">
+                    <controls:SvgIcon Path="{DynamicResource DeleteIcon}"/>
+                </Button>
+                <Button Grid.Column="3" Classes="card-close" Command="{Binding CloseCommand}" ToolTip.Tip="{Binding CloseLabel}">
+                    <controls:SvgIcon Path="{DynamicResource CloseIcon}"/>
+                </Button>
+            </Grid>
+
+            <TextBlock Classes="damp" Text="{Binding PositionText}" TextWrapping="Wrap"/>
+            <TextBlock Classes="damp" Text="{Binding LoadingLabel}" IsVisible="{Binding IsLoading}"/>
+            <ItemsControl ItemsSource="{Binding Details}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="x:String">
+                        <TextBlock Text="{Binding}" TextWrapping="Wrap"/>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </Border>
+
+</UserControl>

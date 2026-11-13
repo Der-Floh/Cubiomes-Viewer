@@ -5,7 +5,7 @@ using Cubiomes_Viewer.Engine.Data.Compute;
 using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.ComputeServ;
-using Cubiomes_Viewer.Service.ClipboardServ;
+using Cubiomes_Viewer.Engine.Service.PinServ;
 using Cubiomes_Viewer.Service.MapStyleServ;
 using Cubiomes_Viewer.Service.NotificationServ;
 using Cubiomes_Viewer.Service.StructureDescriptionServ;
@@ -51,8 +51,56 @@ public sealed class SelectionViewModelTests : IDisposable
         Assert.Same(_styleService.Spawn, _selection.Marker);
         Assert.Equal("X -544, Z -432  ·  Chunk -34, -27", _selection.PositionText);
         Assert.False(_selection.IsLoading);
+        Assert.False(_selection.IsPin);
         Assert.Empty(_selection.Details);
         Assert.Empty(_selection.Boxes);
+    }
+
+    [AvaloniaFact]
+    public void Selection_Pin_ShowsItsLookAndStoresAnotherOnePicked()
+    {
+        var pin = _services.GetRequiredService<IPinService>().Add(_map.World.Seed, _map.World.Dimension, _spawn);
+
+        _map.Selection = MapSelection.ForPin(pin);
+
+        Assert.True(_selection.IsPin);
+        Assert.Equal(MapSelection.PinName, _selection.Title);
+        Assert.Equal("X -544, Z -432  ·  Chunk -34, -27", _selection.PositionText);
+        Assert.Same(_styleService.PlainPin, _selection.SelectedPinLook?.Look);
+        Assert.Equal(_selection.PinLooks.Count, _selection.PinLooks.Select(choice => choice.Look).Distinct().Count());
+        Assert.Equal(_selection.PinLooks.Count, _selection.PinLooks.Select(choice => choice.Display).Distinct(StringComparer.Ordinal).Count());
+        Assert.Contains(_selection.PinLooks, choice => choice.Display == "Stronghold");
+
+        _selection.SelectedPinLook = _selection.PinLooks.Single(choice => choice.Display == "Village");
+
+        Assert.Equal("Village", pin.Icon);
+    }
+
+    [AvaloniaFact]
+    public void Selection_PinWithAnIcon_ShowsThatLook()
+    {
+        var pins = _services.GetRequiredService<IPinService>();
+        var pin = pins.Add(_map.World.Seed, _map.World.Dimension, _spawn);
+        pins.SetIcon(pin, MarkerNames.Stronghold);
+
+        _map.Selection = MapSelection.ForPin(pin);
+
+        Assert.Equal("Stronghold", _selection.SelectedPinLook?.Display);
+        Assert.Equal(MarkerNames.Stronghold, pin.Icon);
+    }
+
+    [AvaloniaFact]
+    public void RemovePin_PickedPin_TakesItAwayAndClosesTheCallout()
+    {
+        var pins = _services.GetRequiredService<IPinService>();
+        var pin = pins.Add(_map.World.Seed, _map.World.Dimension, _spawn);
+        _map.Selection = MapSelection.ForPin(pin);
+
+        _selection.RemovePinCommand.Execute(null);
+
+        Assert.Empty(pins.GetPins(_map.World.Seed, _map.World.Dimension));
+        Assert.Null(_map.Selection);
+        Assert.False(_selection.IsOpen);
     }
 
     [AvaloniaFact]
@@ -121,21 +169,6 @@ public sealed class SelectionViewModelTests : IDisposable
         _session.SampleHeight += 16;
 
         Assert.NotNull(_map.Selection);
-    }
-
-    [AvaloniaFact]
-    public async Task Actions_OnAPickedMarker_CenterTheMapAndCopyItsPosition()
-    {
-        _map.Selection = new MapSelection("World spawn", _styleService.Spawn, _spawn);
-
-        _selection.CenterCommand.Execute(null);
-        await _selection.CopyCoordinatesCommand.ExecuteAsync(null);
-        await _selection.CopyTeleportCommand.ExecuteAsync(null);
-
-        var clipboard = (RecordingClipboardService)_services.GetRequiredService<IClipboardService>();
-        Assert.Equal((_spawn.X, _spawn.Z), (_map.Camera.CenterX, _map.Camera.CenterZ));
-        Assert.Equal(["-544, -432", "/tp @s -544 ~ -432"], clipboard.Texts);
-        Assert.Empty(GetErrors());
     }
 
     private MapSelection CreateStructureSelection(StructureType type, BlockPos position)

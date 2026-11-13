@@ -39,7 +39,9 @@
         </controls:MapView>
 
         <views:LegendView DataContext="{Binding Legend}"/>
-        <views:SelectionCardView DataContext="{Binding Selection}"/>
+        <Canvas ClipToBounds="True">
+            <views:SelectionCalloutView Name="Callout" DataContext="{Binding Selection}"/>
+        </Canvas>
     </Panel>
 
 </UserControl>

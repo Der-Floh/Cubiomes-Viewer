@@ -59,6 +59,40 @@ public sealed class MapStyleServiceTests
         }
     }
 
+    [AvaloniaFact]
+    public void GetPinLook_Marker_TintsItsGlyphOnceAndFallsBackToThePlainPin()
+    {
+        var styles = new MapStyleService();
+
+        var village = styles.GetPinLook(MarkerNames.Of(StructureType.Village));
+
+        Assert.Same(village, styles.GetPinLook("Village"));
+        Assert.Equal("Village", village.Icon);
+        Assert.True(village.Glyph?.Size.Width > 0);
+        Assert.Same(styles.PlainPin, styles.GetPinLook(null));
+        Assert.Same(styles.PlainPin, styles.GetPinLook("NoSuchMarker"));
+        Assert.Null(styles.PlainPin.Glyph);
+    }
+
+    [AvaloniaFact]
+    public void MarkerStyle_Changed_SwapsTheGlyphOfPinLooksGivenOutBefore()
+    {
+        var styles = new MapStyleService();
+        var stronghold = styles.GetPinLook(MarkerNames.Stronghold);
+        var blocky = stronghold.Glyph;
+        try
+        {
+            styles.MarkerStyle = MarkerStyle.Clean;
+
+            Assert.NotSame(blocky, stronghold.Glyph);
+            Assert.Same(stronghold, styles.GetPinLook(MarkerNames.Stronghold));
+        }
+        finally
+        {
+            styles.MarkerStyle = MarkerStyle.Blocky;
+        }
+    }
+
     private static string? GetResource(string key)
         => Application.Current is { } application && application.TryGetResource(key, null, out var value) ? value as string : null;
 }

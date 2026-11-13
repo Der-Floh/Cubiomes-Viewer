@@ -63,6 +63,9 @@
                 <Button Classes="icon" Command="{Binding Map.GoToOriginCommand}" ToolTip.Tip="{Binding OriginLabel}">
                     <controls:SvgIcon Path="{DynamicResource HomeIcon}"/>
                 </Button>
+                <ToggleButton Classes="icon" IsChecked="{Binding Map.IsPlacingPin}" ToolTip.Tip="{Binding PlacePinLabel}">
+                    <controls:SvgIcon Path="{DynamicResource PinDropIcon}"/>
+                </ToggleButton>
                 <Button Classes="icon" Command="{Binding Map.ZoomOutCommand}" ToolTip.Tip="{Binding ZoomOutLabel}">
                     <controls:SvgIcon Path="{DynamicResource MinusIcon}"/>
                 </Button>

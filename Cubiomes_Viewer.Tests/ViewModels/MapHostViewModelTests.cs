@@ -31,4 +31,17 @@ public sealed class MapHostViewModelTests : IDisposable
         Assert.Null(host.Map.Selection);
         Assert.False(host.Selection.IsOpen);
     }
+
+    [AvaloniaFact]
+    public void Dismiss_WhilePlacingAPin_StopsPlacingAndKeepsThePickedMarker()
+    {
+        var host = _services.GetRequiredService<MapHostViewModel>();
+        host.Map.Selection = new MapSelection("World spawn", _services.GetRequiredService<IMapStyleService>().Spawn, new BlockPos(8, 8));
+        host.Map.IsPlacingPin = true;
+
+        host.DismissCommand.Execute(null);
+
+        Assert.False(host.Map.IsPlacingPin);
+        Assert.True(host.Selection.IsOpen);
+    }
 }

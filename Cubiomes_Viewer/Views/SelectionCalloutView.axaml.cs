@@ -2,9 +2,9 @@ using Avalonia.Controls;
 
 namespace Cubiomes_Viewer.Views;
 
-public sealed partial class SelectionCardView : UserControl
+public sealed partial class SelectionCalloutView : UserControl
 {
-    public SelectionCardView()
+    public SelectionCalloutView()
     {
         InitializeComponent();
     }

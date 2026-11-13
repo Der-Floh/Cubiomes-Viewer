@@ -18,12 +18,14 @@ public sealed partial class MapHostViewModel : ViewModelBase
         Legend = legend;
     }
 
-    /// <summary>Ends the measurement if one is running, otherwise closes the details of the picked marker.</summary>
+    /// <summary>Ends the measurement or the placing of a pin if one is under way, otherwise closes the details of the picked marker.</summary>
     [RelayCommand]
     public void Dismiss()
     {
         if (Map.IsMeasuring)
             Menu.StopMeasuring();
+        else if (Map.IsPlacingPin)
+            Map.IsPlacingPin = false;
         else
             Selection.Close();
     }

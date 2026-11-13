@@ -29,6 +29,7 @@ public sealed partial class WorldBarViewModel : ViewModelBase
     public string GoToZLabel { get; } = "Z";
     public string GoLabel { get; } = "Go";
     public string OriginLabel { get; } = "Go to origin";
+    public string PlacePinLabel { get; } = "Place a pin: click the map where it goes";
     public string ZoomInLabel { get; } = "Zoom in";
     public string ZoomOutLabel { get; } = "Zoom out";
     public decimal MinSampleHeight { get; } = Constants.MinSampleHeight;

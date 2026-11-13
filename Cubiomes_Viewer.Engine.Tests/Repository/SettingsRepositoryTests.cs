@@ -42,7 +42,7 @@ public sealed class SettingsRepositoryTests : IDisposable
         var settings = new AppSettings
         {
             Appearance = { Theme = AppTheme.Dark },
-            Map = { CacheMegabytes = 512, SmoothMotion = false, ShowGrid = false },
+            Map = { CacheMegabytes = 512, SmoothMotion = false, ShowGrid = false, Pins = [new MapPin { Seed = -42, Dimension = Dimension.Nether, X = 7, Z = -9, Icon = "Fortress" }] },
             World = { ShowExperimentalVersions = true, EstimateTerrain = false, Salts = [new StructureSaltSetting { Type = StructureType.Bastion, Salt = -7, IsReplacing = true }] },
             View =
             {
@@ -58,6 +58,8 @@ public sealed class SettingsRepositoryTests : IDisposable
         Assert.Equal(512, loaded.Map.CacheMegabytes);
         Assert.False(loaded.Map.SmoothMotion);
         Assert.False(loaded.Map.ShowGrid);
+        var pin = Assert.Single(loaded.Map.Pins);
+        Assert.Equal((-42L, Dimension.Nether, 7, -9, "Fortress"), (pin.Seed, pin.Dimension, pin.X, pin.Z, pin.Icon));
         Assert.True(loaded.World.ShowExperimentalVersions);
         Assert.Equal(new StructureRules { EstimateTerrain = false, Salts = [new StructureSalt(StructureType.Bastion, -7)] }, loaded.World.ToRules());
         Assert.Equal(-42, loaded.View.Seed);

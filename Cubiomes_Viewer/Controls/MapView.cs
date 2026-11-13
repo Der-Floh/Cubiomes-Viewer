@@ -9,6 +9,7 @@ using Cubiomes_Viewer.Controls.Map;
 using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Worlds;
+using Cubiomes_Viewer.Extensions;
 
 namespace Cubiomes_Viewer.Controls;
 
@@ -87,6 +88,9 @@ public sealed class MapView : Control
         get => GetValue(SmoothMotionProperty);
         set => SetValue(SmoothMotionProperty, value);
     }
+
+    /// <summary>What the map shows right now: its camera on a view of its size.</summary>
+    public MapViewport Viewport => new(Camera, Bounds.Width, Bounds.Height);
 
     private readonly List<IMapLayer> _layers = [];
     private readonly MapGestureController _gestures = new();
@@ -372,22 +376,10 @@ public sealed class MapView : Control
         e.Handled = true;
     }
 
-    private MapViewport Viewport => new(Camera, Bounds.Width, Bounds.Height);
-
     private MapZoomLimits ZoomLimits => new(TileMetrics.MinBlocksPerPixel, TileMetrics.For(World, Layer).MaxBlocksPerPixel);
 
     private MapScene CreateScene()
-        => new(World, MapContent.For(World, Layer, SampleHeight, Octaves), Viewport, GetDeviceScaling());
-
-    /// <summary>Device pixels per unit of the map: the screen's scaling times any scale around the map, such as the interface size.</summary>
-    private double GetDeviceScaling()
-    {
-        if (TopLevel.GetTopLevel(this) is not { } topLevel)
-            return 1;
-
-        var transformScale = this.TransformToVisual(topLevel) is { } transform ? transform.M11 : 1;
-        return topLevel.RenderScaling * transformScale;
-    }
+        => new(World, MapContent.For(World, Layer, SampleHeight, Octaves), Viewport, this.GetPixelGrid());
 
     private void AttachLayer(IMapLayer layer)
     {

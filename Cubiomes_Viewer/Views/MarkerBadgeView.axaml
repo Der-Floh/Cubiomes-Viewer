@@ -2,13 +2,12 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:controls="using:Cubiomes_Viewer.Controls"
              xmlns:style="using:Cubiomes_Viewer.Service.MapStyleServ"
              mc:Ignorable="d" d:DesignWidth="20" d:DesignHeight="20"
              x:Class="Cubiomes_Viewer.Views.MarkerBadgeView"
              x:DataType="style:MapMarker">
 
-    <Border Classes="marker" Background="{Binding Fill}">
-        <Image Classes="marker-glyph" Source="{Binding Glyph}"/>
-    </Border>
+    <controls:MarkerBadge Fill="{Binding Fill}" Glyph="{Binding Glyph}"/>
 
 </UserControl>

@@ -9,13 +9,15 @@ public sealed class MapLayerSet
     public GatewayLayer Gateways { get; }
     public StructureLayer Structures { get; }
     public LandmarkLayer Landmarks { get; }
+    public PinLayer Pins { get; }
     public SelectionLayer Selection { get; }
     public MeasureLayer Measure { get; }
 
     /// <summary>All layers from the bottom one to the top one.</summary>
-    public IReadOnlyList<IMapLayer> InDrawOrder => [Tiles, SlimeChunks, Grid, Gateways, Structures, Landmarks, Selection, Measure];
+    public IReadOnlyList<IMapLayer> InDrawOrder => [Tiles, SlimeChunks, Grid, Gateways, Structures, Landmarks, Pins, Selection, Measure];
 
-    public MapLayerSet(TileLayer tiles, SlimeChunkLayer slimeChunks, GridLayer grid, GatewayLayer gateways, StructureLayer structures, LandmarkLayer landmarks, SelectionLayer selection, MeasureLayer measure)
+    public MapLayerSet(TileLayer tiles, SlimeChunkLayer slimeChunks, GridLayer grid, GatewayLayer gateways, StructureLayer structures, LandmarkLayer landmarks, PinLayer pins,
+        SelectionLayer selection, MeasureLayer measure)
     {
         Tiles = tiles;
         SlimeChunks = slimeChunks;
@@ -23,6 +25,7 @@ public sealed class MapLayerSet
         Gateways = gateways;
         Structures = structures;
         Landmarks = landmarks;
+        Pins = pins;
         Selection = selection;
         Measure = measure;
     }

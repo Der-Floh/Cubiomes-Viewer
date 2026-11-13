@@ -13,6 +13,7 @@ using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Settings;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.LayerServ;
+using Cubiomes_Viewer.Engine.Service.PinServ;
 using Cubiomes_Viewer.Engine.Service.TileServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
 using Cubiomes_Viewer.Service.NotificationServ;
@@ -116,6 +117,10 @@ public sealed partial class MapViewModel : ViewModelBase
 
     public bool IsMeasuring => MeasureStart is not null;
 
+    /// <summary>Whether the next click on the map puts a pin down.</summary>
+    [ObservableProperty]
+    public partial bool IsPlacingPin { get; set; }
+
     [ObservableProperty]
     public partial bool IsGenerating { get; set; }
 
@@ -138,16 +143,19 @@ public sealed partial class MapViewModel : ViewModelBase
     private readonly IMapTileService _tileService;
     private readonly IBiomeCatalog _biomeCatalog;
     private readonly ILayerCatalog _layerCatalog;
+    private readonly IPinService _pinService;
     private int _stateUpdateQueued;
 
     private MapContent Content => MapContent.For(World, Layer, SampleHeight, Octaves);
 
-    public MapViewModel(WorldSession session, IMapTileService tileService, IBiomeCatalog biomeCatalog, ILayerCatalog layerCatalog, INotificationService notificationService) : base(notificationService)
+    public MapViewModel(WorldSession session, IMapTileService tileService, IBiomeCatalog biomeCatalog, ILayerCatalog layerCatalog, IPinService pinService,
+        INotificationService notificationService) : base(notificationService)
     {
         _session = session;
         _tileService = tileService;
         _biomeCatalog = biomeCatalog;
         _layerCatalog = layerCatalog;
+        _pinService = pinService;
 
         ShowSession();
         session.PropertyChanged += OnSessionChanged;
@@ -164,6 +172,14 @@ public sealed partial class MapViewModel : ViewModelBase
     public void ZoomOut() => Navigate(Camera with { BlocksPerPixel = Camera.BlocksPerPixel * ButtonZoomStep });
 
     public void GoTo(double blockX, double blockZ) => Navigate(Camera with { CenterX = blockX, CenterZ = blockZ });
+
+    /// <summary>Puts a pin on a block of the open map, stops placing pins and picks the new pin, so its look can be chosen.</summary>
+    public void PlacePin(BlockPos block)
+    {
+        var pin = _pinService.Add(World.Seed, World.Dimension, block);
+        IsPlacingPin = false;
+        Selection = MapSelection.ForPin(pin);
+    }
 
     /// <summary>Moves the Y level of the world by whole wheel steps, within the heights the world bar offers.</summary>
     public void StepSampleHeight(int steps)

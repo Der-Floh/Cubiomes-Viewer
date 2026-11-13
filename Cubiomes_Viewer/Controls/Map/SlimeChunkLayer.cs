@@ -62,8 +62,8 @@ public sealed class SlimeChunkLayer : IMapLayer
             var (left, top) = scene.Viewport.ToScreen(ToBlocks(request.ChunkX), ToBlocks(request.ChunkZ));
             var (right, bottom) = scene.Viewport.ToScreen(ToBlocks(request.ChunkX + request.SizeChunks), ToBlocks(request.ChunkZ + request.SizeChunks));
             context.DrawImage(bitmap, new Rect(
-                new Point(scene.Snap(left), scene.Snap(top)),
-                new Point(scene.Snap(right), scene.Snap(bottom))));
+                new Point(scene.Pixels.SnapX(left), scene.Pixels.SnapY(top)),
+                new Point(scene.Pixels.SnapX(right), scene.Pixels.SnapY(bottom))));
         }
     }
 

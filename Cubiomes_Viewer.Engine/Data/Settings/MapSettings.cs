@@ -34,6 +34,9 @@ public sealed class MapSettings
     /// <summary>The structure type whose biomes the structure potential layer highlights.</summary>
     public StructureType PotentialStructure { get; set; } = StructureType.Village;
 
+    /// <summary>The pins put on the maps of seeds, oldest first.</summary>
+    public List<MapPin> Pins { get; set; } = [];
+
     /// <summary>The feature options whose structures are not marked on the map; empty when every structure of a marked type is.</summary>
     public List<HiddenStructureOption> HiddenStructureOptions { get; set; } = [];
 

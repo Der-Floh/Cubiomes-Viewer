@@ -97,7 +97,7 @@
         <Setter Property="MinWidth" Value="110"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
-    <Style Selector="Button.icon">
+    <Style Selector="Button.icon, ToggleButton.icon">
         <Setter Property="Padding" Value="6"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
@@ -116,17 +116,32 @@
     <Style Selector="StackPanel.marker-label > TextBlock">
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
-    <Style Selector="Border.marker">
+    <Style Selector="controls|MarkerBadge">
         <Setter Property="Width" Value="20"/>
         <Setter Property="Height" Value="20"/>
-        <Setter Property="CornerRadius" Value="5"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource MarkerOutlineColor}"/>
-        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Outline" Value="{DynamicResource MarkerOutlineColor}"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
-    <Style Selector="Image.marker-glyph">
-        <Setter Property="Width" Value="13"/>
-        <Setter Property="Height" Value="13"/>
+    <Style Selector="controls|PinIcon">
+        <Setter Property="Width" Value="24"/>
+        <Setter Property="Height" Value="24"/>
+        <Setter Property="Face" Value="{DynamicResource PinFaceColor}"/>
+        <Setter Property="Outline" Value="{DynamicResource MarkerOutlineColor}"/>
+    </Style>
+    <Style Selector="ComboBox.pin-look">
+        <Setter Property="MinWidth" Value="0"/>
+        <Setter Property="Padding" Value="4,2,0,2"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+    </Style>
+    <Style Selector="ComboBox.pin-look ComboBoxItem">
+        <Setter Property="Padding" Value="6"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="ComboBox.pin-look ComboBoxItem controls|PinIcon">
+        <Setter Property="Width" Value="36"/>
+        <Setter Property="Height" Value="36"/>
     </Style>
     <Style Selector="ToggleButton.filter">
         <Setter Property="Padding" Value="4"/>
@@ -334,19 +349,19 @@
         <Setter Property="Cursor" Value="Hand"/>
     </Style>
 
-    <Style Selector="Border.card">
+    <Style Selector="Border.callout">
         <Setter Property="Background" Value="{DynamicResource RegionColor}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="8"/>
-        <Setter Property="Padding" Value="12"/>
-        <Setter Property="Margin" Value="12"/>
-        <Setter Property="MinWidth" Value="220"/>
-        <Setter Property="MaxWidth" Value="320"/>
-        <Setter Property="HorizontalAlignment" Value="Left"/>
-        <Setter Property="VerticalAlignment" Value="Bottom"/>
+        <Setter Property="Padding" Value="10,8"/>
+        <Setter Property="MaxWidth" Value="300"/>
+        <Setter Property="BoxShadow" Value="0 2 10 0 #59000000"/>
     </Style>
-    <Style Selector="TextBlock.card-title">
+    <Style Selector="StackPanel.callout">
+        <Setter Property="Spacing" Value="4"/>
+    </Style>
+    <Style Selector="TextBlock.callout-title">
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="Margin" Value="8,0"/>

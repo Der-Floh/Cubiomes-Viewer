@@ -5,6 +5,7 @@ using Avalonia;
 using Avalonia.Headless.XUnit;
 
 using Cubiomes_Viewer.Controls.Map;
+using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Data.Worlds;
@@ -25,7 +26,7 @@ public sealed class StructureLayerTests
     private static readonly WorldKey _world = new(262, McVersion.V1_21_3, Dimension.Nether, GeneratorFlags.None);
     private static readonly BlockPos _fortressWithRoom = new(0, 0);
     private static readonly BlockPos _fortressWithoutRoom = new(64, 32);
-    private static readonly MapScene _scene = new(_world, MapContent.For(_world, LayerMode.Biomes, SampleHeight, octaves: 0), new MapViewport(new MapCamera(0, 0, 1), ViewSize, ViewSize), 1);
+    private static readonly MapScene _scene = new(_world, MapContent.For(_world, LayerMode.Biomes, SampleHeight, octaves: 0), new MapViewport(new MapCamera(0, 0, 1), ViewSize, ViewSize), PixelGrid.Unscaled);
 
     [AvaloniaFact]
     public void HitTest_StructureWithAHiddenOption_IsPassedOver()

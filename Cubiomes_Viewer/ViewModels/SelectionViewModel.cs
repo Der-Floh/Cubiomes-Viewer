@@ -9,24 +9,29 @@ using Cubiomes_Viewer.Engine.Data.Compute;
 using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.ComputeServ;
-using Cubiomes_Viewer.Service.ClipboardServ;
+using Cubiomes_Viewer.Engine.Service.PinServ;
+using Cubiomes_Viewer.Engine.Service.StructureServ;
 using Cubiomes_Viewer.Service.MapStyleServ;
 using Cubiomes_Viewer.Service.NotificationServ;
 using Cubiomes_Viewer.Service.StructureDescriptionServ;
 
 namespace Cubiomes_Viewer.ViewModels;
 
-/// <summary>Describes the marker that is picked on the map and offers actions for its position.</summary>
+/// <summary>
+/// Describes what is picked on the map: what it is, where it lies and, for structures, what the generator tells of it.
+/// A picked pin can be given another look or be taken away.
+/// </summary>
 public sealed partial class SelectionViewModel : ViewModelBase
 {
     private static readonly JobPriority _priority = new(JobPriorityClass.Interactive);
 
-    public string CenterLabel { get; } = "Center";
-    public string CopyCoordinatesLabel { get; } = "Copy coordinates";
-    public string CopyTeleportLabel { get; } = "Copy /tp";
     public string CloseLabel { get; } = "Close";
     public string LoadingLabel { get; } = "Reading details...";
-    public string CopiedTitle { get; } = "Copied";
+    public string PinLookLabel { get; } = "Change the pin's icon";
+    public string RemovePinLabel { get; } = "Remove pin";
+    public string PlainPinLabel { get; } = "Plain pin";
+    public string SpawnPinLabel { get; } = "World spawn";
+    public string StrongholdPinLabel { get; } = "Stronghold";
 
     [ObservableProperty]
     public partial bool IsOpen { get; set; }
@@ -43,6 +48,16 @@ public sealed partial class SelectionViewModel : ViewModelBase
     [ObservableProperty]
     public partial bool IsLoading { get; set; }
 
+    [ObservableProperty]
+    public partial bool IsPin { get; set; }
+
+    /// <summary>The look of the picked pin.</summary>
+    [ObservableProperty]
+    public partial PinLookChoice? SelectedPinLook { get; set; }
+
+    /// <summary>The looks a pin can have: plain first, then one with the glyph of each kind of marker.</summary>
+    public IReadOnlyList<PinLookChoice> PinLooks => field ??= CreatePinLooks();
+
     /// <summary>The boxes of blocks that belong to the picked structure, such as its pieces.</summary>
     [ObservableProperty]
     public partial IReadOnlyList<BlockBox> Boxes { get; set; } = [];
@@ -52,46 +67,42 @@ public sealed partial class SelectionViewModel : ViewModelBase
     private readonly MapViewModel _map;
     private readonly IComputeService _computeService;
     private readonly IStructureDescriptionService _descriptionService;
-    private readonly IClipboardService _clipboardService;
-    private readonly INotificationService _notificationService;
+    private readonly IPinService _pinService;
+    private readonly IStructureCatalog _structureCatalog;
+    private readonly IMapStyleService _styleService;
     private CancellationTokenSource? _loading;
 
-    public SelectionViewModel(MapViewModel map, IComputeService computeService, IStructureDescriptionService descriptionService, IClipboardService clipboardService, INotificationService notificationService) : base(notificationService)
+    public SelectionViewModel(MapViewModel map, IComputeService computeService, IStructureDescriptionService descriptionService, IPinService pinService, IStructureCatalog structureCatalog,
+        IMapStyleService styleService, INotificationService notificationService) : base(notificationService)
     {
         _map = map;
         _computeService = computeService;
         _descriptionService = descriptionService;
-        _clipboardService = clipboardService;
-        _notificationService = notificationService;
+        _pinService = pinService;
+        _structureCatalog = structureCatalog;
+        _styleService = styleService;
 
         map.PropertyChanged += OnMapChanged;
     }
 
     [RelayCommand]
-    public void Center()
-    {
-        if (_map.Selection is { } selection)
-            _map.GoTo(selection.Position.X, selection.Position.Z);
-    }
-
-    [RelayCommand]
-    public Task CopyCoordinatesAsync() => CopyAsync(BlockPosText.ToCoordinates);
-
-    [RelayCommand]
-    public Task CopyTeleportAsync() => CopyAsync(BlockPosText.ToTeleportCommand);
-
-    [RelayCommand]
     public void Close() => _map.Selection = null;
 
-    private Task CopyAsync(Func<BlockPos, string> format) => RunGuardedAsync(async () =>
+    [RelayCommand]
+    public void RemovePin()
     {
-        if (_map.Selection is not { } selection)
+        if (_map.Selection?.Pin is not { } pin)
             return;
 
-        var text = format(selection.Position);
-        await _clipboardService.SetTextAsync(text);
-        _notificationService.ShowSuccess(CopiedTitle, text);
-    });
+        _pinService.Remove(pin);
+        _map.Selection = null;
+    }
+
+    partial void OnSelectedPinLookChanged(PinLookChoice? value)
+    {
+        if (value is not null && _map.Selection?.Pin is { } pin)
+            _pinService.SetIcon(pin, value.Look.Icon);
+    }
 
     private void OnMapChanged(object? sender, PropertyChangedEventArgs e)
     {
@@ -107,12 +118,15 @@ public sealed partial class SelectionViewModel : ViewModelBase
         Boxes = [];
         IsLoading = false;
         IsOpen = selection is not null;
+        IsPin = selection?.Pin is not null;
         if (selection is null)
             return;
 
         Title = selection.Name;
         Marker = selection.Marker;
         PositionText = BlockPosText.ToLocation(selection.Position);
+        if (selection.Pin is { } pin)
+            SelectedPinLook = PinLooks.FirstOrDefault(choice => choice.Look == _styleService.GetPinLook(pin.Icon)) ?? PinLooks[0];
         if (selection.Structure is { } type)
             _ = RunGuardedAsync(() => LoadDetailsAsync(selection, type, _map.World));
     }
@@ -147,6 +161,17 @@ public sealed partial class SelectionViewModel : ViewModelBase
             loading.Dispose();
         }
     }
+
+    private List<PinLookChoice> CreatePinLooks()
+        =>
+        [
+            new() { Display = PlainPinLabel, Look = _styleService.PlainPin },
+            .. _structureCatalog.Structures
+                .DistinctBy(structure => structure.Name, StringComparer.Ordinal)
+                .Select(structure => new PinLookChoice { Display = structure.Name, Look = _styleService.GetPinLook(MarkerNames.Of(structure.Type)) }),
+            new() { Display = SpawnPinLabel, Look = _styleService.GetPinLook(MarkerNames.Spawn) },
+            new() { Display = StrongholdPinLabel, Look = _styleService.GetPinLook(MarkerNames.Stronghold) },
+        ];
 
     private static BlockBox[] GetBoxes(StructureDetails details)
         => details.Variant?.Box is { } box

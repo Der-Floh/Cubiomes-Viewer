@@ -65,8 +65,8 @@ public sealed class GatewayLayer : IMarkerLayer
 
             foreach (var gateway in gateways.Gateways)
             {
-                _styleService.DrawMarker(context, Marker, ToScreen(scene, gateway.Position));
-                _styleService.DrawMarker(context, Marker, ToScreen(scene, gateway.Destination));
+                _styleService.DrawMarker(context, Marker, ToScreen(scene, gateway.Position), scene.Pixels);
+                _styleService.DrawMarker(context, Marker, ToScreen(scene, gateway.Destination), scene.Pixels);
             }
         }
     }
@@ -101,6 +101,6 @@ public sealed class GatewayLayer : IMarkerLayer
     private static Point ToScreen(MapScene scene, BlockPos block)
     {
         var (x, y) = scene.Viewport.ToScreen(block.X, block.Z);
-        return new Point(scene.Snap(x), scene.Snap(y));
+        return new Point(x, y);
     }
 }

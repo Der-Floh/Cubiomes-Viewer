@@ -130,8 +130,8 @@ public sealed class TileLayer : IMapLayer
             var (left, top) = scene.Viewport.ToScreen(request.Tile.X * tileBlocks, request.Tile.Z * tileBlocks);
             var (right, bottom) = scene.Viewport.ToScreen((request.Tile.X + 1) * tileBlocks, (request.Tile.Z + 1) * tileBlocks);
             context.DrawImage(bitmap, new Rect(
-                new Point(scene.Snap(left), scene.Snap(top)),
-                new Point(scene.Snap(right), scene.Snap(bottom))));
+                new Point(scene.Pixels.SnapX(left), scene.Pixels.SnapY(top)),
+                new Point(scene.Pixels.SnapX(right), scene.Pixels.SnapY(bottom))));
         }
 
         return isComplete;

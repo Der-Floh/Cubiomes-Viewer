@@ -101,6 +101,6 @@ public sealed class LandmarkLayer : IMarkerLayer
         if (x < -margin || y < -margin || x > scene.Viewport.Width + margin || y > scene.Viewport.Height + margin)
             return;
 
-        _styleService.DrawMarker(context, marker, new Point(scene.Snap(x), scene.Snap(y)));
+        _styleService.DrawMarker(context, marker, new Point(x, y), scene.Pixels);
     }
 }

@@ -23,6 +23,8 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
     private readonly MapLayerSet _layers;
     private readonly IMapStyleService _styleService;
 
+    private Cursor PlacingCursor => field ??= new Cursor(StandardCursorType.Cross);
+
     public MapHostView(MapHostViewModel viewModel, MapLayerSet layers, IMapStyleService styleService)
     {
         InitializeComponent();
@@ -61,6 +63,8 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
         Map.Clicked += OnMapClicked;
         Map.HeightStepped += OnHeightStepped;
         Map.SizeChanged += OnMapSizeChanged;
+        Map.PropertyChanged += OnMapViewPropertyChanged;
+        Callout.SizeChanged += OnCalloutSizeChanged;
         // The context flyout handles the bubbling event before other handlers see it, so listen while it tunnels.
         Map.AddHandler(ContextRequestedEvent, OnContextRequested, RoutingStrategies.Tunnel);
         _map.NavigationRequested += OnNavigationRequested;
@@ -71,6 +75,7 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
         ShowOverlays();
         ShowMeasurement();
         ShowSelection();
+        ShowPinPlacing();
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
@@ -81,6 +86,8 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
         Map.Clicked -= OnMapClicked;
         Map.HeightStepped -= OnHeightStepped;
         Map.SizeChanged -= OnMapSizeChanged;
+        Map.PropertyChanged -= OnMapViewPropertyChanged;
+        Callout.SizeChanged -= OnCalloutSizeChanged;
         Map.RemoveHandler(ContextRequestedEvent, OnContextRequested);
         _map.NavigationRequested -= OnNavigationRequested;
         _map.PropertyChanged -= OnMapPropertyChanged;
@@ -94,9 +101,21 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
 
     private void OnMapSizeChanged(object? sender, SizeChangedEventArgs e) => _map.ViewSize = (e.NewSize.Width, e.NewSize.Height);
 
+    private void OnMapViewPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property == MapView.CameraProperty || e.Property == BoundsProperty)
+            PlaceCallout();
+    }
+
+    private void OnCalloutSizeChanged(object? sender, SizeChangedEventArgs e) => PlaceCallout();
+
     private void OnMapClicked(object? sender, MapClickEventArgs e)
     {
-        _map.Selection = Map.HitTestMarker(e.Position);
+        if (_map.IsPlacingPin)
+            _map.PlacePin(e.Block);
+        else
+            _map.Selection = Map.HitTestMarker(e.Position);
+
         if (e.PointerType != PointerType.Mouse)
             _map.SetHover(e.Block);
     }
@@ -119,12 +138,16 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
                 or nameof(MapViewModel.GridSpacing) or nameof(MapViewModel.GridMultiplier) or nameof(MapViewModel.MarkerScale) or nameof(MapViewModel.MarkerStyle) or nameof(MapViewModel.MarkerZoomLimits):
                 ShowOverlays();
                 Map.Refresh();
+                PlaceCallout();
                 break;
             case nameof(MapViewModel.MeasureStart) or nameof(MapViewModel.HoverPosition):
                 ShowMeasurement();
                 break;
             case nameof(MapViewModel.Selection):
                 ShowSelection();
+                break;
+            case nameof(MapViewModel.IsPlacingPin):
+                ShowPinPlacing();
                 break;
         }
     }
@@ -152,6 +175,8 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
         _layers.Structures.HiddenOptions = _map.HiddenStructureOptions;
     }
 
+    private void ShowPinPlacing() => Map.Cursor = _map.IsPlacingPin ? PlacingCursor : null;
+
     private void ShowMeasurement()
     {
         _layers.Measure.Start = _map.MeasureStart;
@@ -160,7 +185,21 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
 
     private void ShowSelection()
     {
-        _layers.Selection.Position = _map.Selection?.Position;
+        _layers.Selection.Picked = _map.Selection;
         _layers.Selection.Boxes = _selection.Boxes;
+        PlaceCallout();
+    }
+
+    /// <summary>Keeps the callout of the picked marker beside the marker while the map moves under it.</summary>
+    private void PlaceCallout()
+    {
+        if (_map.Selection is not { } picked)
+            return;
+
+        Callout.Measure(Size.Infinity);
+        var marker = _layers.Selection.GetMarkerBounds(Map.Viewport, picked);
+        var position = CalloutPlacement.Place(Callout.DesiredSize, marker, Map.Bounds.Size);
+        Canvas.SetLeft(Callout, position.X);
+        Canvas.SetTop(Callout, position.Y);
     }
 }

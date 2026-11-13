@@ -13,9 +13,11 @@
     <x:String x:Key="DiceIcon">/Assets/Icons/casino_filled.svg</x:String>
     <x:String x:Key="GoToIcon">/Assets/Icons/my_location_filled.svg</x:String>
     <x:String x:Key="HomeIcon">/Assets/Icons/home_filled.svg</x:String>
+    <x:String x:Key="PinDropIcon">/Assets/Icons/pin_drop_filled.svg</x:String>
     <x:String x:Key="PlusIcon">/Assets/Icons/add.svg</x:String>
     <x:String x:Key="MinusIcon">/Assets/Icons/remove.svg</x:String>
     <x:String x:Key="CloseIcon">/Assets/Icons/close.svg</x:String>
+    <x:String x:Key="DeleteIcon">/Assets/Icons/delete_filled.svg</x:String>
     <x:String x:Key="FilterIcon">/Assets/Icons/filter_alt_filled.svg</x:String>
 
 </ResourceDictionary>

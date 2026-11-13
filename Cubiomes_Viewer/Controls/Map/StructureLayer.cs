@@ -82,9 +82,9 @@ public sealed class StructureLayer : IMarkerLayer
 
                     var position = structures.Positions[index];
                     var (x, y) = scene.Viewport.ToScreen(position.X, position.Z);
-                    var center = new Point(scene.Snap(x), scene.Snap(y));
+                    var center = new Point(x, y);
                     if (bounds.Contains(center))
-                        _styleService.DrawMarker(context, marker, center);
+                        _styleService.DrawMarker(context, marker, center, scene.Pixels);
                 }
             }
         }
