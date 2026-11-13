@@ -1,10 +1,7 @@
 namespace Cubiomes_Viewer.Cli.Data;
 
-/// <summary>What the command line asks the CLI to do.</summary>
-public abstract record CliRequest;
-
 /// <summary>Runs the search of a session file, or continues it.</summary>
-public sealed record SearchRequest : CliRequest
+public sealed record SearchRequest
 {
     public required string SessionPath { get; init; }
 
@@ -14,10 +11,3 @@ public sealed record SearchRequest : CliRequest
     /// <summary>Whether the search starts over instead of continuing where it stopped.</summary>
     public bool Reset { get; init; }
 }
-
-/// <summary>Checks that the generator on this machine produces the reference results.</summary>
-public sealed record SelfTestRequest : CliRequest;
-
-public sealed record HelpRequest : CliRequest;
-
-public sealed record VersionRequest : CliRequest;

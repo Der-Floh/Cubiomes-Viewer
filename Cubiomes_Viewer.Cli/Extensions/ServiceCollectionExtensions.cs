@@ -1,5 +1,5 @@
 using Cubiomes_Viewer.Cli.Repository.FileRepo;
-using Cubiomes_Viewer.Cli.Service.ArgumentServ;
+using Cubiomes_Viewer.Cli.Service.CommandLineServ;
 using Cubiomes_Viewer.Cli.Service.CommandServ;
 using Cubiomes_Viewer.Cli.Service.ConsoleServ;
 using Cubiomes_Viewer.Engine.Service.SelfTestServ;
@@ -31,9 +31,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IFileStore, FileStore>();
 
         // commands
-        services.AddSingleton<IArgumentParser, ArgumentParser>();
         services.AddSingleton<ISearchCommand, SearchCommand>();
         services.AddSingleton<ISelfTestCommand, SelfTestCommand>();
+        services.AddSingleton<ICliCommandLine, CliCommandLine>();
         services.AddSingleton<ICliApplication, CliApplication>();
 
         return services;

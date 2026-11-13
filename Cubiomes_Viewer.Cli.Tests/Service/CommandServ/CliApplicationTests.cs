@@ -15,7 +15,7 @@ public sealed class CliApplicationTests : IDisposable
     }
 
     [Fact]
-    public async Task Help_ListsEveryOption()
+    public async Task Help_ListsEveryOptionAndTheExitCodes()
     {
         string[] options = [CliOptionNames.Session, CliOptionNames.Out, CliOptionNames.Reset, CliOptionNames.SelfTest, CliOptionNames.Version, CliOptionNames.Help];
 
@@ -23,15 +23,16 @@ public sealed class CliApplicationTests : IDisposable
 
         Assert.Equal(ExitCodes.Success, result.ExitCode);
         Assert.All(options, option => Assert.Contains(option, result.Output));
+        Assert.Contains("Exit codes: 0 finished, 1 failed, 2 invalid arguments, 130 stopped before finishing.", result.Output);
     }
 
     [Fact]
-    public async Task Version_ShowsTheCommandAndItsVersion()
+    public async Task Version_ShowsTheVersion()
     {
         var result = await CliRun.RunAsync(_appData, ["--version"], cancellationToken: Token);
 
         Assert.Equal(ExitCodes.Success, result.ExitCode);
-        Assert.StartsWith("cubiomes-viewer-cli 0.0.0", result.Output);
+        Assert.Matches(@"^\d+\.\d+\.\d+", result.Output);
     }
 
     [Theory]

@@ -1,8 +1,10 @@
 using System.Buffers;
 using System.Buffers.Binary;
 using System.IO.Compression;
+using System.IO.Hashing;
 
 using Cubiomes_Viewer.Engine.Data.Export;
+using Cubiomes_Viewer.Engine.Extensions;
 
 namespace Cubiomes_Viewer.Engine.Service.ExportServ;
 
@@ -56,7 +58,7 @@ public sealed class PngWriter : IDisposable
     private byte[] _previousRow;
     private int _rowsInBand;
     private int _rowsWritten;
-    private uint _adler = Adler32.Initial;
+    private uint _adler = Adler32.HashToUInt32([]);
     private bool _isFinished;
 
     public PngWriter(Stream destination, int width, int height, PngFormat format)
@@ -202,7 +204,10 @@ public sealed class PngWriter : IDisposable
         destination.Write(number);
         destination.Write(type);
         destination.Write(data);
-        BinaryPrimitives.WriteUInt32BigEndian(number, PngCrc.Compute(type, data));
+        var crc = new Crc32();
+        crc.Append(type);
+        crc.Append(data);
+        BinaryPrimitives.WriteUInt32BigEndian(number, crc.GetCurrentHashAsUInt32());
         destination.Write(number);
     }
 
@@ -226,7 +231,7 @@ public sealed class PngWriter : IDisposable
                 cancellationToken.ThrowIfCancellationRequested();
                 Apply(filter, filtered, RowCount);
                 var deflated = Deflate(filtered.AsSpan(0, length), endsTheStream: IsLast);
-                return new CompressedBand(deflated.GetBuffer().AsMemory(0, (int)deflated.Length), Adler32.Compute(filtered.AsSpan(0, length)), length);
+                return new CompressedBand(deflated.GetBuffer().AsMemory(0, (int)deflated.Length), Adler32.HashToUInt32(filtered.AsSpan(0, length)), length);
             }
             finally
             {

@@ -19,11 +19,14 @@
     <!-- Svg.Controls.Skia.Avalonia stays below 12.0.0.14, which moves to SkiaSharp 4 while Avalonia 12.1 is built on SkiaSharp 3 -->
     <PackageVersion Include="Svg.Controls.Skia.Avalonia" Version="12.0.0.13" />
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageVersion Include="CsvHelper" Version="34.0.0" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.15" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.15" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.15" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.15" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="10.0.15" />
+    <PackageVersion Include="System.CommandLine" Version="2.0.15" />
+    <PackageVersion Include="System.IO.Hashing" Version="11.0.0" />
     <PackageVersion Include="Velopack" Version="1.2.161" />
     <!-- Test packages -->
     <!-- xunit.v3 stays on 3.x: Avalonia.Headless.XUnit 12.1 depends on it -->

@@ -11,6 +11,7 @@ using Cubiomes_Viewer.Engine.Service.AnalysisServ;
 using Cubiomes_Viewer.Engine.Service.SeedServ;
 using Cubiomes_Viewer.Engine.Service.SettingsServ;
 using Cubiomes_Viewer.Engine.Service.StructureServ;
+using Cubiomes_Viewer.Service.CsvServ;
 using Cubiomes_Viewer.Service.MapStyleServ;
 using Cubiomes_Viewer.Service.NotificationServ;
 using Cubiomes_Viewer.Service.StorageServ;
@@ -57,8 +58,8 @@ public sealed partial class StructureAnalysisViewModel : AnalysisTabViewModel
     private readonly WorldSession _session;
     private readonly HashSet<StructureType> _chosen;
 
-    public StructureAnalysisViewModel(AnalysisScopeViewModel scope, IAnalysisService analysis, IStructureCatalog structureCatalog, IMapStyleService styleService, IStructureDescriptionService descriptions, WorldSession session, MapViewModel map, ISeedHistoryService seedHistory, IStorageService storage, ISettingsService settingsService, INotificationService notifications)
-        : base(scope, session, map, seedHistory, storage, settingsService, notifications)
+    public StructureAnalysisViewModel(AnalysisScopeViewModel scope, IAnalysisService analysis, IStructureCatalog structureCatalog, IMapStyleService styleService, IStructureDescriptionService descriptions, WorldSession session, MapViewModel map, ISeedHistoryService seedHistory, IStorageService storage, ICsvService csv, ISettingsService settingsService, INotificationService notifications)
+        : base(scope, session, map, seedHistory, storage, csv, settingsService, notifications)
     {
         _analysis = analysis;
         _structureCatalog = structureCatalog;

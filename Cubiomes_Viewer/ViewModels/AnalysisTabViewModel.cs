@@ -12,6 +12,7 @@ using Cubiomes_Viewer.Engine.Data.Analysis;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.SeedServ;
 using Cubiomes_Viewer.Engine.Service.SettingsServ;
+using Cubiomes_Viewer.Service.CsvServ;
 using Cubiomes_Viewer.Service.NotificationServ;
 using Cubiomes_Viewer.Service.StorageServ;
 
@@ -56,12 +57,13 @@ public abstract partial class AnalysisTabViewModel : ViewModelBase
     private readonly MapViewModel _map;
     private readonly ISeedHistoryService _seedHistory;
     private readonly IStorageService _storage;
+    private readonly ICsvService _csv;
     private readonly ISettingsService _settingsService;
     private readonly INotificationService _notifications;
     private CancellationTokenSource? _stopping;
     private CsvTable? _table;
 
-    protected AnalysisTabViewModel(AnalysisScopeViewModel scope, WorldSession session, MapViewModel map, ISeedHistoryService seedHistory, IStorageService storage, ISettingsService settingsService, INotificationService notifications) : base(notifications)
+    protected AnalysisTabViewModel(AnalysisScopeViewModel scope, WorldSession session, MapViewModel map, ISeedHistoryService seedHistory, IStorageService storage, ICsvService csv, ISettingsService settingsService, INotificationService notifications) : base(notifications)
     {
         _settingsService = settingsService;
         Scope = scope;
@@ -69,6 +71,7 @@ public abstract partial class AnalysisTabViewModel : ViewModelBase
         _map = map;
         _seedHistory = seedHistory;
         _storage = storage;
+        _csv = csv;
         _notifications = notifications;
     }
 
@@ -112,7 +115,7 @@ public abstract partial class AnalysisTabViewModel : ViewModelBase
             return;
 
         var options = new FilePickerSaveOptions { Title = SaveLabel, SuggestedFileName = FileName, DefaultExtension = "csv", FileTypeChoices = [_csvFiles] };
-        if (await _storage.SaveFileAsync(options, Encoding.UTF8.GetBytes(_table.ToCsv(_settingsService.Current.Export.CsvSeparator))) is { } name)
+        if (await _storage.SaveFileAsync(options, Encoding.UTF8.GetBytes(_csv.Write(_table, _settingsService.Current.Export.CsvSeparator))) is { } name)
             _notifications.ShowSuccess($"Saved {name}.");
     }, browserFireAndForget: true);
 

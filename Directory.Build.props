@@ -13,6 +13,8 @@
     <Copyright>Copyright © 2026 Der_Floh</Copyright>
     <Version>0.0.0</Version>
     <NeutralLanguage>en</NeutralLanguage>
+    <!-- Leaves out the translations of packages such as System.CommandLine, whose messages would follow the language of the machine. -->
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
 </Project>

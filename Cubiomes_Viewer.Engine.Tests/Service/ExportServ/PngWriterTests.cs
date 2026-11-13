@@ -7,8 +7,14 @@ namespace Cubiomes_Viewer.Engine.Tests.Service.ExportServ;
 public sealed class PngWriterTests
 {
     [Fact]
-    public void Crc_OfAnEmptyEndChunk_IsTheOneEveryPngEndsWith()
-        => Assert.Equal(0xAE426082u, PngCrc.Compute("IEND"u8, []));
+    public void Image_EndsWithTheEndChunkEveryPngEndsWith()
+    {
+        byte[] endChunk = [0, 0, 0, 0, (byte)'I', (byte)'E', (byte)'N', (byte)'D', 0xAE, 0x42, 0x60, 0x82];
+
+        var png = Write(PngFormat.Rgb, 1, [[1, 2, 3]]);
+
+        Assert.Equal(endChunk, png[^endChunk.Length..]);
+    }
 
     [Fact]
     public void RgbImage_ReadsBackRowByRow()
@@ -76,21 +82,6 @@ public sealed class PngWriterTests
 
         Assert.True((long)width * format.BytesPerPixel * height > 4 << 20);
         Assert.Equal(rows.SelectMany(row => row), PngReader.Read(png).Pixels);
-    }
-
-    [Fact]
-    public void Adler32_OfTwoPartsCombined_IsTheChecksumOfBothInARow()
-    {
-        var random = new Random(3);
-        var first = new byte[12_345];
-        var second = new byte[7_000];
-        random.NextBytes(first);
-        random.NextBytes(second);
-
-        var combined = Adler32.Combine(Adler32.Compute(first), Adler32.Compute(second), second.Length);
-
-        Assert.Equal(0x11E60398u, Adler32.Compute("Wikipedia"u8));
-        Assert.Equal(Adler32.Compute([.. first, .. second]), combined);
     }
 
     [Fact]

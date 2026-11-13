@@ -1,5 +1,6 @@
 using System.Buffers.Binary;
 using System.IO.Compression;
+using System.IO.Hashing;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -52,7 +53,7 @@ internal static class PngReader
             var length = BinaryPrimitives.ReadInt32BigEndian(png[offset..]);
             var type = Encoding.ASCII.GetString(png.Slice(offset + 4, 4));
             var data = png.Slice(offset + 8, length);
-            Assert.Equal(PngCrc.Compute(png.Slice(offset + 4, 4), data), BinaryPrimitives.ReadUInt32BigEndian(png[(offset + 8 + length)..]));
+            Assert.Equal(Crc32.HashToUInt32(png.Slice(offset + 4, 4 + length)), BinaryPrimitives.ReadUInt32BigEndian(png[(offset + 8 + length)..]));
             offset += 12 + length;
 
             switch (type)

@@ -8,5 +8,4 @@ public static class CliOptionNames
     public const string SelfTest = "--selftest";
     public const string Version = "--version";
     public const string Help = "--help";
-    public const string ShortHelp = "-h";
 }
