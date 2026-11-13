@@ -11,12 +11,13 @@ public sealed class ComputeServiceTests
     private const int FailingValue = -1;
 
     private readonly List<int> _executionOrder = [];
+    private readonly GateHandler _gate = new();
     private readonly JobHandlerRegistry _handlers;
     private readonly CubiomesWorldGeneratorFactory _generatorFactory = new();
 
     public ComputeServiceTests()
     {
-        _handlers = new JobHandlerRegistry([JobHandlerRegistration.Create(new EchoHandler(_executionOrder))]);
+        _handlers = new JobHandlerRegistry([JobHandlerRegistration.Create(new EchoHandler(_executionOrder)), JobHandlerRegistration.Create(_gate)]);
     }
 
     [Fact]
@@ -33,6 +34,8 @@ public sealed class ComputeServiceTests
     public async Task RunAsync_InlineService_RunsJobsByPriorityThenSubmissionOrder()
     {
         using var service = new InlineComputeService(_handlers, _generatorFactory);
+        var gate = service.RunAsync(new GateJob(), new JobPriority(JobPriorityClass.Interactive), TestContext.Current.CancellationToken);
+        Assert.True(_gate.Entered.Wait(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
 
         Task<int>[] tasks =
         [
@@ -42,6 +45,8 @@ public sealed class ComputeServiceTests
             service.RunAsync(new EchoJob(4), new JobPriority(JobPriorityClass.Interactive), TestContext.Current.CancellationToken),
             service.RunAsync(new EchoJob(5), new JobPriority(JobPriorityClass.Visible, 1), TestContext.Current.CancellationToken),
         ];
+        _gate.Released.Set();
+        await gate;
         await Task.WhenAll(tasks);
 
         Assert.Equal([4, 3, 5, 2, 1], _executionOrder);
@@ -106,6 +111,22 @@ public sealed class ComputeServiceTests
     }
 
     private sealed record EchoJob(int Value) : ComputeJob<int>;
+
+    /// <summary>A job that holds the worker until it is released, so that jobs queued meanwhile wait together.</summary>
+    private sealed record GateJob : ComputeJob<bool>;
+
+    private sealed class GateHandler : IJobHandler<GateJob, bool>
+    {
+        public ManualResetEventSlim Entered { get; } = new();
+        public ManualResetEventSlim Released { get; } = new();
+
+        public bool Handle(GateJob job, IWorkerContext context, CancellationToken cancellationToken)
+        {
+            Entered.Set();
+            Released.Wait(cancellationToken);
+            return true;
+        }
+    }
 
     private sealed class EchoHandler(List<int> executionOrder) : IJobHandler<EchoJob, int>
     {
