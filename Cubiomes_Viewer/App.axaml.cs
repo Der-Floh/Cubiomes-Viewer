@@ -8,6 +8,7 @@ using Cubiomes_Viewer.Engine.Extensions;
 using Cubiomes_Viewer.Engine.Service.SearchServ;
 using Cubiomes_Viewer.Engine.Service.SettingsServ;
 using Cubiomes_Viewer.Service.ClipboardServ;
+using Cubiomes_Viewer.Service.IconStyleServ;
 using Cubiomes_Viewer.Service.MapStyleServ;
 using Cubiomes_Viewer.Service.NotificationServ;
 using Cubiomes_Viewer.Service.StorageServ;
@@ -133,6 +134,7 @@ public sealed partial class App : Application
         services.AddSingleton<IStorageService, StorageService>();
         services.AddSingleton<INotificationService, NotificationService>();
         services.AddSingleton<IThemeService, ThemeService>();
+        services.AddSingleton<IIconStyleService, IconStyleService>();
         services.AddSingleton<ITileBitmapService, TileBitmapService>();
         services.AddSingleton<IMapStyleService, MapStyleService>();
         services.AddSingleton<IClipboardService, ClipboardService>();

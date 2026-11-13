@@ -11,6 +11,7 @@ using Cubiomes_Viewer.Engine.Service.SettingsServ;
 using Cubiomes_Viewer.Engine.Service.StructureServ;
 using Cubiomes_Viewer.Engine.Service.TileServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
+using Cubiomes_Viewer.Service.IconStyleServ;
 using Cubiomes_Viewer.Service.ThemeServ;
 using Cubiomes_Viewer.Service.WindowServ;
 
@@ -26,6 +27,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     public string Title { get; } = "Settings";
     public string AppearanceLabel { get; } = "Appearance";
     public string ThemeLabel { get; } = "Theme";
+    public string IconStyleLabel { get; } = "Icons";
     public string MapLabel { get; } = "Map";
     public string SmoothMotionLabel { get; } = "Smooth motion";
     public string CacheLabel { get; } = "Tile cache (MB)";
@@ -48,6 +50,9 @@ public sealed partial class SettingsViewModel : ViewModelBase
 
     [ObservableProperty]
     public partial ComboChoice<AppTheme>? SelectedTheme { get; set; }
+
+    [ObservableProperty]
+    public partial ComboChoice<IconStyle>? SelectedIconStyle { get; set; }
 
     [ObservableProperty]
     public partial bool SmoothMotion { get; set; } = true;
@@ -83,6 +88,12 @@ public sealed partial class SettingsViewModel : ViewModelBase
         new() { Display = "Dark", Value = AppTheme.Dark },
     ];
 
+    public ObservableCollection<ComboChoice<IconStyle>> IconStyles { get; } =
+    [
+        new() { Display = "Outlined", Value = IconStyle.Outlined },
+        new() { Display = "Filled", Value = IconStyle.Filled },
+    ];
+
     public ObservableCollection<ComboChoice<int>> GridMultipliers { get; } =
     [
         new() { Display = "2 (doubling)", Value = 2 },
@@ -115,18 +126,20 @@ public sealed partial class SettingsViewModel : ViewModelBase
     private readonly MapViewModel _map;
     private readonly ISettingsService _settingsService;
     private readonly IThemeService _themeService;
+    private readonly IIconStyleService _iconStyleService;
     private readonly IMapTileService _tileService;
     private readonly IStructureCatalog _structureCatalog;
     private readonly IStructureFinder _structureFinder;
     private readonly IVersionCatalog _versionCatalog;
     private bool _isShowingSettings;
 
-    public SettingsViewModel(MapViewModel map, WorldSettingsViewModel world, UpdateViewModel updates, SelfTestViewModel selfTest, ISettingsService settingsService, IThemeService themeService, IMapTileService tileService,
-        IStructureCatalog structureCatalog, IStructureFinder structureFinder, IVersionCatalog versionCatalog, IWindowService windowService)
+    public SettingsViewModel(MapViewModel map, WorldSettingsViewModel world, UpdateViewModel updates, SelfTestViewModel selfTest, ISettingsService settingsService, IThemeService themeService,
+        IIconStyleService iconStyleService, IMapTileService tileService, IStructureCatalog structureCatalog, IStructureFinder structureFinder, IVersionCatalog versionCatalog, IWindowService windowService)
     {
         _map = map;
         _settingsService = settingsService;
         _themeService = themeService;
+        _iconStyleService = iconStyleService;
         _tileService = tileService;
         _structureCatalog = structureCatalog;
         _structureFinder = structureFinder;
@@ -136,6 +149,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         SelfTest = selfTest;
         CanRememberWindow = windowService.HasWindows;
         SelectedTheme = Themes[0];
+        SelectedIconStyle = IconStyles[0];
         SelectedGridMultiplier = GridMultipliers[0];
         SelectedMarkerSize = MarkerSizes[1];
         SelectedCsvSeparator = CsvSeparators[0];
@@ -153,6 +167,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         try
         {
             SelectedTheme = Themes.First(choice => choice.Value == settings.Appearance.Theme);
+            SelectedIconStyle = IconStyles.FirstOrDefault(choice => choice.Value == settings.Appearance.IconStyle) ?? IconStyles[0];
             SmoothMotion = settings.Map.SmoothMotion;
             CacheMegabytes = Math.Clamp(settings.Map.CacheMegabytes, MapSettings.MinCacheMegabytes, MapSettings.MaxCacheMegabytes);
             GridSpacing = Math.Clamp(settings.Map.GridSpacing, 1, MaxGridSpacing);
@@ -172,6 +187,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
     }
 
     partial void OnSelectedThemeChanged(ComboChoice<AppTheme>? value) => Store(settings => settings.Appearance.Theme = value?.Value ?? AppTheme.System);
+
+    partial void OnSelectedIconStyleChanged(ComboChoice<IconStyle>? value) => Store(settings => settings.Appearance.IconStyle = value?.Value ?? IconStyle.Outlined);
 
     partial void OnSmoothMotionChanged(bool value) => Store(settings => settings.Map.SmoothMotion = value);
 
@@ -229,6 +246,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     {
         var settings = _settingsService.Current;
         _themeService.Apply(settings.Appearance.Theme);
+        _iconStyleService.Apply(settings.Appearance.IconStyle);
         _map.SmoothMotion = settings.Map.SmoothMotion;
         _map.GridSpacing = settings.Map.GridSpacing;
         _map.GridMultiplier = settings.Map.GridMultiplier;

@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:controls="using:Cubiomes_Viewer.Controls"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:Cubiomes_Viewer.ViewModels"
              mc:Ignorable="d" d:DesignWidth="320" d:DesignHeight="900"
@@ -128,7 +129,7 @@
                             </StackPanel>
                         </ToggleButton>
                         <Button Grid.Column="1" Classes="card-close" Command="{Binding RemoveCommand}" ToolTip.Tip="{Binding RemoveLabel}">
-                            <Svg Path="{StaticResource CloseIcon}"/>
+                            <controls:SvgIcon Path="{DynamicResource CloseIcon}"/>
                         </Button>
                     </Grid>
                     <ItemsControl ItemsSource="{Binding Problems}" ItemTemplate="{StaticResource ProblemTemplate}" IsVisible="{Binding HasProblems}"/>
@@ -196,7 +197,7 @@
                             <Grid ColumnDefinitions="*,Auto">
                                 <Button Classes="preset" Content="{Binding Name}" Command="{Binding OpenCommand}"/>
                                 <Button Grid.Column="1" Classes="card-close" Command="{Binding DeleteCommand}" ToolTip.Tip="{Binding DeleteLabel}">
-                                    <Svg Path="{StaticResource CloseIcon}"/>
+                                    <controls:SvgIcon Path="{DynamicResource CloseIcon}"/>
                                 </Button>
                             </Grid>
                         </DataTemplate>

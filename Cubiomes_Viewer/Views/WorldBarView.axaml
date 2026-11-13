@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:controls="using:Cubiomes_Viewer.Controls"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:Cubiomes_Viewer.ViewModels"
              mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="60"
@@ -16,7 +17,7 @@
                     </TextBox.KeyBindings>
                 </TextBox>
                 <Button Classes="icon" Command="{Binding RandomSeedCommand}" ToolTip.Tip="{Binding RandomSeedLabel}">
-                    <Svg Path="{StaticResource DiceIcon}"/>
+                    <controls:SvgIcon Path="{DynamicResource DiceIcon}"/>
                 </Button>
                 <DropDownButton Content="{Binding RecentSeedsLabel}" IsEnabled="{Binding HasRecentSeeds}" VerticalAlignment="Center">
                     <DropDownButton.Flyout>
@@ -46,7 +47,7 @@
 
             <WrapPanel Classes="toolbar-group">
                 <Button Classes="icon" ToolTip.Tip="{Binding GoToLabel}">
-                    <Svg Path="{StaticResource GoToIcon}"/>
+                    <controls:SvgIcon Path="{DynamicResource GoToIcon}"/>
                     <Button.Flyout>
                         <Flyout>
                             <StackPanel Classes="flyout-form">
@@ -60,13 +61,13 @@
                     </Button.Flyout>
                 </Button>
                 <Button Classes="icon" Command="{Binding Map.GoToOriginCommand}" ToolTip.Tip="{Binding OriginLabel}">
-                    <Svg Path="{StaticResource HomeIcon}"/>
+                    <controls:SvgIcon Path="{DynamicResource HomeIcon}"/>
                 </Button>
                 <Button Classes="icon" Command="{Binding Map.ZoomOutCommand}" ToolTip.Tip="{Binding ZoomOutLabel}">
-                    <Svg Path="{StaticResource MinusIcon}"/>
+                    <controls:SvgIcon Path="{DynamicResource MinusIcon}"/>
                 </Button>
                 <Button Classes="icon" Command="{Binding Map.ZoomInCommand}" ToolTip.Tip="{Binding ZoomInLabel}">
-                    <Svg Path="{StaticResource PlusIcon}"/>
+                    <controls:SvgIcon Path="{DynamicResource PlusIcon}"/>
                 </Button>
             </WrapPanel>
         </WrapPanel>

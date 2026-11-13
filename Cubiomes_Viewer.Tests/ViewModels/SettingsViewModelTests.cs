@@ -1,5 +1,6 @@
 using System.Text;
 
+using Avalonia;
 using Avalonia.Headless.XUnit;
 
 using Cubiomes_Viewer.Data;
@@ -44,6 +45,25 @@ public sealed class SettingsViewModelTests : IDisposable
         Assert.Equal((100, 10), (_map.GridSpacing, _map.GridMultiplier));
         Assert.True(_map.MarkerScale > 1);
         Assert.Equal((100, 10, MarkerSize.Large), (Stored.Map.GridSpacing, Stored.Map.GridMultiplier, Stored.Map.MarkerSize));
+    }
+
+    [AvaloniaFact]
+    public void IconStyle_Filled_SwitchesTheButtonIconsAndIsStored()
+    {
+        try
+        {
+            _settings.SelectedIconStyle = _settings.IconStyles.Single(choice => choice.Value == IconStyle.Filled);
+
+            Assert.Equal(IconStyle.Filled, Stored.Appearance.IconStyle);
+            Assert.Equal("/Assets/Icons/home_filled.svg", GetIcon("HomeIcon"));
+        }
+        finally
+        {
+            _settings.SelectedIconStyle = _settings.IconStyles.Single(choice => choice.Value == IconStyle.Outlined);
+        }
+
+        Assert.Equal(IconStyle.Outlined, Stored.Appearance.IconStyle);
+        Assert.Equal("/Assets/Icons/home.svg", GetIcon("HomeIcon"));
     }
 
     [AvaloniaFact]
@@ -106,4 +126,7 @@ public sealed class SettingsViewModelTests : IDisposable
         Assert.Equal(MapCamera.Default, main.Map.Camera);
         Assert.Empty(_services.GetRequiredService<SearchSetupViewModel>().Conditions);
     }
+
+    private static string? GetIcon(string key)
+        => Application.Current is { } application && application.TryGetResource(key, null, out var path) ? path as string : null;
 }

@@ -15,6 +15,8 @@
             <TextBlock Classes="section" Text="{Binding AppearanceLabel}"/>
             <TextBlock Classes="field-label" Text="{Binding ThemeLabel}"/>
             <ComboBox ItemsSource="{Binding Themes}" SelectedItem="{Binding SelectedTheme}" HorizontalAlignment="Stretch"/>
+            <TextBlock Classes="field-label" Text="{Binding IconStyleLabel}"/>
+            <ComboBox ItemsSource="{Binding IconStyles}" SelectedItem="{Binding SelectedIconStyle}" HorizontalAlignment="Stretch"/>
 
             <TextBlock Classes="section" Text="{Binding MapLabel}"/>
             <CheckBox Content="{Binding SmoothMotionLabel}" IsChecked="{Binding SmoothMotion}"/>

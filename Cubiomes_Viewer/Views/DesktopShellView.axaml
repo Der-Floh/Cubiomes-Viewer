@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:controls="using:Cubiomes_Viewer.Controls"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:Cubiomes_Viewer.ViewModels"
              xmlns:views="using:Cubiomes_Viewer.Views"
@@ -16,23 +17,23 @@
                 <Grid RowDefinitions="*,Auto">
                     <ListBox Classes="rail" SelectedIndex="{Binding SelectedPanelIndex}" SelectionMode="Single,Toggle">
                         <ListBoxItem ToolTip.Tip="{Binding LayersLabel}">
-                            <Svg Path="{StaticResource LayersIcon}"/>
+                            <controls:SvgIcon Path="{DynamicResource LayersIcon}"/>
                         </ListBoxItem>
                         <ListBoxItem ToolTip.Tip="{Binding SearchLabel}">
-                            <Svg Path="{StaticResource SearchIcon}"/>
+                            <controls:SvgIcon Path="{DynamicResource SearchIcon}"/>
                         </ListBoxItem>
                         <ListBoxItem ToolTip.Tip="{Binding AnalysisLabel}">
-                            <Svg Path="{StaticResource AnalysisIcon}"/>
+                            <controls:SvgIcon Path="{DynamicResource AnalysisIcon}"/>
                         </ListBoxItem>
                         <ListBoxItem ToolTip.Tip="{Binding ExportLabel}">
-                            <Svg Path="{StaticResource ExportIcon}"/>
+                            <controls:SvgIcon Path="{DynamicResource ExportIcon}"/>
                         </ListBoxItem>
                         <ListBoxItem ToolTip.Tip="{Binding SettingsLabel}">
-                            <Svg Path="{StaticResource SettingsIcon}"/>
+                            <controls:SvgIcon Path="{DynamicResource SettingsIcon}"/>
                         </ListBoxItem>
                     </ListBox>
                     <Button Grid.Row="1" Classes="rail-button" Command="{Binding ToggleMapWindowCommand}" ToolTip.Tip="{Binding MapWindowLabel}" IsVisible="{Binding CanUndockMap}">
-                        <Svg Path="{StaticResource MapWindowIcon}"/>
+                        <controls:SvgIcon Path="{DynamicResource MapWindowIcon}"/>
                     </Button>
                 </Grid>
             </Border>

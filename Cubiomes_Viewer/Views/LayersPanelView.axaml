@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:controls="using:Cubiomes_Viewer.Controls"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:Cubiomes_Viewer.ViewModels"
              xmlns:views="using:Cubiomes_Viewer.Views"
@@ -23,7 +24,7 @@
                     <ContentControl Content="{Binding Toggle}"/>
                     <ToggleButton Grid.Column="1" Classes="filter" Classes.filtered="{Binding IsFiltered}" IsChecked="{Binding IsExpanded}"
                                   IsVisible="{Binding HasFeatures}" ToolTip.Tip="{Binding FilterTip}">
-                        <Svg Path="{StaticResource FilterIcon}"/>
+                        <controls:SvgIcon Path="{DynamicResource FilterIcon}"/>
                     </ToggleButton>
                 </Grid>
                 <Border Classes="feature-filter" IsVisible="{Binding IsExpanded}">
