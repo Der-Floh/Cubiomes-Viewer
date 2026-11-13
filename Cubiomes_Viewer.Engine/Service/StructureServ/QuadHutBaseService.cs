@@ -13,7 +13,7 @@ namespace Cubiomes_Viewer.Engine.Service.StructureServ;
 public sealed class QuadHutBaseService : IQuadHutBaseService, IDisposable
 {
     private const int HighBits = 28;
-    private const int ChunkBits = 22;
+    private const int ChunkBits = 20;
     private const uint ChunkSize = 1u << ChunkBits;
     private const int ChunksPerLowBits = 1 << (HighBits - ChunkBits);
     private const int StorageFormat = 1;
@@ -83,7 +83,7 @@ public sealed class QuadHutBaseService : IQuadHutBaseService, IDisposable
             var done = index;
             var bases = await ScanAsync(low, share => progress?.Report((done + share) / missing.Count), cancellationToken);
             _bases[low] = bases;
-            await StoreAsync(low, bases, cancellationToken);
+            await TryStoreAsync(low, bases, cancellationToken);
         }
 
         if (missing.Count > 0)
@@ -118,8 +118,18 @@ public sealed class QuadHutBaseService : IQuadHutBaseService, IDisposable
         return null;
     }
 
-    private Task StoreAsync(ulong low, ulong[] bases, CancellationToken cancellationToken)
-        => _store.WriteAsync(GetStorageKey(low), MemoryMarshal.AsBytes(bases.AsSpan()).ToArray(), cancellationToken);
+    /// <summary>Keeps the bases for later runs; they are in memory already, so a store that fails only means finding them again next time.</summary>
+    private async Task TryStoreAsync(ulong low, ulong[] bases, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _store.WriteAsync(GetStorageKey(low), MemoryMarshal.AsBytes(bases.AsSpan()).ToArray(), cancellationToken);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger.LogWarning(ex, "The quad-hut bases with the lower bits {LowBits:x5} could not be stored and are found again next time", low);
+        }
+    }
 
     private static string GetStorageKey(ulong low) => string.Format(CultureInfo.InvariantCulture, StorageKeyFormat, StorageFormat, low);
 }

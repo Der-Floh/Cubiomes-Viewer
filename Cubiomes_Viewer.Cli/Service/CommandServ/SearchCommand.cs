@@ -126,9 +126,14 @@ public sealed class SearchCommand : ISearchCommand
 
         EventHandler follow = (_, _) => Follow(run);
         _search.Changed += follow;
+        Exception? failure = null;
         try
         {
             await (resume ? _search.ResumeAsync(cancellationToken) : _search.StartAsync(setup, cancellationToken));
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            failure = ex;
         }
         finally
         {
@@ -141,8 +146,8 @@ public sealed class SearchCommand : ISearchCommand
         if (!saved)
             _console.WriteMessage($"The progress could not be saved to {request.SessionPath}: {error}");
 
-        _console.WriteMessage(DescribeOutcome());
-        if (!saved)
+        _console.WriteMessage(failure is null ? DescribeOutcome() : $"The search failed: {failure.Message}");
+        if (!saved || failure is not null)
             return ExitCodes.Failure;
         return _search.State == SearchState.Finished ? ExitCodes.Success : ExitCodes.Stopped;
     }

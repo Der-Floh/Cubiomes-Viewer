@@ -37,6 +37,10 @@ public sealed class CliApplication : ICliApplication
         {
             return await parseResult.InvokeAsync(_invocation, cancellationToken);
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return ExitCodes.Stopped;
+        }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             _console.WriteMessage(ex.Message);

@@ -56,12 +56,17 @@ internal sealed class ComputeQueue<TItem>
         }
     }
 
-    public void Complete()
+    /// <summary>Stops handing out items and returns the ones still waiting, which no worker takes now.</summary>
+    public IReadOnlyList<TItem> Complete()
     {
         lock (_gate)
         {
             _completed = true;
+            List<TItem> waiting = [];
+            while (_items.TryDequeue(out var item, out _))
+                waiting.Add(item);
             Monitor.PulseAll(_gate);
+            return waiting;
         }
     }
 }

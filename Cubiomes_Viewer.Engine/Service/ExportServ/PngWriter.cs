@@ -54,7 +54,7 @@ public sealed class PngWriter : IDisposable
     private readonly int _maxBandsInFlight;
     private readonly Queue<Task<CompressedBand>> _bands = new();
     private readonly CancellationTokenSource _stopping = new();
-    private byte[] _band;
+    private byte[] _band = [];
     private byte[] _previousRow;
     private int _rowsInBand;
     private int _rowsWritten;
@@ -73,9 +73,8 @@ public sealed class PngWriter : IDisposable
         Format = format;
         RowBytes = checked(width * format.BytesPerPixel);
         _destination = destination;
-        _rowsPerBand = Math.Max(1, BandBytes / RowBytes);
+        _rowsPerBand = Math.Clamp(BandBytes / RowBytes, 1, height);
         _maxBandsInFlight = (int)Math.Clamp(BytesInFlight / ((long)_rowsPerBand * RowBytes), 1, Environment.ProcessorCount);
-        _band = ArrayPool<byte>.Shared.Rent(_rowsPerBand * RowBytes);
         _previousRow = new byte[RowBytes];
 
         destination.Write(Signature);
@@ -84,6 +83,9 @@ public sealed class PngWriter : IDisposable
         _imageData = new ImageDataStream(destination);
         _imageData.Write(ZlibHeader);
     }
+
+    /// <summary>How many rows are compressed together; never more than the image has, as a tiled export keeps a writer per tile.</summary>
+    internal int RowsPerBand => _rowsPerBand;
 
     private PngFilter[] Filters => Format.ColorType == PngColorType.Indexed ? _indexedFilters : _rgbFilters;
 
@@ -94,6 +96,9 @@ public sealed class PngWriter : IDisposable
             throw new ArgumentException($"A row of this image holds {RowBytes} bytes, not {row.Length}.", nameof(row));
         if (_rowsWritten == Height)
             throw new InvalidOperationException($"The image has only {Height} rows.");
+
+        if (_rowsInBand == 0)
+            _band = ArrayPool<byte>.Shared.Rent(Math.Min(_rowsPerBand, Height - _rowsWritten) * RowBytes);
 
         row.CopyTo(_band.AsSpan(_rowsInBand * RowBytes));
         _rowsInBand++;
@@ -137,7 +142,7 @@ public sealed class PngWriter : IDisposable
     {
         var job = new BandJob(_band, _rowsInBand, RowBytes, Format.BytesPerPixel, _previousRow, Filters, IsLast: _rowsWritten == Height);
         _previousRow = _band.AsSpan((_rowsInBand - 1) * RowBytes, RowBytes).ToArray();
-        _band = _rowsWritten == Height ? [] : ArrayPool<byte>.Shared.Rent(_rowsPerBand * RowBytes);
+        _band = [];
         _rowsInBand = 0;
 
         if (OperatingSystem.IsBrowser())

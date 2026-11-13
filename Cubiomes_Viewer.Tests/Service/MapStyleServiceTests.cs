@@ -74,6 +74,17 @@ public sealed class MapStyleServiceTests
         Assert.Null(styles.PlainPin.Glyph);
     }
 
+    [AvaloniaTheory]
+    [InlineData("Home")]
+    [InlineData("Search")]
+    [InlineData("Delete")]
+    public void GetPinLook_NameOfAnInterfaceIcon_IsThePlainPin(string icon)
+    {
+        var styles = new MapStyleService();
+
+        Assert.Same(styles.PlainPin, styles.GetPinLook(icon));
+    }
+
     [AvaloniaFact]
     public void MarkerStyle_Changed_SwapsTheGlyphOfPinLooksGivenOutBefore()
     {

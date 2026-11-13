@@ -10,7 +10,8 @@ public interface IComputeService
     int WorkerCount { get; }
 
     /// <summary>
-    /// Queues a job. A job cancelled before a worker picks it up never runs; a running job stops at its next cancellation check.
+    /// Queues a job. A job cancelled before a worker picks it up never runs; a running job stops at its next cancellation
+    /// check, except on a Web Worker, which finishes the job it has and only then takes the cancellation into account.
     /// </summary>
     Task<TResult> RunAsync<TResult>(ComputeJob<TResult> job, JobPriority priority, CancellationToken cancellationToken = default);
 }

@@ -41,6 +41,7 @@ public sealed class TileLayer : IMapLayer
     private readonly LinkedList<TileBitmap> _recency = new();
     private readonly UiThreadCoalescer _invalidation;
     private byte[] _pixels = [];
+    private long _frame;
 
     /// <summary>
     /// The last content whose tiles covered the view. While the tiles of another height or octave limit of the same layer
@@ -89,6 +90,7 @@ public sealed class TileLayer : IMapLayer
         if (!IsVisible || scene.Viewport.IsEmpty)
             return;
 
+        _frame++;
         var metrics = TileMetrics.For(scene.Content.World, scene.Content.Layer);
         var fineScale = TilePyramid.SelectScale(metrics, scene.Viewport.BlocksPerPixel);
         var coarseScale = TilePyramid.GetCoarserScale(metrics, fineScale);
@@ -143,6 +145,7 @@ public sealed class TileLayer : IMapLayer
         {
             _recency.Remove(node);
             _recency.AddFirst(node);
+            node.Value = node.Value with { Frame = _frame };
             return node.Value.Bitmap;
         }
 
@@ -150,7 +153,7 @@ public sealed class TileLayer : IMapLayer
             return null;
 
         var bitmap = CreateBitmap(tile);
-        _bitmaps.Add(request, _recency.AddFirst(new TileBitmap(request, bitmap)));
+        _bitmaps.Add(request, _recency.AddFirst(new TileBitmap(request, bitmap, _frame)));
         TrimBitmaps();
         return bitmap;
     }
@@ -174,9 +177,10 @@ public sealed class TileLayer : IMapLayer
         _bitmaps.Clear();
     }
 
+    /// <summary>Lets go of the bitmaps used longest ago beyond the limit, but never of one the frame being drawn uses.</summary>
     private void TrimBitmaps()
     {
-        while (_bitmaps.Count > MaxBitmaps && _recency.Last is { } last)
+        while (_bitmaps.Count > MaxBitmaps && _recency.Last is { } last && last.Value.Frame != _frame)
         {
             _recency.RemoveLast();
             _bitmaps.Remove(last.Value.Request);
@@ -184,5 +188,5 @@ public sealed class TileLayer : IMapLayer
         }
     }
 
-    private readonly record struct TileBitmap(TileRequest Request, Bitmap Bitmap);
+    private readonly record struct TileBitmap(TileRequest Request, Bitmap Bitmap, long Frame);
 }

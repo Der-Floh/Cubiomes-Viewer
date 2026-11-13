@@ -11,16 +11,17 @@ namespace Cubiomes_Viewer.Cli.Tests;
 /// <summary>Runs the CLI as its process does, with app data in a folder of the test's and the streams it writes kept.</summary>
 internal static class CliRun
 {
-    public static async Task<CliResult> RunAsync(string appData, IReadOnlyList<string> arguments, StringWriter? output = null, CancellationToken cancellationToken = default)
+    public static async Task<CliResult> RunAsync(string appData, IReadOnlyList<string> arguments, StringWriter? output = null, CancellationToken cancellationToken = default, Action<IServiceCollection>? replaceServices = null)
     {
         output ??= new StringWriter();
         var messages = new StringWriter();
         var console = new SystemConsole(output, messages, canReplaceStatus: false, isOutputInTerminal: false, getWidth: () => 0);
-        await using var services = new ServiceCollection()
+        var collection = new ServiceCollection()
             .AddCubiomesEngine()
             .AddCubiomesCli(console)
-            .AddSingleton<IAppDataStore>(new FileSystemAppDataStore(appData))
-            .BuildServiceProvider();
+            .AddSingleton<IAppDataStore>(new FileSystemAppDataStore(appData));
+        replaceServices?.Invoke(collection);
+        await using var services = collection.BuildServiceProvider();
 
         var exitCode = await services.GetRequiredService<ICliApplication>().RunAsync(arguments, cancellationToken);
         return new CliResult(exitCode, output.ToString(), messages.ToString());

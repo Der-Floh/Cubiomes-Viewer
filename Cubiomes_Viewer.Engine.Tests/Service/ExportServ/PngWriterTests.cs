@@ -16,6 +16,18 @@ public sealed class PngWriterTests
         Assert.Equal(endChunk, png[^endChunk.Length..]);
     }
 
+    [Theory]
+    [InlineData(16, 16)]
+    [InlineData(512, 512)]
+    [InlineData(1, 100_000)]
+    public void Band_OfASmallImage_HoldsNoMoreRowsThanTheImage(int width, int height)
+    {
+        using var writer = new PngWriter(new MemoryStream(), width, height, PngFormat.Rgb);
+
+        Assert.InRange(writer.RowsPerBand, 1, height);
+        Assert.True((long)writer.RowsPerBand * width * PngFormat.Rgb.BytesPerPixel <= Math.Max(4 << 20, width * PngFormat.Rgb.BytesPerPixel));
+    }
+
     [Fact]
     public void RgbImage_ReadsBackRowByRow()
     {

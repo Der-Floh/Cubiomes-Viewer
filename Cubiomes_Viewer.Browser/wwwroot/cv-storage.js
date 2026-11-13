@@ -2,12 +2,24 @@ const databaseName = 'cubiomes-viewer';
 const storeName = 'documents';
 let database;
 
+// A connection that failed to open or was closed later is opened again by the next call.
 function openDatabase() {
     database ??= new Promise((resolve, reject) => {
         const request = indexedDB.open(databaseName, 1);
         request.onupgradeneeded = () => request.result.createObjectStore(storeName, { keyPath: 'key' });
-        request.onsuccess = () => resolve(request.result);
+        request.onsuccess = () => {
+            const opened = request.result;
+            opened.onclose = () => database = undefined;
+            opened.onversionchange = () => {
+                opened.close();
+                database = undefined;
+            };
+            resolve(opened);
+        };
         request.onerror = () => reject(request.error);
+    }).catch(error => {
+        database = undefined;
+        throw error;
     });
     return database;
 }

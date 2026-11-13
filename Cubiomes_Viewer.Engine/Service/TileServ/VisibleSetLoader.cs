@@ -1,7 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
 using Cubiomes_Viewer.Engine.Data.Compute;
-using Cubiomes_Viewer.Engine.Interop;
 using Cubiomes_Viewer.Engine.Service.ComputeServ;
 
 using Microsoft.Extensions.Logging;
@@ -10,7 +9,7 @@ namespace Cubiomes_Viewer.Engine.Service.TileServ;
 
 /// <summary>
 /// Loads the data for the requests a view currently needs through the compute service, keeps it in a cache
-/// and cancels work for requests that are no longer needed. A request whose job fails is not tried again.
+/// and cancels work for requests that are no longer needed. A request whose job fails is not tried again while it stays visible.
 /// </summary>
 public sealed class VisibleSetLoader<TRequest, TData>
     where TRequest : notnull
@@ -59,6 +58,7 @@ public sealed class VisibleSetLoader<TRequest, TData>
         lock (_gate)
         {
             var wanted = requests.ToHashSet();
+            _failed.IntersectWith(wanted);
             foreach (var (request, cancellation) in _pending.Where(pending => !wanted.Contains(pending.Key)).ToArray())
             {
                 _pending.Remove(request);
@@ -94,7 +94,7 @@ public sealed class VisibleSetLoader<TRequest, TData>
         {
             // The request left the visible set before its data was loaded.
         }
-        catch (Exception ex) when (ex is CubiomesNativeException or ComputeJobException)
+        catch (Exception ex)
         {
             _logger.LogWarning(ex, "{Request} could not be generated and is skipped", request);
             lock (_gate)

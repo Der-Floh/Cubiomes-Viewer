@@ -88,6 +88,8 @@ public sealed class ConditionValidator : IConditionValidator
         var area = condition.Area;
         if (area.MinX > area.MaxX || area.MinZ > area.MaxZ || area.Radius < 0)
             yield return "The area has no size.";
+        else if (area.Radius > 0 && area != SearchArea.Circle(area.Radius))
+            yield return "A circle has to lie around its reference point, in the square that just holds it.";
         else if (Math.Min(area.MinX, area.MinZ) < -SearchArea.MaxOffset || Math.Max(area.MaxX, area.MaxZ) > SearchArea.MaxOffset)
             yield return $"The area may reach at most {SearchArea.MaxOffset.ToString("N0", CultureInfo.InvariantCulture)} blocks from its reference point.";
     }

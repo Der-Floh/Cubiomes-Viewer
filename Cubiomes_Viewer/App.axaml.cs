@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
 
 using Cubiomes_Viewer.Controls.Map;
 using Cubiomes_Viewer.Data;
@@ -116,6 +117,13 @@ public sealed partial class App : Application
     private static void SetupGlobalExceptionHandlers()
     {
         var logger = Services.GetRequiredService<ILogger<App>>();
+
+        Dispatcher.UIThread.UnhandledException += (_, e) =>
+        {
+            logger.LogError(e.Exception, "Unhandled exception on the UI thread");
+            Services.GetService<INotificationService>()?.ShowError(e.Exception.Message);
+            e.Handled = true;
+        };
 
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
         {

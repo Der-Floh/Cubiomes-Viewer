@@ -59,8 +59,20 @@ internal sealed class BrowserAppDataStore : IAppDataStore
         }
     }
 
-    private Task<JSObject> ImportModuleAsync()
-        => _moduleImport ??= JSHost.ImportAsync(StorageInterop.ModuleName, StorageInterop.ModuleUrl);
+    /// <summary>Imports the storage module once; a failed import is tried again by the next call.</summary>
+    private async Task ImportModuleAsync()
+    {
+        _moduleImport ??= JSHost.ImportAsync(StorageInterop.ModuleName, StorageInterop.ModuleUrl);
+        try
+        {
+            await _moduleImport;
+        }
+        catch (JSException)
+        {
+            _moduleImport = null;
+            throw;
+        }
+    }
 
     private static IOException CreateStorageException(JSException exception)
         => new($"The browser storage is not available: {exception.Message}", exception);

@@ -74,6 +74,8 @@ public sealed class WorkerPoolComputeService : IComputeService, IDisposable
 
         foreach (var worker in workers)
             worker.Dispose();
+        while (_queue.TryDequeue(out var item))
+            item.Fail(new ObjectDisposedException(nameof(WorkerPoolComputeService)));
     }
 
     private void StartWorkersOnce()
@@ -194,7 +196,9 @@ public sealed class WorkerPoolComputeService : IComputeService, IDisposable
 
     private void RetryOrFail(IPoolWorkItem item, int attempt, ComputeWorkerException exception)
     {
-        if (attempt < MaxAttemptsPerJob)
+        if (IsDisposed)
+            item.Fail(new ObjectDisposedException(nameof(WorkerPoolComputeService)));
+        else if (attempt < MaxAttemptsPerJob)
             _queue.Enqueue(item, item.Priority);
         else
             item.Fail(new ComputeJobException($"The job failed on {attempt} compute workers: {exception.Message}", exception));
@@ -212,6 +216,15 @@ public sealed class WorkerPoolComputeService : IComputeService, IDisposable
 
             _idleWorkers.Push(worker);
             return null;
+        }
+    }
+
+    private bool IsDisposed
+    {
+        get
+        {
+            lock (_gate)
+                return _isDisposed;
         }
     }
 

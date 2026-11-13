@@ -1,4 +1,5 @@
 using Cubiomes_Viewer.Engine.Data.Compute;
+using Cubiomes_Viewer.Engine.Extensions;
 using Cubiomes_Viewer.Engine.Service.ComputeServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
 
@@ -110,18 +111,71 @@ public sealed class ComputeServiceTests
             () => { _ = service.RunAsync(new EchoJob(1), new JobPriority(JobPriorityClass.Visible), TestContext.Current.CancellationToken); });
     }
 
+    [Fact]
+    public async Task InProcessService_DisposedWithJobsStillQueued_FailsThem()
+    {
+        var gate = new GateHandler();
+        var service = new InProcessComputeService(new JobHandlerRegistry([JobHandlerRegistration.Create(new EchoHandler(_executionOrder)), JobHandlerRegistration.Create(gate)]), _generatorFactory, NullLogger<InProcessComputeService>.Instance);
+        var holding = Enumerable.Range(0, service.WorkerCount).Select(_ => service.RunAsync(new GateJob(), new JobPriority(JobPriorityClass.Interactive), TestContext.Current.CancellationToken)).ToList();
+        Assert.True(SpinWait.SpinUntil(() => gate.EnteredCount == service.WorkerCount, TimeSpan.FromSeconds(10)));
+        var queued = service.RunAsync(new EchoJob(1), new JobPriority(JobPriorityClass.Visible), TestContext.Current.CancellationToken);
+
+        var disposing = Task.Run(service.Dispose, TestContext.Current.CancellationToken);
+        await Assert.ThrowsAsync<ObjectDisposedException>(() => queued);
+        gate.Released.Set();
+        await disposing;
+        await Task.WhenAll(holding);
+
+        Assert.Empty(_executionOrder);
+    }
+
+    [Fact]
+    public async Task RunAllAsync_OneJobFails_CancelsTheOthersStillRunning()
+    {
+        var compute = new ManualCompute();
+
+        var run = compute.RunAllAsync<int>([new EchoJob(1), new EchoJob(2)], new JobPriority(JobPriorityClass.Visible), maxRunning: 2, cancellationToken: TestContext.Current.CancellationToken);
+        compute.Fail(0, new InvalidOperationException("The job broke."));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => run);
+        Assert.True(compute.Tokens[1].IsCancellationRequested);
+    }
+
     private sealed record EchoJob(int Value) : ComputeJob<int>;
+
+    /// <summary>Hands out jobs that end only when the test ends them, keeping the token each one got.</summary>
+    private sealed class ManualCompute : IComputeService
+    {
+        private readonly List<Action<Exception>> _failures = [];
+
+        public int WorkerCount => 2;
+        public List<CancellationToken> Tokens { get; } = [];
+
+        public Task<TResult> RunAsync<TResult>(ComputeJob<TResult> job, JobPriority priority, CancellationToken cancellationToken = default)
+        {
+            var completion = new TaskCompletionSource<TResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+            Tokens.Add(cancellationToken);
+            _failures.Add(exception => completion.TrySetException(exception));
+            return completion.Task;
+        }
+
+        public void Fail(int index, Exception exception) => _failures[index](exception);
+    }
 
     /// <summary>A job that holds the worker until it is released, so that jobs queued meanwhile wait together.</summary>
     private sealed record GateJob : ComputeJob<bool>;
 
     private sealed class GateHandler : IJobHandler<GateJob, bool>
     {
+        private int _enteredCount;
+
         public ManualResetEventSlim Entered { get; } = new();
         public ManualResetEventSlim Released { get; } = new();
+        public int EnteredCount => Volatile.Read(ref _enteredCount);
 
         public bool Handle(GateJob job, IWorkerContext context, CancellationToken cancellationToken)
         {
+            Interlocked.Increment(ref _enteredCount);
             Entered.Set();
             Released.Wait(cancellationToken);
             return true;

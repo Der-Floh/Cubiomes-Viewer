@@ -46,7 +46,7 @@ public sealed class NotificationService : INotificationService
         {
             if (!Dispatcher.UIThread.CheckAccess())
             {
-                Dispatcher.UIThread.Invoke(() => ShowNotification(notification));
+                Dispatcher.UIThread.Post(() => ShowNotification(notification));
                 return;
             }
 

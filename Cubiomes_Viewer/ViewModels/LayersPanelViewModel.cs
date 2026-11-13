@@ -200,7 +200,7 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
     {
         var available = _layerCatalog.GetAvailable(_session.Version, _session.Dimension);
         var layer = available.FirstOrDefault(info => info.Mode == _session.Layer) ?? available[0];
-        var octaves = _session.Octaves < layer.MaxOctaves ? _session.Octaves : 0;
+        var octaves = _session.Octaves > 0 && _session.Octaves < layer.MaxOctaves ? _session.Octaves : 0;
 
         Update(() =>
         {

@@ -75,7 +75,7 @@ public sealed class MapStyleService : IMapStyleService
 
     public PinLook GetPinLook(string? icon)
     {
-        if (icon is null || !HasResource(icon + IconKeySuffix))
+        if (icon is null || !IsMarkerLook(icon))
             return PlainPin;
 
         if (!_pinLooks.TryGetValue(icon, out var look))
@@ -130,8 +130,11 @@ public sealed class MapStyleService : IMapStyleService
         _ => throw new NotSupportedException($"Unsupported marker style: {style}"),
     };
 
-    private static bool HasResource(string key)
-        => Application.Current is { } application && application.TryGetResource(key, application.ActualThemeVariant, out _);
+    /// <summary>Whether a name has the glyph and the colour of a marker; interface icons share the glyph key pattern but have no colour.</summary>
+    private static bool IsMarkerLook(string name) => HasResource<string>(name + IconKeySuffix) && HasResource<Color>(MarkerColorKeyPrefix + name);
+
+    private static bool HasResource<T>(string key)
+        => Application.Current is { } application && application.TryGetResource(key, application.ActualThemeVariant, out var resource) && resource is T;
 
     private static T GetResource<T>(string key)
     {

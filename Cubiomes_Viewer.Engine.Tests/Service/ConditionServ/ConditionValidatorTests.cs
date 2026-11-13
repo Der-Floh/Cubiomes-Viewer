@@ -82,6 +82,12 @@ public sealed class ConditionValidatorTests
     public void Validate_AreaWithoutSize_IsAProblem()
         => AssertProblem(Define(Village(1) with { Area = new SearchArea(10, 0, 5, 20) }), 1, "no size");
 
+    [Theory]
+    [InlineData(5000, 5000, 6000, 6000, 100)]
+    [InlineData(-10_000, -10_000, 10_000, 10_000, 1)]
+    public void Validate_CircleInARectangleOtherThanItsSquare_IsAProblem(int minX, int minZ, int maxX, int maxZ, int radius)
+        => AssertProblem(Define(Village(1) with { Area = new SearchArea(minX, minZ, maxX, maxZ, radius) }), 1, "A circle has to lie around its reference point");
+
     [Fact]
     public void Validate_AreaTooFarFromItsReferencePoint_IsAProblem()
         => AssertProblem(Define(new SpawnCondition { Id = 1, Area = SearchArea.Rectangle(0, 0, SearchArea.MaxOffset + 1, 10) }), 1, "at most 10,000,000 blocks");

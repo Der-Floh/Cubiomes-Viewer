@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 
 using Cubiomes_Viewer.Controls;
@@ -62,12 +63,33 @@ public sealed class TileLayerTests
         window.Close();
     }
 
-    private static (Window Window, MapView Map) Show(IMapTileService tiles)
+    [AvaloniaFact]
+    public void Render_ViewOfMoreTilesThanTheBitmapLimit_PaintsEachTileOnceAcrossFrames()
     {
-        var layer = new TileLayer(tiles, App.Services.GetRequiredService<ITileColorizer>(), App.Services.GetRequiredService<ITileBitmapService>());
+        const int LargeViewWidth = 3840;
+        const int LargeViewHeight = 2160;
+        const int BitmapLimit = 512;
+        var tiles = new FixedTileService();
+        tiles.Fill(_world.Seed, LowHeight, MushroomFields);
+        var bitmaps = new CountingBitmapService(App.Services.GetRequiredService<ITileBitmapService>());
+        var (window, map) = Show(tiles, bitmaps, LargeViewWidth, LargeViewHeight);
+        map.Camera = new MapCamera(0, 0, 4);
+
+        RenderCentre(window, map);
+        var painted = bitmaps.Created;
+        RenderCentre(window, map);
+
+        Assert.True(painted > BitmapLimit, $"Only {painted} tiles were painted.");
+        Assert.Equal(painted, bitmaps.Created);
+        window.Close();
+    }
+
+    private static (Window Window, MapView Map) Show(IMapTileService tiles, ITileBitmapService? bitmaps = null, int width = ViewSize, int height = ViewSize)
+    {
+        var layer = new TileLayer(tiles, App.Services.GetRequiredService<ITileColorizer>(), bitmaps ?? App.Services.GetRequiredService<ITileBitmapService>());
         var map = new MapView { World = _world, SampleHeight = LowHeight, Camera = new MapCamera(0, 0, 1), SmoothMotion = false, Background = Brushes.Black };
         map.AddLayer(layer);
-        var window = new Window { Width = ViewSize, Height = ViewSize, Content = map };
+        var window = new Window { Width = width, Height = height, Content = map };
         window.Show();
         return (window, map);
     }
@@ -80,10 +102,21 @@ public sealed class TileLayerTests
 
         using var frame = window.CaptureRenderedFrame();
         Assert.NotNull(frame);
-        return FramePixels.Read(frame, ViewSize / 2, ViewSize / 2);
+        return FramePixels.Read(frame, frame.PixelSize.Width / 2, frame.PixelSize.Height / 2);
     }
 
     private static RgbColor GetColor(byte biome) => App.Services.GetRequiredService<IBiomeCatalog>().DefaultPalette[biome];
+
+    private sealed class CountingBitmapService(ITileBitmapService inner) : ITileBitmapService
+    {
+        public int Created { get; private set; }
+
+        public Bitmap Create(ReadOnlySpan<byte> bgra, int width, int height)
+        {
+            Created++;
+            return inner.Create(bgra, width, height);
+        }
+    }
 
     /// <summary>Has tiles of one biome for the heights of the seeds it was filled with, and none for any other.</summary>
     private sealed class FixedTileService : IMapTileService

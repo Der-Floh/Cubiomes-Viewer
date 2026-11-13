@@ -5,6 +5,9 @@ namespace Cubiomes_Viewer.Engine.Service.ComputeServ;
 internal interface IComputeWorkItem
 {
     void Execute(IWorkerContext context);
+
+    /// <summary>Fails the item that no worker will run.</summary>
+    void Abandon(Exception reason);
 }
 
 internal sealed class ComputeWorkItem<TResult> : IComputeWorkItem
@@ -48,5 +51,11 @@ internal sealed class ComputeWorkItem<TResult> : IComputeWorkItem
         {
             _registration.Dispose();
         }
+    }
+
+    public void Abandon(Exception reason)
+    {
+        _completion.TrySetException(reason);
+        _registration.Dispose();
     }
 }

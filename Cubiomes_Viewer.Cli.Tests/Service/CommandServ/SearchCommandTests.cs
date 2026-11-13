@@ -1,5 +1,9 @@
 using Cubiomes_Viewer.Cli.Data;
+using Cubiomes_Viewer.Engine.Data.Compute;
 using Cubiomes_Viewer.Engine.Data.Search;
+using Cubiomes_Viewer.Engine.Service.ComputeServ;
+
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Cubiomes_Viewer.Cli.Tests.Service.CommandServ;
 
@@ -158,6 +162,29 @@ public sealed class SearchCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task SearchThatFails_SaysWhyAndExitsWithTheFailureCode()
+    {
+        var session = FixtureSessions.Write(FixtureSessions.Read(FixtureSessions.GetPath(FixtureSessions.SlimeChunks)), _directory);
+
+        var result = await CliRun.RunAsync(AppData, ["--session", session], cancellationToken: Token, replaceServices: services => services.AddSingleton<IComputeService, FailingCompute>());
+
+        Assert.Equal(ExitCodes.Failure, result.ExitCode);
+        Assert.Contains($"The search failed: {FailingCompute.Reason}", result.Messages);
+    }
+
+    [Fact]
+    public async Task StoppedWhileTheSessionIsRead_ExitsWithTheStoppedCode()
+    {
+        var session = FixtureSessions.GetPath(FixtureSessions.SlimeChunks);
+        using var stopped = new CancellationTokenSource();
+        await stopped.CancelAsync();
+
+        var result = await CliRun.RunAsync(AppData, ["--session", session], cancellationToken: stopped.Token);
+
+        Assert.Equal(ExitCodes.Stopped, result.ExitCode);
+    }
+
+    [Fact]
     public async Task Reset_StoppedSession_StartsOver()
     {
         var setup = FixtureSessions.Read(FixtureSessions.GetPath(FixtureSessions.SlimeChunks)).Setup;
@@ -233,5 +260,16 @@ public sealed class SearchCommandTests : IDisposable
     {
         var search = new SearchSnapshot { Setup = searchedSetup, Scanned = 3, NextSeed = 3, Results = [0, 1, 2] };
         return FixtureSessions.Write(new SearchSession { Setup = setup, Search = search }, _directory);
+    }
+
+    /// <summary>Workers that fail every job, as a search that cannot go on does.</summary>
+    private sealed class FailingCompute : IComputeService
+    {
+        public const string Reason = "The workers are gone.";
+
+        public int WorkerCount => 2;
+
+        public Task<TResult> RunAsync<TResult>(ComputeJob<TResult> job, JobPriority priority, CancellationToken cancellationToken = default)
+            => Task.FromException<TResult>(new InvalidOperationException(Reason));
     }
 }

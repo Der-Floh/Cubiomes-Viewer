@@ -33,7 +33,7 @@ internal sealed class WebWorkerFactory : IComputeWorkerFactory
         var workerId = _nextWorkerId++;
         try
         {
-            await (_moduleImport ??= JSHost.ImportAsync(WorkerInterop.ModuleName, WorkerInterop.ModuleUrl));
+            await ImportModuleAsync();
             var bootMilliseconds = await WorkerInterop.CreateWorkerAsync(workerId, WorkerInterop.WorkerScriptUrl);
             _logger.LogDebug("Web Worker {WorkerId} started in {BootMilliseconds:F0} ms", workerId, bootMilliseconds);
             return new WebWorker(workerId);
@@ -41,6 +41,21 @@ internal sealed class WebWorkerFactory : IComputeWorkerFactory
         catch (JSException ex)
         {
             throw new ComputeWorkerException($"Web Worker {workerId} could not be started: {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>Imports the worker module once; a failed import is tried again by the next worker.</summary>
+    private async Task ImportModuleAsync()
+    {
+        _moduleImport ??= JSHost.ImportAsync(WorkerInterop.ModuleName, WorkerInterop.ModuleUrl);
+        try
+        {
+            await _moduleImport;
+        }
+        catch (JSException)
+        {
+            _moduleImport = null;
+            throw;
         }
     }
 

@@ -150,6 +150,26 @@ public sealed class SeedSourceSearchTests : IDisposable
     }
 
     [Fact]
+    public void Restore_QuadHutSearchOfAnUnknownVersion_IsRefusedWithAProblem()
+    {
+        var setup = new SearchSetup { Definition = ConditionTestBench.Define(McVersion.Undefined, new SlimeChunkCondition { Id = 1 }), Source = new QuadHutSeedSource() };
+
+        var exception = Assert.Throws<InvalidSearchException>(() => _search.Restore(new SearchSnapshot { Setup = setup, Scanned = 0, Results = [] }));
+
+        Assert.Equal("Choose a Minecraft version.", Assert.Single(exception.Problems).Message);
+    }
+
+    [Fact]
+    public async Task StartAsync_QuadHutRegionAtTheEndOfTheIntegers_IsRefusedWithAProblem()
+    {
+        var setup = new SearchSetup { Definition = ConditionTestBench.Define(Version, new SlimeChunkCondition { Id = 1 }), Source = new QuadHutSeedSource { RegionX = int.MinValue } };
+
+        var exception = await Assert.ThrowsAsync<InvalidSearchException>(() => _search.StartAsync(setup, TestContext.Current.CancellationToken));
+
+        Assert.StartsWith("The regions of the quad must lie within", Assert.Single(exception.Problems).Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task StartAsync_EmptySeedList_Throws()
     {
         var setup = new SearchSetup { Definition = SearchRuns.SlimeChunks, Source = new SeedListSource() };

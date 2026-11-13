@@ -54,7 +54,8 @@ public sealed class InProcessComputeService : IComputeService, IDisposable
             return;
 
         _disposed = true;
-        _queue.Complete();
+        foreach (var item in _queue.Complete())
+            item.Abandon(new ObjectDisposedException(nameof(InProcessComputeService)));
         foreach (var worker in _workers)
             worker.Join(_shutdownTimeout);
     }

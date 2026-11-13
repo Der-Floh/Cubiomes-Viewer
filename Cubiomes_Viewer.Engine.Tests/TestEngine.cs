@@ -36,7 +36,7 @@ internal static class TestEngine
     public static SearchPlanCompiler CreateSearchPlanCompiler() => new(CreateConditionRegistry());
 
     /// <summary>A factory for sources other than quad huts, whose bases these tests never need.</summary>
-    public static SeedSequenceFactory CreateSeedSequenceFactory() => new(new NoQuadHutBases(), new CubiomesQuadFinder(), CreateStructureCatalog());
+    public static SeedSequenceFactory CreateSeedSequenceFactory() => new(new NoQuadHutBases(), new CubiomesQuadFinder(), CreateStructureCatalog(), new VersionCatalog());
 
     private sealed class NoQuadHutBases : IQuadHutBaseService
     {

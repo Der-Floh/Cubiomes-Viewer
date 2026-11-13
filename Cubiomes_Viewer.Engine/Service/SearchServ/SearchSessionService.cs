@@ -1,4 +1,5 @@
 using Cubiomes_Viewer.Engine.Data.Search;
+using Cubiomes_Viewer.Engine.Interop;
 using Cubiomes_Viewer.Engine.Repository.AppDataRepo;
 using Cubiomes_Viewer.Engine.Repository.SessionRepo;
 using Cubiomes_Viewer.Engine.Service.AppDataServ;
@@ -117,7 +118,7 @@ public sealed class SearchSessionService : ISearchSessionService, IDisposable
         {
             _search.Restore(snapshot);
         }
-        catch (Exception ex) when (ex is InvalidSearchException or ArgumentException)
+        catch (Exception ex) when (ex is InvalidSearchException or ArgumentException or CubiomesNativeException)
         {
             _logger.LogWarning(ex, "The stored search cannot be continued; only its setup is kept");
             _search.Reset();

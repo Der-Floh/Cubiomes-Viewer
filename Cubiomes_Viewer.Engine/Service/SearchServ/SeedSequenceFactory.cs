@@ -2,6 +2,7 @@ using Cubiomes_Viewer.Engine.Data.Search;
 using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.StructureServ;
+using Cubiomes_Viewer.Engine.Service.WorldGenServ;
 
 namespace Cubiomes_Viewer.Engine.Service.SearchServ;
 
@@ -15,12 +16,14 @@ public sealed class SeedSequenceFactory : ISeedSequenceFactory
     private readonly IQuadHutBaseService _quadBases;
     private readonly IQuadFinder _quadFinder;
     private readonly IStructureCatalog _structureCatalog;
+    private readonly IVersionCatalog _versionCatalog;
 
-    public SeedSequenceFactory(IQuadHutBaseService quadBases, IQuadFinder quadFinder, IStructureCatalog structureCatalog)
+    public SeedSequenceFactory(IQuadHutBaseService quadBases, IQuadFinder quadFinder, IStructureCatalog structureCatalog, IVersionCatalog versionCatalog)
     {
         _quadBases = quadBases;
         _quadFinder = quadFinder;
         _structureCatalog = structureCatalog;
+        _versionCatalog = versionCatalog;
     }
 
     public IEnumerable<string> Validate(SeedSource source, McVersion version) => source switch
@@ -62,9 +65,9 @@ public sealed class SeedSequenceFactory : ISeedSequenceFactory
     {
         if (!_qualities.Contains(quad.Quality))
             yield return "Choose how close the four huts have to be.";
-        if (!Enum.IsDefined(quad.Type) || !_quadFinder.SupportsQuads(quad.Type, version))
+        if (!Enum.IsDefined(quad.Type) || (_versionCatalog.Versions.Contains(version) && !_quadFinder.SupportsQuads(quad.Type, version)))
             yield return $"{DescribeType(quad.Type)} form no quads in this version.";
-        if (Math.Abs(quad.RegionX) > MaxRegion || Math.Abs(quad.RegionZ) > MaxRegion)
+        if (quad.RegionX is < -MaxRegion or > MaxRegion || quad.RegionZ is < -MaxRegion or > MaxRegion)
             yield return $"The regions of the quad must lie within {MaxRegion} regions of the origin.";
     }
 
