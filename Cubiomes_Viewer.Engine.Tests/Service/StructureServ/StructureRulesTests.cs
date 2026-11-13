@@ -100,6 +100,37 @@ public sealed class StructureRulesTests : IDisposable
     }
 
     [Theory]
+    [InlineData(McVersion.V1_16_5)]
+    [InlineData(McVersion.V1_21_3)]
+    public void ReplacedVillageSalt_KeepsOutpostsAwayFromTheVillagesItPlaces(McVersion version)
+    {
+        const int VillageExclusionChunks = 10;
+        Assert.True(_finder.TryGetGameSalt(StructureType.Village, version, out var gameSalt));
+        var rules = Replace(StructureType.Village, gameSalt + SaltShift);
+
+        var outposts = Create(version, rules).FindStructures(StructureType.Outpost, _area);
+        var villages = FindAttempts(StructureType.Village, version, rules, Seed);
+
+        Assert.NotEmpty(outposts);
+        Assert.DoesNotContain(outposts, outpost => villages.Any(village =>
+            Math.Abs((outpost.X >> 4) - (village.X >> 4)) <= VillageExclusionChunks && Math.Abs((outpost.Z >> 4) - (village.Z >> 4)) <= VillageExclusionChunks));
+    }
+
+    [Theory]
+    [InlineData(McVersion.V1_17_1)]
+    [InlineData(McVersion.V1_21_3)]
+    public void ReplacedGeodeSalt_DescribesEveryGeodeItPlaces(McVersion version)
+    {
+        Assert.True(_finder.TryGetGameSalt(StructureType.Geode, version, out var gameSalt));
+        var generator = Create(version, Replace(StructureType.Geode, gameSalt + SaltShift));
+
+        var geodes = generator.FindStructures(StructureType.Geode, new BlockArea(-512, -512, 1024, 1024));
+
+        Assert.NotEmpty(geodes);
+        Assert.All(geodes, geode => Assert.NotNull(generator.DescribeStructure(StructureType.Geode, geode).Variant));
+    }
+
+    [Theory]
     [InlineData(StructureType.DesertPyramid)]
     [InlineData(StructureType.JungleTemple)]
     public void WithoutTerrainEstimate_KeepsTheStructuresTheEstimateLeavesOut(StructureType type)

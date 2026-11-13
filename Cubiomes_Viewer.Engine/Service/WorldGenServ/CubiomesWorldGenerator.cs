@@ -10,7 +10,7 @@ namespace Cubiomes_Viewer.Engine.Service.WorldGenServ;
 public sealed class CubiomesWorldGenerator : IWorldGenerator
 {
     private const int MaxStrongholds = 128;
-    private const int MaxPieces = 421;
+    private const int MaxPieces = 16_384;
     private const int EndGatewayCount = 20;
     private const int ValuesPerGateway = 4;
     private const int UnknownHeight = 320;

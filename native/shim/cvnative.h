@@ -11,7 +11,7 @@
 #define CV_API
 #endif
 
-#define CV_ABI_VERSION 10
+#define CV_ABI_VERSION 11
 
 #define CV_BIOME_NONE 255
 #define CV_BIOME_COLOR_BYTES 768
@@ -19,7 +19,8 @@
 #define CV_MAX_LAYERED_SCALE 256
 #define CV_MAX_STRUCTURE_ATTEMPTS 65536
 #define CV_MAX_STRONGHOLDS 128
-#define CV_MAX_PIECES 421
+/* cubiomes writes fortress pieces without looking at the length of the buffer, so it is far longer than any fortress needs. */
+#define CV_MAX_PIECES 16384
 #define CV_END_GATEWAYS 20
 #define CV_CLIMATE_UNIT 10000
 #define CV_HEIGHT_UNIT 16
