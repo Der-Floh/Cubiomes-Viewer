@@ -19,6 +19,7 @@ permissions:
 
 jobs:
   deploy-to-github-pages:
+    if: github.event_name != 'release' || !github.event.release.prerelease
     uses: Der-Floh/Der-Floh/.github/workflows/app-pages.yml@v1
     with:
       project-path: Cubiomes_Viewer.Browser/Cubiomes_Viewer.Browser.csproj

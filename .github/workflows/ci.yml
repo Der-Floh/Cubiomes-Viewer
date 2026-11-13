@@ -37,6 +37,10 @@ jobs:
       - name: Setup .NET
         uses: Der-Floh/Der-Floh/.github/actions/setup-dotnet@v1
 
+      - name: Build the native library for glibc 2.28
+        if: runner.os == 'Linux'
+        run: bash native/build-manylinux.sh
+
       - name: Test engine
         run: dotnet test Cubiomes_Viewer.Engine.Tests -c Release -clp:ForceConsoleColor
 
