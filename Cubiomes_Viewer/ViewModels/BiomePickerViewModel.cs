@@ -20,7 +20,7 @@ public sealed partial class BiomePickerViewModel : ObservableObject
     public string DimensionLabel { get; } = "Dimension";
 
     [ObservableProperty]
-    public partial ComboChoice<Dimension>? SelectedDimension { get; set; }
+    public partial DimensionChoice? SelectedDimension { get; set; }
 
     [ObservableProperty]
     public partial string Filter { get; set; } = string.Empty;
@@ -28,12 +28,7 @@ public sealed partial class BiomePickerViewModel : ObservableObject
     [ObservableProperty]
     public partial string ChosenText { get; set; } = string.Empty;
 
-    public ObservableCollection<ComboChoice<Dimension>> Dimensions { get; } =
-    [
-        new() { Display = "Overworld", Value = Dimension.Overworld },
-        new() { Display = "Nether", Value = Dimension.Nether },
-        new() { Display = "End", Value = Dimension.End },
-    ];
+    public IReadOnlyList<DimensionChoice> Dimensions { get; }
 
     /// <summary>The biomes of the dimension that match the filter, together with the chosen ones even when the version lacks them.</summary>
     public ObservableCollection<BiomeToggleViewModel> Biomes { get; } = [];
@@ -48,8 +43,9 @@ public sealed partial class BiomePickerViewModel : ObservableObject
     private McVersion _version;
     private bool _isShowing;
 
-    public BiomePickerViewModel(BiomeSet chosen, Dimension dimension, McVersion version, IBiomeCatalog catalog, Action changed)
+    public BiomePickerViewModel(BiomeSet chosen, Dimension dimension, McVersion version, IReadOnlyList<DimensionChoice> dimensions, IBiomeCatalog catalog, Action changed)
     {
+        Dimensions = dimensions;
         _catalog = catalog;
         _changed = changed;
         _version = version;
@@ -79,7 +75,7 @@ public sealed partial class BiomePickerViewModel : ObservableObject
     }
 
     /// <summary>Biomes of another dimension cannot occur in the new one, so they are no longer chosen.</summary>
-    partial void OnSelectedDimensionChanged(ComboChoice<Dimension>? value)
+    partial void OnSelectedDimensionChanged(DimensionChoice? value)
     {
         if (_isShowing || value is null)
             return;

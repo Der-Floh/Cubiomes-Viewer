@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
+using Avalonia.Svg.Skia;
 
 using Cubiomes_Viewer.Engine.Data.Worlds;
 
@@ -18,9 +19,10 @@ public sealed class MapStyleService : IMapStyleService
     private const string MeasureColorKey = "MeasureColor";
     private const string SelectionColorKey = "SelectionColor";
     private const double MarkerSideLength = 22;
-    private const double GlyphDesignSize = 24;
     private const double GlyphSize = 14;
     private const double CornerRadius = 5;
+
+    private static readonly Uri _assetBaseUri = new($"avares://{typeof(MapStyleService).Assembly.GetName().Name}/");
 
     public double MarkerSize => MarkerSideLength * MarkerScale;
 
@@ -34,13 +36,15 @@ public sealed class MapStyleService : IMapStyleService
     public Color SelectionColor => _selectionColor ??= GetResource<Color>(SelectionColorKey);
 
     private readonly Dictionary<StructureType, MapMarker> _structureMarkers = [];
+    private readonly Dictionary<Dimension, MapMarker> _dimensionMarkers = [];
     private Color? _slimeChunkColor;
     private Color? _measureColor;
     private Color? _outlineColor;
     private Color? _selectionColor;
 
-    private IBrush GlyphBrush => field ??= new ImmutableSolidColorBrush(GetResource<Color>(GlyphColorKey));
+    private Color GlyphColor => _glyphColor ??= GetResource<Color>(GlyphColorKey);
     private IPen OutlinePen => field ??= new ImmutablePen(new ImmutableSolidColorBrush(OutlineColor));
+    private Color? _glyphColor;
 
     public MapMarker GetStructureMarker(StructureType type)
     {
@@ -48,6 +52,17 @@ public sealed class MapStyleService : IMapStyleService
         {
             marker = CreateMarker(type.ToString());
             _structureMarkers.Add(type, marker);
+        }
+
+        return marker;
+    }
+
+    public MapMarker GetDimensionMarker(Dimension dimension)
+    {
+        if (!_dimensionMarkers.TryGetValue(dimension, out var marker))
+        {
+            marker = CreateMarker(dimension.ToString());
+            _dimensionMarkers.Add(dimension, marker);
         }
 
         return marker;
@@ -62,14 +77,13 @@ public sealed class MapStyleService : IMapStyleService
         context.DrawRectangle(marker.Fill, OutlinePen, badge, CornerRadius * MarkerScale, CornerRadius * MarkerScale);
 
         var glyphSize = GlyphSize * MarkerScale;
-        var scale = glyphSize / GlyphDesignSize;
-        var transform = Matrix.CreateScale(scale, scale) * Matrix.CreateTranslation(center.X - glyphSize / 2, center.Y - glyphSize / 2);
-        using (context.PushTransform(transform))
-            context.DrawGeometry(GlyphBrush, null, marker.Glyph);
+        context.DrawImage(marker.Glyph, new Rect(center.X - glyphSize / 2, center.Y - glyphSize / 2, glyphSize, glyphSize));
     }
 
-    private static MapMarker CreateMarker(string name)
-        => new(GetResource<Geometry>(name + IconKeySuffix), new ImmutableSolidColorBrush(GetResource<Color>(MarkerColorKeyPrefix + name)));
+    private MapMarker CreateMarker(string name)
+        => new(CreateGlyph(GetResource<string>(name + IconKeySuffix)), new ImmutableSolidColorBrush(GetResource<Color>(MarkerColorKeyPrefix + name)));
+
+    private SvgImage CreateGlyph(string path) => new() { Source = SvgSource.Load(path, _assetBaseUri), CurrentColor = GlyphColor };
 
     private static T GetResource<T>(string key)
     {

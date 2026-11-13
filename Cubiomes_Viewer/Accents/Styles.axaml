@@ -1,6 +1,7 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:controls="using:Cubiomes_Viewer.Controls">
+        xmlns:controls="using:Cubiomes_Viewer.Controls"
+        xmlns:converters="using:Cubiomes_Viewer.Converters">
 
     <Style Selector="Button">
         <Setter Property="Cursor" Value="Hand"/>
@@ -21,9 +22,12 @@
         <Setter Property="HorizontalContentAlignment" Value="Left"/>
     </Style>
 
-    <Style Selector="PathIcon">
+    <!-- The icons fill with currentColor, which follows the foreground of the control around them in each of its states. -->
+    <Style Selector="Svg">
         <Setter Property="Width" Value="16"/>
         <Setter Property="Height" Value="16"/>
+        <Setter Property="IsHitTestVisible" Value="False"/>
+        <Setter Property="CurrentColor" Value="{Binding $self.(TextElement.Foreground), Converter={x:Static converters:BrushColorConverter.Instance}}"/>
     </Style>
 
     <Style Selector="controls|MapView">
@@ -109,6 +113,9 @@
         <Setter Property="Orientation" Value="Horizontal"/>
         <Setter Property="Spacing" Value="8"/>
     </Style>
+    <Style Selector="StackPanel.marker-label > TextBlock">
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
     <Style Selector="Border.marker">
         <Setter Property="Width" Value="20"/>
         <Setter Property="Height" Value="20"/>
@@ -117,14 +124,9 @@
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
-    <Style Selector="Viewbox.marker-glyph">
+    <Style Selector="Image.marker-glyph">
         <Setter Property="Width" Value="13"/>
         <Setter Property="Height" Value="13"/>
-    </Style>
-    <Style Selector="Path.marker-glyph">
-        <Setter Property="Width" Value="24"/>
-        <Setter Property="Height" Value="24"/>
-        <Setter Property="Fill" Value="{DynamicResource MarkerGlyphColor}"/>
     </Style>
     <Style Selector="ToggleButton.filter">
         <Setter Property="Padding" Value="6"/>
@@ -133,12 +135,12 @@
         <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="Foreground" Value="{DynamicResource FontColorDamp}"/>
     </Style>
-    <Style Selector="ToggleButton.filter PathIcon">
+    <Style Selector="ToggleButton.filter Svg">
         <Setter Property="Width" Value="14"/>
         <Setter Property="Height" Value="14"/>
     </Style>
-    <Style Selector="ToggleButton.filter.filtered:not(:checked) PathIcon">
-        <Setter Property="Foreground" Value="{DynamicResource AccentColor}"/>
+    <Style Selector="ToggleButton.filter.filtered:not(:checked) Svg">
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource AccentColor}"/>
     </Style>
     <Style Selector="Border.feature-filter">
         <Setter Property="Background" Value="{DynamicResource RegionColorDamp}"/>
@@ -172,7 +174,7 @@
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="HorizontalContentAlignment" Value="Center"/>
     </Style>
-    <Style Selector="ListBox.rail PathIcon">
+    <Style Selector="ListBox.rail Svg">
         <Setter Property="Width" Value="20"/>
         <Setter Property="Height" Value="20"/>
     </Style>
@@ -191,7 +193,7 @@
         <Setter Property="HorizontalAlignment" Value="Stretch"/>
         <Setter Property="HorizontalContentAlignment" Value="Center"/>
     </Style>
-    <Style Selector="Button.rail-button PathIcon">
+    <Style Selector="Button.rail-button Svg">
         <Setter Property="Width" Value="20"/>
         <Setter Property="Height" Value="20"/>
     </Style>
@@ -355,7 +357,7 @@
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
-    <Style Selector="Button.card-close PathIcon">
+    <Style Selector="Button.card-close Svg">
         <Setter Property="Width" Value="12"/>
         <Setter Property="Height" Value="12"/>
     </Style>

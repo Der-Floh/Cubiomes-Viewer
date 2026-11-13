@@ -23,6 +23,9 @@ public interface IMapStyleService
 
     MapMarker GetStructureMarker(StructureType type);
 
+    /// <summary>The badge a dimension is picked by.</summary>
+    MapMarker GetDimensionMarker(Dimension dimension);
+
     /// <summary>Draws a marker centred on a point.</summary>
     void DrawMarker(DrawingContext context, MapMarker marker, Point center);
 }

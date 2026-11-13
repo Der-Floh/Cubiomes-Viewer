@@ -14,7 +14,7 @@
                 <views:MarkerBadgeView DataContext="{Binding Marker}"/>
                 <TextBlock Grid.Column="1" Classes="card-title" Text="{Binding Title}"/>
                 <Button Grid.Column="2" Classes="card-close" Command="{Binding CloseCommand}" ToolTip.Tip="{Binding CloseLabel}">
-                    <PathIcon Data="{StaticResource CloseIcon}"/>
+                    <Svg Path="{StaticResource CloseIcon}"/>
                 </Button>
             </Grid>
 

@@ -16,7 +16,7 @@
                     </TextBox.KeyBindings>
                 </TextBox>
                 <Button Classes="icon" Command="{Binding RandomSeedCommand}" ToolTip.Tip="{Binding RandomSeedLabel}">
-                    <PathIcon Data="{StaticResource DiceIcon}"/>
+                    <Svg Path="{StaticResource DiceIcon}"/>
                 </Button>
                 <DropDownButton Content="{Binding RecentSeedsLabel}" IsEnabled="{Binding HasRecentSeeds}" VerticalAlignment="Center">
                     <DropDownButton.Flyout>
@@ -46,7 +46,7 @@
 
             <WrapPanel Classes="toolbar-group">
                 <Button Classes="icon" ToolTip.Tip="{Binding GoToLabel}">
-                    <PathIcon Data="{StaticResource GoToIcon}"/>
+                    <Svg Path="{StaticResource GoToIcon}"/>
                     <Button.Flyout>
                         <Flyout>
                             <StackPanel Classes="flyout-form">
@@ -60,13 +60,13 @@
                     </Button.Flyout>
                 </Button>
                 <Button Classes="icon" Command="{Binding Map.GoToOriginCommand}" ToolTip.Tip="{Binding OriginLabel}">
-                    <PathIcon Data="{StaticResource HomeIcon}"/>
+                    <Svg Path="{StaticResource HomeIcon}"/>
                 </Button>
                 <Button Classes="icon" Command="{Binding Map.ZoomOutCommand}" ToolTip.Tip="{Binding ZoomOutLabel}">
-                    <PathIcon Data="{StaticResource MinusIcon}"/>
+                    <Svg Path="{StaticResource MinusIcon}"/>
                 </Button>
                 <Button Classes="icon" Command="{Binding Map.ZoomInCommand}" ToolTip.Tip="{Binding ZoomInLabel}">
-                    <PathIcon Data="{StaticResource PlusIcon}"/>
+                    <Svg Path="{StaticResource PlusIcon}"/>
                 </Button>
             </WrapPanel>
         </WrapPanel>

@@ -1,9 +1,11 @@
+using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Search;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.ConditionServ;
 using Cubiomes_Viewer.Engine.Service.LayerServ;
 using Cubiomes_Viewer.Engine.Service.StructureServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
+using Cubiomes_Viewer.Service.MapStyleServ;
 
 namespace Cubiomes_Viewer.ViewModels;
 
@@ -17,13 +19,15 @@ public sealed class SearchConditionFactory
     private readonly IStructureCatalog _structureCatalog;
     private readonly IBiomeCatalog _biomeCatalog;
     private readonly ILayerCatalog _layerCatalog;
+    private readonly IMapStyleService _styleService;
 
-    public SearchConditionFactory(IConditionRegistry registry, IStructureCatalog structureCatalog, IBiomeCatalog biomeCatalog, ILayerCatalog layerCatalog)
+    public SearchConditionFactory(IConditionRegistry registry, IStructureCatalog structureCatalog, IBiomeCatalog biomeCatalog, ILayerCatalog layerCatalog, IMapStyleService styleService)
     {
         _registry = registry;
         _structureCatalog = structureCatalog;
         _biomeCatalog = biomeCatalog;
         _layerCatalog = layerCatalog;
+        _styleService = styleService;
     }
 
     public SearchConditionViewModel Create(SearchCondition condition, McVersion version, Action<SearchConditionViewModel> edited, Action<SearchConditionViewModel> removed)
@@ -33,8 +37,8 @@ public sealed class SearchConditionFactory
     {
         StructureCondition structure => new StructureFieldsViewModel(structure, version, _structureCatalog, changed),
         QuadHutCondition quad => new QuadHutFieldsViewModel(quad, _structureCatalog, changed),
-        BiomeCondition biome => new BiomeFieldsViewModel(biome, version, _biomeCatalog, changed),
-        BiomePatchCondition patch => new BiomePatchFieldsViewModel(patch, version, _biomeCatalog, changed),
+        BiomeCondition biome => new BiomeFieldsViewModel(biome, version, DimensionChoices.Create(_styleService), _biomeCatalog, changed),
+        BiomePatchCondition patch => new BiomePatchFieldsViewModel(patch, version, DimensionChoices.Create(_styleService), _biomeCatalog, changed),
         ClimateCondition climate => new ClimateFieldsViewModel(climate, version, _layerCatalog, changed),
         TemperatureCategoryCondition temperature => new TemperatureCategoryFieldsViewModel(temperature, changed),
         _ => null,

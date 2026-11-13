@@ -10,6 +10,7 @@ using Cubiomes_Viewer.Engine.Data.Seeds;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.SeedServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
+using Cubiomes_Viewer.Service.MapStyleServ;
 using Cubiomes_Viewer.Service.NotificationServ;
 
 namespace Cubiomes_Viewer.ViewModels;
@@ -46,7 +47,7 @@ public sealed partial class WorldBarViewModel : ViewModelBase
     public partial bool LargeBiomes { get; set; }
 
     [ObservableProperty]
-    public partial ComboChoice<Dimension>? SelectedDimension { get; set; }
+    public partial DimensionChoice? SelectedDimension { get; set; }
 
     [ObservableProperty]
     public partial decimal? SampleHeight { get; set; }
@@ -69,12 +70,7 @@ public sealed partial class WorldBarViewModel : ViewModelBase
     /// <summary>The versions offered, newest first.</summary>
     public ObservableCollection<ComboChoice<McVersion>> Versions { get; } = [];
 
-    public ObservableCollection<ComboChoice<Dimension>> Dimensions { get; } =
-    [
-        new() { Display = "Overworld", Value = Dimension.Overworld },
-        new() { Display = "Nether", Value = Dimension.Nether },
-        new() { Display = "End", Value = Dimension.End },
-    ];
+    public IReadOnlyList<DimensionChoice> Dimensions { get; }
 
     /// <summary>The recently opened seeds, newest first.</summary>
     public ObservableCollection<RecentSeedViewModel> RecentSeeds { get; } = [];
@@ -86,8 +82,10 @@ public sealed partial class WorldBarViewModel : ViewModelBase
     private readonly ISeedHistoryService _seedHistory;
     private readonly IVersionCatalog _versionCatalog;
 
-    public WorldBarViewModel(WorldSession session, MapViewModel map, ISeedParser seedParser, ISeedHistoryService seedHistory, IVersionCatalog versionCatalog, INotificationService notificationService) : base(notificationService)
+    public WorldBarViewModel(WorldSession session, MapViewModel map, ISeedParser seedParser, ISeedHistoryService seedHistory, IVersionCatalog versionCatalog,
+        IMapStyleService styleService, INotificationService notificationService) : base(notificationService)
     {
+        Dimensions = DimensionChoices.Create(styleService);
         _session = session;
         _seedParser = seedParser;
         _seedHistory = seedHistory;
@@ -115,7 +113,7 @@ public sealed partial class WorldBarViewModel : ViewModelBase
         SelectedVersion = Versions.FirstOrDefault(choice => choice.Value == _session.Version);
     }
 
-    partial void OnSelectedDimensionChanged(ComboChoice<Dimension>? value)
+    partial void OnSelectedDimensionChanged(DimensionChoice? value)
     {
         if (value is not null)
             _session.Dimension = value.Value;

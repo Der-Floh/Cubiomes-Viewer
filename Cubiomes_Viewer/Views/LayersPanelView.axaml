@@ -23,7 +23,7 @@
                     <ContentControl Content="{Binding Toggle}"/>
                     <ToggleButton Grid.Column="1" Classes="filter" Classes.filtered="{Binding IsFiltered}" IsChecked="{Binding IsExpanded}"
                                   IsVisible="{Binding HasFeatures}" ToolTip.Tip="{Binding FilterTip}">
-                        <PathIcon Data="{StaticResource FilterIcon}"/>
+                        <Svg Path="{StaticResource FilterIcon}"/>
                     </ToggleButton>
                 </Grid>
                 <Border Classes="feature-filter" IsVisible="{Binding IsExpanded}">

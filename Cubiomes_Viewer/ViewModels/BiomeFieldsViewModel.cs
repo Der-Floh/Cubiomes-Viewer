@@ -72,12 +72,12 @@ public sealed partial class BiomeFieldsViewModel : ObservableObject, IConditionF
     private readonly Action _changed;
     private bool _isShowing;
 
-    public BiomeFieldsViewModel(BiomeCondition condition, McVersion version, IBiomeCatalog catalog, Action changed)
+    public BiomeFieldsViewModel(BiomeCondition condition, McVersion version, IReadOnlyList<DimensionChoice> dimensions, IBiomeCatalog catalog, Action changed)
     {
         ArgumentNullException.ThrowIfNull(condition);
 
         _changed = changed;
-        Picker = new BiomePickerViewModel(condition.Biomes, condition.Dimension, version, catalog, changed);
+        Picker = new BiomePickerViewModel(condition.Biomes, condition.Dimension, version, dimensions, catalog, changed);
         _isShowing = true;
         SelectedMatch = Matches.FirstOrDefault(choice => choice.Value == condition.Match) ?? Matches[0];
         SelectedScale = Scales.FirstOrDefault(choice => choice.Value == condition.Scale) ?? Scales.First(choice => choice.Value == BiomeCondition.DefaultScale);

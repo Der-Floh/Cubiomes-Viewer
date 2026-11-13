@@ -8,9 +8,7 @@
              x:DataType="style:MapMarker">
 
     <Border Classes="marker" Background="{Binding Fill}">
-        <Viewbox Classes="marker-glyph">
-            <Path Classes="marker-glyph" Data="{Binding Glyph}"/>
-        </Viewbox>
+        <Image Classes="marker-glyph" Source="{Binding Glyph}"/>
     </Border>
 
 </UserControl>

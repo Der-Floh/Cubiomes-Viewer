@@ -1,11 +1,19 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="using:Cubiomes_Viewer"
+             xmlns:data="using:Cubiomes_Viewer.Data"
+             xmlns:views="using:Cubiomes_Viewer.Views"
              x:Class="Cubiomes_Viewer.App"
              RequestedThemeVariant="Default">
 
     <Application.DataTemplates>
         <local:ViewLocator/>
+        <DataTemplate x:DataType="data:DimensionChoice">
+            <StackPanel Classes="marker-label">
+                <views:MarkerBadgeView DataContext="{Binding Marker}"/>
+                <TextBlock Text="{Binding Display}"/>
+            </StackPanel>
+        </DataTemplate>
     </Application.DataTemplates>
 
     <Application.Resources>

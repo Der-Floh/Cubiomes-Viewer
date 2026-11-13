@@ -50,12 +50,12 @@ public sealed partial class BiomePatchFieldsViewModel : ObservableObject, ICondi
     private readonly Action _changed;
     private bool _isShowing;
 
-    public BiomePatchFieldsViewModel(BiomePatchCondition condition, McVersion version, IBiomeCatalog catalog, Action changed)
+    public BiomePatchFieldsViewModel(BiomePatchCondition condition, McVersion version, IReadOnlyList<DimensionChoice> dimensions, IBiomeCatalog catalog, Action changed)
     {
         ArgumentNullException.ThrowIfNull(condition);
 
         _changed = changed;
-        Picker = new BiomePickerViewModel(condition.Biomes, condition.Dimension, version, catalog, changed);
+        Picker = new BiomePickerViewModel(condition.Biomes, condition.Dimension, version, dimensions, catalog, changed);
         _isShowing = true;
         MinChunks = condition.MinChunks;
         SelectedScale = Scales.FirstOrDefault(choice => choice.Value == condition.Scale) ?? Scales.First(choice => choice.Value == BiomePatchCondition.DefaultScale);
