@@ -4,7 +4,7 @@ Cubiomes Viewer includes or links the following third-party software.
 
 ## cubiomes
 
-Source: https://github.com/Cubitect/cubiomes (git submodule `native/cubiomes`). The C sources are compiled into the native `cvnative` library, and parts of its 48-bit seed arithmetic are re-implemented in C# in `Cubiomes_Viewer.Engine`.
+Source: https://github.com/Cubitect/cubiomes (git submodule `native/cubiomes`). The C sources are compiled into the native `cvnative` library, its Beta 1.7 terrain noise sampler is copied into `native/shim/cv_beta_noise.inc` with its permutation table indexed as the game indexes it, and parts of its 48-bit seed arithmetic are re-implemented in C# in `Cubiomes_Viewer.Engine`.
 
 ```text
 MIT License

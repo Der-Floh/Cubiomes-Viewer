@@ -7,7 +7,11 @@
 #pragma warning(push, 0)
 #endif
 
+/* cubiomes' Beta 1.7 terrain sampler is set aside for the corrected one in cv_beta_noise.inc. */
+#define sampleOctaveBeta17Terrain cv_cubiomes_sampleOctaveBeta17Terrain
 #include "../cubiomes/noise.c"
+#undef sampleOctaveBeta17Terrain
+#include "cv_beta_noise.inc"
 #include "../cubiomes/biomes.c"
 #include "../cubiomes/layers.c"
 #include "../cubiomes/biomenoise.c"

@@ -46,6 +46,8 @@ public sealed class MapExportServiceTests : IDisposable
         { McVersion.V1_12_2, Dimension.Overworld, 1 },
         { McVersion.V1_16_5, Dimension.Nether, 4 },
         { McVersion.V1_21_3, Dimension.End, 16 },
+        { McVersion.Beta1_7, Dimension.Overworld, 16 },
+        { McVersion.Beta1_7, Dimension.Overworld, 1 },
     };
 
     [Theory]
@@ -69,7 +71,7 @@ public sealed class MapExportServiceTests : IDisposable
     {
         { "biomes 1.21.3", McVersion.V1_21_3, Dimension.Overworld, LayerMode.Biomes, 4, HeightStyle.Shaded, null, "682012674c80850630978741900adc9c7a4842d215f289622ee1a46a67329b53" },
         { "biomes 1.12.2", McVersion.V1_12_2, Dimension.Overworld, LayerMode.Biomes, 16, HeightStyle.Shaded, null, "fc95c96fadee2416860006d10b990e68ba84dae68d2924ddbd1e474874de1f8a" },
-        { "biomes Beta 1.7", McVersion.Beta1_7, Dimension.Overworld, LayerMode.Biomes, 16, HeightStyle.Shaded, null, "dcb0aa49b65b651ad0a9691819c2561afc9e88f60a74573a7f259d8762858b48" },
+        { "biomes Beta 1.7", McVersion.Beta1_7, Dimension.Overworld, LayerMode.Biomes, 16, HeightStyle.Shaded, null, "a9ddf40cc5e4404a4c2b1cd10bb413a083d37c79a6ed09d45ea67c628656d862" },
         { "nether 1.16.5", McVersion.V1_16_5, Dimension.Nether, LayerMode.Biomes, 4, HeightStyle.Shaded, null, "10ae64e818080402f7f2a67a75aa4531798a83044d5fb571c89950e5f63f7a52" },
         { "end 1.21.3", McVersion.V1_21_3, Dimension.End, LayerMode.Biomes, 16, HeightStyle.Shaded, null, "c4894f4f7f6691ea6c73fb36bc245bd5ebfea4e04a5641fa9cd979534db4f6cb" },
         { "village potential 1.20.6", McVersion.V1_20_6, Dimension.Overworld, LayerMode.StructurePotential, 16, HeightStyle.Shaded, StructureType.Village, "fd0bc1f3b27e06d4b9d6bd6135f580afdcca876e2ed286ed06aa5eb49c6a3d3c" },
