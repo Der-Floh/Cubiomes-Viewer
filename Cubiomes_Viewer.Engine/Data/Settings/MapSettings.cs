@@ -34,6 +34,9 @@ public sealed class MapSettings
     /// <summary>The structure type whose biomes the structure potential layer highlights.</summary>
     public StructureType PotentialStructure { get; set; } = StructureType.Village;
 
+    /// <summary>The feature options whose structures are not marked on the map; empty when every structure of a marked type is.</summary>
+    public List<HiddenStructureOption> HiddenStructureOptions { get; set; } = [];
+
     /// <summary>The structure types marked on the map, across all dimensions.</summary>
     public List<StructureType> VisibleStructures { get; set; } =
     [

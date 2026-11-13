@@ -26,6 +26,9 @@ public sealed class StructureLayer : IMarkerLayer
     /// <summary>How far out the types are marked where it differs from their defaults, in blocks per pixel.</summary>
     public IReadOnlyDictionary<StructureType, double> ZoomLimits { get; set; } = FrozenDictionary<StructureType, double>.Empty;
 
+    /// <summary>Per structure type, the bits of the feature options whose structures are left out.</summary>
+    public IReadOnlyDictionary<StructureType, ulong> HiddenOptions { get; set; } = FrozenDictionary<StructureType, ulong>.Empty;
+
     private readonly IStructureAreaService _areaService;
     private readonly IStructureCatalog _catalog;
     private readonly IMapStyleService _styleService;
@@ -71,8 +74,13 @@ public sealed class StructureLayer : IMarkerLayer
                     continue;
 
                 var marker = _styleService.GetStructureMarker(request.Type);
-                foreach (var position in structures.Positions)
+                var hidden = HiddenOptions.GetValueOrDefault(request.Type);
+                for (var index = 0; index < structures.Positions.Length; index++)
                 {
+                    if (IsHidden(structures, index, hidden))
+                        continue;
+
+                    var position = structures.Positions[index];
                     var (x, y) = scene.Viewport.ToScreen(position.X, position.Z);
                     var center = new Point(scene.Snap(x), scene.Snap(y));
                     if (bounds.Contains(center))
@@ -94,8 +102,12 @@ public sealed class StructureLayer : IMarkerLayer
             if (!_areaService.TryGetStructures(request, out var structures))
                 continue;
 
+            var hidden = HiddenOptions.GetValueOrDefault(request.Type);
             for (var last = structures.Positions.Length - 1; last >= 0; last--)
             {
+                if (IsHidden(structures, last, hidden))
+                    continue;
+
                 var structure = structures.Positions[last];
                 var (x, y) = scene.Viewport.ToScreen(structure.X, structure.Z);
                 if (Math.Abs(x - position.X) <= reach && Math.Abs(y - position.Y) <= reach)
@@ -105,6 +117,10 @@ public sealed class StructureLayer : IMarkerLayer
 
         return null;
     }
+
+    /// <summary>A structure has one option of each feature, so it is left out when any of its options is hidden.</summary>
+    private static bool IsHidden(StructureAreaData structures, int index, ulong hiddenOptions)
+        => hiddenOptions != 0 && index < structures.Options.Length && (structures.Options[index] & hiddenOptions) != 0;
 
     private List<StructureAreaRequest> GetRequests(MapScene scene)
     {

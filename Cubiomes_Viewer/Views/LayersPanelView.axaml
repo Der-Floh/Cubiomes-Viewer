@@ -17,6 +17,40 @@
                 </StackPanel>
             </CheckBox>
         </DataTemplate>
+        <DataTemplate x:DataType="vm:StructureToggleViewModel">
+            <StackPanel>
+                <Grid ColumnDefinitions="*,Auto">
+                    <ContentControl Content="{Binding Toggle}"/>
+                    <ToggleButton Grid.Column="1" Classes="filter" Classes.filtered="{Binding IsFiltered}" IsChecked="{Binding IsExpanded}"
+                                  IsVisible="{Binding HasFeatures}" ToolTip.Tip="{Binding FilterTip}">
+                        <PathIcon Data="{StaticResource FilterIcon}"/>
+                    </ToggleButton>
+                </Grid>
+                <Border Classes="feature-filter" IsVisible="{Binding IsExpanded}">
+                    <StackPanel Classes="form">
+                        <ItemsControl Classes="rows" ItemsSource="{Binding Features}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:StructureFeatureViewModel">
+                                    <StackPanel>
+                                        <TextBlock Classes="field-label" Text="{Binding Name}"/>
+                                        <ItemsControl Classes="feature-options" ItemsSource="{Binding Options}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:StructureFeatureOptionViewModel">
+                                                    <CheckBox Content="{Binding Name}" IsChecked="{Binding IsChecked}"/>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <WrapPanel Classes="card-actions" IsVisible="{Binding IsFiltered}">
+                            <Button Content="{Binding ShowAllOptionsLabel}" Command="{Binding ShowAllOptionsCommand}"/>
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </DataTemplate>
     </UserControl.DataTemplates>
 
     <ScrollViewer>

@@ -2,9 +2,11 @@ using Avalonia.Headless.XUnit;
 
 using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Maps;
+using Cubiomes_Viewer.Engine.Data.Settings;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Repository.SettingsRepo;
 using Cubiomes_Viewer.Engine.Service.SettingsServ;
+using Cubiomes_Viewer.Engine.Service.StructureServ;
 using Cubiomes_Viewer.ViewModels;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -32,9 +34,9 @@ public sealed class LayersPanelViewModelTests : IDisposable
 
         Assert.True(_layers.IsOverworld);
         Assert.True(_layers.HasStructures);
-        Assert.True(GetStructure("Village").IsChecked);
-        Assert.False(GetStructure("Mineshaft").IsChecked);
-        Assert.DoesNotContain(_layers.Structures, structure => structure.Name == "Nether fortress");
+        Assert.True(GetStructure("Village").Toggle.IsChecked);
+        Assert.False(GetStructure("Mineshaft").Toggle.IsChecked);
+        Assert.DoesNotContain(_layers.Structures, structure => structure.Toggle.Name == "Nether fortress");
         Assert.Contains(StructureType.Village, _main.Map.VisibleStructures);
         Assert.DoesNotContain(StructureType.Mineshaft, _main.Map.VisibleStructures);
         Assert.True(_main.Map.ShowSpawn);
@@ -177,7 +179,7 @@ public sealed class LayersPanelViewModelTests : IDisposable
     {
         await _main.Initialization;
 
-        GetStructure("Mineshaft").IsChecked = true;
+        GetStructure("Mineshaft").Toggle.IsChecked = true;
         _layers.Spawn.IsChecked = false;
         _layers.ShowSlimeChunks = true;
         await _services.GetRequiredService<ISettingsService>().FlushAsync(TestContext.Current.CancellationToken);
@@ -200,8 +202,8 @@ public sealed class LayersPanelViewModelTests : IDisposable
         _services.GetRequiredService<WorldSession>().Dimension = Dimension.Nether;
 
         Assert.False(_layers.IsOverworld);
-        Assert.Equal(["Nether fortress", "Bastion remnant", "Ruined portal"], _layers.Structures.Select(structure => structure.Name));
-        Assert.Equal([true, true, false], _layers.Structures.Select(structure => structure.IsChecked));
+        Assert.Equal(["Nether fortress", "Bastion remnant", "Ruined portal"], _layers.Structures.Select(structure => structure.Toggle.Name));
+        Assert.Equal([true, true, false], _layers.Structures.Select(structure => structure.Toggle.IsChecked));
     }
 
     [AvaloniaFact]
@@ -238,14 +240,116 @@ public sealed class LayersPanelViewModelTests : IDisposable
         await _main.Initialization;
 
         _layers.HideAllStructuresCommand.Execute(null);
-        Assert.All(_layers.Structures, structure => Assert.False(structure.IsChecked));
+        Assert.All(_layers.Structures, structure => Assert.False(structure.Toggle.IsChecked));
         Assert.DoesNotContain(StructureType.Village, _main.Map.VisibleStructures);
         Assert.Contains(StructureType.Fortress, _main.Map.VisibleStructures);
 
         _layers.ShowAllStructuresCommand.Execute(null);
-        Assert.All(_layers.Structures, structure => Assert.True(structure.IsChecked));
+        Assert.All(_layers.Structures, structure => Assert.True(structure.Toggle.IsChecked));
         Assert.Contains(StructureType.Geode, _main.Map.VisibleStructures);
     }
 
-    private MarkerToggleViewModel GetStructure(string name) => _layers.Structures.Single(structure => structure.Name == name);
+    [AvaloniaFact]
+    public async Task Features_InTheNether_AreOfferedForEachStructureWithEveryOptionTicked()
+    {
+        await _main.Initialization;
+        Assert.False(GetStructure("Desert pyramid").HasFeatures);
+
+        _services.GetRequiredService<WorldSession>().Dimension = Dimension.Nether;
+
+        var fortress = GetStructure("Nether fortress");
+        Assert.Equal(["Nether wart room", "Blaze spawner"], fortress.Features.Select(feature => feature.Name));
+        Assert.All(fortress.Features, feature => Assert.Equal(["With", "Without"], feature.Options.Select(option => option.Name)));
+        Assert.Equal(["Housing units", "Hoglin stables", "Treasure room", "Bridge"], GetStructure("Bastion remnant").Features.Single().Options.Select(option => option.Name));
+        Assert.All(_layers.Structures, structure => Assert.True(structure.HasFeatures));
+        Assert.All(_layers.Structures.SelectMany(structure => structure.Features).SelectMany(feature => feature.Options), option => Assert.True(option.IsChecked));
+        Assert.DoesNotContain(_layers.Structures, structure => structure.IsFiltered);
+        Assert.Empty(_main.Map.HiddenStructureOptions);
+    }
+
+    [AvaloniaFact]
+    public async Task FeatureOption_Unticked_HidesTheStructuresWithItOnTheMapAndIsStored()
+    {
+        await _main.Initialization;
+        _services.GetRequiredService<WorldSession>().Dimension = Dimension.Nether;
+        var fortress = GetStructure("Nether fortress");
+
+        GetOption(fortress, "Nether wart room", "Without").IsChecked = false;
+        await _services.GetRequiredService<ISettingsService>().FlushAsync(TestContext.Current.CancellationToken);
+
+        var stored = await _services.GetRequiredService<ISettingsRepository>().LoadAsync(TestContext.Current.CancellationToken);
+        var hidden = Assert.Single(stored.Map.HiddenStructureOptions);
+        var shownOnMap = Assert.Single(_main.Map.HiddenStructureOptions);
+        Assert.True(fortress.IsFiltered);
+        Assert.Equal(StructureType.Fortress, shownOnMap.Key);
+        Assert.Equal(GetBit(StructureType.Fortress, McVersion.V1_21_3, "netherWartRoom", "without"), shownOnMap.Value);
+        Assert.Equal((StructureType.Fortress, "netherWartRoom", "without"), (hidden.Type, hidden.Feature, hidden.Option));
+    }
+
+    [AvaloniaFact]
+    public async Task ShowAllOptions_AfterSomeWereUnticked_MarksEveryStructureAgain()
+    {
+        await _main.Initialization;
+        _services.GetRequiredService<WorldSession>().Dimension = Dimension.Nether;
+        var bastion = GetStructure("Bastion remnant");
+        GetOption(bastion, "Type", "Housing units").IsChecked = false;
+        GetOption(bastion, "Type", "Bridge").IsChecked = false;
+        Assert.True(bastion.IsFiltered);
+
+        bastion.ShowAllOptionsCommand.Execute(null);
+        await _services.GetRequiredService<ISettingsService>().FlushAsync(TestContext.Current.CancellationToken);
+
+        var stored = await _services.GetRequiredService<ISettingsRepository>().LoadAsync(TestContext.Current.CancellationToken);
+        Assert.False(bastion.IsFiltered);
+        Assert.All(bastion.Features.Single().Options, option => Assert.True(option.IsChecked));
+        Assert.Empty(_main.Map.HiddenStructureOptions);
+        Assert.Empty(stored.Map.HiddenStructureOptions);
+    }
+
+    [AvaloniaFact]
+    public async Task Version_WithoutAFeatureWhoseOptionIsUnticked_LeavesItOutUntilTheVersionHasItAgain()
+    {
+        await _main.Initialization;
+        var session = _services.GetRequiredService<WorldSession>();
+        GetOption(GetStructure("Village"), "Type", "Desert").IsChecked = false;
+
+        session.Version = McVersion.V1_12_2;
+        Assert.Equal(["Villagers"], GetStructure("Village").Features.Select(feature => feature.Name));
+        Assert.False(GetStructure("Village").IsFiltered);
+        Assert.Empty(_main.Map.HiddenStructureOptions);
+
+        session.Version = McVersion.V1_21_3;
+        Assert.False(GetOption(GetStructure("Village"), "Type", "Desert").IsChecked);
+        Assert.Equal(GetBit(StructureType.Village, McVersion.V1_21_3, "type", "desert"), _main.Map.HiddenStructureOptions[StructureType.Village]);
+    }
+
+    [AvaloniaFact]
+    public async Task Initialization_StoredHiddenOption_IsShownUntickedAndHiddenOnTheMap()
+    {
+        using var services = TestServices.Create();
+        var stored = new AppSettings
+        {
+            Map = { HiddenStructureOptions = [new HiddenStructureOption { Type = StructureType.Fortress, Feature = "blazeSpawner", Option = "without" }] },
+            View = { Dimension = Dimension.Nether },
+        };
+        await services.GetRequiredService<ISettingsRepository>().SaveAsync(stored, TestContext.Current.CancellationToken);
+
+        var main = services.GetRequiredService<MainViewModel>();
+        await main.Initialization;
+
+        var fortress = services.GetRequiredService<LayersPanelViewModel>().Structures.Single(structure => structure.Type == StructureType.Fortress);
+        Assert.True(fortress.IsFiltered);
+        Assert.False(GetOption(fortress, "Blaze spawner", "Without").IsChecked);
+        Assert.True(GetOption(fortress, "Blaze spawner", "With").IsChecked);
+        Assert.Equal(GetBit(StructureType.Fortress, McVersion.V1_21_3, "blazeSpawner", "without"), main.Map.HiddenStructureOptions[StructureType.Fortress]);
+    }
+
+    private StructureToggleViewModel GetStructure(string name) => _layers.Structures.Single(structure => structure.Toggle.Name == name);
+
+    private static StructureFeatureOptionViewModel GetOption(StructureToggleViewModel structure, string feature, string option)
+        => structure.Features.Single(candidate => candidate.Name == feature).Options.Single(candidate => candidate.Name == option);
+
+    private ulong GetBit(StructureType type, McVersion version, string feature, string option)
+        => _services.GetRequiredService<IStructureFeatureCatalog>().GetFeatures(type, version)
+            .Single(candidate => candidate.Key == feature).Options.Single(candidate => candidate.Key == option).Bit;
 }

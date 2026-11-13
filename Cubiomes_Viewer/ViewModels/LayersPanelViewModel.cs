@@ -8,6 +8,7 @@ using CommunityToolkit.Mvvm.Input;
 
 using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Maps;
+using Cubiomes_Viewer.Engine.Data.Settings;
 using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.LayerServ;
@@ -96,23 +97,29 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
     public ObservableCollection<ComboChoice<StructureType>> PotentialStructures { get; } = [];
 
     /// <summary>The structure types of the current version and dimension.</summary>
-    public ObservableCollection<MarkerToggleViewModel> Structures { get; } = [];
+    public ObservableCollection<StructureToggleViewModel> Structures { get; } = [];
 
     private readonly MapViewModel _map;
     private readonly WorldSession _session;
     private readonly IStructureCatalog _structureCatalog;
+    private readonly IStructureFeatureCatalog _featureCatalog;
     private readonly ILayerCatalog _layerCatalog;
     private readonly IMapStyleService _styleService;
     private readonly ISettingsService _settingsService;
     private readonly HashSet<StructureType> _visibleStructures = [];
+
+    /// <summary>The unticked feature options by key, so that they last through versions whose bits differ or that lack the feature.</summary>
+    private readonly HashSet<StructureOptionKey> _hiddenOptions = [];
     private bool _isUpdating;
 
-    public LayersPanelViewModel(MapViewModel map, BiomeColorsViewModel biomeColors, WorldSession session, IStructureCatalog structureCatalog, ILayerCatalog layerCatalog, IMapStyleService styleService, ISettingsService settingsService)
+    public LayersPanelViewModel(MapViewModel map, BiomeColorsViewModel biomeColors, WorldSession session, IStructureCatalog structureCatalog, IStructureFeatureCatalog featureCatalog,
+        ILayerCatalog layerCatalog, IMapStyleService styleService, ISettingsService settingsService)
     {
         BiomeColors = biomeColors;
         _map = map;
         _session = session;
         _structureCatalog = structureCatalog;
+        _featureCatalog = featureCatalog;
         _layerCatalog = layerCatalog;
         _styleService = styleService;
         _settingsService = settingsService;
@@ -140,6 +147,8 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
 
             _visibleStructures.Clear();
             _visibleStructures.UnionWith(settings.VisibleStructures);
+            _hiddenOptions.Clear();
+            _hiddenOptions.UnionWith(settings.HiddenStructureOptions.Select(option => new StructureOptionKey(option.Type, option.Feature, option.Option)));
             ShowAvailableStructures();
         });
         ShowOverlaysOnMap();
@@ -177,6 +186,8 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
     {
         if (e.PropertyName is nameof(WorldSession.Version) or nameof(WorldSession.Dimension))
             ShowAvailableStructures();
+        if (e.PropertyName is nameof(WorldSession.Version))
+            _map.HiddenStructureOptions = GetHiddenOptionBits();
         if (e.PropertyName is nameof(WorldSession.Version) or nameof(WorldSession.Dimension) or nameof(WorldSession.Layer) or nameof(WorldSession.Octaves))
             ShowLayers();
     }
@@ -249,9 +260,13 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
         IsEnd = _session.Dimension == Dimension.End;
     }
 
-    private MarkerToggleViewModel CreateStructureToggle(StructureInfo structure)
-        => new(structure.Name, _styleService.GetStructureMarker(structure.Type), _visibleStructures.Contains(structure.Type),
-            isVisible => SetStructureVisible(structure.Type, isVisible));
+    private StructureToggleViewModel CreateStructureToggle(StructureInfo structure)
+    {
+        var type = structure.Type;
+        var toggle = new MarkerToggleViewModel(structure.Name, _styleService.GetStructureMarker(type), _visibleStructures.Contains(type), isVisible => SetStructureVisible(type, isVisible));
+        return new StructureToggleViewModel(type, toggle, _featureCatalog.GetFeatures(type, _session.Version),
+            (feature, option) => !_hiddenOptions.Contains(new StructureOptionKey(type, feature.Key, option.Key)), SetStructureFilter);
+    }
 
     private void SetStructureVisible(StructureType type, bool isVisible)
     {
@@ -263,12 +278,29 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
         ApplyOverlays();
     }
 
+    private void SetStructureFilter(StructureToggleViewModel structure)
+    {
+        foreach (var feature in structure.Features)
+        {
+            foreach (var option in feature.Options)
+            {
+                var key = new StructureOptionKey(structure.Type, feature.Key, option.Key);
+                if (option.IsChecked)
+                    _hiddenOptions.Remove(key);
+                else
+                    _hiddenOptions.Add(key);
+            }
+        }
+
+        ApplyOverlays();
+    }
+
     private void SetAllStructures(bool isVisible)
     {
         Update(() =>
         {
             foreach (var structure in Structures)
-                structure.IsChecked = isVisible;
+                structure.Toggle.IsChecked = isVisible;
         });
         ApplyOverlays();
     }
@@ -307,6 +339,20 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
         _map.ShowSpawn = Spawn.IsChecked;
         _map.ShowStrongholds = Strongholds.IsChecked;
         _map.VisibleStructures = _visibleStructures.ToFrozenSet();
+        _map.HiddenStructureOptions = GetHiddenOptionBits();
+    }
+
+    /// <summary>Per structure type, the bits the current version gives the hidden options of the features it has.</summary>
+    private FrozenDictionary<StructureType, ulong> GetHiddenOptionBits()
+        => _hiddenOptions.GroupBy(key => key.Type)
+            .Select(group => (Type: group.Key, Bits: group.Aggregate(0UL, (bits, key) => bits | GetOptionBit(key))))
+            .Where(entry => entry.Bits != 0)
+            .ToFrozenDictionary(entry => entry.Type, entry => entry.Bits);
+
+    private ulong GetOptionBit(StructureOptionKey key)
+    {
+        var feature = _featureCatalog.GetFeatures(key.Type, _session.Version).FirstOrDefault(candidate => string.Equals(candidate.Key, key.Feature, StringComparison.Ordinal));
+        return feature?.Options.FirstOrDefault(option => string.Equals(option.Key, key.Option, StringComparison.Ordinal))?.Bit ?? 0;
     }
 
     private void StoreOverlays()
@@ -320,6 +366,16 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
         settings.ShowSpawn = Spawn.IsChecked;
         settings.ShowStrongholds = Strongholds.IsChecked;
         settings.VisibleStructures = [.. _visibleStructures.Order()];
+        settings.HiddenStructureOptions =
+        [
+            .. _hiddenOptions
+                .OrderBy(key => key.Type)
+                .ThenBy(key => key.Feature, StringComparer.Ordinal)
+                .ThenBy(key => key.Option, StringComparer.Ordinal)
+                .Select(key => new HiddenStructureOption { Type = key.Type, Feature = key.Feature, Option = key.Option }),
+        ];
         _settingsService.RequestSave();
     }
+
+    private readonly record struct StructureOptionKey(StructureType Type, string Feature, string Option);
 }

@@ -111,6 +111,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ITileColorizer, TileColorizer>();
         services.AddSingleton<IMapTileService, MapTileService>();
         services.AddSingleton<IStructureCatalog, StructureCatalog>();
+        services.AddSingleton<IStructureFeatureCatalog, StructureFeatureCatalog>();
         services.AddSingleton<IStructureAreaService, StructureAreaService>();
         services.AddSingleton<IWorldLandmarkService, WorldLandmarkService>();
         services.AddSingleton<IEndGatewayService, EndGatewayService>();

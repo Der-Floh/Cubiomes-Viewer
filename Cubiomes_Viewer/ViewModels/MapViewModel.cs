@@ -92,6 +92,10 @@ public sealed partial class MapViewModel : ViewModelBase
     [ObservableProperty]
     public partial IReadOnlySet<StructureType> VisibleStructures { get; set; } = FrozenSet<StructureType>.Empty;
 
+    /// <summary>Per structure type, the bits of the feature options whose structures are not marked; types without hidden options are left out.</summary>
+    [ObservableProperty]
+    public partial IReadOnlyDictionary<StructureType, ulong> HiddenStructureOptions { get; set; } = FrozenDictionary<StructureType, ulong>.Empty;
+
     [ObservableProperty]
     public partial bool SmoothMotion { get; set; } = true;
 

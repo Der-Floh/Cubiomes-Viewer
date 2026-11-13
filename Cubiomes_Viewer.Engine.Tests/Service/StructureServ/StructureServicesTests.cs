@@ -119,12 +119,14 @@ public sealed class StructureServicesTests : IDisposable
         var landmarks = ComputeEnvelope.DeserializeResponse<WorldLandmarks>(host.Execute(ComputeEnvelope.SerializeJob(landmarksJob)));
         var slime = ComputeEnvelope.DeserializeResponse<SlimeAreaData>(host.Execute(ComputeEnvelope.SerializeJob(slimeJob)));
 
-        var expectedArea = new StructureAreaJobHandler().Handle(areaJob, context, CancellationToken.None);
+        var expectedArea = new StructureAreaJobHandler(new StructureFeatureCatalog()).Handle(areaJob, context, CancellationToken.None);
         var expectedLandmarks = new LandmarksJobHandler().Handle(landmarksJob, context, CancellationToken.None);
         var expectedSlime = new SlimeAreaJobHandler(new CubiomesSlimeChunkFinder()).Handle(slimeJob, context, CancellationToken.None);
         Assert.Equal(areaJob.Request, area.Request);
         Assert.NotEmpty(area.Positions);
         Assert.Equal(expectedArea.Positions, area.Positions);
+        Assert.Equal(area.Positions.Length, area.Options.Length);
+        Assert.Equal(expectedArea.Options, area.Options);
         Assert.Equal(_overworld, landmarks.World);
         Assert.Equal(expectedLandmarks.Spawn, landmarks.Spawn);
         Assert.Equal(expectedLandmarks.Strongholds, landmarks.Strongholds);

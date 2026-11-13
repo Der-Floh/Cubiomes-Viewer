@@ -115,7 +115,7 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
         {
             case nameof(MapViewModel.Layer) or nameof(MapViewModel.HeightStyle) or nameof(MapViewModel.PotentialStructure) or nameof(MapViewModel.BiomeColors)
                 or nameof(MapViewModel.ShowGrid) or nameof(MapViewModel.ShowSlimeChunks) or nameof(MapViewModel.ShowGatewayLinks)
-                or nameof(MapViewModel.ShowSpawn) or nameof(MapViewModel.ShowStrongholds) or nameof(MapViewModel.VisibleStructures)
+                or nameof(MapViewModel.ShowSpawn) or nameof(MapViewModel.ShowStrongholds) or nameof(MapViewModel.VisibleStructures) or nameof(MapViewModel.HiddenStructureOptions)
                 or nameof(MapViewModel.GridSpacing) or nameof(MapViewModel.GridMultiplier) or nameof(MapViewModel.MarkerScale) or nameof(MapViewModel.MarkerZoomLimits):
                 ShowOverlays();
                 Map.Refresh();
@@ -148,6 +148,7 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
         _layers.Landmarks.ShowStrongholds = _map.ShowStrongholds;
         _layers.Structures.VisibleTypes = _map.VisibleStructures;
         _layers.Structures.ZoomLimits = _map.MarkerZoomLimits;
+        _layers.Structures.HiddenOptions = _map.HiddenStructureOptions;
     }
 
     private void ShowMeasurement()

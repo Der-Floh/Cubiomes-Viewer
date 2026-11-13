@@ -126,6 +126,36 @@
         <Setter Property="Height" Value="24"/>
         <Setter Property="Fill" Value="{DynamicResource MarkerGlyphColor}"/>
     </Style>
+    <Style Selector="ToggleButton.filter">
+        <Setter Property="Padding" Value="6"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Foreground" Value="{DynamicResource FontColorDamp}"/>
+    </Style>
+    <Style Selector="ToggleButton.filter PathIcon">
+        <Setter Property="Width" Value="14"/>
+        <Setter Property="Height" Value="14"/>
+    </Style>
+    <Style Selector="ToggleButton.filter.filtered:not(:checked) PathIcon">
+        <Setter Property="Foreground" Value="{DynamicResource AccentColor}"/>
+    </Style>
+    <Style Selector="Border.feature-filter">
+        <Setter Property="Background" Value="{DynamicResource RegionColorDamp}"/>
+        <Setter Property="CornerRadius" Value="6"/>
+        <Setter Property="Padding" Value="10,6"/>
+        <Setter Property="Margin" Value="28,2,0,6"/>
+    </Style>
+    <Style Selector="ItemsControl.feature-options">
+        <Setter Property="ItemsPanel">
+            <ItemsPanelTemplate>
+                <WrapPanel ItemSpacing="12"/>
+            </ItemsPanelTemplate>
+        </Setter>
+    </Style>
+    <Style Selector="ItemsControl.feature-options CheckBox">
+        <Setter Property="MinWidth" Value="0"/>
+    </Style>
     <Style Selector="StackPanel.flyout-form">
         <Setter Property="Spacing" Value="8"/>
         <Setter Property="MinWidth" Value="200"/>
