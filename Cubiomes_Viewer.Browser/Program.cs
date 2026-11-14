@@ -8,14 +8,18 @@ using Cubiomes_Viewer;
 using Cubiomes_Viewer.Browser.Service;
 using Cubiomes_Viewer.Engine.Repository.AppDataRepo;
 using Cubiomes_Viewer.Engine.Service.ComputeServ;
+using Cubiomes_Viewer.Service.AppAddressServ;
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 internal sealed partial class Program
 {
+    /// <param name="args">The page's address, which main.js hands over.</param>
     private static Task Main(string[] args)
     {
-        App.ConfigurePlatformServices = ConfigureBrowserServices;
+        var startAddress = args.FirstOrDefault();
+        App.ConfigurePlatformServices = services => ConfigureBrowserServices(services, startAddress);
 
         return BuildAvaloniaApp()
             .WithInterFont()
@@ -33,10 +37,11 @@ internal sealed partial class Program
     [JSExport]
     internal static Task FlushStoredStateAsync() => App.FlushStoredStateAsync();
 
-    private static void ConfigureBrowserServices(IServiceCollection services)
+    private static void ConfigureBrowserServices(IServiceCollection services, string? startAddress)
     {
         services.AddSingleton<IAppDataStore, BrowserAppDataStore>();
         services.AddSingleton<IComputeWorkerFactory, WebWorkerFactory>();
         services.AddSingleton<IComputeService, WorkerPoolComputeService>();
+        services.AddSingleton<IAppAddressService>(provider => new BrowserAppAddressService(startAddress, provider.GetRequiredService<ILogger<BrowserAppAddressService>>()));
     }
 }

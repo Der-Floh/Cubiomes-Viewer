@@ -180,6 +180,24 @@ public sealed partial class MapViewModel : ViewModelBase
     /// <summary>Centres the map on the middle of a block straight away, keeping the zoom.</summary>
     public void JumpTo(BlockPos block) => JumpTo(Camera with { CenterX = block.X + BlockMiddle, CenterZ = block.Z + BlockMiddle });
 
+    /// <summary>
+    /// Opens the view a link carries: its world and layer, then its place straight away. The version and dimension come before the layer,
+    /// because a world without the layer falls back to biomes.
+    /// </summary>
+    public void Open(MapLink link)
+    {
+        ArgumentNullException.ThrowIfNull(link);
+
+        _session.Version = link.Version;
+        _session.LargeBiomes = link.LargeBiomes;
+        _session.Dimension = link.Dimension;
+        _session.Layer = link.Layer;
+        _session.Octaves = link.Octaves;
+        _session.SampleHeight = link.SampleHeight;
+        _session.Seed = link.Seed;
+        JumpTo(link.Camera);
+    }
+
     /// <summary>Puts a pin on a block of the open map, stops placing pins and picks the new pin, so its look can be chosen.</summary>
     public void PlacePin(BlockPos block)
     {

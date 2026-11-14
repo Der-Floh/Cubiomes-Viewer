@@ -4,6 +4,7 @@ using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.SeedServ;
+using Cubiomes_Viewer.Service.NotificationServ;
 using Cubiomes_Viewer.ViewModels;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -124,4 +125,35 @@ public sealed class WorldBarViewModelTests : IDisposable
 
         Assert.Equal(new MapCamera(1234, -5678, MapCamera.DefaultBlocksPerPixel), _viewModel.Map.Camera);
     }
+
+    [AvaloniaFact]
+    public void ApplySeed_Link_OpensItsViewAndRemembersTheSeed()
+    {
+        _viewModel.SeedText = $"{RecordingAppAddressService.TestLinkBase}?seed=262&dimension=end&x=40&z=-8";
+
+        _viewModel.ApplySeedCommand.Execute(null);
+
+        Assert.Equal(262, _session.Seed);
+        Assert.Equal(Dimension.End, _session.Dimension);
+        Assert.Equal(new MapCamera(40.5, -7.5, MapCamera.DefaultBlocksPerPixel), _viewModel.Map.Camera);
+        Assert.Equal("262", _viewModel.SeedText);
+        Assert.Equal("from link", _viewModel.SeedHint);
+        Assert.Equal([262L], _services.GetRequiredService<ISeedHistoryService>().Seeds);
+        Assert.Empty(Notifications.Notifications);
+    }
+
+    [AvaloniaFact]
+    public void ApplySeed_AddressWithoutSeed_WarnsAndKeepsTheWorld()
+    {
+        _session.Seed = 262;
+        _viewModel.SeedText = RecordingAppAddressService.TestLinkBase;
+
+        _viewModel.ApplySeedCommand.Execute(null);
+
+        Assert.Equal(262, _session.Seed);
+        Assert.Empty(_services.GetRequiredService<ISeedHistoryService>().Seeds);
+        Assert.Equal("The link has no seed.", Assert.Single(Notifications.Notifications).Message);
+    }
+
+    private RecordingNotificationService Notifications => (RecordingNotificationService)_services.GetRequiredService<INotificationService>();
 }

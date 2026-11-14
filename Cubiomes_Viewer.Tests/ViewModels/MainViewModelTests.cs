@@ -7,7 +7,9 @@ using Cubiomes_Viewer.Engine.Data.Settings;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Repository.AppDataRepo;
 using Cubiomes_Viewer.Engine.Repository.SettingsRepo;
+using Cubiomes_Viewer.Engine.Service.SeedServ;
 using Cubiomes_Viewer.Engine.Service.SettingsServ;
+using Cubiomes_Viewer.Service.AppAddressServ;
 using Cubiomes_Viewer.Service.NotificationServ;
 using Cubiomes_Viewer.ViewModels;
 
@@ -129,5 +131,72 @@ public sealed class MainViewModelTests : IDisposable
         Assert.Contains("settings.unreadable-", warning.Message, StringComparison.Ordinal);
     }
 
+    [AvaloniaFact]
+    public async Task Initialization_StartLink_OpensItsViewOverTheRestoredOneAndRemembersTheSeed()
+    {
+        await StoreViewAsync(new ViewSettings { Seed = 1, Version = McVersion.V1_18_2, CenterX = 7, CenterZ = 7 });
+        Address.StartAddress = $"{RecordingAppAddressService.TestLinkBase}?seed=262&version=1.16&dimension=nether&x=100&z=-50&scale=2&layer=height";
+
+        var main = _services.GetRequiredService<MainViewModel>();
+        await main.Initialization;
+
+        var session = _services.GetRequiredService<WorldSession>();
+        Assert.Empty(Notifications.Notifications);
+        Assert.Equal(262, session.Seed);
+        Assert.Equal(McVersion.V1_16_5, session.Version);
+        Assert.Equal(Dimension.Nether, session.Dimension);
+        Assert.Equal(new MapCamera(100.5, -49.5, 2), main.Map.Camera);
+        Assert.Equal(262L, _services.GetRequiredService<ISeedHistoryService>().Seeds[0]);
+        Assert.Equal(262, _services.GetRequiredService<ISettingsService>().Current.View.Seed);
+    }
+
+    [AvaloniaFact]
+    public async Task Initialization_StartLinkWithUnreadableValues_OpensTheRestAndWarnsOnce()
+    {
+        await StoreViewAsync(new ViewSettings { Seed = 1, Version = McVersion.V1_18_2 });
+        Address.StartAddress = $"{RecordingAppAddressService.TestLinkBase}?seed=262&version=1.99";
+
+        var main = _services.GetRequiredService<MainViewModel>();
+        await main.Initialization;
+
+        var session = _services.GetRequiredService<WorldSession>();
+        Assert.Equal(262, session.Seed);
+        Assert.Equal(McVersion.V1_18_2, session.Version);
+        var warning = Assert.Single(Notifications.Notifications);
+        Assert.Equal(NotificationType.Warning, warning.Type);
+        Assert.Equal("The link's version could not be read and stays as it is.", warning.Message);
+    }
+
+    [AvaloniaFact]
+    public async Task Initialization_StartAddressWithoutLink_RestoresTheStoredViewAndShowsItsLink()
+    {
+        await StoreViewAsync(new ViewSettings { Seed = 262, Version = McVersion.V1_21_3, CenterX = 10.2, CenterZ = -3.7, BlocksPerPixel = 2 });
+        Address.StartAddress = RecordingAppAddressService.TestLinkBase;
+
+        var main = _services.GetRequiredService<MainViewModel>();
+        await main.Initialization;
+
+        Assert.Empty(Notifications.Notifications);
+        Assert.Equal(262, _services.GetRequiredService<WorldSession>().Seed);
+        Assert.Equal($"{RecordingAppAddressService.TestLinkBase}?seed=262&version=1.21.3&dimension=overworld&x=10&z=-4&scale=2", Assert.Single(Address.Shown));
+    }
+
+    [AvaloniaFact]
+    public async Task ViewChanges_AfterInitialization_AreShownInTheAddressBar()
+    {
+        var main = _services.GetRequiredService<MainViewModel>();
+        await main.Initialization;
+
+        _services.GetRequiredService<WorldSession>().Dimension = Dimension.End;
+        main.Map.Camera = new MapCamera(-20.5, 30, 8);
+
+        Assert.EndsWith("&dimension=end&x=-21&z=30&scale=8", Address.Shown[^1], StringComparison.Ordinal);
+    }
+
+    private async Task StoreViewAsync(ViewSettings view)
+        => await _services.GetRequiredService<ISettingsRepository>().SaveAsync(new AppSettings { View = view }, TestContext.Current.CancellationToken);
+
     private RecordingNotificationService Notifications => (RecordingNotificationService)_services.GetRequiredService<INotificationService>();
+
+    private RecordingAppAddressService Address => (RecordingAppAddressService)_services.GetRequiredService<IAppAddressService>();
 }

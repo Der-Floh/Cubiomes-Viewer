@@ -10,7 +10,9 @@ using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.SeedServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
+using Cubiomes_Viewer.Service.AppAddressServ;
 using Cubiomes_Viewer.Service.ClipboardServ;
+using Cubiomes_Viewer.Service.MapLinkServ;
 using Cubiomes_Viewer.Service.NotificationServ;
 using Cubiomes_Viewer.Service.StorageServ;
 
@@ -22,6 +24,7 @@ public sealed partial class MapMenuViewModel : ViewModelBase
     private const string ImageExtension = "png";
 
     public string CopyTeleportLabel { get; } = "Copy /tp command";
+    public string CopyLinkLabel { get; } = "Copy link to this spot";
     public string OpenShadowSeedLabel { get; } = "Open shadow seed";
     public string ShadowSeedHint { get; } = "The shadow seed has the same Overworld biome layout in Beta 1.8 to 1.17. Its structures and terrain differ, and since 1.13 its oceans have other temperatures.";
     public string SaveImageLabel { get; } = "Save map image...";
@@ -63,16 +66,21 @@ public sealed partial class MapMenuViewModel : ViewModelBase
     private readonly WorldSession _session;
     private readonly ISeedHistoryService _seedHistory;
     private readonly IVersionCatalog _versionCatalog;
+    private readonly IMapLinkService _mapLinks;
+    private readonly IAppAddressService _address;
     private readonly IClipboardService _clipboardService;
     private readonly IStorageService _storageService;
     private readonly INotificationService _notificationService;
 
-    public MapMenuViewModel(MapViewModel map, WorldSession session, ISeedHistoryService seedHistory, IVersionCatalog versionCatalog, IClipboardService clipboardService, IStorageService storageService, INotificationService notificationService) : base(notificationService)
+    public MapMenuViewModel(MapViewModel map, WorldSession session, ISeedHistoryService seedHistory, IVersionCatalog versionCatalog, IMapLinkService mapLinks, IAppAddressService address,
+        IClipboardService clipboardService, IStorageService storageService, INotificationService notificationService) : base(notificationService)
     {
         _map = map;
         _session = session;
         _seedHistory = seedHistory;
         _versionCatalog = versionCatalog;
+        _mapLinks = mapLinks;
+        _address = address;
         _clipboardService = clipboardService;
         _storageService = storageService;
         _notificationService = notificationService;
@@ -98,6 +106,10 @@ public sealed partial class MapMenuViewModel : ViewModelBase
 
     [RelayCommand]
     public Task CopySeedAsync() => CopyAsync(Seed);
+
+    /// <summary>Copies a link to the open view centred on the menu's block, at the zoom the map has.</summary>
+    [RelayCommand]
+    public Task CopyLinkAsync() => CopyAsync(_mapLinks.Format(MapLink.Of(_session, _map.Camera) with { Center = Position }, _address.LinkBase));
 
     [RelayCommand]
     public void ToggleMeasuring() => _map.MeasureStart = _map.IsMeasuring ? null : Position;

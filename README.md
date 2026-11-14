@@ -58,6 +58,13 @@ Heavy work in the browser runs in a pool of Web Workers (one per logical process
 
 In development the Browser head references the worker project, which serves it under `/worker/`. On publish the worker is published separately and copied to `wwwroot/worker/`, because the WebAssembly SDK would otherwise merge the worker's assemblies into the main app's boot manifest. Always publish with `dotnet publish Cubiomes_Viewer.Browser -c Release`.
 
+### The map's right-click menu
+
+Right-clicking the map offers the clicked block's coordinates, `/tp` command, chunk, region file and the seed for the clipboard, measures distances from the block and puts a pin on it. It also offers:
+
+- Copy link to this spot: a web address that opens the web version on the same world, layer and zoom, centred on the block, such as `https://der-floh.github.io/Cubiomes-Viewer/?seed=262&version=1.21.3&dimension=nether&x=100&z=-50&scale=4`. A link names the seed, the version as the version box shows it, the dimension, the block in the middle and the zoom in blocks per pixel, and adds `largebiomes`, `layer`, `y` and `octaves` where they differ from the defaults. Pasting a link into the seed box opens its view, on the desktop too. In the web version the address bar always holds the link to what the map shows, so a reload keeps the view and the address can be shared as it is.
+- Open in the Nether or Open in the Overworld: the same spot in the other dimension, for planning portals. The Nether block is the Overworld one divided by 8 and rounded down; the Overworld block is the middle of the 8 by 8 blocks a Nether block stands for, where the game sends a player standing in the middle of it. The map jumps there at the same zoom and rings the block.
+
 ### Seed search
 
 The Search panel finds seeds that meet a list of conditions, each counted or excluded and optionally looking around where another condition was found:

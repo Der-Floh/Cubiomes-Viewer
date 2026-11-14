@@ -8,8 +8,10 @@ using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Extensions;
 using Cubiomes_Viewer.Engine.Service.SearchServ;
 using Cubiomes_Viewer.Engine.Service.SettingsServ;
+using Cubiomes_Viewer.Service.AppAddressServ;
 using Cubiomes_Viewer.Service.ClipboardServ;
 using Cubiomes_Viewer.Service.CsvServ;
+using Cubiomes_Viewer.Service.MapLinkServ;
 using Cubiomes_Viewer.Service.MapStyleServ;
 using Cubiomes_Viewer.Service.NotificationServ;
 using Cubiomes_Viewer.Service.StorageServ;
@@ -176,6 +178,8 @@ public sealed partial class App : Application
         services.AddSingleton<IStructureDescriptionService, StructureDescriptionService>();
         services.AddSingleton<IWindowService, WindowService>();
         services.AddSingleton<IUpdateService, NoUpdateService>();
+        services.AddSingleton<IAppAddressService, NoAddressBarService>();
+        services.AddSingleton<IMapLinkService, MapLinkService>();
         services.AddSingleton<WorldSession>();
 
         // map layers

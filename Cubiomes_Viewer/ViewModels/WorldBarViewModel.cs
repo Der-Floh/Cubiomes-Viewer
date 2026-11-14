@@ -10,6 +10,7 @@ using Cubiomes_Viewer.Engine.Data.Seeds;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.SeedServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
+using Cubiomes_Viewer.Service.MapLinkServ;
 using Cubiomes_Viewer.Service.MapStyleServ;
 using Cubiomes_Viewer.Service.NotificationServ;
 
@@ -19,7 +20,8 @@ public sealed partial class WorldBarViewModel : ViewModelBase
 {
     private const McVersion FirstLargeBiomesVersion = McVersion.V1_3_2;
 
-    public string SeedPlaceholder { get; } = "Seed (empty for random)";
+    public string SeedPlaceholder { get; } = "Seed or link (empty for random)";
+    public string FromLinkHint { get; } = "from link";
     public string RandomSeedLabel { get; } = "Random seed";
     public string RecentSeedsLabel { get; } = "Recent";
     public string LargeBiomesLabel { get; } = "Large biomes";
@@ -82,15 +84,19 @@ public sealed partial class WorldBarViewModel : ViewModelBase
     private readonly ISeedParser _seedParser;
     private readonly ISeedHistoryService _seedHistory;
     private readonly IVersionCatalog _versionCatalog;
+    private readonly IMapLinkService _mapLinks;
+    private readonly INotificationService _notifications;
 
     public WorldBarViewModel(WorldSession session, MapViewModel map, ISeedParser seedParser, ISeedHistoryService seedHistory, IVersionCatalog versionCatalog,
-        IMapStyleService styleService, INotificationService notificationService) : base(notificationService)
+        IMapLinkService mapLinks, IMapStyleService styleService, INotificationService notificationService) : base(notificationService)
     {
         Dimensions = DimensionChoices.Create(styleService);
         _session = session;
         _seedParser = seedParser;
         _seedHistory = seedHistory;
         _versionCatalog = versionCatalog;
+        _mapLinks = mapLinks;
+        _notifications = notificationService;
         Map = map;
 
         ShowVersions();
@@ -126,8 +132,18 @@ public sealed partial class WorldBarViewModel : ViewModelBase
             _session.SampleHeight = (int)height;
     }
 
+    /// <summary>Opens the typed seed, or the view of a link pasted in its place.</summary>
     [RelayCommand]
-    public void ApplySeed() => OpenSeed(_seedParser.Parse(SeedText));
+    public void ApplySeed()
+    {
+        if (_mapLinks.TryParse(SeedText, MapLink.Of(_session, Map.Camera), out var link, out var problem))
+            OpenLink(link);
+        else if (problem is null)
+            OpenSeed(_seedParser.Parse(SeedText));
+
+        if (problem is not null)
+            _notifications.ShowWarning(problem);
+    }
 
     [RelayCommand]
     public void RandomSeed() => OpenSeed(_seedParser.Parse(null));
@@ -136,6 +152,14 @@ public sealed partial class WorldBarViewModel : ViewModelBase
     public void GoTo() => Map.GoTo((double)(GoToX ?? 0), (double)(GoToZ ?? 0));
 
     private void OpenRecentSeed(long seed) => OpenSeed(new SeedParseResult(seed, SeedKind.Numeric));
+
+    private void OpenLink(MapLink link)
+    {
+        Map.Open(link);
+        _seedHistory.Add(link.Seed);
+        SeedText = FormatSeed(link.Seed);
+        SeedHint = FromLinkHint;
+    }
 
     private void OpenSeed(SeedParseResult result)
     {

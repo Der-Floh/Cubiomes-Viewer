@@ -28,6 +28,7 @@
                     <MenuItem Header="{Binding Menu.CopyChunkLabel}" Command="{Binding Menu.CopyChunkCommand}"/>
                     <MenuItem Header="{Binding Menu.CopyRegionFileLabel}" Command="{Binding Menu.CopyRegionFileCommand}"/>
                     <MenuItem Header="{Binding Menu.CopySeedLabel}" Command="{Binding Menu.CopySeedCommand}"/>
+                    <MenuItem Header="{Binding Menu.CopyLinkLabel}" Command="{Binding Menu.CopyLinkCommand}"/>
                     <Separator/>
                     <MenuItem Header="{Binding Menu.MeasureLabel}" Command="{Binding Menu.ToggleMeasuringCommand}"/>
                     <MenuItem Header="{Binding Menu.PlacePinLabel}" Command="{Binding Menu.PlacePinCommand}"/>

@@ -4,6 +4,9 @@ public static class Constants
 {
     public const string AppName = "Cubiomes Viewer";
     public const string RepositoryUrl = "https://github.com/Der-Floh/Cubiomes-Viewer";
+
+    /// <summary>The web version, which links to a view of the map point at; with the trailing slash its host serves it without a redirect.</summary>
+    public const string WebAppUrl = "https://der-floh.github.io/Cubiomes-Viewer/";
     public const double ScreenDpi = 96;
 
     /// <summary>Views narrower than this use the compact (mobile) shell.</summary>

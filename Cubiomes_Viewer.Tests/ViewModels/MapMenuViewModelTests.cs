@@ -77,6 +77,18 @@ public sealed class MapMenuViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
+    public async Task CopyLink_Executed_CopiesALinkCentredOnTheClickedBlockAtTheMapsZoom()
+    {
+        _session.Seed = 262;
+        _map.Camera = new MapCamera(0, 0, 2);
+
+        await _menu.CopyLinkCommand.ExecuteAsync(null);
+
+        var clipboard = (RecordingClipboardService)_services.GetRequiredService<IClipboardService>();
+        Assert.Equal($"{RecordingAppAddressService.TestLinkBase}?seed=262&version=1.21.3&dimension=overworld&x=-300&z=1000&scale=2", Assert.Single(clipboard.Texts));
+    }
+
+    [AvaloniaFact]
     public void ToggleMeasuring_Executed_StartsAtTheMenuPositionAndStopsAgain()
     {
         _menu.ToggleMeasuringCommand.Execute(null);

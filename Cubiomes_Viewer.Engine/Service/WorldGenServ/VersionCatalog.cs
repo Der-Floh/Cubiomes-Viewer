@@ -13,9 +13,18 @@ public sealed class VersionCatalog : IVersionCatalog
     public IReadOnlyList<McVersion> Versions => field ??= LoadVersions();
     public McVersion Newest => Versions[^1];
 
+    private FrozenDictionary<string, McVersion> VersionsByName => field ??= Versions.ToFrozenDictionary(GetName, StringComparer.OrdinalIgnoreCase);
+
     public string GetName(McVersion version)
         => Marshal.PtrToStringUTF8(CubiomesNative.VersionName((int)version))
             ?? throw new ArgumentOutOfRangeException(nameof(version), version, "The native generator does not know this Minecraft version.");
+
+    public bool TryGetVersion(string name, out McVersion version)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+
+        return VersionsByName.TryGetValue(name.Trim(), out version);
+    }
 
     public bool IsExperimental(McVersion version) => _experimental.Contains(version);
 

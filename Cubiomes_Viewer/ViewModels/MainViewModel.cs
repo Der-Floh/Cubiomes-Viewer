@@ -8,6 +8,8 @@ using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Service.AppDataServ;
 using Cubiomes_Viewer.Engine.Service.SeedServ;
 using Cubiomes_Viewer.Engine.Service.SettingsServ;
+using Cubiomes_Viewer.Service.AppAddressServ;
+using Cubiomes_Viewer.Service.MapLinkServ;
 using Cubiomes_Viewer.Service.NotificationServ;
 using Cubiomes_Viewer.Service.WindowServ;
 
@@ -58,10 +60,13 @@ public sealed partial class MainViewModel : ViewModelBase
     private readonly ISeedHistoryService _seedHistory;
     private readonly ISeedParser _seedParser;
     private readonly IUnreadableDataService _unreadable;
+    private readonly IMapLinkService _mapLinks;
+    private readonly IAppAddressService _address;
     private readonly INotificationService _notifications;
     private bool _isInitialized;
+    private string? _startLinkProblem;
 
-    public MainViewModel(WorldBarViewModel worldBar, MapViewModel map, LayersPanelViewModel layersPanel, SearchPanelViewModel searchPanel, AnalysisPanelViewModel analysisPanel, ExportViewModel exportPanel, SettingsViewModel settingsPanel, WorldSession session, ISettingsService settingsService, ISeedHistoryService seedHistory, ISeedParser seedParser, IUnreadableDataService unreadable, IWindowService windowService, INotificationService notificationService) : base(notificationService)
+    public MainViewModel(WorldBarViewModel worldBar, MapViewModel map, LayersPanelViewModel layersPanel, SearchPanelViewModel searchPanel, AnalysisPanelViewModel analysisPanel, ExportViewModel exportPanel, SettingsViewModel settingsPanel, WorldSession session, ISettingsService settingsService, ISeedHistoryService seedHistory, ISeedParser seedParser, IUnreadableDataService unreadable, IMapLinkService mapLinks, IAppAddressService address, IWindowService windowService, INotificationService notificationService) : base(notificationService)
     {
         CanUndockMap = windowService.HasWindows;
         WorldBar = worldBar;
@@ -75,6 +80,8 @@ public sealed partial class MainViewModel : ViewModelBase
         _seedHistory = seedHistory;
         _seedParser = seedParser;
         _unreadable = unreadable;
+        _mapLinks = mapLinks;
+        _address = address;
         _notifications = notificationService;
 
         Initialization = RunGuardedAsync(InitializeAsync);
@@ -94,6 +101,7 @@ public sealed partial class MainViewModel : ViewModelBase
         await _settingsService.LoadAsync();
         var restore = _settingsService.Current.Session.RestoreLastSession;
         ShowStoredView(restore);
+        var isLinkOpened = OpenStartLink();
         _layersPanel.ShowSettings();
         _settingsPanel.ShowSettings();
         await _layersPanel.BiomeColors.LoadAsync();
@@ -102,10 +110,40 @@ public sealed partial class MainViewModel : ViewModelBase
         Map.PropertyChanged += OnMapChanged;
         _seedHistory.Changed += StoreView;
         _isInitialized = true;
+        if (isLinkOpened)
+            StoreView();
+        else
+            ShowAddress();
 
         await _searchPanel.LoadAsync(restore);
         ShowUnreadableCopies();
+        ShowStartLinkProblem();
         _ = _settingsPanel.Updates.CheckAtStartAsync();
+    }
+
+    /// <summary>Opens the view of the address the app was opened with, over the restored one, when that address is a link.</summary>
+    private bool OpenStartLink()
+    {
+        if (!_mapLinks.TryParse(_address.StartAddress, MapLink.Of(_session, Map.Camera), out var link, out var problem))
+            return false;
+
+        Map.Open(link);
+        _seedHistory.Add(link.Seed);
+        _startLinkProblem = problem;
+        return true;
+    }
+
+    private void ShowStartLinkProblem()
+    {
+        if (_startLinkProblem is { } problem)
+            _notifications.ShowWarning(problem);
+    }
+
+    /// <summary>Puts a link to the view in the address bar, where there is one.</summary>
+    private void ShowAddress()
+    {
+        if (_address.HasAddressBar)
+            _address.ShowAddress(_mapLinks.Format(MapLink.Of(_session, Map.Camera), _address.LinkBase));
     }
 
     private void ShowUnreadableCopies()
@@ -163,5 +201,6 @@ public sealed partial class MainViewModel : ViewModelBase
         view.BlocksPerPixel = Map.Camera.BlocksPerPixel;
         view.RecentSeeds = [.. _seedHistory.Seeds];
         _settingsService.RequestSave();
+        ShowAddress();
     }
 }
