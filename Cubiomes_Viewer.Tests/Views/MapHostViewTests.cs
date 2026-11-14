@@ -262,6 +262,54 @@ public sealed class MapHostViewTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void DeleteKey_WithAPinPicked_RemovesItButNotWhileItsNameIsTyped()
+    {
+        var pins = _services.GetRequiredService<IPinService>();
+        ShowAtTheCenter(new BlockPos(0, 0));
+        _map.IsPlacingPin = true;
+        Click(_center);
+        HeadlessInput.Render();
+        var nameBox = GetCallout().GetVisualDescendants().OfType<TextBox>().Single(box => box.Classes.Contains(CalloutTitleClass));
+
+        nameBox.Focus();
+        _window.KeyPressQwerty(PhysicalKey.Delete, RawInputModifiers.None);
+        Assert.Single(pins.GetPins(262, Dimension.Overworld));
+
+        GetMapView().Focus();
+        _window.KeyPressQwerty(PhysicalKey.Delete, RawInputModifiers.None);
+
+        Assert.Empty(pins.GetPins(262, Dimension.Overworld));
+        Assert.Null(_map.Selection);
+    }
+
+    [AvaloniaFact]
+    public void BackspaceKey_WithAMeasurementPicked_RemovesIt()
+    {
+        var measurements = _services.GetRequiredService<IMeasurementService>();
+        var measurement = measurements.Add(262, Dimension.Overworld, new BlockPos(-80, 0), new BlockPos(80, 0));
+        ShowAtTheCenter(new BlockPos(0, 0));
+        Click(new Point(_center.X + 50, _center.Y + 1));
+        Assert.Equal(MapSelection.ForMeasurement(measurement), _map.Selection);
+
+        _window.KeyPressQwerty(PhysicalKey.Backspace, RawInputModifiers.None);
+
+        Assert.Empty(measurements.GetMeasurements(262, Dimension.Overworld));
+        Assert.Null(_map.Selection);
+    }
+
+    [AvaloniaFact]
+    public void DeleteKey_WithAStructurePicked_KeepsIt()
+    {
+        var marker = _services.GetRequiredService<IMapStyleService>().Spawn;
+        GetMapView().Focus();
+        _map.Selection = new MapSelection("World spawn", marker, new BlockPos(0, 0));
+
+        _window.KeyPressQwerty(PhysicalKey.Delete, RawInputModifiers.None);
+
+        Assert.NotNull(_map.Selection);
+    }
+
+    [AvaloniaFact]
     public void Click_WhileMeasuring_KeepsTheLineAndPicksIt()
     {
         ShowAtTheCenter(new BlockPos(0, 0));
@@ -274,7 +322,7 @@ public sealed class MapHostViewTests : IDisposable
         var measurement = Assert.Single(_services.GetRequiredService<IMeasurementService>().GetMeasurements(262, Dimension.Overworld));
         Assert.Equal((new BlockPos(0, 0), new BlockPos(30, 40)), (measurement.Start, measurement.End));
         Assert.Equal(MapSelection.ForMeasurement(measurement), _map.Selection);
-        Assert.True(GetCallout().GetVisualDescendants().OfType<TextBox>().Single().IsEffectivelyVisible);
+        Assert.True(GetCallout().GetVisualDescendants().OfType<TextBox>().Single(box => box.Classes.Contains(CalloutTitleClass)).IsEffectivelyVisible);
     }
 
     [AvaloniaFact]

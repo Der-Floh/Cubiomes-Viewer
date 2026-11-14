@@ -60,10 +60,12 @@ public sealed partial class SelectionViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsNamable), nameof(NamePlaceholder), nameof(NameLabel), nameof(RemoveLabel))]
+    [NotifyCanExecuteChangedFor(nameof(RemoveCommand))]
     public partial bool IsPin { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsNamable), nameof(NamePlaceholder), nameof(NameLabel), nameof(RemoveLabel))]
+    [NotifyCanExecuteChangedFor(nameof(RemoveCommand))]
     public partial bool IsMeasurement { get; set; }
 
     /// <summary>Whether the pick is one of the user's own, a pin or a kept measurement, which can be named and taken away.</summary>
@@ -118,7 +120,7 @@ public sealed partial class SelectionViewModel : ViewModelBase
     public void Close() => _map.Selection = null;
 
     /// <summary>Takes the picked pin or measurement away and closes the callout.</summary>
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(IsNamable))]
     public void Remove()
     {
         switch (_map.Selection)

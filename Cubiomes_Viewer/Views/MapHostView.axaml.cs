@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media.Imaging;
+using Avalonia.VisualTree;
 
 using Cubiomes_Viewer.Controls;
 using Cubiomes_Viewer.Controls.Map;
@@ -111,6 +112,20 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
         _selection.PropertyChanged -= OnSelectionPropertyChanged;
         _menu.ImageSource = null;
     }
+
+    /// <summary>Delete or Backspace takes the picked pin or measurement away, as its trash button does, unless a text box has the keys.</summary>
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        base.OnKeyDown(e);
+
+        if (e.Handled || e.KeyModifiers != KeyModifiers.None || e.Key is not (Key.Delete or Key.Back) || IsInTextBox(e.Source) || !_selection.RemoveCommand.CanExecute(null))
+            return;
+
+        _selection.RemoveCommand.Execute(null);
+        e.Handled = true;
+    }
+
+    private static bool IsInTextBox(object? source) => source is Visual visual && visual.FindAncestorOfType<TextBox>(includeSelf: true) is not null;
 
     private void OnHoverChanged(object? sender, MapHoverEventArgs e) => _map.SetHover(e.Position);
 
