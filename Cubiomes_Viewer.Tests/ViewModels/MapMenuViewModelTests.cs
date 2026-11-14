@@ -8,6 +8,7 @@ using Cubiomes_Viewer.Engine.Service.PinServ;
 using Cubiomes_Viewer.Engine.Service.SeedServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
 using Cubiomes_Viewer.Service.ClipboardServ;
+using Cubiomes_Viewer.Service.MapStyleServ;
 using Cubiomes_Viewer.Service.NotificationServ;
 using Cubiomes_Viewer.Service.StorageServ;
 using Cubiomes_Viewer.ViewModels;
@@ -113,6 +114,18 @@ public sealed class MapMenuViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void Hover_WhenMeasuringStops_DropsTheDistanceAtOnce()
+    {
+        _map.MeasureStart = new BlockPos(10, -20);
+        _map.SetHover(new BlockPos(40, 20));
+
+        _menu.StopMeasuringCommand.Execute(null);
+
+        Assert.DoesNotContain("blocks from", _map.HoverText, StringComparison.Ordinal);
+        Assert.Contains("X 40, Z 20", _map.HoverText, StringComparison.Ordinal);
+    }
+
+    [AvaloniaFact]
     public async Task SaveImage_FileChosen_WritesTheMapImageToIt()
     {
         _session.Seed = 262;
@@ -175,6 +188,16 @@ public sealed class MapMenuViewModelTests : IDisposable
         Assert.Contains(MapSelection.StrongholdName, names);
         Assert.DoesNotContain(_menu.StructureTargets, target => target.Target is StructureTarget { Type: StructureType.Fortress });
         Assert.Equal(names.Order(StringComparer.CurrentCulture), names);
+    }
+
+    [AvaloniaFact]
+    public void Targets_Shown_CarryTheMarkersTheMapDrawsThemWith()
+    {
+        var styleService = _services.GetRequiredService<IMapStyleService>();
+
+        Assert.Same(styleService.GetStructureMarker(StructureType.Village), _menu.StructureTargets.Single(target => target.Name == "Village").Marker);
+        Assert.Same(styleService.Stronghold, _menu.StructureTargets.Single(target => target.Target is StrongholdTarget).Marker);
+        Assert.All(_menu.BiomeTargets, target => Assert.Null(target.Marker));
     }
 
     [AvaloniaFact]

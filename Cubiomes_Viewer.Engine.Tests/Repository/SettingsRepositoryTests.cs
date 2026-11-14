@@ -40,7 +40,11 @@ public sealed class SettingsRepositoryTests : IDisposable
         var settings = new AppSettings
         {
             Appearance = { Theme = AppTheme.Dark },
-            Map = { CacheMegabytes = 512, SmoothMotion = false, ShowGrid = false, Pins = [new MapPin { Seed = -42, Dimension = Dimension.Nether, X = 7, Z = -9, Name = "Blaze farm", Icon = "Fortress" }] },
+            Map =
+            {
+                CacheMegabytes = 512, SmoothMotion = false, ShowGrid = false, Pins = [new MapPin { Seed = -42, Dimension = Dimension.Nether, X = 7, Z = -9, Name = "Blaze farm", Icon = "Fortress" }],
+                Measurements = [new MapMeasurement { Seed = -42, Dimension = Dimension.Nether, StartX = 1, StartZ = 2, EndX = -30, EndZ = 44, Name = "Tunnel" }],
+            },
             World = { ShowExperimentalVersions = true, EstimateTerrain = false, Salts = [new StructureSaltSetting { Type = StructureType.Bastion, Salt = -7, IsReplacing = true }] },
             View =
             {
@@ -58,6 +62,8 @@ public sealed class SettingsRepositoryTests : IDisposable
         Assert.False(loaded.Map.ShowGrid);
         var pin = Assert.Single(loaded.Map.Pins);
         Assert.Equal((-42L, Dimension.Nether, 7, -9, "Blaze farm", "Fortress"), (pin.Seed, pin.Dimension, pin.X, pin.Z, pin.Name, pin.Icon));
+        var measurement = Assert.Single(loaded.Map.Measurements);
+        Assert.Equal((-42L, Dimension.Nether, new BlockPos(1, 2), new BlockPos(-30, 44), "Tunnel"), (measurement.Seed, measurement.Dimension, measurement.Start, measurement.End, measurement.Name));
         Assert.True(loaded.World.ShowExperimentalVersions);
         Assert.Equal(new StructureRules { EstimateTerrain = false, Salts = [new StructureSalt(StructureType.Bastion, -7)] }, loaded.World.ToRules());
         Assert.Equal(-42, loaded.View.Seed);

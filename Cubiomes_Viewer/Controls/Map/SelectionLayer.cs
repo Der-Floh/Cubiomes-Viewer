@@ -52,6 +52,7 @@ public sealed class SelectionLayer : IMapLayer
     } = [];
 
     private readonly IMapStyleService _styleService;
+    private readonly MeasurePainter _measurePainter;
 
     private ImmutableSolidColorBrush LineBrush => field ??= new ImmutableSolidColorBrush(_styleService.SelectionColor);
     private ImmutableSolidColorBrush FillBrush => field ??= new ImmutableSolidColorBrush(_styleService.SelectionColor, BoxFillOpacity / (double)byte.MaxValue);
@@ -59,9 +60,10 @@ public sealed class SelectionLayer : IMapLayer
     private IPen SpotPen => field ??= new ImmutablePen(LineBrush, SpotThickness);
     private IPen SpotOutlinePen => field ??= new ImmutablePen(new ImmutableSolidColorBrush(_styleService.OutlineColor), SpotOutlineThickness);
 
-    public SelectionLayer(IMapStyleService styleService)
+    public SelectionLayer(IMapStyleService styleService, MeasurePainter measurePainter)
     {
         _styleService = styleService;
+        _measurePainter = measurePainter;
     }
 
     public void Attach() { }
@@ -80,6 +82,8 @@ public sealed class SelectionLayer : IMapLayer
 
             if (picked.Pin is { } pin)
                 _styleService.DrawPin(context, _styleService.GetPinLook(pin.Icon), PinLayer.GetTip(scene.Viewport, pin), scene.Pixels, Magnification);
+            else if (picked.Measurement is { } measurement)
+                _measurePainter.DrawKept(context, scene.Viewport, measurement, isPicked: true);
             else if (picked.Marker is { } marker)
                 _styleService.DrawMarker(context, marker, ToScreen(scene.Viewport, picked), scene.Pixels, Magnification);
             else
@@ -87,13 +91,15 @@ public sealed class SelectionLayer : IMapLayer
         }
     }
 
-    /// <summary>Where a picked marker, pin or spot is drawn on a view of the map.</summary>
+    /// <summary>Where a picked marker, pin or spot is drawn on a view of the map; for a measurement, where its label is.</summary>
     public Rect GetMarkerBounds(MapViewport viewport, MapSelection picked)
     {
         ArgumentNullException.ThrowIfNull(picked);
 
         if (picked.Pin is { } pin)
             return _styleService.GetPinBounds(PinLayer.GetTip(viewport, pin), Magnification);
+        if (picked.Measurement is { } measurement)
+            return _measurePainter.GetLabelBounds(viewport, measurement);
 
         var center = ToScreen(viewport, picked);
         var size = _styleService.MarkerSize * Magnification;

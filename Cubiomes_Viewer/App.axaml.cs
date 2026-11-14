@@ -188,6 +188,8 @@ public sealed partial class App : Application
         services.AddTransient<GridLayer>();
         services.AddTransient<StructureLayer>();
         services.AddTransient<LandmarkLayer>();
+        services.AddTransient<MeasurePainter>();
+        services.AddTransient<MeasurementLayer>();
         services.AddTransient<PinLayer>();
         services.AddTransient<MeasureLayer>();
         services.AddTransient<SelectionLayer>();

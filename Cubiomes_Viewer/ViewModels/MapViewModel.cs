@@ -13,6 +13,7 @@ using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Settings;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.LayerServ;
+using Cubiomes_Viewer.Engine.Service.MeasurementServ;
 using Cubiomes_Viewer.Engine.Service.PinServ;
 using Cubiomes_Viewer.Engine.Service.TileServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
@@ -145,18 +146,20 @@ public sealed partial class MapViewModel : ViewModelBase
     private readonly IBiomeCatalog _biomeCatalog;
     private readonly ILayerCatalog _layerCatalog;
     private readonly IPinService _pinService;
+    private readonly IMeasurementService _measurementService;
     private int _stateUpdateQueued;
 
     private MapContent Content => MapContent.For(World, Layer, SampleHeight, Octaves);
 
     public MapViewModel(WorldSession session, IMapTileService tileService, IBiomeCatalog biomeCatalog, ILayerCatalog layerCatalog, IPinService pinService,
-        INotificationService notificationService) : base(notificationService)
+        IMeasurementService measurementService, INotificationService notificationService) : base(notificationService)
     {
         _session = session;
         _tileService = tileService;
         _biomeCatalog = biomeCatalog;
         _layerCatalog = layerCatalog;
         _pinService = pinService;
+        _measurementService = measurementService;
 
         ShowSession();
         session.PropertyChanged += OnSessionChanged;
@@ -208,6 +211,19 @@ public sealed partial class MapViewModel : ViewModelBase
         var pin = _pinService.Add(World.Seed, World.Dimension, block);
         IsPlacingPin = false;
         Selection = MapSelection.ForPin(pin);
+    }
+
+    partial void OnMeasureStartChanged(BlockPos? value) => SetHover(HoverPosition);
+
+    /// <summary>Keeps the line being measured, from its start to a block, and picks it so it can be named; ending on the start only stops measuring.</summary>
+    public void FinishMeasuring(BlockPos end)
+    {
+        if (MeasureStart is not { } start)
+            return;
+
+        MeasureStart = null;
+        if (end != start)
+            Selection = MapSelection.ForMeasurement(_measurementService.Add(World.Seed, World.Dimension, start, end));
     }
 
     /// <summary>Moves a pin to another block and keeps it picked.</summary>

@@ -37,6 +37,9 @@ public sealed class MapSettings
     /// <summary>The pins put on the maps of seeds, oldest first.</summary>
     public List<MapPin> Pins { get; set; } = [];
 
+    /// <summary>The distances measured on the maps of seeds and kept there, oldest first.</summary>
+    public List<MapMeasurement> Measurements { get; set; } = [];
+
     /// <summary>The feature options whose structures are not marked on the map; empty when every structure of a marked type is.</summary>
     public List<HiddenStructureOption> HiddenStructureOptions { get; set; } = [];
 

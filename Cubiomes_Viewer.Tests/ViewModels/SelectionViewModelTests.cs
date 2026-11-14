@@ -5,6 +5,7 @@ using Cubiomes_Viewer.Engine.Data.Compute;
 using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.ComputeServ;
+using Cubiomes_Viewer.Engine.Service.MeasurementServ;
 using Cubiomes_Viewer.Engine.Service.PinServ;
 using Cubiomes_Viewer.Service.MapStyleServ;
 using Cubiomes_Viewer.Service.NotificationServ;
@@ -108,31 +109,67 @@ public sealed class SelectionViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
-    public void PinName_Typed_NamesThePinAndShowsItWhenPickedAgain()
+    public void Name_TypedForAPin_NamesThePinAndShowsItWhenPickedAgain()
     {
         var pin = _services.GetRequiredService<IPinService>().Add(_map.World.Seed, _map.World.Dimension, _spawn);
         _map.Selection = MapSelection.ForPin(pin);
-        Assert.Equal(string.Empty, _selection.PinName);
+        Assert.Equal(string.Empty, _selection.Name);
+        Assert.Equal(MapSelection.PinName, _selection.NamePlaceholder);
 
-        _selection.PinName = "Base camp ";
+        _selection.Name = "Base camp ";
         _map.Selection = null;
         _map.Selection = MapSelection.ForPin(pin);
 
         Assert.Equal("Base camp", pin.Name);
-        Assert.Equal("Base camp", _selection.PinName);
+        Assert.Equal("Base camp", _selection.Name);
         Assert.Equal("Base camp", _map.Selection.Name);
     }
 
     [AvaloniaFact]
-    public void RemovePin_PickedPin_TakesItAwayAndClosesTheCallout()
+    public void Remove_PickedPin_TakesItAwayAndClosesTheCallout()
     {
         var pins = _services.GetRequiredService<IPinService>();
         var pin = pins.Add(_map.World.Seed, _map.World.Dimension, _spawn);
         _map.Selection = MapSelection.ForPin(pin);
 
-        _selection.RemovePinCommand.Execute(null);
+        _selection.RemoveCommand.Execute(null);
 
         Assert.Empty(pins.GetPins(_map.World.Seed, _map.World.Dimension));
+        Assert.Null(_map.Selection);
+        Assert.False(_selection.IsOpen);
+    }
+
+    [AvaloniaFact]
+    public void Selection_Measurement_ShowsItsEndsAndLengthAndTakesAName()
+    {
+        var measurement = _services.GetRequiredService<IMeasurementService>().Add(_map.World.Seed, _map.World.Dimension, new BlockPos(10, -20), new BlockPos(40, 20));
+
+        _map.Selection = MapSelection.ForMeasurement(measurement);
+
+        Assert.True(_selection.IsOpen);
+        Assert.True(_selection.IsNamable);
+        Assert.False(_selection.IsPin);
+        Assert.Null(_selection.Marker);
+        Assert.Equal("From X 10, Z -20 to X 40, Z 20", _selection.PositionText);
+        Assert.Equal("50 blocks  ·  X +30, Z +40", _selection.Note);
+        Assert.Equal((string.Empty, MapSelection.MeasurementName), (_selection.Name, _selection.NamePlaceholder));
+        Assert.Equal(("Name the measurement", "Remove measurement"), (_selection.NameLabel, _selection.RemoveLabel));
+
+        _selection.Name = " Rail line ";
+
+        Assert.Equal("Rail line", measurement.Name);
+    }
+
+    [AvaloniaFact]
+    public void Remove_PickedMeasurement_TakesItAwayAndClosesTheCallout()
+    {
+        var measurements = _services.GetRequiredService<IMeasurementService>();
+        var measurement = measurements.Add(_map.World.Seed, _map.World.Dimension, new BlockPos(0, 0), new BlockPos(3, 4));
+        _map.Selection = MapSelection.ForMeasurement(measurement);
+
+        _selection.RemoveCommand.Execute(null);
+
+        Assert.Empty(measurements.GetMeasurements(_map.World.Seed, _map.World.Dimension));
         Assert.Null(_map.Selection);
         Assert.False(_selection.IsOpen);
     }

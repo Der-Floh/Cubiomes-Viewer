@@ -5,16 +5,27 @@ using Cubiomes_Viewer.Service.MapStyleServ;
 namespace Cubiomes_Viewer.Data;
 
 /// <summary>
-/// A thing on the map that can be picked: a marker, a pin the user put down, or a spot that only a ring marks. <see cref="Structure"/> is set for structures,
-/// whose details the generator can describe, <see cref="Pin"/> for pins, which have no marker, and <see cref="Note"/> where the callout says more.
+/// A thing on the map that can be picked: a marker, a pin or a kept measurement of the user's, or a spot that only a ring marks.
+/// <see cref="Structure"/> is set for structures, whose details the generator can describe, <see cref="Pin"/> for pins and
+/// <see cref="Measurement"/> for measurements, which have no marker, and <see cref="Note"/> where the callout says more.
 /// </summary>
-public sealed record MapSelection(string Name, MapMarker? Marker, BlockPos Position, StructureType? Structure = null, MapPin? Pin = null, string? Note = null)
+public sealed record MapSelection(string Name, MapMarker? Marker, BlockPos Position, StructureType? Structure = null, MapPin? Pin = null, string? Note = null,
+    MapMeasurement? Measurement = null)
 {
     public const string PinName = "Pin";
     public const string StrongholdName = "Stronghold";
+    public const string MeasurementName = "Measurement";
 
-    /// <summary>Whether this is a spot: a block with neither marker nor pin, which the map rings.</summary>
-    public bool IsSpot => Marker is null && Pin is null;
+    /// <summary>Whether this is a spot: a block with neither marker, pin nor measurement, which the map rings.</summary>
+    public bool IsSpot => Marker is null && Pin is null && Measurement is null;
+
+    /// <summary>A kept measurement, placed at its start.</summary>
+    public static MapSelection ForMeasurement(MapMeasurement measurement)
+    {
+        ArgumentNullException.ThrowIfNull(measurement);
+
+        return new MapSelection(measurement.Name ?? MeasurementName, null, measurement.Start, Measurement: measurement);
+    }
 
     /// <summary>A structure, whose details the callout reads from the generator.</summary>
     public static MapSelection ForStructure(string name, MapMarker marker, BlockPos position, StructureType type, string? note = null)

@@ -128,7 +128,9 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
 
     private void OnMapClicked(object? sender, MapClickEventArgs e)
     {
-        if (_map.IsPlacingPin)
+        if (_map.IsMeasuring)
+            _map.FinishMeasuring(e.Block);
+        else if (_map.IsPlacingPin)
             _map.PlacePin(e.Block);
         else
             _map.Selection = Map.HitTestMarker(e.Position);
@@ -194,8 +196,16 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
     private bool IsOverPickedPin(Point position)
         => _map.Selection is { Pin: not null } picked && _layers.Selection.GetMarkerBounds(Map.Viewport, picked).Contains(position);
 
+    /// <summary>Points the menu at the block under the pointer; while a distance is measured, a right click ends the measurement instead, as Escape does.</summary>
     private void OnContextRequested(object? sender, ContextRequestedEventArgs e)
     {
+        if (_map.IsMeasuring)
+        {
+            _menu.StopMeasuring();
+            e.Handled = true;
+            return;
+        }
+
         var position = e.TryGetPosition(Map, out var pointer) ? pointer : new Point(Map.Bounds.Width / 2, Map.Bounds.Height / 2);
         _menu.Position = Map.GetBlockAt(position);
     }

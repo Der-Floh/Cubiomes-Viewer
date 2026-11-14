@@ -19,6 +19,7 @@ using Cubiomes_Viewer.Engine.Service.ConditionServ;
 using Cubiomes_Viewer.Engine.Service.ExportServ;
 using Cubiomes_Viewer.Engine.Service.LayerServ;
 using Cubiomes_Viewer.Engine.Service.LocateServ;
+using Cubiomes_Viewer.Engine.Service.MeasurementServ;
 using Cubiomes_Viewer.Engine.Service.PinServ;
 using Cubiomes_Viewer.Engine.Service.SearchServ;
 using Cubiomes_Viewer.Engine.Service.SeedServ;
@@ -123,6 +124,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISeedParser, SeedParser>();
         services.AddSingleton<ISeedHistoryService, SeedHistoryService>();
         services.AddSingleton<IPinService, PinService>();
+        services.AddSingleton<IMeasurementService, MeasurementService>();
         services.AddSingleton<IUnreadableDataService, UnreadableDataService>();
         services.AddSingleton<ISettingsService, SettingsService>();
         services.AddSingleton<ISelfTestService, SelfTestService>();

@@ -1,7 +1,6 @@
-using Cubiomes_Viewer.Engine.Data.Settings;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.PinServ;
-using Cubiomes_Viewer.Engine.Service.SettingsServ;
+using Cubiomes_Viewer.Engine.Tests.Service.SettingsServ;
 
 namespace Cubiomes_Viewer.Engine.Tests.Service.PinServ;
 
@@ -77,15 +76,5 @@ public sealed class PinServiceTests
 
         Assert.Empty(_pins.GetPins(262, Dimension.Overworld));
         Assert.Equal((2, 2), (_changes, _settings.SaveRequests));
-    }
-
-    private sealed class FakeSettingsService : ISettingsService
-    {
-        public AppSettings Current { get; } = new();
-        public int SaveRequests { get; private set; }
-
-        public Task LoadAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
-        public void RequestSave() => SaveRequests++;
-        public Task FlushAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 }

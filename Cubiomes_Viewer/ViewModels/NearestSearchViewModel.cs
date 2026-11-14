@@ -81,6 +81,15 @@ public sealed partial class NearestSearchViewModel : ViewModelBase
                 .OrderBy(target => target.Name, StringComparer.CurrentCulture),
         ];
 
+    /// <summary>The marker the map draws a target with: a structure's or the strongholds'; <see langword="null"/> for a biome.</summary>
+    public MapMarker? GetMarker(NearestTarget target) => target switch
+    {
+        StructureTarget structure => _styleService.GetStructureMarker(structure.Type),
+        StrongholdTarget => _styleService.Stronghold,
+        BiomeTarget => null,
+        _ => throw new NotSupportedException($"Unsupported target: {target}"),
+    };
+
     /// <summary>Searches outward from a block of the open world and shows what it finds, or says that nothing is in range.</summary>
     public Task FindAsync(NearestTarget target, BlockPos origin)
     {

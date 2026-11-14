@@ -18,6 +18,7 @@ using Cubiomes_Viewer.Engine.Data.Settings;
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Data.Worlds;
+using Cubiomes_Viewer.Engine.Service.MeasurementServ;
 using Cubiomes_Viewer.Engine.Service.PinServ;
 using Cubiomes_Viewer.Engine.Service.StructureServ;
 using Cubiomes_Viewer.Engine.Service.TileServ;
@@ -261,6 +262,57 @@ public sealed class MapHostViewTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void Click_WhileMeasuring_KeepsTheLineAndPicksIt()
+    {
+        ShowAtTheCenter(new BlockPos(0, 0));
+        _map.MeasureStart = new BlockPos(0, 0);
+
+        Click(new Point(_center.X + 30, _center.Y + 40));
+        HeadlessInput.Render();
+
+        Assert.False(_map.IsMeasuring);
+        var measurement = Assert.Single(_services.GetRequiredService<IMeasurementService>().GetMeasurements(262, Dimension.Overworld));
+        Assert.Equal((new BlockPos(0, 0), new BlockPos(30, 40)), (measurement.Start, measurement.End));
+        Assert.Equal(MapSelection.ForMeasurement(measurement), _map.Selection);
+        Assert.True(GetCallout().GetVisualDescendants().OfType<TextBox>().Single().IsEffectivelyVisible);
+    }
+
+    [AvaloniaFact]
+    public void Click_OnAKeptMeasurement_PicksItAndDrawsItInTheSelectionColour()
+    {
+        var styleService = _services.GetRequiredService<IMapStyleService>();
+        var measurement = _services.GetRequiredService<IMeasurementService>().Add(262, Dimension.Overworld, new BlockPos(-80, 0), new BlockPos(80, 0));
+        ShowAtTheCenter(new BlockPos(0, 0));
+        var onTheLine = new Point(_center.X + 50, _center.Y + 1);
+        var row = (int)_center.Y;
+        Assert.Equal(ToRgb(styleService.MeasureColor), FramePixels.Read(CaptureFrame(), (int)onTheLine.X, row));
+
+        Click(onTheLine);
+
+        Assert.Equal(MapSelection.ForMeasurement(measurement), _map.Selection);
+        Assert.Equal(ToRgb(styleService.SelectionColor), FramePixels.Read(CaptureFrame(), (int)onTheLine.X, row));
+
+        Click(new Point(_center.X + 50, _center.Y + 40));
+        Assert.Null(_map.Selection);
+    }
+
+    [AvaloniaFact]
+    public void RightClick_WhileMeasuring_EndsTheMeasurementWithoutOpeningTheMenu()
+    {
+        ShowAtTheCenter(new BlockPos(0, 0));
+        _map.MeasureStart = new BlockPos(0, 0);
+        var point = new Point(_center.X + 30, _center.Y + 40);
+
+        _window.MouseDown(point, MouseButton.Right);
+        _window.MouseUp(point, MouseButton.Right);
+        HeadlessInput.Render();
+
+        Assert.False(_map.IsMeasuring);
+        Assert.False(Assert.IsType<MenuFlyout>(GetMapView().ContextFlyout).IsOpen, "The menu opened.");
+        Assert.Empty(_services.GetRequiredService<IMeasurementService>().GetMeasurements(262, Dimension.Overworld));
+    }
+
+    [AvaloniaFact]
     public void Spot_Picked_DrawsARingAroundItsBlockAndPlacesTheCalloutAboveIt()
     {
         var styleService = _services.GetRequiredService<IMapStyleService>();
@@ -271,7 +323,7 @@ public sealed class MapHostViewTests : IDisposable
         _map.Selection = spot;
         var frame = CaptureFrame();
 
-        var ring = new SelectionLayer(styleService).GetMarkerBounds(GetMapView().Viewport, spot);
+        var ring = new SelectionLayer(styleService, new MeasurePainter(styleService)).GetMarkerBounds(GetMapView().Viewport, spot);
         Assert.Equal(new Point(_center.X + 0.5, _center.Y + 0.5), ring.Center);
         var selectionColor = new RgbColor(styleService.SelectionColor.R, styleService.SelectionColor.G, styleService.SelectionColor.B);
         var row = (int)_center.Y;
@@ -302,7 +354,9 @@ public sealed class MapHostViewTests : IDisposable
         var menu = OpenContextMenu(new BlockPos(800, -400));
 
         HeadlessInput.Click(_window.GetVisualDescendants().OfType<MenuItem>().Single(item => Equals(item.Header, "Find nearest structure")));
-        HeadlessInput.Click(_window.GetVisualDescendants().OfType<MenuItem>().Single(item => Equals(item.Header, "Village")));
+        var village = _window.GetVisualDescendants().OfType<MenuItem>().Single(item => Equals(item.Header, "Village"));
+        Assert.Same(_services.GetRequiredService<IMapStyleService>().GetStructureMarker(StructureType.Village), Assert.IsType<MarkerBadgeView>(village.Icon).DataContext);
+        HeadlessInput.Click(village);
 
         Assert.False(menu.IsOpen, "The menu stayed open.");
         var nearest = _services.GetRequiredService<NearestSearchViewModel>();
@@ -551,11 +605,9 @@ public sealed class MapHostViewTests : IDisposable
         return menu;
     }
 
-    private static RgbColor ToRgb(Avalonia.Media.IBrush brush)
-    {
-        var color = Assert.IsAssignableFrom<Avalonia.Media.ISolidColorBrush>(brush).Color;
-        return new RgbColor(color.R, color.G, color.B);
-    }
+    private static RgbColor ToRgb(Avalonia.Media.IBrush brush) => ToRgb(Assert.IsAssignableFrom<Avalonia.Media.ISolidColorBrush>(brush).Color);
+
+    private static RgbColor ToRgb(Avalonia.Media.Color color) => new(color.R, color.G, color.B);
 
     private static (int Red, int Green, int Blue) ReadPixel(WriteableBitmap bitmap, int x, int y)
     {
