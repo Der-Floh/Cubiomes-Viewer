@@ -18,6 +18,7 @@ using Cubiomes_Viewer.Engine.Service.ComputeServ;
 using Cubiomes_Viewer.Engine.Service.ConditionServ;
 using Cubiomes_Viewer.Engine.Service.ExportServ;
 using Cubiomes_Viewer.Engine.Service.LayerServ;
+using Cubiomes_Viewer.Engine.Service.LocateServ;
 using Cubiomes_Viewer.Engine.Service.PinServ;
 using Cubiomes_Viewer.Engine.Service.SearchServ;
 using Cubiomes_Viewer.Engine.Service.SeedServ;
@@ -104,6 +105,7 @@ public static class ServiceCollectionExtensions
 
         // analysis
         services.AddSingleton<IAnalysisService, AnalysisService>();
+        services.AddSingleton<ILocateService, LocateService>();
 
         // export
         services.AddSingleton<IMapExportService, MapExportService>();

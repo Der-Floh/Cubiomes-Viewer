@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 
@@ -34,6 +35,20 @@ public sealed partial class MapMenuViewModel : ViewModelBase
     public string SavedTitle { get; } = "Saved";
     public string FromOverworldTitle { get; } = "From the Overworld";
     public string FromNetherTitle { get; } = "From the Nether";
+    public string FindStructureLabel { get; } = "Find nearest structure";
+    public string FindBiomeLabel { get; } = "Find nearest biome";
+
+    /// <summary>The structures Find nearest offers in the open world, replaced only when the version or dimension offers others.</summary>
+    public ObservableCollection<NearestTargetViewModel> StructureTargets { get; } = [];
+
+    /// <summary>The biomes Find nearest offers in the open world, replaced only when the version or dimension offers others.</summary>
+    public ObservableCollection<NearestTargetViewModel> BiomeTargets { get; } = [];
+
+    [ObservableProperty]
+    public partial bool HasStructureTargets { get; set; }
+
+    [ObservableProperty]
+    public partial bool HasBiomeTargets { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CopyCoordinatesLabel), nameof(CopyChunkLabel), nameof(CopyRegionFileLabel), nameof(OtherDimensionLabel))]
@@ -63,6 +78,7 @@ public sealed partial class MapMenuViewModel : ViewModelBase
     private bool IsInNether => _session.Dimension == Dimension.Nether;
 
     private readonly MapViewModel _map;
+    private readonly NearestSearchViewModel _nearest;
     private readonly WorldSession _session;
     private readonly ISeedHistoryService _seedHistory;
     private readonly IVersionCatalog _versionCatalog;
@@ -72,10 +88,11 @@ public sealed partial class MapMenuViewModel : ViewModelBase
     private readonly IStorageService _storageService;
     private readonly INotificationService _notificationService;
 
-    public MapMenuViewModel(MapViewModel map, WorldSession session, ISeedHistoryService seedHistory, IVersionCatalog versionCatalog, IMapLinkService mapLinks, IAppAddressService address,
-        IClipboardService clipboardService, IStorageService storageService, INotificationService notificationService) : base(notificationService)
+    public MapMenuViewModel(MapViewModel map, NearestSearchViewModel nearest, WorldSession session, ISeedHistoryService seedHistory, IVersionCatalog versionCatalog, IMapLinkService mapLinks,
+        IAppAddressService address, IClipboardService clipboardService, IStorageService storageService, INotificationService notificationService) : base(notificationService)
     {
         _map = map;
+        _nearest = nearest;
         _session = session;
         _seedHistory = seedHistory;
         _versionCatalog = versionCatalog;
@@ -85,6 +102,7 @@ public sealed partial class MapMenuViewModel : ViewModelBase
         _storageService = storageService;
         _notificationService = notificationService;
 
+        ShowTargets();
         map.PropertyChanged += OnMapChanged;
         session.PropertyChanged += OnSessionChanged;
     }
@@ -163,6 +181,27 @@ public sealed partial class MapMenuViewModel : ViewModelBase
         _notificationService.ShowSuccess(CopiedTitle, text);
     });
 
+    private Task FindNearestAsync(NearestTarget target) => _nearest.FindAsync(target, Position);
+
+    private void ShowTargets()
+    {
+        Replace(StructureTargets, _nearest.GetStructureTargets(_session.Version, _session.Dimension));
+        Replace(BiomeTargets, _nearest.GetBiomeTargets(_session.Version, _session.Dimension));
+        HasStructureTargets = StructureTargets.Count > 0;
+        HasBiomeTargets = BiomeTargets.Count > 0;
+    }
+
+    /// <summary>Lists other targets only when they differ, as a menu whose items are rebuilt while one is clicked stays open.</summary>
+    private void Replace(ObservableCollection<NearestTargetViewModel> items, IReadOnlyList<NearestTarget> targets)
+    {
+        if (items.Select(item => item.Target).SequenceEqual(targets))
+            return;
+
+        items.Clear();
+        foreach (var target in targets)
+            items.Add(new NearestTargetViewModel(target, FindNearestAsync));
+    }
+
     private string GetImageFileName()
         => string.Create(CultureInfo.InvariantCulture, $"cubiomes-{_session.Seed}-{_versionCatalog.GetName(_session.Version)}-{_session.Dimension}.{ImageExtension}")
             .ToLowerInvariant();
@@ -185,5 +224,7 @@ public sealed partial class MapMenuViewModel : ViewModelBase
             OnPropertyChanged(nameof(CanOpenOtherDimension));
             OpenOtherDimensionCommand.NotifyCanExecuteChanged();
         }
+        if (e.PropertyName is nameof(WorldSession.Version) or nameof(WorldSession.Dimension))
+            ShowTargets();
     }
 }

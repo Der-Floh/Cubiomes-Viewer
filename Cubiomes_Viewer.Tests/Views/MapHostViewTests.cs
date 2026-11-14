@@ -33,7 +33,9 @@ namespace Cubiomes_Viewer.Tests.Views;
 public sealed class MapHostViewTests : IDisposable
 {
     private const int ViewSize = 256;
+    private const int MenuViewWidth = 960;
     private const int MenuViewHeight = 720;
+    private const int MenuClickLeft = 16;
     private const int MenuClickTop = 16;
     private const int BytesPerPixel = 4;
     private const int DragDistance = 40;
@@ -295,6 +297,22 @@ public sealed class MapHostViewTests : IDisposable
     }
 
     [AvaloniaFact]
+    public async Task ContextMenu_FindNearestVillage_ClosesTheMenuAndPicksTheVillageItFound()
+    {
+        var menu = OpenContextMenu(new BlockPos(800, -400));
+
+        HeadlessInput.Click(_window.GetVisualDescendants().OfType<MenuItem>().Single(item => Equals(item.Header, "Find nearest structure")));
+        HeadlessInput.Click(_window.GetVisualDescendants().OfType<MenuItem>().Single(item => Equals(item.Header, "Village")));
+
+        Assert.False(menu.IsOpen, "The menu stayed open.");
+        var nearest = _services.GetRequiredService<NearestSearchViewModel>();
+        await TestWait.UntilAsync(() => !nearest.IsRunning && _map.Selection is not null, "The village was not found in time.");
+        Assert.Equal(StructureType.Village, _map.Selection?.Structure);
+        Assert.EndsWith("blocks from 800, -400", _map.Selection?.Note, StringComparison.Ordinal);
+        Assert.False(_host.GetVisualDescendants().OfType<NearestSearchView>().Single().GetVisualDescendants().OfType<Border>().First().IsVisible);
+    }
+
+    [AvaloniaFact]
     public void JumpTo_DuringAFlight_EndsTheFlightAtTheJump()
     {
         _map.SmoothMotion = true;
@@ -513,14 +531,14 @@ public sealed class MapHostViewTests : IDisposable
 
     private MapView GetMapView() => _host.GetVisualDescendants().OfType<MapView>().Single();
 
-    /// <summary>Right-clicks a block near the top of a window tall enough for the whole menu, and returns the open menu.</summary>
+    /// <summary>Right-clicks a block near the top left of a window large enough for the whole menu and its submenus, and returns the open menu.</summary>
     private MenuFlyout OpenContextMenu(BlockPos block)
     {
-        _window.Height = MenuViewHeight;
+        (_window.Width, _window.Height) = (MenuViewWidth, MenuViewHeight);
         HeadlessInput.Render();
-        var point = new Point(_center.X, MenuClickTop);
+        var point = new Point(MenuClickLeft, MenuClickTop);
         var map = GetMapView();
-        _map.Camera = new MapCamera(block.X, block.Z - (point.Y - map.Bounds.Height / 2), 1);
+        _map.Camera = new MapCamera(block.X - (point.X - map.Bounds.Width / 2), block.Z - (point.Y - map.Bounds.Height / 2), 1);
         HeadlessInput.Render();
         Assert.Equal(block, map.GetBlockAt(point));
 

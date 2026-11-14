@@ -12,11 +12,13 @@ namespace Cubiomes_Viewer.Tests;
 /// <summary>Builds the application's services with storage, compute, notifications, the clipboard, the file pickers and the address bar replaced by test-safe ones.</summary>
 internal static class TestServices
 {
-    public static ServiceProvider Create()
+    /// <param name="configure">Replaces further services, such as one a test fakes.</param>
+    public static ServiceProvider Create(Action<IServiceCollection>? configure = null)
     {
         var services = new ServiceCollection();
         App.ConfigureServices(services);
         UseIsolatedPlatform(services);
+        configure?.Invoke(services);
         return services.BuildServiceProvider();
     }
 

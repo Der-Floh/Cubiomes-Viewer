@@ -23,6 +23,10 @@ public static class BlockPosText
     /// <summary>The block and its chunk, as shown where a position is described to the user.</summary>
     public static string ToLocation(BlockPos position) => $"{ToBlock(position)}  ·  Chunk {ToChunk(position)}";
 
+    /// <summary>How far one block lies from another, named by where the distance is measured from.</summary>
+    public static string ToDistance(BlockPos start, BlockPos end)
+        => string.Create(CultureInfo.InvariantCulture, $"{start.DistanceTo(end):0.#} blocks from {start.X}, {start.Z}");
+
     /// <summary>The name of the region file that stores the block.</summary>
     public static string ToRegionFile(BlockPos position)
         => string.Create(CultureInfo.InvariantCulture, $"r.{position.X >> RegionShift}.{position.Z >> RegionShift}.mca");

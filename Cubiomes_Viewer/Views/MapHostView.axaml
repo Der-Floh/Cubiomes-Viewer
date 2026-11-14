@@ -13,6 +13,13 @@
         <KeyBinding Gesture="Escape" Command="{Binding DismissCommand}"/>
     </UserControl.KeyBindings>
 
+    <UserControl.Resources>
+        <ControlTheme x:Key="NearestTargetItem" TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}" x:DataType="vm:NearestTargetViewModel">
+            <Setter Property="Header" Value="{Binding Name}"/>
+            <Setter Property="Command" Value="{Binding FindCommand}"/>
+        </ControlTheme>
+    </UserControl.Resources>
+
     <Panel>
         <controls:MapView Name="Map"
                           Camera="{Binding Map.Camera}"
@@ -34,6 +41,11 @@
                     <MenuItem Header="{Binding Menu.PlacePinLabel}" Command="{Binding Menu.PlacePinCommand}"/>
                     <MenuItem Header="{Binding Menu.OtherDimensionLabel}" Command="{Binding Menu.OpenOtherDimensionCommand}" IsVisible="{Binding Menu.CanOpenOtherDimension}"/>
                     <Separator/>
+                    <MenuItem Header="{Binding Menu.FindStructureLabel}" ItemsSource="{Binding Menu.StructureTargets}"
+                              ItemContainerTheme="{StaticResource NearestTargetItem}" IsEnabled="{Binding Menu.HasStructureTargets}"/>
+                    <MenuItem Header="{Binding Menu.FindBiomeLabel}" ItemsSource="{Binding Menu.BiomeTargets}"
+                              ItemContainerTheme="{StaticResource NearestTargetItem}" IsEnabled="{Binding Menu.HasBiomeTargets}"/>
+                    <Separator/>
                     <MenuItem Header="{Binding Menu.OpenShadowSeedLabel}" Command="{Binding Menu.OpenShadowSeedCommand}"
                               ToolTip.Tip="{Binding Menu.ShadowSeedHint}" ToolTip.ShowOnDisabled="True"/>
                     <MenuItem Header="{Binding Menu.SaveImageLabel}" Command="{Binding Menu.SaveImageCommand}"/>
@@ -42,6 +54,7 @@
         </controls:MapView>
 
         <views:LegendView DataContext="{Binding Legend}"/>
+        <views:NearestSearchView DataContext="{Binding Nearest}"/>
         <Canvas ClipToBounds="True">
             <views:SelectionCalloutView Name="Callout" DataContext="{Binding Selection}"/>
         </Canvas>

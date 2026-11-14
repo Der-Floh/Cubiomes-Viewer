@@ -31,6 +31,27 @@ public sealed class CubiomesStructureFinderTests
         Assert.Equal(firstPosition, secondPosition);
     }
 
+    /// <summary>The nearest-structure search scans whole regions at a time, so every attempt must lie in the region it belongs to.</summary>
+    [Theory]
+    [MemberData(nameof(AllTypesAndVersions))]
+    public void TryGetRegionPosition_AnyTypeAndVersion_LiesInsideItsRegion(StructureType type, McVersion version)
+    {
+        if (!_finder.TryGetPlacement(type, version, out var placement))
+            return;
+
+        for (var regionZ = -2; regionZ <= 2; regionZ++)
+        {
+            for (var regionX = -2; regionX <= 2; regionX++)
+            {
+                if (!_finder.TryGetRegionPosition(type, version, StructureRules.Default, Seed, regionX, regionZ, out var position))
+                    continue;
+
+                Assert.InRange(position.X, regionX * placement.RegionBlocks, (regionX + 1) * placement.RegionBlocks - 1);
+                Assert.InRange(position.Z, regionZ * placement.RegionBlocks, (regionZ + 1) * placement.RegionBlocks - 1);
+            }
+        }
+    }
+
     [Fact]
     public void TryGetRegionPosition_Village_IgnoresUpperSeedBits()
     {

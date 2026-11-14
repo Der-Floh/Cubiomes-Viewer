@@ -3,6 +3,7 @@ using Avalonia.Headless.XUnit;
 using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Worlds;
+using Cubiomes_Viewer.Engine.Service.LocateServ;
 using Cubiomes_Viewer.Engine.Service.PinServ;
 using Cubiomes_Viewer.Engine.Service.SeedServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
@@ -162,6 +163,58 @@ public sealed class MapMenuViewModelTests : IDisposable
         _session.Version = McVersion.V1_21_3;
 
         Assert.False(_menu.OpenShadowSeedCommand.CanExecute(null));
+    }
+
+    [AvaloniaFact]
+    public void StructureTargets_Overworld_ListItsStructuresWithTheStrongholdsByName()
+    {
+        var names = _menu.StructureTargets.Select(target => target.Name).ToList();
+
+        Assert.True(_menu.HasStructureTargets);
+        Assert.Contains("Village", names);
+        Assert.Contains(MapSelection.StrongholdName, names);
+        Assert.DoesNotContain(_menu.StructureTargets, target => target.Target is StructureTarget { Type: StructureType.Fortress });
+        Assert.Equal(names.Order(StringComparer.CurrentCulture), names);
+    }
+
+    [AvaloniaFact]
+    public void StructureTargets_DimensionChanged_ListTheNethersStructures()
+    {
+        _session.Dimension = Dimension.Nether;
+
+        var types = _menu.StructureTargets.Select(target => target.Target).OfType<StructureTarget>().Select(target => target.Type).ToList();
+        Assert.Contains(StructureType.Fortress, types);
+        Assert.Contains(StructureType.Bastion, types);
+        Assert.DoesNotContain(StructureType.Village, types);
+        Assert.DoesNotContain(_menu.StructureTargets, target => target.Target is StrongholdTarget);
+    }
+
+    [AvaloniaFact]
+    public void BiomeTargets_Version_ListItsBiomesByName()
+    {
+        var biomes = _services.GetRequiredService<IBiomeCatalog>().GetBiomes(_session.Version, Dimension.Overworld);
+
+        var names = _menu.BiomeTargets.Select(target => target.Name).ToList();
+
+        Assert.True(_menu.HasBiomeTargets);
+        Assert.Equal(biomes.Count, names.Count);
+        Assert.Contains("Mushroom Fields", names);
+        Assert.Equal(names.Order(StringComparer.CurrentCulture), names);
+    }
+
+    [AvaloniaFact]
+    public async Task FindTarget_Executed_SearchesFromTheClickedBlock()
+    {
+        _session.Seed = 262;
+        var locate = _services.GetRequiredService<ILocateService>();
+        var range = locate.GetStructureRange(StructureType.Village, _session.Version);
+        var expected = await locate.FindStructureAsync(_map.World, StructureType.Village, _position, range, cancellationToken: TestContext.Current.CancellationToken);
+
+        await _menu.StructureTargets.Single(target => target.Target is StructureTarget { Type: StructureType.Village }).FindCommand.ExecuteAsync(null);
+
+        Assert.NotNull(expected);
+        Assert.Equal(expected.Position, _map.Selection?.Position);
+        Assert.Equal(BlockPosText.ToDistance(_position, expected.Position), _map.Selection?.Note);
     }
 
     [AvaloniaFact]

@@ -33,6 +33,18 @@ public sealed class TilePyramidTests
     public void SelectScale_LayeredMetrics_UsesOnePixelSamplesAndStopsAtCoarsestLevel(double blocksPerPixel, int expectedScale)
         => Assert.Equal(expectedScale, TilePyramid.SelectScale(TileMetrics.Layered, blocksPerPixel));
 
+    [Theory]
+    [InlineData(1)]
+    [InlineData(4)]
+    [InlineData(64)]
+    public void GetMaxBlocksPerPixel_Scale_IsTheFarthestZoomThatStillShowsIt(int scale)
+    {
+        var farthest = TilePyramid.GetMaxBlocksPerPixel(_twoPixelMetrics, scale);
+
+        Assert.Equal(scale, TilePyramid.SelectScale(_twoPixelMetrics, farthest));
+        Assert.True(TilePyramid.SelectScale(_twoPixelMetrics, farthest * 1.01) > scale);
+    }
+
     [Fact]
     public void GetCoarserScale_FinestAndCoarsest_ReturnsNextOrNull()
     {

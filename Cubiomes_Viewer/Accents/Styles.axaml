@@ -413,6 +413,24 @@
         <Setter Property="Padding" Value="10,4"/>
     </Style>
 
+    <Style Selector="Border.task-card">
+        <Setter Property="Background" Value="{DynamicResource RegionColor}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="10,6,4,6"/>
+        <Setter Property="Margin" Value="12"/>
+        <Setter Property="MinWidth" Value="200"/>
+        <Setter Property="MaxWidth" Value="320"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Bottom"/>
+        <Setter Property="BoxShadow" Value="0 2 10 0 #59000000"/>
+    </Style>
+    <Style Selector="TextBlock.task-title">
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+    </Style>
+
     <Style Selector="Border.legend">
         <Setter Property="Background" Value="{DynamicResource RegionColor}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>

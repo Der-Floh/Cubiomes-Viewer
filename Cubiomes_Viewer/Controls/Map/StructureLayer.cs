@@ -111,7 +111,7 @@ public sealed class StructureLayer : IMarkerLayer
                 var structure = structures.Positions[last];
                 var (x, y) = scene.Viewport.ToScreen(structure.X, structure.Z);
                 if (Math.Abs(x - position.X) <= reach && Math.Abs(y - position.Y) <= reach)
-                    return new MapSelection(_catalog.GetInfo(request.Type).Name, _styleService.GetStructureMarker(request.Type), structure, request.Type);
+                    return MapSelection.ForStructure(_catalog.GetInfo(request.Type).Name, _styleService.GetStructureMarker(request.Type), structure, request.Type);
             }
         }
 

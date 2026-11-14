@@ -210,6 +210,7 @@ public sealed partial class App : Application
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<WorldBarViewModel>();
         services.AddSingleton<MapViewModel>();
+        services.AddSingleton<NearestSearchViewModel>();
         services.AddSingleton<MapMenuViewModel>();
         services.AddSingleton<SelectionViewModel>();
         services.AddSingleton<LegendViewModel>();

@@ -2,6 +2,7 @@ using Avalonia.Headless.XUnit;
 
 using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Worlds;
+using Cubiomes_Viewer.Engine.Service.LocateServ;
 using Cubiomes_Viewer.Service.MapStyleServ;
 using Cubiomes_Viewer.ViewModels;
 
@@ -30,6 +31,21 @@ public sealed class MapHostViewModelTests : IDisposable
         host.DismissCommand.Execute(null);
         Assert.Null(host.Map.Selection);
         Assert.False(host.Selection.IsOpen);
+    }
+
+    [AvaloniaFact]
+    public async Task Dismiss_WhileFindingAndMeasuring_StopsTheSearchFirst()
+    {
+        using var services = TestServices.Create(collection => collection.AddSingleton<ILocateService>(new FakeLocateService(waitsUntilCancelled: true)));
+        var host = services.GetRequiredService<MapHostViewModel>();
+        host.Map.MeasureStart = new BlockPos(0, 0);
+        var finding = host.Nearest.FindAsync(new StructureTarget("Village", StructureType.Village), new BlockPos(0, 0));
+
+        host.DismissCommand.Execute(null);
+        await finding;
+
+        Assert.False(host.Nearest.IsRunning);
+        Assert.True(host.Map.IsMeasuring);
     }
 
     [AvaloniaFact]

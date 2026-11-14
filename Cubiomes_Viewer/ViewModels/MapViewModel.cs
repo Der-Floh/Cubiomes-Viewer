@@ -178,7 +178,11 @@ public sealed partial class MapViewModel : ViewModelBase
     public void JumpTo(MapCamera camera) => Navigate(camera, animate: false);
 
     /// <summary>Centres the map on the middle of a block straight away, keeping the zoom.</summary>
-    public void JumpTo(BlockPos block) => JumpTo(Camera with { CenterX = block.X + BlockMiddle, CenterZ = block.Z + BlockMiddle });
+    public void JumpTo(BlockPos block) => JumpTo(CenterOn(block));
+
+    /// <summary>Glides to the middle of a block, zooming in to <paramref name="maxBlocksPerPixel"/> if the map is zoomed out further.</summary>
+    public void FlyTo(BlockPos block, double maxBlocksPerPixel = double.PositiveInfinity)
+        => Navigate(CenterOn(block) with { BlocksPerPixel = Math.Min(Camera.BlocksPerPixel, maxBlocksPerPixel) }, animate: true);
 
     /// <summary>
     /// Opens the view a link carries: its world and layer, then its place straight away. The version and dimension come before the layer,
@@ -228,11 +232,8 @@ public sealed partial class MapViewModel : ViewModelBase
 
         var location = BlockPosText.ToLocation(block);
         var text = DescribeSample(block) is { } sample ? $"{sample}  ·  {location}" : location;
-        HoverText = MeasureStart is { } start ? $"{text}  ·  {DescribeDistance(start, block)}" : text;
+        HoverText = MeasureStart is { } start ? $"{text}  ·  {BlockPosText.ToDistance(start, block)}" : text;
     }
-
-    private static string DescribeDistance(BlockPos start, BlockPos end)
-        => string.Create(CultureInfo.InvariantCulture, $"{start.DistanceTo(end):0.#} blocks from {start.X}, {start.Z}");
 
     /// <summary>What the shown layer has at a block: the name of its biome or the value of its number, if that tile is loaded.</summary>
     private string? DescribeSample(BlockPos block)
@@ -250,6 +251,8 @@ public sealed partial class MapViewModel : ViewModelBase
         => _tileService.TryGetCachedBiome(Content, block.X, block.Z, out var biome) && biome != EngineConstants.NoBiomeId
             ? _biomeCatalog.GetDisplayName(World.Version, biome)
             : null;
+
+    private MapCamera CenterOn(BlockPos block) => Camera with { CenterX = block.X + BlockMiddle, CenterZ = block.Z + BlockMiddle };
 
     private void Navigate(MapCamera target, bool animate)
     {

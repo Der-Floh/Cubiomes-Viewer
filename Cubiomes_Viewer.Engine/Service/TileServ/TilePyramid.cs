@@ -26,6 +26,15 @@ public static class TilePyramid
         return metrics.Scales[^1];
     }
 
+    /// <summary>The farthest zoom, in blocks per pixel, at which <see cref="SelectScale"/> still picks <paramref name="scale"/> or a finer one.</summary>
+    public static double GetMaxBlocksPerPixel(TileMetrics metrics, int scale)
+    {
+        ArgumentNullException.ThrowIfNull(metrics);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(scale);
+
+        return scale / metrics.MinSamplePixels;
+    }
+
     public static int? GetCoarserScale(TileMetrics metrics, int scale)
     {
         ArgumentNullException.ThrowIfNull(metrics);

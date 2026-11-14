@@ -12,7 +12,6 @@ namespace Cubiomes_Viewer.Controls.Map;
 public sealed class LandmarkLayer : IMarkerLayer
 {
     private const string SpawnName = "World spawn";
-    private const string StrongholdName = "Stronghold";
 
     private static readonly RenderOptions _markerRenderOptions = new() { EdgeMode = EdgeMode.Antialias };
 
@@ -81,7 +80,7 @@ public sealed class LandmarkLayer : IMarkerLayer
             return null;
 
         var index = Array.FindLastIndex(landmarks.Strongholds, stronghold => IsHit(scene, stronghold, position));
-        return index < 0 ? null : new MapSelection($"{StrongholdName} {index + 1}", _styleService.Stronghold, landmarks.Strongholds[index]);
+        return index < 0 ? null : MapSelection.ForStronghold(index, _styleService.Stronghold, landmarks.Strongholds[index]);
     }
 
     private bool IsHit(MapScene scene, BlockPos marker, Point position)
