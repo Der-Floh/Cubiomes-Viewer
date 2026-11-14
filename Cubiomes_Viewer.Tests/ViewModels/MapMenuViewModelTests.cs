@@ -1,6 +1,7 @@
 using Avalonia.Headless.XUnit;
 
 using Cubiomes_Viewer.Data;
+using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.PinServ;
 using Cubiomes_Viewer.Engine.Service.SeedServ;
@@ -149,6 +150,60 @@ public sealed class MapMenuViewModelTests : IDisposable
         _session.Version = McVersion.V1_21_3;
 
         Assert.False(_menu.OpenShadowSeedCommand.CanExecute(null));
+    }
+
+    [AvaloniaFact]
+    public void OtherDimensionLabel_Position_NamesTheOtherDimensionAndItsBlock()
+    {
+        Assert.Equal("Open in the Nether (-38, 125)", _menu.OtherDimensionLabel);
+
+        _session.Dimension = Dimension.Nether;
+
+        Assert.Equal("Open in the Overworld (-2396, 8004)", _menu.OtherDimensionLabel);
+    }
+
+    [AvaloniaFact]
+    public void OpenOtherDimension_InTheOverworld_OpensTheNetherBlockAtAnEighthAndMarksIt()
+    {
+        _map.Camera = new MapCamera(-250, 900, 2);
+
+        _menu.OpenOtherDimensionCommand.Execute(null);
+
+        Assert.Equal(Dimension.Nether, _session.Dimension);
+        Assert.Equal(new MapCamera(-37.5, 125.5, 2), _map.Camera);
+        Assert.Equal(MapSelection.ForSpot("From the Overworld", new BlockPos(-38, 125), "Overworld X -300, Z 1000"), _map.Selection);
+    }
+
+    [AvaloniaFact]
+    public void OpenOtherDimension_InTheNether_OpensTheMiddleOfItsEightBlocks()
+    {
+        _session.Dimension = Dimension.Nether;
+        _menu.Position = new BlockPos(12, -7);
+
+        _menu.OpenOtherDimensionCommand.Execute(null);
+
+        Assert.Equal(Dimension.Overworld, _session.Dimension);
+        Assert.Equal(MapSelection.ForSpot("From the Nether", new BlockPos(100, -52), "Nether X 12, Z -7"), _map.Selection);
+    }
+
+    [AvaloniaFact]
+    public void OpenOtherDimension_FarOutInTheNether_StaysInsideTheWorldBorder()
+    {
+        _session.Dimension = Dimension.Nether;
+        _menu.Position = new BlockPos(10_000_000, -10_000_000);
+
+        _menu.OpenOtherDimensionCommand.Execute(null);
+
+        Assert.Equal(new BlockPos(30_000_000, -30_000_000), _map.Selection?.Position);
+    }
+
+    [AvaloniaFact]
+    public void OpenOtherDimension_InTheEnd_IsNotOffered()
+    {
+        _session.Dimension = Dimension.End;
+
+        Assert.False(_menu.CanOpenOtherDimension);
+        Assert.False(_menu.OpenOtherDimensionCommand.CanExecute(null));
     }
 
     private sealed class FixedImageSource(byte[] image) : IMapImageSource

@@ -16,9 +16,12 @@ public static class BlockPosText
     public static string ToChunk(BlockPos position)
         => string.Create(CultureInfo.InvariantCulture, $"{position.X >> ChunkShift}, {position.Z >> ChunkShift}");
 
+    /// <summary>The block's coordinates with their axes named.</summary>
+    public static string ToBlock(BlockPos position)
+        => string.Create(CultureInfo.InvariantCulture, $"X {position.X}, Z {position.Z}");
+
     /// <summary>The block and its chunk, as shown where a position is described to the user.</summary>
-    public static string ToLocation(BlockPos position)
-        => string.Create(CultureInfo.InvariantCulture, $"X {position.X}, Z {position.Z}  ·  Chunk {ToChunk(position)}");
+    public static string ToLocation(BlockPos position) => $"{ToBlock(position)}  ·  Chunk {ToChunk(position)}";
 
     /// <summary>The name of the region file that stores the block.</summary>
     public static string ToRegionFile(BlockPos position)

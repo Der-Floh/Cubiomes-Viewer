@@ -57,6 +57,24 @@ public sealed class SelectionViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void Selection_Spot_ShowsItsNoteWithoutABadge()
+    {
+        _map.Selection = MapSelection.ForSpot("From the Overworld", new BlockPos(12, -7), "Overworld X 100, Z -50");
+
+        Assert.True(_selection.IsOpen);
+        Assert.Equal("From the Overworld", _selection.Title);
+        Assert.Null(_selection.Marker);
+        Assert.False(_selection.IsPin);
+        Assert.Equal("X 12, Z -7  ·  Chunk 0, -1", _selection.PositionText);
+        Assert.Equal("Overworld X 100, Z -50", _selection.Note);
+        Assert.Empty(_selection.Details);
+
+        _map.Selection = new MapSelection("World spawn", _styleService.Spawn, _spawn);
+
+        Assert.Empty(_selection.Note);
+    }
+
+    [AvaloniaFact]
     public void Selection_Pin_ShowsItsLookAndStoresAnotherOnePicked()
     {
         var pin = _services.GetRequiredService<IPinService>().Add(_map.World.Seed, _map.World.Dimension, _spawn);

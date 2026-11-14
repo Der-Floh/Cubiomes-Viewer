@@ -31,6 +31,7 @@
                     <Separator/>
                     <MenuItem Header="{Binding Menu.MeasureLabel}" Command="{Binding Menu.ToggleMeasuringCommand}"/>
                     <MenuItem Header="{Binding Menu.PlacePinLabel}" Command="{Binding Menu.PlacePinCommand}"/>
+                    <MenuItem Header="{Binding Menu.OtherDimensionLabel}" Command="{Binding Menu.OpenOtherDimensionCommand}" IsVisible="{Binding Menu.CanOpenOtherDimension}"/>
                     <Separator/>
                     <MenuItem Header="{Binding Menu.OpenShadowSeedLabel}" Command="{Binding Menu.OpenShadowSeedCommand}"
                               ToolTip.Tip="{Binding Menu.ShadowSeedHint}" ToolTip.ShowOnDisabled="True"/>

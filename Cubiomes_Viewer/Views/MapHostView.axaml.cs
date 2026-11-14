@@ -200,7 +200,7 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
         _menu.Position = Map.GetBlockAt(position);
     }
 
-    private void OnNavigationRequested(MapCamera target) => Map.NavigateTo(target, animate: true);
+    private void OnNavigationRequested(MapNavigation navigation) => Map.NavigateTo(navigation.Target, navigation.Animate);
 
     private void OnMapPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {

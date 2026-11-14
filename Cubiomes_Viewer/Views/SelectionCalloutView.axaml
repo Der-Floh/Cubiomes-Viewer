@@ -13,7 +13,7 @@
     <Border Classes="callout" IsVisible="{Binding IsOpen}">
         <StackPanel Classes="callout">
             <Grid ColumnDefinitions="Auto,*,Auto,Auto">
-                <Panel IsVisible="{Binding !IsPin}" VerticalAlignment="Center">
+                <Panel IsVisible="{Binding Marker, Converter={x:Static ObjectConverters.IsNotNull}}" VerticalAlignment="Center">
                     <views:MarkerBadgeView DataContext="{Binding Marker}"/>
                 </Panel>
                 <ComboBox Classes="pin-look" IsVisible="{Binding IsPin}" ItemsSource="{Binding PinLooks}" SelectedItem="{Binding SelectedPinLook}"
@@ -41,6 +41,7 @@
             </Grid>
 
             <TextBlock Classes="damp" Text="{Binding PositionText}" TextWrapping="Wrap"/>
+            <TextBlock Classes="damp" Text="{Binding Note}" TextWrapping="Wrap" IsVisible="{Binding Note, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
             <TextBlock Classes="damp" Text="{Binding LoadingLabel}" IsVisible="{Binding IsLoading}"/>
             <ItemsControl ItemsSource="{Binding Details}">
                 <ItemsControl.ItemTemplate>

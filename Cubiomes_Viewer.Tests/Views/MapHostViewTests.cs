@@ -33,6 +33,8 @@ namespace Cubiomes_Viewer.Tests.Views;
 public sealed class MapHostViewTests : IDisposable
 {
     private const int ViewSize = 256;
+    private const int MenuViewHeight = 720;
+    private const int MenuClickTop = 16;
     private const int BytesPerPixel = 4;
     private const int DragDistance = 40;
     private const int PinOffset = 40;
@@ -257,6 +259,78 @@ public sealed class MapHostViewTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void Spot_Picked_DrawsARingAroundItsBlockAndPlacesTheCalloutAboveIt()
+    {
+        var styleService = _services.GetRequiredService<IMapStyleService>();
+        var block = new BlockPos(100, -50);
+        ShowAtTheCenter(block);
+
+        var spot = MapSelection.ForSpot("From the Overworld", block, "Overworld X 800, Z -400");
+        _map.Selection = spot;
+        var frame = CaptureFrame();
+
+        var ring = new SelectionLayer(styleService).GetMarkerBounds(GetMapView().Viewport, spot);
+        Assert.Equal(new Point(_center.X + 0.5, _center.Y + 0.5), ring.Center);
+        var selectionColor = new RgbColor(styleService.SelectionColor.R, styleService.SelectionColor.G, styleService.SelectionColor.B);
+        var row = (int)_center.Y;
+        Assert.Contains(selectionColor, Enumerable.Range((int)ring.Right - 4, 4).Select(x => FramePixels.Read(frame, x, row)));
+        Assert.NotEqual(selectionColor, FramePixels.Read(frame, (int)_center.X, row));
+
+        var callout = GetCallout().Bounds;
+        Assert.True(callout.Bottom <= ring.Top - CalloutPlacement.Gap + 0.5, $"The callout reaches down to {callout.Bottom}.");
+        Assert.Equal("From the Overworld", GetCalloutTitle().Text);
+    }
+
+    [AvaloniaFact]
+    public void ContextMenu_OpenInTheNether_ClosesTheMenuAndMarksTheBlock()
+    {
+        var menu = OpenContextMenu(new BlockPos(800, -400));
+
+        HeadlessInput.Click(_window.GetVisualDescendants().OfType<MenuItem>().Single(item => Equals(item.Header, "Open in the Nether (100, -50)")));
+
+        Assert.Equal(Dimension.Nether, _session.Dimension);
+        Assert.Equal(new MapCamera(100.5, -49.5, 1), _map.Camera);
+        Assert.Equal(MapSelection.ForSpot("From the Overworld", new BlockPos(100, -50), "Overworld X 800, Z -400"), _map.Selection);
+        Assert.False(menu.IsOpen, "The menu stayed open.");
+    }
+
+    [AvaloniaFact]
+    public void JumpTo_DuringAFlight_EndsTheFlightAtTheJump()
+    {
+        _map.SmoothMotion = true;
+        ShowAtTheCenter(new BlockPos(0, 0));
+
+        _map.GoTo(5000, 5000);
+        HeadlessInput.Render();
+        _map.JumpTo(new BlockPos(-300, 200));
+        HeadlessInput.Render();
+        HeadlessInput.Render();
+
+        Assert.Equal(new MapCamera(-299.5, 200.5, 1), _map.Camera);
+    }
+
+    [AvaloniaFact]
+    public void ZoomLimit_LoweredDuringAFlight_KeepsTheFlightWithinIt()
+    {
+        const double StartBlocksPerPixel = 64;
+        _map.SmoothMotion = true;
+        _map.Camera = new MapCamera(0, 0, StartBlocksPerPixel);
+        HeadlessInput.Render();
+
+        _map.ZoomOut();
+        HeadlessInput.Render();
+        _session.Dimension = Dimension.End;
+        _session.Layer = LayerMode.Height;
+        HeadlessInput.Render();
+        HeadlessInput.Render();
+
+        var limit = TileMetrics.For(_map.World, _map.Layer).MaxBlocksPerPixel;
+        Assert.Equal(LayerMode.Height, _map.Layer);
+        Assert.True(limit < StartBlocksPerPixel, "The End's heights must zoom out less far than the flight starts.");
+        Assert.True(_map.Camera.BlocksPerPixel <= limit, $"The flight went out to {_map.Camera.BlocksPerPixel} blocks per pixel.");
+    }
+
+    [AvaloniaFact]
     public void Wheel_TurnedToZoomInWithShift_LowersTheYLevelByABiomeCellInsteadOfZooming()
     {
         _session.SampleHeight = 64;
@@ -436,6 +510,28 @@ public sealed class MapHostViewTests : IDisposable
         => _host.GetVisualDescendants().OfType<TextBlock>().Single(text => text.Classes.Contains(CalloutTitleClass));
 
     private SelectionCalloutView GetCallout() => _host.GetVisualDescendants().OfType<SelectionCalloutView>().Single();
+
+    private MapView GetMapView() => _host.GetVisualDescendants().OfType<MapView>().Single();
+
+    /// <summary>Right-clicks a block near the top of a window tall enough for the whole menu, and returns the open menu.</summary>
+    private MenuFlyout OpenContextMenu(BlockPos block)
+    {
+        _window.Height = MenuViewHeight;
+        HeadlessInput.Render();
+        var point = new Point(_center.X, MenuClickTop);
+        var map = GetMapView();
+        _map.Camera = new MapCamera(block.X, block.Z - (point.Y - map.Bounds.Height / 2), 1);
+        HeadlessInput.Render();
+        Assert.Equal(block, map.GetBlockAt(point));
+
+        _window.MouseDown(point, MouseButton.Right);
+        _window.MouseUp(point, MouseButton.Right);
+        HeadlessInput.Render();
+
+        var menu = Assert.IsType<MenuFlyout>(map.ContextFlyout);
+        Assert.True(menu.IsOpen, "The menu did not open.");
+        return menu;
+    }
 
     private static RgbColor ToRgb(Avalonia.Media.IBrush brush)
     {

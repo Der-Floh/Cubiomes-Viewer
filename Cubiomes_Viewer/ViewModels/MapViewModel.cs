@@ -25,6 +25,7 @@ namespace Cubiomes_Viewer.ViewModels;
 public sealed partial class MapViewModel : ViewModelBase
 {
     private const double ButtonZoomStep = 2;
+    private const double BlockMiddle = 0.5;
 
     public string GeneratingLabel { get; } = "Generating...";
 
@@ -136,8 +137,8 @@ public sealed partial class MapViewModel : ViewModelBase
         ? string.Create(CultureInfo.InvariantCulture, $"1 px = {Camera.BlocksPerPixel:0.##} blocks")
         : string.Create(CultureInfo.InvariantCulture, $"1 block = {1 / Camera.BlocksPerPixel:0.##} px");
 
-    /// <summary>Raised when the map should travel to a camera; the view animates the move.</summary>
-    public event Action<MapCamera>? NavigationRequested;
+    /// <summary>Raised when the map should travel to a camera; the view glides there or jumps, as the navigation asks.</summary>
+    public event Action<MapNavigation>? NavigationRequested;
 
     private readonly WorldSession _session;
     private readonly IMapTileService _tileService;
@@ -166,12 +167,18 @@ public sealed partial class MapViewModel : ViewModelBase
     public void GoToOrigin() => GoTo(0, 0);
 
     [RelayCommand]
-    public void ZoomIn() => Navigate(Camera with { BlocksPerPixel = Camera.BlocksPerPixel / ButtonZoomStep });
+    public void ZoomIn() => Navigate(Camera with { BlocksPerPixel = Camera.BlocksPerPixel / ButtonZoomStep }, animate: true);
 
     [RelayCommand]
-    public void ZoomOut() => Navigate(Camera with { BlocksPerPixel = Camera.BlocksPerPixel * ButtonZoomStep });
+    public void ZoomOut() => Navigate(Camera with { BlocksPerPixel = Camera.BlocksPerPixel * ButtonZoomStep }, animate: true);
 
-    public void GoTo(double blockX, double blockZ) => Navigate(Camera with { CenterX = blockX, CenterZ = blockZ });
+    public void GoTo(double blockX, double blockZ) => Navigate(Camera with { CenterX = blockX, CenterZ = blockZ }, animate: true);
+
+    /// <summary>Shows a camera straight away, without gliding there.</summary>
+    public void JumpTo(MapCamera camera) => Navigate(camera, animate: false);
+
+    /// <summary>Centres the map on the middle of a block straight away, keeping the zoom.</summary>
+    public void JumpTo(BlockPos block) => JumpTo(Camera with { CenterX = block.X + BlockMiddle, CenterZ = block.Z + BlockMiddle });
 
     /// <summary>Puts a pin on a block of the open map, stops placing pins and picks the new pin, so its look can be chosen.</summary>
     public void PlacePin(BlockPos block)
@@ -226,10 +233,10 @@ public sealed partial class MapViewModel : ViewModelBase
             ? _biomeCatalog.GetDisplayName(World.Version, biome)
             : null;
 
-    private void Navigate(MapCamera target)
+    private void Navigate(MapCamera target, bool animate)
     {
         if (NavigationRequested is { } handler)
-            handler(target);
+            handler(new MapNavigation(target, animate));
         else
             Camera = target;
     }

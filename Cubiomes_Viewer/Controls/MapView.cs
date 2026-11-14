@@ -476,7 +476,7 @@ public sealed class MapView : Control
 
         navigation.Elapsed += elapsed;
         var progress = Math.Clamp(navigation.Elapsed / _navigationDuration, 0, 1);
-        SetCurrentValue(CameraProperty, navigation.GetCamera(progress));
+        SetCurrentValue(CameraProperty, MapGestureController.Clamp(navigation.GetCamera(progress), ZoomLimits));
 
         if (progress < 1)
             return true;

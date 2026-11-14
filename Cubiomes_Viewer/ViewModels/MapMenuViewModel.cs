@@ -29,9 +29,11 @@ public sealed partial class MapMenuViewModel : ViewModelBase
     public string CopiedTitle { get; } = "Copied";
     public string SaveImageTitle { get; } = "Save map image";
     public string SavedTitle { get; } = "Saved";
+    public string FromOverworldTitle { get; } = "From the Overworld";
+    public string FromNetherTitle { get; } = "From the Nether";
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(CopyCoordinatesLabel), nameof(CopyChunkLabel), nameof(CopyRegionFileLabel))]
+    [NotifyPropertyChangedFor(nameof(CopyCoordinatesLabel), nameof(CopyChunkLabel), nameof(CopyRegionFileLabel), nameof(OtherDimensionLabel))]
     public partial BlockPos Position { get; set; }
 
     public string CopyCoordinatesLabel => $"Copy coordinates ({Coordinates})";
@@ -39,6 +41,13 @@ public sealed partial class MapMenuViewModel : ViewModelBase
     public string CopyRegionFileLabel => $"Copy region file ({RegionFile})";
     public string CopySeedLabel => $"Copy seed ({Seed})";
     public string MeasureLabel => _map.IsMeasuring ? "Stop measuring" : "Measure distance from here";
+
+    public string OtherDimensionLabel => IsInNether
+        ? $"Open in the Overworld ({BlockPosText.ToCoordinates(NetherMath.ToOverworld(Position))})"
+        : $"Open in the Nether ({BlockPosText.ToCoordinates(NetherMath.ToNether(Position))})";
+
+    /// <summary>Whether the open dimension has a linked one: the Nether for the Overworld and the other way round, none for the End.</summary>
+    public bool CanOpenOtherDimension => _session.Dimension != Dimension.End;
 
     /// <summary>The view that shows the map; set by that view while it is on screen.</summary>
     public IMapImageSource? ImageSource { get; set; }
@@ -48,6 +57,7 @@ public sealed partial class MapMenuViewModel : ViewModelBase
     private string RegionFile => BlockPosText.ToRegionFile(Position);
     private string Seed => _session.Seed.ToString(CultureInfo.InvariantCulture);
     private bool CanOpenShadowSeed => SeedMath.HasShadowBiomes(_session.Version);
+    private bool IsInNether => _session.Dimension == Dimension.Nether;
 
     private readonly MapViewModel _map;
     private readonly WorldSession _session;
@@ -94,6 +104,20 @@ public sealed partial class MapMenuViewModel : ViewModelBase
 
     [RelayCommand]
     public void StopMeasuring() => _map.MeasureStart = null;
+
+    /// <summary>Opens the linked dimension at the block that lines up with the menu's block, and rings that block.</summary>
+    [RelayCommand(CanExecute = nameof(CanOpenOtherDimension))]
+    public void OpenOtherDimension()
+    {
+        var (from, origin) = (_session.Dimension, Position);
+        var (dimension, target, title) = IsInNether
+            ? (Dimension.Overworld, NetherMath.ToOverworld(origin), FromNetherTitle)
+            : (Dimension.Nether, NetherMath.ToNether(origin), FromOverworldTitle);
+
+        _session.Dimension = dimension;
+        _map.JumpTo(target);
+        _map.Selection = MapSelection.ForSpot(title, target, $"{from} {BlockPosText.ToBlock(origin)}");
+    }
 
     [RelayCommand(CanExecute = nameof(CanOpenShadowSeed))]
     public void OpenShadowSeed()
@@ -143,5 +167,11 @@ public sealed partial class MapMenuViewModel : ViewModelBase
             OnPropertyChanged(nameof(CopySeedLabel));
         if (e.PropertyName == nameof(WorldSession.Version))
             OpenShadowSeedCommand.NotifyCanExecuteChanged();
+        if (e.PropertyName == nameof(WorldSession.Dimension))
+        {
+            OnPropertyChanged(nameof(OtherDimensionLabel));
+            OnPropertyChanged(nameof(CanOpenOtherDimension));
+            OpenOtherDimensionCommand.NotifyCanExecuteChanged();
+        }
     }
 }

@@ -48,6 +48,10 @@ public sealed partial class SelectionViewModel : ViewModelBase
     [ObservableProperty]
     public partial string PositionText { get; set; } = string.Empty;
 
+    /// <summary>More about the pick, such as where a spot came from; empty when there is nothing to add.</summary>
+    [ObservableProperty]
+    public partial string Note { get; set; } = string.Empty;
+
     [ObservableProperty]
     public partial bool IsLoading { get; set; }
 
@@ -141,6 +145,7 @@ public sealed partial class SelectionViewModel : ViewModelBase
         Title = selection.Name;
         Marker = selection.Marker;
         PositionText = BlockPosText.ToLocation(selection.Position);
+        Note = selection.Note ?? string.Empty;
         if (selection.Pin is { } pin)
             ShowPin(pin, keepTypedName: pin == previousPin);
         if (selection.Structure is { } type)
