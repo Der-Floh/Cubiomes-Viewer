@@ -8,6 +8,7 @@ using Cubiomes_Viewer.Engine.Data.Search;
 using Cubiomes_Viewer.Engine.Data.Settings;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
+using Cubiomes_Viewer.Service.MapStyleServ;
 
 namespace Cubiomes_Viewer.ViewModels;
 
@@ -72,12 +73,13 @@ public sealed partial class BiomeFieldsViewModel : ObservableObject, IConditionF
     private readonly Action _changed;
     private bool _isShowing;
 
-    public BiomeFieldsViewModel(BiomeCondition condition, McVersion version, IReadOnlyList<DimensionChoice> dimensions, IBiomeCatalog catalog, Action changed)
+    public BiomeFieldsViewModel(BiomeCondition condition, McVersion version, IReadOnlyList<DimensionChoice> dimensions, IBiomeCatalog catalog, IMapStyleService styleService,
+        Action changed)
     {
         ArgumentNullException.ThrowIfNull(condition);
 
         _changed = changed;
-        Picker = new BiomePickerViewModel(condition.Biomes, condition.Dimension, version, dimensions, catalog, changed);
+        Picker = new BiomePickerViewModel(condition.Biomes, condition.Dimension, version, dimensions, catalog, styleService, changed);
         _isShowing = true;
         SelectedMatch = Matches.FirstOrDefault(choice => choice.Value == condition.Match) ?? Matches[0];
         SelectedScale = Scales.FirstOrDefault(choice => choice.Value == condition.Scale) ?? Scales.First(choice => choice.Value == BiomeCondition.DefaultScale);

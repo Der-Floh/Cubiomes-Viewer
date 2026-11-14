@@ -4,6 +4,7 @@
              xmlns:controls="using:Cubiomes_Viewer.Controls"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:Cubiomes_Viewer.ViewModels"
+             xmlns:views="using:Cubiomes_Viewer.Views"
              mc:Ignorable="d" d:DesignWidth="320" d:DesignHeight="900"
              x:Class="Cubiomes_Viewer.Views.SearchPanelView"
              x:DataType="vm:SearchPanelViewModel">
@@ -34,7 +35,12 @@
         </DataTemplate>
 
         <DataTemplate x:DataType="vm:BiomeToggleViewModel">
-            <CheckBox Content="{Binding Name}" IsChecked="{Binding IsChecked}"/>
+            <CheckBox IsChecked="{Binding IsChecked}">
+                <StackPanel Classes="marker-label">
+                    <views:MarkerBadgeView DataContext="{Binding Marker}"/>
+                    <TextBlock Text="{Binding Name}"/>
+                </StackPanel>
+            </CheckBox>
         </DataTemplate>
 
         <DataTemplate x:DataType="vm:BiomePickerViewModel">

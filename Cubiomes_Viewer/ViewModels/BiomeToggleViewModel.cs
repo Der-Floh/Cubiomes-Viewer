@@ -1,5 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 
+using Cubiomes_Viewer.Service.MapStyleServ;
+
 namespace Cubiomes_Viewer.ViewModels;
 
 /// <summary>Chooses one biome for a biome condition and reports each change to its owner.</summary>
@@ -7,6 +9,7 @@ public sealed partial class BiomeToggleViewModel : ObservableObject
 {
     public int Biome { get; }
     public string Name { get; }
+    public MapMarker Marker { get; }
 
     [ObservableProperty]
     public partial bool IsChecked { get; set; }
@@ -14,10 +17,11 @@ public sealed partial class BiomeToggleViewModel : ObservableObject
     // Unset while the constructor assigns the initial state, which is not a change to report.
     private readonly Action<BiomeToggleViewModel>? _changed;
 
-    public BiomeToggleViewModel(int biome, string name, bool isChecked, Action<BiomeToggleViewModel> changed)
+    public BiomeToggleViewModel(int biome, string name, MapMarker marker, bool isChecked, Action<BiomeToggleViewModel> changed)
     {
         Biome = biome;
         Name = name;
+        Marker = marker;
         IsChecked = isChecked;
         _changed = changed;
     }

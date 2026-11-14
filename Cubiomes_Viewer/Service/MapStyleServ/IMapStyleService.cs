@@ -34,6 +34,9 @@ public interface IMapStyleService
 
     MapMarker GetStructureMarker(StructureType type);
 
+    /// <summary>The badge of a biome: its glyph on the biome's default map colour, in white or dark, whichever stands out more.</summary>
+    MapMarker GetBiomeMarker(int biome);
+
     /// <summary>The badge a dimension is picked by.</summary>
     MapMarker GetDimensionMarker(Dimension dimension);
 

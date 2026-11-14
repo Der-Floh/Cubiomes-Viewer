@@ -81,12 +81,12 @@ public sealed partial class NearestSearchViewModel : ViewModelBase
                 .OrderBy(target => target.Name, StringComparer.CurrentCulture),
         ];
 
-    /// <summary>The marker the map draws a target with: a structure's or the strongholds'; <see langword="null"/> for a biome.</summary>
-    public MapMarker? GetMarker(NearestTarget target) => target switch
+    /// <summary>The badge of a target: a structure's or the strongholds' marker, or a biome's badge.</summary>
+    public MapMarker GetMarker(NearestTarget target) => target switch
     {
         StructureTarget structure => _styleService.GetStructureMarker(structure.Type),
         StrongholdTarget => _styleService.Stronghold,
-        BiomeTarget => null,
+        BiomeTarget biome => _styleService.GetBiomeMarker(biome.Biome),
         _ => throw new NotSupportedException($"Unsupported target: {target}"),
     };
 

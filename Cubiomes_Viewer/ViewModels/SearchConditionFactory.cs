@@ -37,8 +37,8 @@ public sealed class SearchConditionFactory
     {
         StructureCondition structure => new StructureFieldsViewModel(structure, version, _structureCatalog, changed),
         QuadHutCondition quad => new QuadHutFieldsViewModel(quad, _structureCatalog, changed),
-        BiomeCondition biome => new BiomeFieldsViewModel(biome, version, DimensionChoices.Create(_styleService), _biomeCatalog, changed),
-        BiomePatchCondition patch => new BiomePatchFieldsViewModel(patch, version, DimensionChoices.Create(_styleService), _biomeCatalog, changed),
+        BiomeCondition biome => new BiomeFieldsViewModel(biome, version, DimensionChoices.Create(_styleService), _biomeCatalog, _styleService, changed),
+        BiomePatchCondition patch => new BiomePatchFieldsViewModel(patch, version, DimensionChoices.Create(_styleService), _biomeCatalog, _styleService, changed),
         ClimateCondition climate => new ClimateFieldsViewModel(climate, version, _layerCatalog, changed),
         TemperatureCategoryCondition temperature => new TemperatureCategoryFieldsViewModel(temperature, changed),
         _ => null,

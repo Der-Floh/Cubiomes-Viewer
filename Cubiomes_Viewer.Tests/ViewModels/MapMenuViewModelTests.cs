@@ -197,7 +197,7 @@ public sealed class MapMenuViewModelTests : IDisposable
 
         Assert.Same(styleService.GetStructureMarker(StructureType.Village), _menu.StructureTargets.Single(target => target.Name == "Village").Marker);
         Assert.Same(styleService.Stronghold, _menu.StructureTargets.Single(target => target.Target is StrongholdTarget).Marker);
-        Assert.All(_menu.BiomeTargets, target => Assert.Null(target.Marker));
+        Assert.All(_menu.BiomeTargets, target => Assert.Same(styleService.GetBiomeMarker(Assert.IsType<BiomeTarget>(target.Target).Biome), target.Marker));
     }
 
     [AvaloniaFact]

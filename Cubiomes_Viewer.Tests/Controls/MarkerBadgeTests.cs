@@ -9,6 +9,7 @@ using Avalonia.Threading;
 using Cubiomes_Viewer.Controls;
 using Cubiomes_Viewer.Engine.Data.Colors;
 using Cubiomes_Viewer.Engine.Data.Worlds;
+using Cubiomes_Viewer.Engine.Service.WorldGenServ;
 using Cubiomes_Viewer.Service.MapStyleServ;
 
 namespace Cubiomes_Viewer.Tests.Controls;
@@ -23,7 +24,7 @@ public sealed class MarkerBadgeTests
     [AvaloniaFact]
     public void Render_AtAFractionalInterfaceSize_DrawsEveryBadgeAlikeWithCrispEdges()
     {
-        var marker = new MapStyleService().GetStructureMarker(StructureType.Village);
+        var marker = new MapStyleService(new BiomeCatalog(), new VersionCatalog()).GetStructureMarker(StructureType.Village);
         var fill = ((ISolidColorBrush)marker.Fill).Color;
         var canvas = new Canvas { Children = { CreateBadge(marker, 3.3), CreateBadge(marker, 30.9) } };
         var window = new Window

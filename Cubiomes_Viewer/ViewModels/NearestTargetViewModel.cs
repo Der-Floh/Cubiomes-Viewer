@@ -11,14 +11,15 @@ public sealed class NearestTargetViewModel
     public NearestTarget Target { get; }
     public string Name => Target.Name;
 
-    /// <summary>The marker of a structure or the strongholds; <see langword="null"/> for a biome, which has none.</summary>
-    public MapMarker? Marker { get; }
+    /// <summary>The badge of the target: a structure's or the strongholds' marker, or a biome's badge.</summary>
+    public MapMarker Marker { get; }
 
     public IAsyncRelayCommand FindCommand { get; }
 
-    public NearestTargetViewModel(NearestTarget target, MapMarker? marker, Func<NearestTarget, Task> find)
+    public NearestTargetViewModel(NearestTarget target, MapMarker marker, Func<NearestTarget, Task> find)
     {
         ArgumentNullException.ThrowIfNull(target);
+        ArgumentNullException.ThrowIfNull(marker);
         ArgumentNullException.ThrowIfNull(find);
 
         Target = target;

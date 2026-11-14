@@ -7,6 +7,7 @@ using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Biomes;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
+using Cubiomes_Viewer.Service.MapStyleServ;
 
 namespace Cubiomes_Viewer.ViewModels;
 
@@ -38,15 +39,18 @@ public sealed partial class BiomePickerViewModel : ObservableObject
     public Dimension Dimension => SelectedDimension?.Value ?? Dimension.Overworld;
 
     private readonly IBiomeCatalog _catalog;
+    private readonly IMapStyleService _styleService;
     private readonly Action _changed;
     private readonly List<BiomeToggleViewModel> _allBiomes = [];
     private McVersion _version;
     private bool _isShowing;
 
-    public BiomePickerViewModel(BiomeSet chosen, Dimension dimension, McVersion version, IReadOnlyList<DimensionChoice> dimensions, IBiomeCatalog catalog, Action changed)
+    public BiomePickerViewModel(BiomeSet chosen, Dimension dimension, McVersion version, IReadOnlyList<DimensionChoice> dimensions, IBiomeCatalog catalog, IMapStyleService styleService,
+        Action changed)
     {
         Dimensions = dimensions;
         _catalog = catalog;
+        _styleService = styleService;
         _changed = changed;
         _version = version;
         Chosen = chosen;
@@ -93,7 +97,7 @@ public sealed partial class BiomePickerViewModel : ObservableObject
 
         _allBiomes.Clear();
         _allBiomes.AddRange(biomes
-            .Select(biome => new BiomeToggleViewModel(biome, GetName(biome), Chosen.Contains(biome), OnBiomeToggled))
+            .Select(biome => new BiomeToggleViewModel(biome, GetName(biome), _styleService.GetBiomeMarker(biome), Chosen.Contains(biome), OnBiomeToggled))
             .OrderBy(toggle => toggle.Name, StringComparer.Ordinal));
         ShowFilteredBiomes();
         ShowChosen();

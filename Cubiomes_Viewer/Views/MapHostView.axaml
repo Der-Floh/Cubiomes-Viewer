@@ -17,8 +17,6 @@
         <ControlTheme x:Key="NearestTargetItem" TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}" x:DataType="vm:NearestTargetViewModel">
             <Setter Property="Header" Value="{Binding Name}"/>
             <Setter Property="Command" Value="{Binding FindCommand}"/>
-        </ControlTheme>
-        <ControlTheme x:Key="NearestStructureItem" TargetType="MenuItem" BasedOn="{StaticResource NearestTargetItem}" x:DataType="vm:NearestTargetViewModel">
             <Setter Property="Icon">
                 <Template>
                     <views:MarkerBadgeView x:DataType="vm:NearestTargetViewModel" DataContext="{Binding Marker}"/>
@@ -49,7 +47,7 @@
                     <MenuItem Header="{Binding Menu.OtherDimensionLabel}" Command="{Binding Menu.OpenOtherDimensionCommand}" IsVisible="{Binding Menu.CanOpenOtherDimension}"/>
                     <Separator/>
                     <MenuItem Header="{Binding Menu.FindStructureLabel}" ItemsSource="{Binding Menu.StructureTargets}"
-                              ItemContainerTheme="{StaticResource NearestStructureItem}" IsEnabled="{Binding Menu.HasStructureTargets}"/>
+                              ItemContainerTheme="{StaticResource NearestTargetItem}" IsEnabled="{Binding Menu.HasStructureTargets}"/>
                     <MenuItem Header="{Binding Menu.FindBiomeLabel}" ItemsSource="{Binding Menu.BiomeTargets}"
                               ItemContainerTheme="{StaticResource NearestTargetItem}" IsEnabled="{Binding Menu.HasBiomeTargets}"/>
                     <Separator/>
