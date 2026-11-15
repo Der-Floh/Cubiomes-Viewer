@@ -66,6 +66,7 @@
             <ComboBox Classes="fill" ItemsSource="{Binding PotentialStructures}" SelectedItem="{Binding SelectedPotentialStructure}"
                       IsVisible="{Binding IsPotentialShown}" ToolTip.Tip="{Binding PotentialHint}"/>
 
+            <Separator Classes="section"/>
             <TextBlock Classes="section" Text="{Binding BiomeColors.Title}"/>
             <StackPanel Classes="form" DataContext="{Binding BiomeColors}" x:DataType="vm:BiomeColorsViewModel">
                 <ComboBox Classes="fill" ItemsSource="{Binding MapChoices}" SelectedItem="{Binding SelectedMap}" IsEnabled="{Binding !IsEditing}"/>
@@ -109,17 +110,20 @@
                 </Border>
             </StackPanel>
 
+            <Separator Classes="section"/>
             <TextBlock Classes="section" Text="{Binding OverlaysLabel}"/>
             <CheckBox Content="{Binding ShowGridLabel}" IsChecked="{Binding ShowGrid}"/>
             <CheckBox Content="{Binding ShowSlimeChunksLabel}" IsChecked="{Binding ShowSlimeChunks}" IsVisible="{Binding IsOverworld}"/>
             <CheckBox Content="{Binding ShowGatewayLinksLabel}" IsChecked="{Binding ShowGatewayLinks}" IsVisible="{Binding IsEnd}"/>
 
-            <StackPanel IsVisible="{Binding IsOverworld}">
+            <StackPanel Classes="form" IsVisible="{Binding IsOverworld}">
+                <Separator Classes="section"/>
                 <TextBlock Classes="section" Text="{Binding LandmarksLabel}"/>
                 <ContentControl Content="{Binding Spawn}"/>
                 <ContentControl Content="{Binding Strongholds}"/>
             </StackPanel>
 
+            <Separator Classes="section"/>
             <Grid ColumnDefinitions="*,Auto,Auto">
                 <TextBlock Classes="section" Text="{Binding StructuresLabel}"/>
                 <Button Grid.Column="1" Classes="compact" Content="{Binding ShowAllLabel}" Command="{Binding ShowAllStructuresCommand}" IsVisible="{Binding HasStructures}"/>

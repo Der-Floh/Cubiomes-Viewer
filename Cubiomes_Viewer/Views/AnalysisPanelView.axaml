@@ -105,6 +105,7 @@
                 </Grid>
             </StackPanel>
 
+            <Separator Classes="section"/>
             <TabControl Classes="analysis" ItemsSource="{Binding Tabs}" SelectedIndex="{Binding SelectedTabIndex}">
                 <TabControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:AnalysisTabViewModel">

@@ -45,6 +45,11 @@
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Margin" Value="0,8,0,0"/>
     </Style>
+    <Style Selector="Separator.section">
+        <Setter Property="Height" Value="1"/>
+        <Setter Property="Margin" Value="0,8,0,0"/>
+        <Setter Property="Background" Value="{DynamicResource BorderColor}"/>
+    </Style>
     <Style Selector="TextBlock.damp">
         <Setter Property="Foreground" Value="{DynamicResource FontColorDamp}"/>
     </Style>
@@ -69,7 +74,7 @@
     </Style>
 
     <Style Selector=":is(Control).section-content">
-        <Setter Property="Margin" Value="0,12,0,0"/>
+        <Setter Property="Margin" Value="0,8,0,0"/>
     </Style>
 
     <Style Selector="Image.tile-preview">

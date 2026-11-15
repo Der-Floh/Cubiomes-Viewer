@@ -211,6 +211,7 @@
                 </ItemsControl>
             </StackPanel>
 
+            <Separator Classes="section"/>
             <StackPanel Classes="form" DataContext="{Binding Setup}" x:DataType="vm:SearchSetupViewModel">
                 <TextBlock Classes="damp" Text="{Binding VersionText}" TextWrapping="Wrap"/>
 
@@ -231,6 +232,7 @@
                     </DropDownButton.Flyout>
                 </DropDownButton>
 
+                <Separator Classes="section"/>
                 <TextBlock Classes="section" Text="{Binding SeedsLabel}"/>
                 <StackPanel Classes="form" DataContext="{Binding Seeds}" x:DataType="vm:SeedSourceViewModel">
                     <TextBlock Classes="field-label" Text="{Binding SourceLabel}"/>
@@ -291,6 +293,7 @@
                 <TextBlock Classes="damp" Text="{Binding ProgressText}" TextWrapping="Wrap" IsVisible="{Binding HasSearch}"/>
             </StackPanel>
 
+            <Separator Classes="section"/>
             <StackPanel Classes="form" DataContext="{Binding Results}" x:DataType="vm:SearchResultsViewModel">
                 <Grid ColumnDefinitions="*,Auto">
                     <TextBlock Classes="section" Text="{Binding Title}"/>
@@ -301,6 +304,7 @@
                 <ListBox Classes="results" ItemsSource="{Binding Seeds}" SelectedItem="{Binding SelectedSeed}" IsVisible="{Binding HasSeeds}"/>
             </StackPanel>
 
+            <Separator Classes="section"/>
             <TextBlock Classes="section" Text="{Binding SessionLabel}"/>
             <TextBlock Classes="damp" Text="{Binding SessionHint}" TextWrapping="Wrap"/>
             <Grid Classes="pair" ColumnDefinitions="*,Auto" DataContext="{Binding Presets}" x:DataType="vm:SearchPresetsViewModel">

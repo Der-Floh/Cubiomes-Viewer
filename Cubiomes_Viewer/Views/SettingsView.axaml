@@ -18,6 +18,7 @@
             <TextBlock Classes="field-label" Text="{Binding UiZoomLabel}"/>
             <ComboBox ItemsSource="{Binding UiZooms}" SelectedItem="{Binding SelectedUiZoom}" HorizontalAlignment="Stretch"/>
 
+            <Separator Classes="section"/>
             <TextBlock Classes="section" Text="{Binding MapLabel}"/>
             <CheckBox Content="{Binding SmoothMotionLabel}" IsChecked="{Binding SmoothMotion}"/>
             <TextBlock Classes="field-label" Text="{Binding CacheLabel}"/>
@@ -46,6 +47,7 @@
                 </StackPanel>
             </Expander>
 
+            <Separator Classes="section"/>
             <TextBlock Classes="section" Text="{Binding World.Title}"/>
             <StackPanel Classes="form" DataContext="{Binding World}" x:DataType="vm:WorldSettingsViewModel">
                 <CheckBox Content="{Binding ExperimentalVersionsLabel}" IsChecked="{Binding ShowExperimentalVersions}"/>
@@ -70,15 +72,18 @@
                 </Expander>
             </StackPanel>
 
+            <Separator Classes="section"/>
             <TextBlock Classes="section" Text="{Binding StartLabel}"/>
             <CheckBox Content="{Binding RestoreLabel}" IsChecked="{Binding RestoreLastSession}"/>
             <TextBlock Classes="damp" Text="{Binding RestoreHint}" TextWrapping="Wrap"/>
             <CheckBox Content="{Binding RememberWindowLabel}" IsChecked="{Binding RememberWindow}" IsVisible="{Binding CanRememberWindow}"/>
 
+            <Separator Classes="section"/>
             <TextBlock Classes="section" Text="{Binding ExportLabel}"/>
             <TextBlock Classes="field-label" Text="{Binding CsvSeparatorLabel}"/>
             <ComboBox Classes="fill" ItemsSource="{Binding CsvSeparators}" SelectedItem="{Binding SelectedCsvSeparator}"/>
 
+            <Separator Classes="section"/>
             <TextBlock Classes="section" Text="{Binding Updates.Title}"/>
             <StackPanel Classes="form" DataContext="{Binding Updates}" x:DataType="vm:UpdateViewModel">
                 <TextBlock Text="{Binding VersionText}"/>
@@ -93,6 +98,7 @@
                 </StackPanel>
             </StackPanel>
 
+            <Separator Classes="section"/>
             <Expander Classes="section-content" Header="{Binding DiagnosticsLabel}" HorizontalAlignment="Stretch">
                 <views:SelfTestView DataContext="{Binding SelfTest}"/>
             </Expander>
