@@ -37,8 +37,6 @@ public sealed class MapStyleService : IMapStyleService
 
     private static readonly Uri _assetBaseUri = new($"avares://{typeof(MapStyleService).Assembly.GetName().Name}/");
 
-    public double MarkerSize => MarkerSideLength * MarkerScale;
-
     public double PinSize => PinSideLength * MarkerScale;
 
     public double MarkerScale { get; set; } = 1;
@@ -106,11 +104,13 @@ public sealed class MapStyleService : IMapStyleService
         return look;
     }
 
+    public double GetMarkerSize(PixelGrid pixels, double magnification = 1) => MarkerBadgePainter.GetSide(GetWantedMarkerSize(magnification), pixels);
+
     public void DrawMarker(DrawingContext context, MapMarker marker, Point center, PixelGrid pixels, double magnification = 1)
     {
         ArgumentNullException.ThrowIfNull(marker);
 
-        MarkerBadgePainter.Draw(context, marker.Fill, marker.Glyph, center, MarkerSize * magnification, pixels, OutlineBrush);
+        MarkerBadgePainter.Draw(context, marker.Fill, marker.Glyph, center, GetWantedMarkerSize(magnification), pixels, OutlineBrush);
     }
 
     public void DrawPin(DrawingContext context, PinLook look, Point tip, PixelGrid pixels, double magnification = 1)
@@ -121,6 +121,8 @@ public sealed class MapStyleService : IMapStyleService
     }
 
     public Rect GetPinBounds(Point tip, double magnification = 1) => PinPainter.GetBounds(tip, PinSize * magnification);
+
+    private double GetWantedMarkerSize(double magnification) => MarkerSideLength * MarkerScale * magnification;
 
     /// <summary>Returns the marker of a structure type, landmark or dimension by the name its resources are keyed with.</summary>
     private MapMarker GetMarker(string name)

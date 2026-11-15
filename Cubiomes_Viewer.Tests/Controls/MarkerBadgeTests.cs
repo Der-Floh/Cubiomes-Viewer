@@ -59,6 +59,41 @@ public sealed class MarkerBadgeTests
         }
     }
 
+    [AvaloniaTheory]
+    [InlineData(22, 1.25, 16)]
+    [InlineData(40, 1, 32)]
+    [InlineData(30, 1.5, 32)]
+    public void Render_AtAnySize_DrawsTheGlyphAWholeNumberOfDevicePixelsPerGlyphPixel(double side, double interfaceScale, int glyphPixels)
+    {
+        var glyphColor = Color.FromRgb(255, 255, 255);
+        var badge = new MarkerBadge { Fill = new SolidColorBrush(Color.FromRgb(0, 120, 0)), Glyph = SquareGlyph.In(glyphColor), Width = side, Height = side };
+        Canvas.SetLeft(badge, 3.3);
+        Canvas.SetTop(badge, BadgeTop);
+        var window = new Window
+        {
+            Width = 100,
+            Height = 100,
+            Background = new SolidColorBrush(_background),
+            Content = new LayoutTransformControl { LayoutTransform = new ScaleTransform(interfaceScale, interfaceScale), Child = new Canvas { Children = { badge } } },
+        };
+        window.Show();
+        try
+        {
+            Dispatcher.UIThread.RunJobs();
+            AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+            var frame = Assert.IsType<WriteableBitmap>(window.CaptureRenderedFrame(), exactMatch: false);
+
+            var (count, bounds) = FramePixels.Find(frame, new RgbColor(glyphColor.R, glyphColor.G, glyphColor.B));
+
+            Assert.Equal((glyphPixels, glyphPixels), (bounds.Width, bounds.Height));
+            Assert.Equal(glyphPixels * glyphPixels, count);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
     private static MarkerBadge CreateBadge(MapMarker marker, double left)
     {
         var badge = new MarkerBadge { Fill = marker.Fill, Glyph = marker.Glyph, Width = BadgeSide, Height = BadgeSide };

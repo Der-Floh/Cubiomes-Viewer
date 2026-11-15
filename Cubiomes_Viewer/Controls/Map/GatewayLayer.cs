@@ -93,7 +93,7 @@ public sealed class GatewayLayer : IMarkerLayer
 
     private bool IsHit(MapScene scene, BlockPos marker, Point position)
     {
-        var reach = _styleService.MarkerSize / 2;
+        var reach = _styleService.GetMarkerSize(scene.Pixels) / 2;
         var center = ToScreen(scene, marker);
         return Math.Abs(center.X - position.X) <= reach && Math.Abs(center.Y - position.Y) <= reach;
     }

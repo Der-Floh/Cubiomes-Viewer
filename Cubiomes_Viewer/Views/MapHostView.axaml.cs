@@ -209,7 +209,7 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
     }
 
     private bool IsOverPickedPin(Point position)
-        => _map.Selection is { Pin: not null } picked && _layers.Selection.GetMarkerBounds(Map.Viewport, picked).Contains(position);
+        => _map.Selection is { Pin: not null } picked && _layers.Selection.GetMarkerBounds(Map.Viewport, Map.GetPixelGrid(), picked).Contains(position);
 
     /// <summary>Points the menu at the block under the pointer; while a distance is measured, a right click ends the measurement instead, as Escape does.</summary>
     private void OnContextRequested(object? sender, ContextRequestedEventArgs e)
@@ -295,7 +295,7 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
             return;
 
         Callout.Measure(Size.Infinity);
-        var marker = _layers.Selection.GetMarkerBounds(Map.Viewport, picked);
+        var marker = _layers.Selection.GetMarkerBounds(Map.Viewport, Map.GetPixelGrid(), picked);
         var position = CalloutPlacement.Place(Callout.DesiredSize, marker, Map.Bounds.Size);
         Canvas.SetLeft(Callout, position.X);
         Canvas.SetTop(Callout, position.Y);

@@ -22,7 +22,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     private const long BytesPerMegabyte = 1024 * 1024;
     private const double SmallMarkerScale = 0.75;
     private const double LargeMarkerScale = 1.35;
-    private const double VeryLargeMarkerScale = 1.8;
+    private const double VeryLargeMarkerScale = 2.25;
     private const int MaxGridSpacing = 1_000_000;
 
     public string Title { get; } = "Settings";

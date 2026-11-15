@@ -25,7 +25,7 @@ public static class PinPainter
     private const double ShapeLeft = 4;
     private const double ShapeTop = 2;
     private const double HeadCenterY = 10.2;
-    private const double GlyphSide = 10;
+    private const double FaceWidth = 12;
     private const double OutlineUnits = 0.75;
 
     private static readonly Uri _assetBaseUri = new($"avares://{typeof(PinPainter).Assembly.GetName().Name}/");
@@ -50,7 +50,8 @@ public static class PinPainter
         ArgumentNullException.ThrowIfNull(outline);
 
         var unit = size / IconSide;
-        var left = pixels.SnapX(tip.X) - TipX * unit;
+        var tipX = pixels.SnapX(tip.X);
+        var left = tipX - TipX * unit;
         var top = pixels.SnapY(tip.Y) - TipY * unit;
         var outlinePen = new ImmutablePen(outline.ToImmutable(), pixels.RoundLength(OutlineUnits * unit, minimumPixels: 1) / unit);
 
@@ -59,9 +60,21 @@ public static class PinPainter
             context.DrawGeometry(face, null, _body.Value);
             context.DrawGeometry(fill, null, _rim.Value);
             context.DrawGeometry(null, outlinePen, _body.Value);
-            if (glyph is not null)
-                context.DrawImage(glyph, new Rect(TipX - GlyphSide / 2, HeadCenterY - GlyphSide / 2, GlyphSide, GlyphSide));
         }
+
+        if (glyph is not null)
+            context.DrawImage(glyph, GetGlyphBounds(new Point(tipX, top + HeadCenterY * unit), unit, pixels));
+    }
+
+    /// <summary>
+    /// Where the glyph goes in the head: centred on whole device pixels, with as many device pixels per glyph pixel as let it fit
+    /// the face, but one at least.
+    /// </summary>
+    private static Rect GetGlyphBounds(Point headCenter, double unit, PixelGrid pixels)
+    {
+        var scale = Math.Max(1, (int)Math.Floor(FaceWidth * unit * pixels.Scaling / PixelGlyph.Pixels));
+        var side = PixelGlyph.GetSide(scale, pixels);
+        return new Rect(headCenter.X - side / 2, pixels.SnapY(headCenter.Y - side / 2), side, side);
     }
 
     private static Geometry LoadShape(string iconPath)

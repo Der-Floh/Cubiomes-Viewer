@@ -85,7 +85,7 @@ public sealed class LandmarkLayer : IMarkerLayer
 
     private bool IsHit(MapScene scene, BlockPos marker, Point position)
     {
-        var reach = _styleService.MarkerSize / 2;
+        var reach = _styleService.GetMarkerSize(scene.Pixels) / 2;
         var (x, y) = scene.Viewport.ToScreen(marker.X, marker.Z);
         return Math.Abs(x - position.X) <= reach && Math.Abs(y - position.Y) <= reach;
     }
@@ -95,7 +95,7 @@ public sealed class LandmarkLayer : IMarkerLayer
 
     private void DrawMarker(DrawingContext context, MapScene scene, MapMarker marker, BlockPos position)
     {
-        var margin = _styleService.MarkerSize / 2;
+        var margin = _styleService.GetMarkerSize(scene.Pixels) / 2;
         var (x, y) = scene.Viewport.ToScreen(position.X, position.Z);
         if (x < -margin || y < -margin || x > scene.Viewport.Width + margin || y > scene.Viewport.Height + margin)
             return;

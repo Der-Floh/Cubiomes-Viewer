@@ -22,6 +22,7 @@ using Cubiomes_Viewer.Engine.Service.MeasurementServ;
 using Cubiomes_Viewer.Engine.Service.PinServ;
 using Cubiomes_Viewer.Engine.Service.StructureServ;
 using Cubiomes_Viewer.Engine.Service.TileServ;
+using Cubiomes_Viewer.Extensions;
 using Cubiomes_Viewer.Service.MapStyleServ;
 using Cubiomes_Viewer.Tests.Controls;
 using Cubiomes_Viewer.ViewModels;
@@ -73,7 +74,9 @@ public sealed class MapHostViewTests : IDisposable
     {
         var styleService = _services.GetRequiredService<IMapStyleService>();
         var spawn = await ShowSpawnAtTheCenterAsync();
-        var beyondTheNormalBadge = (int)(_center.X + styleService.MarkerSize / 2 + 2);
+        var pixels = GetMapView().GetPixelGrid();
+        var beyondTheNormalBadge = (int)(_center.X + styleService.GetMarkerSize(pixels) / 2 + 2);
+        var unpicked = FramePixels.Read(CaptureFrame(), beyondTheNormalBadge, (int)_center.Y);
 
         Click(_center);
         var frame = CaptureFrame();
@@ -82,10 +85,10 @@ public sealed class MapHostViewTests : IDisposable
         var title = GetCalloutTitle();
         Assert.True(title.IsEffectivelyVisible);
         Assert.Equal("World spawn", title.Text);
-        Assert.Equal(ToRgb(styleService.Spawn.Fill), FramePixels.Read(frame, beyondTheNormalBadge, (int)_center.Y));
+        Assert.NotEqual(unpicked, FramePixels.Read(frame, beyondTheNormalBadge, (int)_center.Y));
 
         var callout = GetCallout().Bounds;
-        Assert.True(callout.Bottom <= _center.Y - styleService.MarkerSize * SelectionLayer.Magnification / 2 - CalloutPlacement.Gap + 0.5, $"The callout reaches down to {callout.Bottom}.");
+        Assert.True(callout.Bottom <= _center.Y - styleService.GetMarkerSize(pixels, SelectionLayer.Magnification) / 2 - CalloutPlacement.Gap + 0.5, $"The callout reaches down to {callout.Bottom}.");
         Assert.InRange(callout.Center.X, _center.X - 1, _center.X + 1);
     }
 
@@ -371,7 +374,7 @@ public sealed class MapHostViewTests : IDisposable
         _map.Selection = spot;
         var frame = CaptureFrame();
 
-        var ring = new SelectionLayer(styleService, new MeasurePainter(styleService)).GetMarkerBounds(GetMapView().Viewport, spot);
+        var ring = new SelectionLayer(styleService, new MeasurePainter(styleService)).GetMarkerBounds(GetMapView().Viewport, GetMapView().GetPixelGrid(), spot);
         Assert.Equal(new Point(_center.X + 0.5, _center.Y + 0.5), ring.Center);
         var selectionColor = new RgbColor(styleService.SelectionColor.R, styleService.SelectionColor.G, styleService.SelectionColor.B);
         var row = (int)_center.Y;

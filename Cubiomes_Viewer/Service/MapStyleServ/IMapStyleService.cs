@@ -9,9 +9,6 @@ namespace Cubiomes_Viewer.Service.MapStyleServ;
 /// <summary>Provides the icons and colours of the map overlays from the application resources and draws markers with them.</summary>
 public interface IMapStyleService
 {
-    /// <summary>The side length of a drawn marker in device-independent pixels.</summary>
-    double MarkerSize { get; }
-
     /// <summary>The side length of the square a pin is drawn in, in device-independent pixels; its tip is near the bottom.</summary>
     double PinSize { get; }
 
@@ -38,6 +35,12 @@ public interface IMapStyleService
 
     /// <summary>A pin showing the glyph of the named marker; the plain pin when there is no name or no such marker.</summary>
     PinLook GetPinLook(string? icon);
+
+    /// <summary>
+    /// The side length of a marker drawn <paramref name="magnification"/> times its size on these device pixels, in
+    /// device-independent pixels; its glyph needs whole device pixels, so the side differs a little from screen to screen.
+    /// </summary>
+    double GetMarkerSize(PixelGrid pixels, double magnification = 1);
 
     /// <summary>Draws a marker centred on a point, <paramref name="magnification"/> times its size, with its edges on device pixels.</summary>
     void DrawMarker(DrawingContext context, MapMarker marker, Point center, PixelGrid pixels, double magnification = 1);

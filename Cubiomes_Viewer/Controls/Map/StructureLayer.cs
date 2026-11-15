@@ -63,7 +63,7 @@ public sealed class StructureLayer : IMarkerLayer
         if (!IsVisible || _requests.Count == 0)
             return;
 
-        var margin = _styleService.MarkerSize / 2;
+        var margin = _styleService.GetMarkerSize(scene.Pixels) / 2;
         var bounds = new Rect(-margin, -margin, scene.Viewport.Width + 2 * margin, scene.Viewport.Height + 2 * margin);
 
         using (context.PushRenderOptions(_markerRenderOptions))
@@ -95,7 +95,7 @@ public sealed class StructureLayer : IMarkerLayer
         if (!IsVisible)
             return null;
 
-        var reach = _styleService.MarkerSize / 2;
+        var reach = _styleService.GetMarkerSize(scene.Pixels) / 2;
         for (var index = _requests.Count - 1; index >= 0; index--)
         {
             var request = _requests[index];

@@ -47,7 +47,7 @@ public sealed class MarkerBadge : Control
         _renderedPixels = this.GetPixelGrid();
         var side = Math.Min(Bounds.Width, Bounds.Height);
         if (Fill is { } fill && Glyph is { } glyph && Outline is { } outline && side > 0)
-            MarkerBadgePainter.Draw(context, fill, glyph, new Point(Bounds.Width / 2, Bounds.Height / 2), side, _renderedPixels, outline);
+            MarkerBadgePainter.Draw(context, fill, glyph, new Point(Bounds.Width / 2, Bounds.Height / 2), side, _renderedPixels, outline, maximumSide: side);
     }
 
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)

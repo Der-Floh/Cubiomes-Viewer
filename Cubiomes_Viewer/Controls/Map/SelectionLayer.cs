@@ -87,12 +87,15 @@ public sealed class SelectionLayer : IMapLayer
             else if (picked.Marker is { } marker)
                 _styleService.DrawMarker(context, marker, ToScreen(scene.Viewport, picked), scene.Pixels, Magnification);
             else
-                DrawSpot(context, GetMarkerBounds(scene.Viewport, picked));
+                DrawSpot(context, GetMarkerBounds(scene.Viewport, scene.Pixels, picked));
         }
     }
 
-    /// <summary>Where a picked marker, pin or spot is drawn on a view of the map; for a measurement, where its label is.</summary>
-    public Rect GetMarkerBounds(MapViewport viewport, MapSelection picked)
+    /// <summary>
+    /// Where a picked marker, pin or spot is drawn on a view of the map whose device pixels are <paramref name="pixels"/>; for a
+    /// measurement, where its label is.
+    /// </summary>
+    public Rect GetMarkerBounds(MapViewport viewport, PixelGrid pixels, MapSelection picked)
     {
         ArgumentNullException.ThrowIfNull(picked);
 
@@ -102,7 +105,7 @@ public sealed class SelectionLayer : IMapLayer
             return _measurePainter.GetLabelBounds(viewport, measurement);
 
         var center = ToScreen(viewport, picked);
-        var size = _styleService.MarkerSize * Magnification;
+        var size = _styleService.GetMarkerSize(pixels, Magnification);
         return new Rect(center.X - size / 2, center.Y - size / 2, size, size);
     }
 
