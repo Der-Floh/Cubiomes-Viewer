@@ -1,0 +1,33 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <x:String x:Key="VillageIcon">/Assets/Icons/Structures/village.svg</x:String>
+    <x:String x:Key="OutpostIcon">/Assets/Icons/Structures/outpost.svg</x:String>
+    <x:String x:Key="DesertPyramidIcon">/Assets/Icons/Structures/desert_pyramid.svg</x:String>
+    <x:String x:Key="JungleTempleIcon">/Assets/Icons/Structures/jungle_temple.svg</x:String>
+    <x:String x:Key="SwampHutIcon">/Assets/Icons/Structures/swamp_hut.svg</x:String>
+    <x:String x:Key="IglooIcon">/Assets/Icons/Structures/igloo.svg</x:String>
+    <x:String x:Key="MonumentIcon">/Assets/Icons/Structures/monument.svg</x:String>
+    <x:String x:Key="MansionIcon">/Assets/Icons/Structures/mansion.svg</x:String>
+    <x:String x:Key="OceanRuinIcon">/Assets/Icons/Structures/ocean_ruin.svg</x:String>
+    <x:String x:Key="ShipwreckIcon">/Assets/Icons/Structures/shipwreck.svg</x:String>
+    <x:String x:Key="TreasureIcon">/Assets/Icons/Structures/treasure.svg</x:String>
+    <x:String x:Key="RuinedPortalIcon">/Assets/Icons/Structures/ruined_portal.svg</x:String>
+    <x:String x:Key="RuinedPortalNetherIcon">/Assets/Icons/Structures/ruined_portal.svg</x:String>
+    <x:String x:Key="AncientCityIcon">/Assets/Icons/Structures/ancient_city.svg</x:String>
+    <x:String x:Key="TrailRuinsIcon">/Assets/Icons/Structures/trail_ruins.svg</x:String>
+    <x:String x:Key="TrialChambersIcon">/Assets/Icons/Structures/trial_chambers.svg</x:String>
+    <x:String x:Key="MineshaftIcon">/Assets/Icons/Structures/mineshaft.svg</x:String>
+    <x:String x:Key="DesertWellIcon">/Assets/Icons/Structures/desert_well.svg</x:String>
+    <x:String x:Key="GeodeIcon">/Assets/Icons/Structures/geode.svg</x:String>
+    <x:String x:Key="FortressIcon">/Assets/Icons/Structures/fortress.svg</x:String>
+    <x:String x:Key="BastionIcon">/Assets/Icons/Structures/bastion.svg</x:String>
+    <x:String x:Key="EndCityIcon">/Assets/Icons/Structures/end_city.svg</x:String>
+    <x:String x:Key="EndGatewayIcon">/Assets/Icons/Structures/end_gateway.svg</x:String>
+    <x:String x:Key="SpawnIcon">/Assets/Icons/Structures/spawn.svg</x:String>
+    <x:String x:Key="StrongholdIcon">/Assets/Icons/Structures/stronghold.svg</x:String>
+    <x:String x:Key="OverworldIcon">/Assets/Icons/Dimensions/overworld.svg</x:String>
+    <x:String x:Key="NetherIcon">/Assets/Icons/Dimensions/nether.svg</x:String>
+    <x:String x:Key="EndIcon">/Assets/Icons/Dimensions/end.svg</x:String>
+
+</ResourceDictionary>

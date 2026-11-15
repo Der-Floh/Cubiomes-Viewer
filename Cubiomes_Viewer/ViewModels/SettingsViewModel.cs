@@ -28,7 +28,6 @@ public sealed partial class SettingsViewModel : ViewModelBase
     public string Title { get; } = "Settings";
     public string AppearanceLabel { get; } = "Appearance";
     public string ThemeLabel { get; } = "Theme";
-    public string MarkerStyleLabel { get; } = "Map markers";
     public string UiZoomLabel { get; } = "Interface size";
     public string MapLabel { get; } = "Map";
     public string SmoothMotionLabel { get; } = "Smooth motion";
@@ -52,9 +51,6 @@ public sealed partial class SettingsViewModel : ViewModelBase
 
     [ObservableProperty]
     public partial ComboChoice<AppTheme>? SelectedTheme { get; set; }
-
-    [ObservableProperty]
-    public partial ComboChoice<MarkerStyle>? SelectedMarkerStyle { get; set; }
 
     [ObservableProperty]
     public partial ComboChoice<int>? SelectedUiZoom { get; set; }
@@ -91,12 +87,6 @@ public sealed partial class SettingsViewModel : ViewModelBase
         new() { Display = "Follow system", Value = AppTheme.System },
         new() { Display = "Light", Value = AppTheme.Light },
         new() { Display = "Dark", Value = AppTheme.Dark },
-    ];
-
-    public ObservableCollection<ComboChoice<MarkerStyle>> MarkerStyles { get; } =
-    [
-        new() { Display = "Blocky", Value = MarkerStyle.Blocky },
-        new() { Display = "Clean", Value = MarkerStyle.Clean },
     ];
 
     public ObservableCollection<ComboChoice<int>> UiZooms { get; } =
@@ -166,7 +156,6 @@ public sealed partial class SettingsViewModel : ViewModelBase
         ShowWithoutStoring(() =>
         {
             SelectedTheme = Themes[0];
-            SelectedMarkerStyle = MarkerStyles[0];
             SelectedUiZoom = UiZooms[0];
             SelectedGridMultiplier = GridMultipliers[0];
             SelectedMarkerSize = MarkerSizes[1];
@@ -185,7 +174,6 @@ public sealed partial class SettingsViewModel : ViewModelBase
         ShowWithoutStoring(() =>
         {
             SelectedTheme = Themes.FirstOrDefault(choice => choice.Value == settings.Appearance.Theme) ?? Themes[0];
-            SelectedMarkerStyle = MarkerStyles.FirstOrDefault(choice => choice.Value == settings.Appearance.MarkerStyle) ?? MarkerStyles[0];
             SelectedUiZoom = UiZooms.FirstOrDefault(choice => choice.Value == settings.Appearance.UiZoom) ?? UiZooms[0];
             SmoothMotion = settings.Map.SmoothMotion;
             CacheMegabytes = ClampCacheMegabytes(settings.Map.CacheMegabytes);
@@ -202,8 +190,6 @@ public sealed partial class SettingsViewModel : ViewModelBase
     }
 
     partial void OnSelectedThemeChanged(ComboChoice<AppTheme>? value) => Store(settings => settings.Appearance.Theme = value?.Value ?? AppTheme.System);
-
-    partial void OnSelectedMarkerStyleChanged(ComboChoice<MarkerStyle>? value) => Store(settings => settings.Appearance.MarkerStyle = value?.Value ?? MarkerStyle.Blocky);
 
     partial void OnSelectedUiZoomChanged(ComboChoice<int>? value) => Store(settings => settings.Appearance.UiZoom = value?.Value ?? AppearanceSettings.DefaultUiZoom);
 
@@ -277,7 +263,6 @@ public sealed partial class SettingsViewModel : ViewModelBase
     {
         var settings = _settingsService.Current;
         _themeService.Apply(SelectedTheme?.Value ?? AppTheme.System);
-        _map.MarkerStyle = SelectedMarkerStyle?.Value ?? MarkerStyle.Blocky;
         _uiZoomService.Apply(SelectedUiZoom?.Value ?? AppearanceSettings.DefaultUiZoom);
         _map.SmoothMotion = settings.Map.SmoothMotion;
         _map.GridSpacing = ClampGridSpacing(settings.Map.GridSpacing);

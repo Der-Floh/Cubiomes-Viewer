@@ -7,10 +7,8 @@ using Avalonia.Svg.Skia;
 
 using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Colors;
-using Cubiomes_Viewer.Engine.Data.Settings;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
-using Cubiomes_Viewer.Extensions;
 
 namespace Cubiomes_Viewer.Service.MapStyleServ;
 
@@ -18,8 +16,7 @@ public sealed class MapStyleService : IMapStyleService
 {
     private const string IconKeySuffix = "Icon";
     private const string MarkerColorKeyPrefix = "Marker.";
-    private const string MarkerStyleKey = "MarkerStyle";
-    private const string BiomeIconPathFormat = "/Assets/Icons/Biomes/{0}/{1}.svg";
+    private const string BiomeIconPathFormat = "/Assets/Icons/Biomes/{0}.svg";
     private const string PinColorKey = "Marker.Pin";
     private const string GlyphColorKey = "Marker.Glyph";
     private const string DarkGlyphColorKey = "Marker.GlyphDark";
@@ -46,25 +43,6 @@ public sealed class MapStyleService : IMapStyleService
 
     public double MarkerScale { get; set; } = 1;
 
-    public MarkerStyle MarkerStyle
-    {
-        get;
-        set
-        {
-            if (field == value)
-                return;
-
-            field = value;
-            Application.Current?.UseStyleDictionary(MarkerStyleKey, value.ToString(), GetSource(value));
-            foreach (var (name, marker) in _markers)
-                marker.Glyph = CreateGlyph(name, GlyphColor);
-            foreach (var (name, look) in _pinLooks)
-                look.Glyph = CreateGlyph(name, GetResource<Color>(MarkerColorKeyPrefix + name));
-            foreach (var biome in _biomeMarkers.Values)
-                biome.Marker.Glyph = CreateBiomeGlyph(biome.Icon, biome.GlyphColor);
-        }
-    }
-
     public MapMarker Spawn => GetMarker(MarkerNames.Spawn);
     public MapMarker Stronghold => GetMarker(MarkerNames.Stronghold);
     public PinLook PlainPin => field ??= new PinLook(null, new ImmutableSolidColorBrush(GetResource<Color>(PinColorKey)), null);
@@ -77,7 +55,7 @@ public sealed class MapStyleService : IMapStyleService
     private readonly IVersionCatalog _versionCatalog;
     private readonly Dictionary<string, MapMarker> _markers = new(StringComparer.Ordinal);
     private readonly Dictionary<string, PinLook> _pinLooks = new(StringComparer.Ordinal);
-    private readonly Dictionary<int, BiomeMarker> _biomeMarkers = [];
+    private readonly Dictionary<int, MapMarker> _biomeMarkers = [];
     private Color? _slimeChunkColor;
     private Color? _measureColor;
     private Color? _outlineColor;
@@ -98,18 +76,17 @@ public sealed class MapStyleService : IMapStyleService
 
     public MapMarker GetBiomeMarker(int biome)
     {
-        if (!_biomeMarkers.TryGetValue(biome, out var entry))
+        if (!_biomeMarkers.TryGetValue(biome, out var marker))
         {
             var icon = _biomeCatalog.GetName(_versionCatalog.Newest, biome)
                 ?? throw new ArgumentOutOfRangeException(nameof(biome), biome, "The generator knows no biome with this id.");
             var color = _biomeCatalog.DefaultPalette[biome];
             var fill = Color.FromRgb(color.Red, color.Green, color.Blue);
-            var glyphColor = GetContrastingGlyphColor(color);
-            entry = new BiomeMarker(new MapMarker(CreateBiomeGlyph(icon, glyphColor), new ImmutableSolidColorBrush(fill)), icon, glyphColor);
-            _biomeMarkers.Add(biome, entry);
+            marker = new MapMarker(CreateBiomeGlyph(icon, GetContrastingGlyphColor(color)), new ImmutableSolidColorBrush(fill));
+            _biomeMarkers.Add(biome, marker);
         }
 
-        return entry.Marker;
+        return marker;
     }
 
     public MapMarker GetDimensionMarker(Dimension dimension) => GetMarker(MarkerNames.Of(dimension));
@@ -160,16 +137,14 @@ public sealed class MapStyleService : IMapStyleService
     private MapMarker CreateMarker(string name)
         => new(CreateGlyph(name, GlyphColor), new ImmutableSolidColorBrush(GetResource<Color>(MarkerColorKeyPrefix + name)));
 
-    /// <summary>Loads the glyph of a marker in the current marker style, drawn in one colour.</summary>
-    private static SvgImage CreateGlyph(string name, Color color)
-        => new() { Source = SvgSource.Load(GetResource<string>(name + IconKeySuffix), _assetBaseUri), CurrentColor = color };
+    /// <summary>Loads the glyph of a marker by the name its resources are keyed with, drawn in one colour.</summary>
+    private static SvgImage CreateGlyph(string name, Color color) => LoadGlyph(GetResource<string>(name + IconKeySuffix), color);
 
-    /// <summary>Loads the glyph of a biome, named like the biome, from the folder of the current marker style.</summary>
+    /// <summary>Loads the glyph of a biome, named like the biome.</summary>
     private static SvgImage CreateBiomeGlyph(string icon, Color color)
-    {
-        var path = string.Format(CultureInfo.InvariantCulture, BiomeIconPathFormat, GetResource<string>(MarkerStyleKey), icon);
-        return new SvgImage { Source = SvgSource.Load(path, _assetBaseUri), CurrentColor = color };
-    }
+        => LoadGlyph(string.Format(CultureInfo.InvariantCulture, BiomeIconPathFormat, icon), color);
+
+    private static SvgImage LoadGlyph(string path, Color color) => new() { Source = SvgSource.Load(path, _assetBaseUri), CurrentColor = color };
 
     /// <summary>The light or the dark glyph colour, whichever stands out more against a badge, judged by relative luminance as in WCAG.</summary>
     private static Color GetContrastingGlyphColor(RgbColor background)
@@ -189,16 +164,6 @@ public sealed class MapStyleService : IMapStyleService
         var value = channel / (double)byte.MaxValue;
         return value <= LinearThreshold ? value / LinearSlope : Math.Pow((value + GammaOffset) / (1 + GammaOffset), Gamma);
     }
-
-    /// <summary>A biome's badge with what its glyph is loaded from, so that a change of the marker style can load it anew.</summary>
-    private sealed record BiomeMarker(MapMarker Marker, string Icon, Color GlyphColor);
-
-    private static string GetSource(MarkerStyle style) => style switch
-    {
-        MarkerStyle.Blocky => "Accents/MarkersBlocky.axaml",
-        MarkerStyle.Clean => "Accents/MarkersClean.axaml",
-        _ => throw new NotSupportedException($"Unsupported marker style: {style}"),
-    };
 
     /// <summary>Whether a name has the glyph and the colour of a marker; interface icons share the glyph key pattern but have no colour.</summary>
     private static bool IsMarkerLook(string name) => HasResource<string>(name + IconKeySuffix) && HasResource<Color>(MarkerColorKeyPrefix + name);

@@ -93,6 +93,17 @@ public sealed class SettingsRepositoryTests : IDisposable
     }
 
     [Fact]
+    public async Task LoadAsync_SettingNoLongerKept_IsSkipped()
+    {
+        var content = Encoding.UTF8.GetBytes("""{ "appearance": { "theme": "Dark", "markerStyle": "Clean" } }""");
+        await _store.WriteAsync(SettingsRepository.StorageKey, content, TestContext.Current.CancellationToken);
+
+        var settings = await _repository.LoadAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(AppTheme.Dark, settings.Appearance.Theme);
+    }
+
+    [Fact]
     public async Task LoadAsync_SettingsOfANewerVersion_Throws()
     {
         var content = Encoding.UTF8.GetBytes($$"""{ "schemaVersion": {{AppSettings.CurrentSchemaVersion + 1}} }""");

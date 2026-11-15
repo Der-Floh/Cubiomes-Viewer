@@ -20,7 +20,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceInclude Source="/Accents/Themes.axaml"/>
-                <ResourceInclude Source="/Accents/MarkersBlocky.axaml"/>
+                <ResourceInclude Source="/Accents/Markers.axaml"/>
                 <ResourceInclude Source="/Accents/Icons.axaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>

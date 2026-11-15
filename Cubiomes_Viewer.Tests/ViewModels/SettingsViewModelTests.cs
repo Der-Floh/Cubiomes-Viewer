@@ -39,7 +39,7 @@ public sealed class SettingsViewModelTests : IDisposable
         using var services = TestServices.Create();
         var stored = new AppSettings
         {
-            Appearance = { Theme = AppTheme.Dark, MarkerStyle = MarkerStyle.Clean, UiZoom = 150 },
+            Appearance = { Theme = AppTheme.Dark, UiZoom = 150 },
             Map = { GridMultiplier = 10, MarkerSize = MarkerSize.Large, ColorMap = "Mine" },
             Export = { CsvSeparator = CsvSeparator.Semicolon },
         };
@@ -51,7 +51,7 @@ public sealed class SettingsViewModelTests : IDisposable
         _ = services.GetRequiredService<BiomeColorsViewModel>();
 
         var current = settingsService.Current;
-        Assert.Equal((AppTheme.Dark, MarkerStyle.Clean, 150), (current.Appearance.Theme, current.Appearance.MarkerStyle, current.Appearance.UiZoom));
+        Assert.Equal((AppTheme.Dark, 150), (current.Appearance.Theme, current.Appearance.UiZoom));
         Assert.Equal((10, MarkerSize.Large, "Mine"), (current.Map.GridMultiplier, current.Map.MarkerSize, current.Map.ColorMap));
         Assert.Equal(CsvSeparator.Semicolon, current.Export.CsvSeparator);
     }
@@ -89,15 +89,6 @@ public sealed class SettingsViewModelTests : IDisposable
         Assert.Equal(1.5, _services.GetRequiredService<IUiZoomService>().Scale);
         Assert.Equal(150, Stored.Appearance.UiZoom);
         Assert.Equal(["100 %", "125 %", "150 %", "200 %"], _settings.UiZooms.Select(choice => choice.Display));
-    }
-
-    [AvaloniaFact]
-    public void MarkerStyle_Clean_ReachesTheMapAndIsStored()
-    {
-        _settings.SelectedMarkerStyle = _settings.MarkerStyles.Single(choice => choice.Value == MarkerStyle.Clean);
-
-        Assert.Equal(MarkerStyle.Clean, _map.MarkerStyle);
-        Assert.Equal(MarkerStyle.Clean, Stored.Appearance.MarkerStyle);
     }
 
     [AvaloniaFact]
