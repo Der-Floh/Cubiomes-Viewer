@@ -25,8 +25,19 @@ public static class PinPainter
     private const double ShapeLeft = 4;
     private const double ShapeTop = 2;
     private const double HeadCenterY = 10.2;
-    private const double FaceWidth = 12;
     private const double OutlineUnits = 0.75;
+
+    /// <summary>The side of the largest square the face of the head holds around its centre, in units of the icon.</summary>
+    private const double FaceSquare = 8.66;
+
+    /// <summary>The glyph keeps this many of its pixels between its corners and the rim.</summary>
+    private const int GlyphMarginPixels = 1;
+
+    /// <summary>
+    /// The smallest side of a pin whose face holds a glyph with its margin, at one device pixel per unit; smaller pins crowd the
+    /// glyph against the rim.
+    /// </summary>
+    public static double SmallestSizeWithRoom => IconSide * (PixelGlyph.Pixels + 2 * GlyphMarginPixels) / FaceSquare;
 
     private static readonly Uri _assetBaseUri = new($"avares://{typeof(PinPainter).Assembly.GetName().Name}/");
     private static readonly Lazy<Geometry> _body = new(() => LoadShape(BodyIconPath));
@@ -67,12 +78,12 @@ public static class PinPainter
     }
 
     /// <summary>
-    /// Where the glyph goes in the head: centred on whole device pixels, with as many device pixels per glyph pixel as let it fit
-    /// the face, but one at least.
+    /// Where the glyph goes in the head: centred on whole device pixels, with as many device pixels per glyph pixel as let it and
+    /// its margin fit the face, but one at least.
     /// </summary>
     private static Rect GetGlyphBounds(Point headCenter, double unit, PixelGrid pixels)
     {
-        var scale = Math.Max(1, (int)Math.Floor(FaceWidth * unit * pixels.Scaling / PixelGlyph.Pixels));
+        var scale = Math.Max(1, (int)Math.Floor(FaceSquare * unit * pixels.Scaling / (PixelGlyph.Pixels + 2 * GlyphMarginPixels)));
         var side = PixelGlyph.GetSide(scale, pixels);
         return new Rect(headCenter.X - side / 2, pixels.SnapY(headCenter.Y - side / 2), side, side);
     }

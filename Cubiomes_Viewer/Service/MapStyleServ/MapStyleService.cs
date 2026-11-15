@@ -25,7 +25,7 @@ public sealed class MapStyleService : IMapStyleService
     private const string MeasureColorKey = "MeasureColor";
     private const string SelectionColorKey = "SelectionColor";
     private const double MarkerSideLength = 22;
-    private const double PinSideLength = 32;
+    private const double PinSideLength = 52;
     private const double RedWeight = 0.2126;
     private const double GreenWeight = 0.7152;
     private const double BlueWeight = 0.0722;
@@ -37,7 +37,7 @@ public sealed class MapStyleService : IMapStyleService
 
     private static readonly Uri _assetBaseUri = new($"avares://{typeof(MapStyleService).Assembly.GetName().Name}/");
 
-    public double PinSize => PinSideLength * MarkerScale;
+    public double PinSize => Math.Max(PinSideLength * MarkerScale, PinPainter.SmallestSizeWithRoom);
 
     public double MarkerScale { get; set; } = 1;
 

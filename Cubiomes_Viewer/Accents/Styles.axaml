@@ -126,8 +126,8 @@
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
     <Style Selector="controls|PinIcon">
-        <Setter Property="Width" Value="32"/>
-        <Setter Property="Height" Value="32"/>
+        <Setter Property="Width" Value="52"/>
+        <Setter Property="Height" Value="52"/>
         <Setter Property="Face" Value="{DynamicResource PinFaceColor}"/>
         <Setter Property="Outline" Value="{DynamicResource MarkerOutlineColor}"/>
     </Style>
@@ -141,10 +141,6 @@
     <Style Selector="ComboBox.pin-look ComboBoxItem">
         <Setter Property="Padding" Value="6"/>
         <Setter Property="HorizontalContentAlignment" Value="Center"/>
-    </Style>
-    <Style Selector="ComboBox.pin-look ComboBoxItem controls|PinIcon">
-        <Setter Property="Width" Value="36"/>
-        <Setter Property="Height" Value="36"/>
     </Style>
     <Style Selector="ToggleButton.filter">
         <Setter Property="Padding" Value="4"/>
