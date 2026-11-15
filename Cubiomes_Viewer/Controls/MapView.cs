@@ -97,6 +97,9 @@ public sealed class MapView : Control
     private readonly Dictionary<int, Point> _pointers = [];
     private Point? _hoverPosition;
     private Point? _tapStart;
+
+    /// <summary>The mouse button that drags the map, while one does.</summary>
+    private MouseButton? _mouseDragButton;
     private Point _pinchCenter;
     private double _pinchDistance;
 
@@ -229,7 +232,7 @@ public sealed class MapView : Control
 
         var point = e.GetCurrentPoint(this);
         Focus();
-        if (e.Pointer.Type == PointerType.Mouse && point.Properties.PointerUpdateKind != PointerUpdateKind.LeftButtonPressed)
+        if (e.Pointer.Type == PointerType.Mouse && !TryBeginMouseDrag(point.Properties.PointerUpdateKind))
             return;
 
         e.Pointer.Capture(this);
@@ -272,17 +275,29 @@ public sealed class MapView : Control
 
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
+        var endsMouseDrag = e.Pointer.Type == PointerType.Mouse && e.InitialPressMouseButton == _mouseDragButton;
+        // The base raises ContextRequested for an unhandled right release, so a right drag must be handled first to open no menu.
+        if (endsMouseDrag && _mouseDragButton == MouseButton.Right && _tapStart is null)
+            e.Handled = true;
         base.OnPointerReleased(e);
 
-        if (e.Pointer.Type == PointerType.Mouse && e.InitialPressMouseButton != MouseButton.Left)
-            return;
+        if (e.Pointer.Type == PointerType.Mouse)
+        {
+            if (!endsMouseDrag)
+                return;
+            _mouseDragButton = null;
+        }
+
         if (!_pointers.Remove(e.Pointer.Id))
             return;
 
         e.Pointer.Capture(null);
         if (_pointers.Count == 0)
         {
-            var isTap = RaiseClickIfTapped(e);
+            var isTap = _tapStart is not null;
+            if (isTap && e.InitialPressMouseButton != MouseButton.Right)
+                RaiseClick(e);
+            _tapStart = null;
             _gestures.EndDrag(GetTime(e));
             if (SmoothMotion && _gestures.HasInertia && !isTap)
                 RequestFrame();
@@ -300,6 +315,8 @@ public sealed class MapView : Control
     {
         base.OnPointerCaptureLost(e);
 
+        if (e.Pointer.Type == PointerType.Mouse)
+            _mouseDragButton = null;
         if (!_pointers.Remove(e.Pointer.Id))
             return;
 
@@ -401,16 +418,27 @@ public sealed class MapView : Control
 
     private void OnLayerInvalidated(object? sender, EventArgs e) => InvalidateVisual();
 
-    /// <summary>Raises a click when the pointer stayed near where it went down; returns whether it did, as a tap does not glide on.</summary>
-    private bool RaiseClickIfTapped(PointerReleasedEventArgs e)
+    /// <summary>Lets the left or the right mouse button drag the map, unless the other one already does.</summary>
+    private bool TryBeginMouseDrag(PointerUpdateKind kind)
     {
-        if (_tapStart is null)
+        MouseButton? button = kind switch
+        {
+            PointerUpdateKind.LeftButtonPressed => MouseButton.Left,
+            PointerUpdateKind.RightButtonPressed => MouseButton.Right,
+            _ => null,
+        };
+        if (button is null || _mouseDragButton is not null)
             return false;
 
-        _tapStart = null;
+        _mouseDragButton = button;
+        return true;
+    }
+
+    /// <summary>Raises a click where the pointer went up, after it stayed near where it went down.</summary>
+    private void RaiseClick(PointerReleasedEventArgs e)
+    {
         var position = e.GetPosition(this);
         Clicked?.Invoke(this, new MapClickEventArgs(position, GetBlockAt(position), e.Pointer.Type));
-        return true;
     }
 
     private void RaiseHover(Point position)

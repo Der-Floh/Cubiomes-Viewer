@@ -228,6 +228,21 @@ public sealed class MapHostViewTests : IDisposable
     }
 
     [AvaloniaFact]
+    public async Task RightDrag_OnTheMap_MovesTheMapAndOpensNoMenu()
+    {
+        var spawn = await ShowSpawnAtTheCenterAsync();
+
+        _window.MouseDown(_center, MouseButton.Right);
+        _window.MouseMove(new Point(_center.X + DragDistance, _center.Y), RawInputModifiers.RightMouseButton);
+        _window.MouseUp(new Point(_center.X + DragDistance, _center.Y), MouseButton.Right);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal(spawn.X - DragDistance, _map.Camera.CenterX);
+        Assert.False(Assert.IsType<MenuFlyout>(GetMapView().ContextFlyout).IsOpen, "The menu opened.");
+        Assert.Null(_map.Selection);
+    }
+
+    [AvaloniaFact]
     public async Task RightClick_OnTheMap_PointsTheContextMenuAtTheClickedBlock()
     {
         var spawn = await ShowSpawnAtTheCenterAsync();
