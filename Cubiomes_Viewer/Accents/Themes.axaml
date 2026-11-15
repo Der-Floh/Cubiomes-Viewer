@@ -25,7 +25,7 @@
     <Color x:Key="Marker.AncientCity">#1c4a5a</Color>
     <Color x:Key="Marker.TrailRuins">#b0704a</Color>
     <Color x:Key="Marker.TrialChambers">#c2622d</Color>
-    <Color x:Key="Marker.AbandonedCamp">#2f7d6d</Color>
+    <Color x:Key="Marker.AbandonedCamp">#3f51b5</Color>
     <Color x:Key="Marker.Mineshaft">#616161</Color>
     <Color x:Key="Marker.DesertWell">#a8893a</Color>
     <Color x:Key="Marker.Geode">#9c5fd6</Color>
