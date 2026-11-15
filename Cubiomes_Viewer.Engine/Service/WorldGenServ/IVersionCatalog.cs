@@ -14,8 +14,8 @@ public interface IVersionCatalog
     bool TryGetVersion(string name, out McVersion version);
 
     /// <summary>
-    /// Whether the generator supports a version less completely: the oldest ones and the Winter Drop, which this
-    /// revision of cubiomes knew only before its release.
+    /// Whether the generator supports a version less completely: the oldest ones and 1.21.4, the Winter Drop, which
+    /// this revision of cubiomes knew only from before its release.
     /// </summary>
     bool IsExperimental(McVersion version);
 }

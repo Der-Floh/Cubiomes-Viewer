@@ -8,7 +8,7 @@ A cross-platform Minecraft Java Edition seed finder and biome map viewer, built 
 
 ## Features
 
-- **Biome map** of any seed from Beta 1.7 to 1.21.3, in the Overworld, Nether and End, with structures, strongholds, the spawn point and slime chunks marked.
+- **Biome map** of any seed from Beta 1.7 to 1.21.4, in the Overworld, Nether and End, with structures, strongholds, the spawn point and slime chunks marked.
 - **More layers**: climate parameters, surface heights, rivers, ocean temperatures and where a structure type can generate, plus optional relief shading of the biome map.
 - **Seed search** for seeds that meet a list of conditions, in the app or from the command line.
 - **Analysis** of the biomes, structures and locations around a point, for one seed or up to 1,000 found seeds.
@@ -79,7 +79,7 @@ cubiomes-viewer-cli --session search.json --out seeds.txt
 
 - **Appearance**: theme and interface size.
 - **Map**: smooth motion, relief shading of the biome map, tile cache, grid spacing, marker size, and how far out each structure type is marked.
-- **World generation**: the experimental versions (Beta 1.7, Beta 1.8, 1.0 and the 1.21 Winter Drop), the terrain estimate that leaves out some structures on low land from 1.18 on, and replaced structure salts, as servers and data packs use them.
+- **World generation**: the experimental versions (Beta 1.7, Beta 1.8, 1.0 and 1.21.4, the Winter Drop), the terrain estimate that leaves out some structures on low land from 1.18 on, and replaced structure salts, as servers and data packs use them.
 - **Start**: open the last world and search, and keep the desktop window's size and position.
 - **Export**: the separator of CSV files.
 - **Updates** (desktop): the installed version, a check on request, and the check at start.

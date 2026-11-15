@@ -8,6 +8,9 @@ namespace Cubiomes_Viewer.Engine.Service.WorldGenServ;
 
 public sealed class VersionCatalog : IVersionCatalog
 {
+    /// <summary>The number the Winter Drop was released as; cubiomes still calls it "1.21 WD", from before Mojang numbered it.</summary>
+    private const string WinterDropName = "1.21.4";
+
     private static readonly FrozenSet<McVersion> _experimental = [McVersion.Beta1_7, McVersion.Beta1_8, McVersion.V1_0_0, McVersion.V1_21_WinterDrop];
 
     public IReadOnlyList<McVersion> Versions => field ??= LoadVersions();
@@ -16,8 +19,10 @@ public sealed class VersionCatalog : IVersionCatalog
     private FrozenDictionary<string, McVersion> VersionsByName => field ??= Versions.ToFrozenDictionary(GetName, StringComparer.OrdinalIgnoreCase);
 
     public string GetName(McVersion version)
-        => Marshal.PtrToStringUTF8(CubiomesNative.VersionName((int)version))
-            ?? throw new ArgumentOutOfRangeException(nameof(version), version, "The native generator does not know this Minecraft version.");
+        => version == McVersion.V1_21_WinterDrop
+            ? WinterDropName
+            : Marshal.PtrToStringUTF8(CubiomesNative.VersionName((int)version))
+                ?? throw new ArgumentOutOfRangeException(nameof(version), version, "The native generator does not know this Minecraft version.");
 
     public bool TryGetVersion(string name, out McVersion version)
     {

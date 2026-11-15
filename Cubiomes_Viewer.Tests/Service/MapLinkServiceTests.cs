@@ -28,7 +28,7 @@ public sealed class MapLinkServiceTests
     {
         var link = new MapLink(-5, McVersion.V1_21_WinterDrop, Dimension.Overworld, true, new BlockPos(0, 0), 1.0 / 32, LayerMode.Height, 70, 3);
 
-        Assert.Equal($"{LinkBase}?seed=-5&version=1.21%20WD&dimension=overworld&x=0&z=0&scale=0.03125&largebiomes=1&layer=height&y=70&octaves=3", _links.Format(link, LinkBase));
+        Assert.Equal($"{LinkBase}?seed=-5&version=1.21.4&dimension=overworld&x=0&z=0&scale=0.03125&largebiomes=1&layer=height&y=70&octaves=3", _links.Format(link, LinkBase));
     }
 
     [Theory]

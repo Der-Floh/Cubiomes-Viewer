@@ -26,4 +26,12 @@ public sealed class VersionCatalogTests
 
     [Fact]
     public void TryGetVersion_UnknownName_FindsNothing() => Assert.False(_catalog.TryGetVersion("1.99", out _));
+
+    [Fact]
+    public void GetName_WinterDrop_IsTheNumberItWasReleasedAs()
+    {
+        Assert.Equal("1.21.4", _catalog.GetName(McVersion.V1_21_WinterDrop));
+        Assert.True(_catalog.TryGetVersion("1.21.4", out var found));
+        Assert.Equal(McVersion.V1_21_WinterDrop, found);
+    }
 }
