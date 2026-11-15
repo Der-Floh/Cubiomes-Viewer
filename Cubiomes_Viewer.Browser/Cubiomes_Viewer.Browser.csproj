@@ -40,4 +40,8 @@
     </ItemGroup>
     <Copy SourceFiles="@(WorkerBundleFile)" DestinationFolder="$(PublishDir)wwwroot\%(RecursiveDir)" SkipUnchangedFiles="true" />
   </Target>
+
+  <Target Name="PublishLegalFiles" AfterTargets="Publish" Condition="'$(_IsPublishing)' == 'true'">
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\..\LICENSE.txt;$(MSBuildProjectDirectory)\..\THIRD-PARTY-NOTICES.md" DestinationFolder="$(PublishDir)wwwroot" SkipUnchangedFiles="true" />
+  </Target>
 </Project>

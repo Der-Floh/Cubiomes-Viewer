@@ -20,6 +20,11 @@
     <ProjectReference Include="..\Cubiomes_Viewer.Engine\Cubiomes_Viewer.Engine.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\LICENSE.txt" Link="LICENSE.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+    <None Include="..\THIRD-PARTY-NOTICES.md" Link="THIRD-PARTY-NOTICES.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+  </ItemGroup>
+
   <Import Project="..\native\CvNative.Desktop.targets" />
 
   <Target Name="StripPdbsFromPublish" AfterTargets="ComputeResolvedFilesToPublishList">
