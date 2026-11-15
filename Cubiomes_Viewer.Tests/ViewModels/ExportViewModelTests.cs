@@ -97,6 +97,18 @@ public sealed class ExportViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void BiomeRelief_SwitchedOn_ShadesTheExportAndWarnsThatItsBiomeIdsAreLost()
+    {
+        SetArea(0, 0, 999, 499, scale: 4);
+        Assert.False(_export.HasWarnings);
+
+        _map.BiomeRelief = true;
+
+        Assert.True(_export.CreateRequest().Style.BiomeRelief);
+        Assert.Contains("biome ids cannot be read back", Assert.Single(_export.Warnings), StringComparison.Ordinal);
+    }
+
+    [AvaloniaFact]
     public void AreaWiderThanMostProgramsOpen_IsAWarningThatLetsTheExportStart()
     {
         SetArea(0, 0, 99_999, 99, scale: 1);

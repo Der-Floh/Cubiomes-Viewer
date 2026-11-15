@@ -20,6 +20,7 @@ public sealed class MapExportServiceTests : IDisposable
     private const int SampleHeight = 64;
 
     private static readonly BlockArea _area = new(-1000, -700, 2000, 1500);
+    private static readonly TileStyle _relief = new(BiomeRelief: true);
 
     private readonly string _directory = Path.Combine(Path.GetTempPath(), "cubiomes-viewer-tests", Guid.NewGuid().ToString("N"));
     private readonly ServiceProvider _services;
@@ -90,6 +91,60 @@ public sealed class MapExportServiceTests : IDisposable
         var image = PngReader.Read(await ExportAsync(request));
 
         Assert.True(expectedHash == image.ContentHash, $"{name}: {image.ContentHash}");
+    }
+
+    public static TheoryData<string, McVersion, Dimension, int, string> FixedShadedExports() => new()
+    {
+        { "shaded biomes 1.21.3", McVersion.V1_21_3, Dimension.Overworld, 4, "759890a62c5d9c6ef9319d9106cc76ab4c4176819a6fde4972065dc0af1a9099" },
+        { "shaded biomes 1.21.3 at 1:1", McVersion.V1_21_3, Dimension.Overworld, 1, "198535ab9206feaa5dbb635530258cddce69911989760138ab07bc83cff4f87f" },
+        { "shaded biomes 1.12.2", McVersion.V1_12_2, Dimension.Overworld, 16, "30b58b8b31efcf6b6077793c0d8cb17682bcde61023f5a2229898f8fcc7ad1f0" },
+        { "shaded end 1.21.3", McVersion.V1_21_3, Dimension.End, 16, "7f0a5bea4aa3d5952bcd888e62698b0fd726f605453a0b2d2697f709755c251e" },
+    };
+
+    [Theory]
+    [MemberData(nameof(FixedShadedExports))]
+    public async Task ShadedExport_OfAFixedWorld_ShowsWhatItShowedWhenItWasRecorded(string name, McVersion version, Dimension dimension, int scale, string expectedHash)
+    {
+        var request = Request(World(262, version, dimension), LayerMode.Biomes, scale) with { Style = _relief };
+
+        var image = PngReader.Read(await ExportAsync(request));
+
+        Assert.True(expectedHash == image.ContentHash, $"{name}: {image.ContentHash}");
+    }
+
+    [Fact]
+    public async Task Biomes_ShadedByTerrain_AreWrittenInColoursThatDifferFromTheFlatOnes()
+    {
+        var request = Request(World(262, McVersion.V1_21_3, Dimension.Overworld), LayerMode.Biomes, 4);
+
+        var flat = PngReader.Read(await ExportAsync(request));
+        var shaded = PngReader.Read(await ExportAsync(request with { Style = _relief }));
+
+        Assert.Equal((flat.Width, flat.Height, PngColorType.Rgb), (shaded.Width, shaded.Height, shaded.ColorType));
+        var changed = Enumerable.Range(0, flat.Pixels.Length).Count(pixel => !flat.Palette.AsSpan(flat.Pixels[pixel] * 3, 3).SequenceEqual(shaded.Pixels.AsSpan(pixel * 3, 3)));
+        Assert.True(changed > flat.Pixels.Length / 10, $"Relief changed {changed} of {flat.Pixels.Length} pixels.");
+    }
+
+    [Theory]
+    [InlineData(McVersion.V1_12_2, Dimension.Overworld, 256)]
+    [InlineData(McVersion.V1_16_5, Dimension.Nether, 4)]
+    public async Task Biomes_ShadedWhereNoHeightsReach_StayPalettePixelsOfTheGeneratedBiomes(McVersion version, Dimension dimension, int scale)
+    {
+        var request = Request(World(262, version, dimension), LayerMode.Biomes, scale) with { Style = _relief };
+
+        var image = PngReader.Read(await ExportAsync(request));
+
+        Assert.Equal(PngColorType.Indexed, image.ColorType);
+        Assert.Equal(GenerateBiomes(request.Worlds[0], request.GetLayout(), scale), image.Pixels);
+        Assert.Empty(_export.FindWarnings(request));
+    }
+
+    [Fact]
+    public void FindWarnings_ShadedBiomes_SayTheBiomeIdsCannotBeReadBack()
+    {
+        var request = Request(World(262, McVersion.V1_21_3, Dimension.Overworld), LayerMode.Biomes, 4) with { Style = _relief };
+
+        Assert.Contains("biome ids cannot be read back", Assert.Single(_export.FindWarnings(request)), StringComparison.Ordinal);
     }
 
     [Fact]

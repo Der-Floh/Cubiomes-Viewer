@@ -32,6 +32,7 @@ public sealed class MapExportService : IMapExportService
     private const int ViewerBytesPerPixel = 4;
     private const int BiomeBytesPerSample = 1;
     private const int ColourBytesPerSample = sizeof(short) + RgbBytes + BgraBytes;
+    private const int ShadedBiomeBytesPerSample = BiomeBytesPerSample + ColourBytesPerSample;
     private const double BytesPerGigabyte = 1L << 30;
 
     /// <summary>The rows of tiles held at once: the one being written and the next, which is generated meanwhile.</summary>
@@ -97,8 +98,14 @@ public sealed class MapExportService : IMapExportService
         if (layout.PixelCount > LargePixelCount)
             warnings.Add(Format($"With {layout.PixelCount:N0} pixels per seed, the export takes long, and opening the image needs about {layout.PixelCount * ViewerBytesPerPixel / BytesPerGigabyte:N1} GB of memory."));
 
-        var samples = TileMetrics.For(request.Worlds[0], request.Layer).TileSamples;
-        var memory = (long)layout.Width * samples * TileRowsInMemory * (request.Layer.HasBiomeSamples ? BiomeBytesPerSample : ColourBytesPerSample);
+        var world = request.Worlds[0];
+        var isShaded = request.Layer.HasBiomeSamples && HasRelief(request, world);
+        if (isShaded)
+            warnings.Add("Shaded by terrain height, the image is written in colour, so the biome ids cannot be read back from it.");
+
+        var samples = TileMetrics.For(world, request.Layer).TileSamples;
+        var bytesPerSample = IsIndexed(request, world) ? BiomeBytesPerSample : isShaded ? ShadedBiomeBytesPerSample : ColourBytesPerSample;
+        var memory = (long)layout.Width * samples * TileRowsInMemory * bytesPerSample;
         if (memory > LargeMemoryBytes)
             warnings.Add(Format($"While it runs, the export holds about {memory / BytesPerGigabyte:N1} GB of memory for the rows of tiles it generates and writes."));
 
@@ -172,11 +179,20 @@ public sealed class MapExportService : IMapExportService
             : WholeImageSink.Create(archive, name, layout, format, compressor);
     }
 
-    /// <summary>Layers of biomes keep one palette index per biome id, with the id of no biome transparent; other layers are painted.</summary>
+    /// <summary>
+    /// Layers of biomes keep one palette index per biome id, with the id of no biome transparent, unless they are shaded by
+    /// the terrain; those and the other layers are painted.
+    /// </summary>
     private PngFormat GetFormat(MapExportRequest request, WorldKey world)
-        => request.Layer.HasBiomeSamples
+        => IsIndexed(request, world)
             ? PngFormat.Indexed(_colorizer.GetBiomeColors(request.Style, world.Version), Constants.NoBiomeTileValue)
             : PngFormat.Rgb;
+
+    private bool IsIndexed(MapExportRequest request, WorldKey world) => request.Layer.HasBiomeSamples && !HasRelief(request, world);
+
+    /// <summary>Whether the style shades the layer of the world at the scale of the export; that depends on neither tile nor position.</summary>
+    private bool HasRelief(MapExportRequest request, WorldKey world)
+        => _colorizer.GetReliefTile(MapContent.For(world, request.Layer, request.SampleHeight, request.Octaves).GetRequest(new TileKey(request.Scale, 0, 0)), request.Style) is not null;
 
     /// <summary>
     /// Generates the image one row of tiles at a time and passes its rows on as they are complete; the next row of tiles is
@@ -186,11 +202,13 @@ public sealed class MapExportService : IMapExportService
         RowProgress rows, CancellationToken cancellationToken)
     {
         var tiles = new TileRowSource(MapContent.For(world, request.Layer, request.SampleHeight, request.Octaves), request.Scale, TileMetrics.For(world, request.Layer).TileSamples, layout);
-        var bytesPerPixel = request.Layer.HasBiomeSamples ? 1 : RgbBytes;
+        var isIndexed = IsIndexed(request, world);
+        var bytesPerPixel = isIndexed ? 1 : RgbBytes;
         var row = new byte[layout.Width * bytesPerPixel];
+        var heights = new HeightRows((requests, token) => GenerateHeightsAsync(world, requests, token));
 
         using var stopping = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        var next = GenerateAsync(tiles, tiles.FirstRow, stopping.Token);
+        var next = GenerateAsync(tiles, tiles.FirstRow, request.Style, heights, stopping.Token);
         try
         {
             for (var tileZ = tiles.FirstRow; tileZ <= tiles.LastRow; tileZ++)
@@ -198,9 +216,9 @@ public sealed class MapExportService : IMapExportService
                 cancellationToken.ThrowIfCancellationRequested();
                 var generated = await next.ConfigureAwait(false);
                 if (tileZ < tiles.LastRow)
-                    next = GenerateAsync(tiles, tileZ + 1, stopping.Token);
+                    next = GenerateAsync(tiles, tileZ + 1, request.Style, heights, stopping.Token);
 
-                var pixels = GetPixels(generated, request.Style);
+                var pixels = GetPixels(generated, request.Style, isIndexed);
                 var top = Math.Max(tileZ * tiles.Samples, layout.SampleZ);
                 var bottom = Math.Min((tileZ + 1) * tiles.Samples, layout.SampleZ + layout.Height);
                 for (var sampleZ = top; sampleZ < bottom; sampleZ++)
@@ -222,39 +240,52 @@ public sealed class MapExportService : IMapExportService
         await sink.FinishAsync().ConfigureAwait(false);
     }
 
-    private Task<TileData[]> GenerateAsync(TileRowSource tiles, int tileZ, CancellationToken cancellationToken)
+    /// <summary>Generates a row of map tiles together with the height tiles that shade them, if the style shades them.</summary>
+    private async Task<TileRow> GenerateAsync(TileRowSource tiles, int tileZ, TileStyle style, HeightRows heights, CancellationToken cancellationToken)
     {
-        ComputeJob<TileData>[] jobs = [.. Enumerable.Range(tiles.FirstColumn, tiles.LastColumn - tiles.FirstColumn + 1).Select(tileX =>
-            new TileJob(tiles.Content.GetRequest(new TileKey(tiles.Scale, tileX, tileZ)), tiles.Samples))];
+        TileRequest[] requests = [.. Enumerable.Range(tiles.FirstColumn, tiles.LastColumn - tiles.FirstColumn + 1).Select(tileX => tiles.Content.GetRequest(new TileKey(tiles.Scale, tileX, tileZ)))];
+        var mapTiles = GenerateTilesAsync(requests, tiles.Samples, cancellationToken);
+        var heightTiles = heights.GetAsync([.. requests.Select(request => _colorizer.GetReliefTile(request, style)).OfType<TileRequest>().Distinct()], cancellationToken);
+
+        await Task.WhenAll(mapTiles, heightTiles).ConfigureAwait(false);
+        return new TileRow(await mapTiles.ConfigureAwait(false), (await heightTiles.ConfigureAwait(false)).ToDictionary(tile => tile.Request));
+    }
+
+    private Task<TileData[]> GenerateHeightsAsync(WorldKey world, IReadOnlyList<TileRequest> requests, CancellationToken cancellationToken)
+        => GenerateTilesAsync(requests, TileMetrics.For(world, LayerMode.Height).TileSamples, cancellationToken);
+
+    private Task<TileData[]> GenerateTilesAsync(IEnumerable<TileRequest> requests, int samples, CancellationToken cancellationToken)
+    {
+        ComputeJob<TileData>[] jobs = [.. requests.Select(request => new TileJob(request, samples))];
         return _compute.RunAllAsync(jobs, _priority, MaxRunning, cancellationToken: cancellationToken);
     }
 
     /// <summary>The pixels of a row of tiles, coloured side by side where the runtime has threads to share the work.</summary>
-    private byte[][] GetPixels(TileData[] tiles, TileStyle style)
+    private byte[][] GetPixels(TileRow row, TileStyle style, bool isIndexed)
     {
-        var pixels = new byte[tiles.Length][];
+        var pixels = new byte[row.Tiles.Length][];
         if (OperatingSystem.IsBrowser())
         {
-            for (var index = 0; index < tiles.Length; index++)
-                pixels[index] = GetPixels(tiles[index], style);
+            for (var index = 0; index < row.Tiles.Length; index++)
+                pixels[index] = GetPixels(row, row.Tiles[index], style, isIndexed);
         }
         else
         {
-            Parallel.For(0, tiles.Length, index => pixels[index] = GetPixels(tiles[index], style));
+            Parallel.For(0, row.Tiles.Length, index => pixels[index] = GetPixels(row, row.Tiles[index], style, isIndexed));
         }
 
         return pixels;
     }
 
     /// <summary>The bytes of a tile's pixels, row by row: biome ids, or red, green and blue.</summary>
-    private byte[] GetPixels(TileData tile, TileStyle style)
+    private byte[] GetPixels(TileRow row, TileData tile, TileStyle style, bool isIndexed)
     {
-        if (!tile.HasValues)
+        if (isIndexed)
             return tile.Biomes;
 
         var count = tile.Samples * tile.Samples;
         var bgra = new byte[count * BgraBytes];
-        _colorizer.Colorize(tile, style, bgra);
+        _colorizer.Colorize(tile, style, bgra, _colorizer.GetReliefTile(tile.Request, style) is { } relief ? row.Heights[relief] : null);
 
         var rgb = new byte[count * RgbBytes];
         for (var index = 0; index < count; index++)
@@ -288,6 +319,26 @@ public sealed class MapExportService : IMapExportService
         public int LastColumn => FloorDivide(Layout.SampleX + Layout.Width - 1, Samples);
         public int FirstRow => FloorDivide(Layout.SampleZ, Samples);
         public int LastRow => FloorDivide(Layout.SampleZ + Layout.Height - 1, Samples);
+    }
+
+    /// <summary>A row of generated map tiles and the height tiles that shade them, by their requests.</summary>
+    private sealed record TileRow(TileData[] Tiles, IReadOnlyDictionary<TileRequest, TileData> Heights);
+
+    /// <summary>
+    /// The height tiles of the row of map tiles generated last. One height tile can lie under several rows of map tiles,
+    /// so the next row reuses them when it needs the same ones.
+    /// </summary>
+    private sealed class HeightRows(Func<IReadOnlyList<TileRequest>, CancellationToken, Task<TileData[]>> generate)
+    {
+        private TileRequest[] _requests = [];
+        private Task<TileData[]> _tiles = Task.FromResult<TileData[]>([]);
+
+        public Task<TileData[]> GetAsync(TileRequest[] requests, CancellationToken cancellationToken)
+        {
+            if (!requests.SequenceEqual(_requests))
+                (_requests, _tiles) = (requests, generate(requests, cancellationToken));
+            return _tiles;
+        }
     }
 
     /// <summary>Reports the share of all rows of all images written so far.</summary>

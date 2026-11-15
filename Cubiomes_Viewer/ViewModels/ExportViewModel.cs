@@ -161,7 +161,7 @@ public sealed partial class ExportViewModel : ViewModelBase, IOpenablePanel
             Layer = _map.Layer,
             SampleHeight = _map.SampleHeight,
             Octaves = _map.Octaves,
-            Style = new TileStyle(_map.HeightStyle, _map.Layer == LayerMode.StructurePotential ? _map.PotentialStructure : null, _map.BiomeColors),
+            Style = new TileStyle(_map.HeightStyle, _map.Layer == LayerMode.StructurePotential ? _map.PotentialStructure : null, _map.BiomeColors, _map.BiomeRelief),
             Area = new BlockArea(minX, minZ, maxX - minX + 1, maxZ - minZ + 1),
             Scale = SelectedScale?.Value ?? Scales.FirstOrDefault()?.Value ?? 1,
             TileSize = UseTiles ? (int)Math.Round(TileSize ?? DefaultTileSize) : null,
@@ -260,6 +260,10 @@ public sealed partial class ExportViewModel : ViewModelBase, IOpenablePanel
         if (e.PropertyName is nameof(MapViewModel.World) or nameof(MapViewModel.Layer) or nameof(MapViewModel.SampleHeight) or nameof(MapViewModel.Octaves))
         {
             Show(ShowLayer);
+            Refresh();
+        }
+        else if (e.PropertyName == nameof(MapViewModel.BiomeRelief))
+        {
             Refresh();
         }
     }
