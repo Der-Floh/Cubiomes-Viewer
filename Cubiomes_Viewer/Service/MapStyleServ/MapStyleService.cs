@@ -16,7 +16,7 @@ public sealed class MapStyleService : IMapStyleService
 {
     private const string IconKeySuffix = "Icon";
     private const string MarkerColorKeyPrefix = "Marker.";
-    private const string BiomeIconPathFormat = "/Assets/Icons/Biomes/{0}.svg";
+    private const string BiomeIconPathFormat = "/Assets/Icons/MapIcons/Biomes/{0}.svg";
     private const string PinColorKey = "Marker.Pin";
     private const string GlyphColorKey = "Marker.Glyph";
     private const string DarkGlyphColorKey = "Marker.GlyphDark";

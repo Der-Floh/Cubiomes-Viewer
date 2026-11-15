@@ -1,12 +1,18 @@
 using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
+using Avalonia.Platform;
 using Avalonia.Svg.Skia;
+using Avalonia.Threading;
 
+using Cubiomes_Viewer.Engine.Data.Colors;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.StructureServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
 using Cubiomes_Viewer.Service.MapStyleServ;
+using Cubiomes_Viewer.Tests.Controls;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -14,6 +20,50 @@ namespace Cubiomes_Viewer.Tests.Service;
 
 public sealed class MapStyleServiceTests
 {
+    private const string MapGlyphFolder = "avares://Cubiomes_Viewer/Assets/Icons/MapIcons/";
+    private const int GlyphSide = 64;
+    private const int WindowSide = GlyphSide * 2;
+
+    [AvaloniaFact]
+    public void Files_OfTheMapGlyphs_FillWithTheGlyphColour()
+    {
+        var glyphs = AssetLoader.GetAssets(new Uri(MapGlyphFolder), null).Where(asset => asset.AbsolutePath.EndsWith(".svg", StringComparison.Ordinal)).ToList();
+
+        Assert.NotEmpty(glyphs);
+        Assert.All(glyphs, glyph =>
+        {
+            using var reader = new StreamReader(AssetLoader.Open(glyph));
+            var svg = reader.ReadToEnd();
+            Assert.Contains("fill=\"currentColor\"", svg, StringComparison.Ordinal);
+            Assert.DoesNotContain("fill=\"#", svg, StringComparison.Ordinal);
+        });
+    }
+
+    [AvaloniaFact]
+    public void GetDimensionMarker_Glyph_IsDrawnInItsGlyphColour()
+    {
+        var glyph = Assert.IsType<SvgImage>(new MapStyleService(new BiomeCatalog(), new VersionCatalog()).GetDimensionMarker(Dimension.End).Glyph);
+        var glyphColour = Assert.IsType<Color>(glyph.CurrentColor);
+        var window = new Window { Width = WindowSide, Height = WindowSide, Background = Brushes.Red, Content = new Image { Source = glyph, Width = GlyphSide, Height = GlyphSide } };
+        window.Show();
+        try
+        {
+            Dispatcher.UIThread.RunJobs();
+            AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+            using var frame = window.CaptureRenderedFrame();
+            Assert.NotNull(frame);
+
+            var colours = Enumerable.Range(0, WindowSide * WindowSide).Select(index => FramePixels.Read(frame, index % WindowSide, index / WindowSide)).ToHashSet();
+
+            Assert.Contains(new RgbColor(glyphColour.R, glyphColour.G, glyphColour.B), colours);
+            Assert.DoesNotContain(new RgbColor(0, 0, 0), colours);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
     [AvaloniaFact]
     public void GetBiomeMarker_EveryBiomeOfEveryVersion_HasAGlyphOnItsPaletteColour()
     {

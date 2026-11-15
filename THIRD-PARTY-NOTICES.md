@@ -32,7 +32,7 @@ SOFTWARE.
 
 ## Material Symbols
 
-Source: https://fonts.google.com/icons. The icons of the buttons in `Cubiomes_Viewer/Assets/Icons` are Material Symbols in their outlined and filled forms; their fill is changed to `currentColor` so that the app can colour them. The glyphs in `Assets/Icons/Structures`, `Assets/Icons/Biomes` and `Assets/Icons/Dimensions` are drawn for this project.
+Source: https://fonts.google.com/icons. The icons of the buttons in `Cubiomes_Viewer/Assets/Icons` are Material Symbols in their outlined and filled forms; their fill is changed to `currentColor` so that the app can colour them. The map glyphs in the folders below `Assets/Icons` (`MapIcons` and the earlier `Structures`, `Biomes` and `Dimensions`) are drawn for this project.
 
 ```text
 Copyright Google LLC
