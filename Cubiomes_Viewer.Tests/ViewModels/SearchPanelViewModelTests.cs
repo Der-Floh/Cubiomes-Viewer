@@ -611,7 +611,7 @@ public sealed class SearchPanelViewModelTests : IDisposable
     {
         var setup = new SearchSetup
         {
-            Definition = new SearchDefinition { Version = McVersion.V1_21_3, Conditions = [new StructureCondition { Id = 1, Type = StructureType.Village }] },
+            Definition = new SearchDefinition { Conditions = [new StructureCondition { Id = 1, Type = StructureType.Village }] },
             Source = new SeedRangeSource { FirstSeed = 10, LastSeed = 99_999 },
         };
         var stored = new SearchSession { Setup = setup, Search = new SearchSnapshot { Setup = setup, Scanned = 490, NextSeed = 500, Results = [12, 400] } };
@@ -633,7 +633,7 @@ public sealed class SearchPanelViewModelTests : IDisposable
     {
         var setup = new SearchSetup
         {
-            Definition = new SearchDefinition { Version = McVersion.V1_21_3, Conditions = [new StructureCondition { Id = 1, Type = StructureType.Village }] },
+            Definition = new SearchDefinition { Conditions = [new StructureCondition { Id = 1, Type = StructureType.Village }] },
             Source = new SeedRangeSource { FirstSeed = 10, LastSeed = 99_999 },
             Workers = 999,
         };

@@ -7,7 +7,7 @@ namespace Cubiomes_Viewer.Engine.Data.Search;
 /// <summary>What a search looks for: the conditions a seed has to meet in one Minecraft version. Two definitions with the same content are equal.</summary>
 public sealed record SearchDefinition
 {
-    public McVersion Version { get; init; } = McVersion.V1_21_3;
+    public McVersion Version { get; init; } = McVersion.V26_3;
     public bool LargeBiomes { get; init; }
 
     /// <summary>How structures generate in the worlds the search looks at.</summary>

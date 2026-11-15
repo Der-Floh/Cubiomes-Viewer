@@ -48,7 +48,7 @@ public sealed class SelfTestService : ISelfTestService
             RunCheck("Native ABI version", CheckAbiVersion),
             RunCheck("Version catalog matches the native library", CheckVersionCatalog),
             RunCheck("Seed 262 has mushroom fields at the origin", CheckAnchorSeed),
-            .. ReferenceBiomeHash.QuickOverworldHashes.Select(expected =>
+            .. ReferenceBiomeHash.QuickOverworldHashes.Concat(ReferenceBiomeHash.RecordedOverworldHashes).Select(expected =>
                 RunCheck($"Biome regression hash {expected.Version}", () => CheckBiomeHash(expected.Version, expected.Hash))),
             RunCheck("Area generation matches point sampling (1.17 layers)", () => CheckAreaMatchesPoints(McVersion.V1_17_1)),
             RunCheck("Area generation matches point sampling (newest noise)", () => CheckAreaMatchesPoints(_versionCatalog.Newest)),

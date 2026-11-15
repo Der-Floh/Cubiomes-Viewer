@@ -18,6 +18,9 @@ namespace Cubiomes_Viewer.Engine.Tests.Service.ExportServ;
 public sealed class MapExportServiceTests : IDisposable
 {
     private const int SampleHeight = 64;
+    private const int NewestExportSide = 2000;
+    private const byte EndHighlandsBiomeId = 42;
+    private const byte DappledForestBiomeId = 188;
 
     private static readonly BlockArea _area = new(-1000, -700, 2000, 1500);
     private static readonly TileStyle _relief = new(BiomeRelief: true);
@@ -100,6 +103,24 @@ public sealed class MapExportServiceTests : IDisposable
         { "shaded biomes 1.12.2", McVersion.V1_12_2, Dimension.Overworld, 16, "967d4b6622714c2bbe552b827056b72ca5e06d113cee94ac426a082989b72915" },
         { "shaded end 1.21.3", McVersion.V1_21_3, Dimension.End, 16, "25dfa22471bd2c260bc9390ce08b6b95e5cacfdd3f095fa14957489198ac0a4c" },
     };
+
+    public static TheoryData<string, Dimension, int, int, int, byte, string> FixedNewestExports() => new()
+    {
+        { "dappled forest 26.3", Dimension.Overworld, 4, -1200, 500, DappledForestBiomeId, "d103ec612448185aeba8b2d3b469c60d6f6bf08176de9ce97bcb42947eeb3ac6" },
+        { "end ring 26.3", Dimension.End, 16, -372_000, -1000, EndHighlandsBiomeId, "fa3255d44b27128c088c4517fa9c1b86d95551d744f04c96d2df1aa6949439ff" },
+    };
+
+    [Theory]
+    [MemberData(nameof(FixedNewestExports))]
+    public async Task Export_OfTheNewestVersion_ShowsWhatItShowedWhenItWasRecorded(string name, Dimension dimension, int scale, int x, int z, byte shownBiome, string expectedHash)
+    {
+        var request = Request(World(262, McVersion.V26_3, dimension), LayerMode.Biomes, scale) with { Area = new BlockArea(x, z, NewestExportSide, NewestExportSide) };
+
+        var image = PngReader.Read(await ExportAsync(request));
+
+        Assert.Contains(shownBiome, image.Pixels);
+        Assert.True(expectedHash == image.ContentHash, $"{name}: {image.ContentHash}");
+    }
 
     [Theory]
     [MemberData(nameof(FixedShadedExports))]

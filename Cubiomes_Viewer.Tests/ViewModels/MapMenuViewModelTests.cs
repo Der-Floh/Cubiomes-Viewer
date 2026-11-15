@@ -84,6 +84,7 @@ public sealed class MapMenuViewModelTests : IDisposable
     public async Task CopyLink_Executed_CopiesALinkCentredOnTheClickedBlockAtTheMapsZoom()
     {
         _session.Seed = 262;
+        _session.Version = McVersion.V1_21_3;
         _map.Camera = new MapCamera(0, 0, 2);
 
         await _menu.CopyLinkCommand.ExecuteAsync(null);

@@ -73,6 +73,7 @@ internal static class ReferenceStructureHash
 
     public static IReadOnlyList<(McVersion Version, BlockPos Spawn)> Spawns { get; } =
     [
+        (McVersion.V26_3, new BlockPos(-544, -432)),
         (McVersion.V1_21_3, new BlockPos(-544, -432)),
         (McVersion.V1_17_1, new BlockPos(160, -240)),
         (McVersion.V1_12_2, new BlockPos(-12, -68)),

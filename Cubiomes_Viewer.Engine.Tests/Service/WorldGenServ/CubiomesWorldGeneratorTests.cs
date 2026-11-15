@@ -9,6 +9,9 @@ public sealed class CubiomesWorldGeneratorTests
 {
     private const long AnchorSeed = 262;
     private const int MushroomFieldsBiomeId = 14;
+    private const int EndHighlandsBiomeId = 42;
+    private const int EndBarrensBiomeId = 43;
+    private const int DappledForestBiomeId = 188;
     private const int ProbeSize = 8;
 
     public static TheoryData<McVersion, Dimension, int> AllVersionsDimensionsAndScales()
@@ -28,6 +31,26 @@ public sealed class CubiomesWorldGeneratorTests
         generator.Apply(Dimension.Overworld, AnchorSeed);
 
         Assert.Equal(MushroomFieldsBiomeId, generator.GetBiomeAt(scale: 1, x: 0, y: 63, z: 0));
+    }
+
+    [Fact]
+    public void GetBiomeAt_DappledForestOf26_3FoundInTheGame_IsDappledForest()
+    {
+        using var generator = new CubiomesWorldGenerator(McVersion.V26_3, GeneratorFlags.None);
+        generator.Apply(Dimension.Overworld, -3_829_811_542_736_183_482);
+
+        Assert.Equal(DappledForestBiomeId, generator.GetBiomeAt(scale: 1, x: 68_148, y: 77, z: 80_990));
+    }
+
+    [Theory]
+    [InlineData(McVersion.V26_2, EndBarrensBiomeId)]
+    [InlineData(McVersion.V26_3, EndHighlandsBiomeId)]
+    public void GetBiomeAt_EndRingOfMc159283_IsBarrenUntil26_3Fixes(McVersion version, int expected)
+    {
+        using var generator = new CubiomesWorldGenerator(version, GeneratorFlags.None);
+        generator.Apply(Dimension.End, 856_461_443_495_910_397);
+
+        Assert.Equal(expected, generator.GetBiomeAt(scale: 16, x: -371_136 >> 4, y: 0, z: -64 >> 4));
     }
 
     [Fact]

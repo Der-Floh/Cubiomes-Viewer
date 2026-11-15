@@ -15,7 +15,7 @@ public sealed partial class WorldSession : ObservableObject
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Key))]
-    public partial McVersion Version { get; set; } = McVersion.V1_21_3;
+    public partial McVersion Version { get; set; } = McVersion.V26_3;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Key))]

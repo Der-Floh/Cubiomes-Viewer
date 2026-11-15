@@ -9,7 +9,7 @@ public sealed class ViewSettings
     public const int DefaultSampleHeight = 256;
 
     public long Seed { get; set; }
-    public McVersion Version { get; set; } = McVersion.V1_21_3;
+    public McVersion Version { get; set; } = McVersion.V26_3;
     public bool LargeBiomes { get; set; }
     public Dimension Dimension { get; set; } = Dimension.Overworld;
     public int SampleHeight { get; set; } = DefaultSampleHeight;

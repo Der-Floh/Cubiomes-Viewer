@@ -35,6 +35,18 @@ internal static class ReferenceBiomeHash
         (McVersion.V1_0_0, 0xbd794adb),
     ];
 
+    /// <summary>
+    /// Expected <see cref="QuickBits"/> hashes for versions newer than cubiomes' own tests, one for each of their biome
+    /// tables, recorded from the Windows x64 reference build.
+    /// </summary>
+    public static IReadOnlyList<(McVersion Version, uint Hash)> RecordedOverworldHashes { get; } =
+    [
+        (McVersion.V26_3, 0xa8fe92e3),
+        (McVersion.V26_2, 0x043cc9a7),
+        (McVersion.V1_21_5, 0x2b8ce80d),
+        (McVersion.V1_21_WinterDrop, 0xf0ad2439),
+    ];
+
     public static uint Compute(IWorldGenerator generator, Dimension dimension, int bits)
     {
         var radius = 1 << (bits - 1);
