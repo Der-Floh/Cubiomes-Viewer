@@ -89,7 +89,7 @@ cubiomes-viewer-cli --session search.json --out seeds.txt
 
 Each release on [GitHub](https://github.com/Der-Floh/Cubiomes-Viewer/releases) carries:
 
-- **Windows** (x64 and ARM64): a setup and a portable zip. The setup is also on winget as `Der_Floh.CubiomesViewer`.
+- **Windows** (x64 and ARM64): a setup and a portable zip.<!-- The setup is also on winget as `Der_Floh.CubiomesViewer`. -->
 - **Linux** (x64): an AppImage.
 - **macOS** (Apple Silicon and Intel): an installer package and a zipped app. Neither is signed, so macOS blocks the first start until it is allowed in System Settings → Privacy & Security → Open Anyway.
 - **Command line**: the search for each of these systems, as a zip on Windows and a `.tar.gz` elsewhere.
