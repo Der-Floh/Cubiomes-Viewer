@@ -1,3 +1,4 @@
+using Cubiomes_Viewer.Engine.Data;
 using Cubiomes_Viewer.Engine.Data.Compute;
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Worlds;
@@ -204,7 +205,7 @@ public sealed class MapTileServiceTests : IDisposable
         using var generator = _generatorFactory.Create(request.World.Version, GeneratorFlags.None);
         generator.Apply(request.World.Dimension, request.World.Seed);
 
-        var area = TilePyramid.GetArea(request.Tile, samples, request.Y);
+        var area = TilePyramid.GetArea(request.Tile, samples, request.Y, request.Layer == LayerMode.Height ? Constants.HeightTileBorder : 0);
         var values = new short[area.SampleCount];
         if (request.Layer.ToClimateParameter() is { } parameter)
             generator.GenerateClimate(parameter, request.Octaves, area, values);

@@ -4,7 +4,11 @@ using Cubiomes_Viewer.Engine.Data.Maps;
 
 namespace Cubiomes_Viewer.Engine.Service.TileServ;
 
-/// <summary>Brings out the shape of the terrain on a tile that is already painted in its colours.</summary>
+/// <summary>
+/// Brings out the shape of the terrain on a tile that is already painted in its colours. Slopes are measured across the
+/// samples next to each sample; at the edges of a height tile those come from the border of its neighbours' samples that
+/// it keeps, so that tiles side by side meet without a seam.
+/// </summary>
 internal static class HeightRelief
 {
     private const int BytesPerPixel = TileColorizer.BytesPerPixel;
@@ -25,15 +29,16 @@ internal static class HeightRelief
     /// Brightens slopes that face the light and darkens those that face away; flat ground keeps its colour.
     /// Coarser samples flatten the terrain, so the slopes are exaggerated with the square root of the scale.
     /// </summary>
-    public static void Shade(ReadOnlySpan<short> heights, int samples, int scale, int unit, Span<byte> bgra)
+    public static void Shade(TileData heights, int unit, Span<byte> bgra)
     {
-        var exaggeration = Math.Sqrt(scale) / 2;
-        var stepsPerSample = (double)scale * unit;
+        var grid = new HeightGrid(heights);
+        var exaggeration = Math.Sqrt(heights.Request.Tile.Scale) / 2;
+        var stepsPerSample = (double)heights.Request.Tile.Scale * unit;
 
-        for (var z = 0; z < samples; z++)
+        for (var z = 0; z < grid.Samples; z++)
         {
-            for (var x = 0; x < samples; x++)
-                Scale(bgra.Slice((z * samples + x) * BytesPerPixel, ColorChannels), GetSampleBrightness(heights, samples, x, z, stepsPerSample, exaggeration));
+            for (var x = 0; x < grid.Samples; x++)
+                Scale(bgra.Slice((z * grid.Samples + x) * BytesPerPixel, ColorChannels), GetSampleBrightness(grid, x, z, stepsPerSample, exaggeration));
         }
     }
 
@@ -42,17 +47,17 @@ internal static class HeightRelief
     /// tile that cover it. The light falls as on the height layer, only softer, and where one height sample spans several
     /// pixels, its brightness blends smoothly into that of its neighbours, which the samples around the covered ones give.
     /// </summary>
-    public static void ShadeCovered(ReadOnlySpan<short> heights, int heightSamples, int heightScale, int unit, CoveredSamples covered, int pixels, Span<byte> bgra)
+    public static void ShadeCovered(TileData heights, int unit, CoveredSamples covered, int pixels, Span<byte> bgra)
     {
-        var grid = covered.Count + 2;
-        var brightness = ArrayPool<double>.Shared.Rent(grid * grid);
+        var size = covered.Count + 2;
+        var brightness = ArrayPool<double>.Shared.Rent(size * size);
         try
         {
-            FillCoveredBrightness(heights, heightSamples, heightScale, unit, covered, brightness);
+            FillCoveredBrightness(new HeightGrid(heights), heights.Request.Tile.Scale, unit, covered, brightness);
             var (cells, weights) = GetBlend(pixels, pixels / covered.Count);
             for (var z = 0; z < pixels; z++)
             {
-                var (above, below) = (cells[z] * grid, (cells[z] + 1) * grid);
+                var (above, below) = (cells[z] * size, (cells[z] + 1) * size);
                 for (var x = 0; x < pixels; x++)
                 {
                     var (left, right) = (cells[x], cells[x] + 1);
@@ -69,19 +74,20 @@ internal static class HeightRelief
     }
 
     /// <summary>Darkens every sample whose neighbour to the east or south lies in another band of heights.</summary>
-    public static void DrawContours(ReadOnlySpan<short> heights, int samples, int scale, int unit, Span<byte> bgra)
+    public static void DrawContours(TileData heights, int unit, Span<byte> bgra)
     {
-        var interval = GetContourBlocks(scale) * unit;
+        var grid = new HeightGrid(heights);
+        var interval = GetContourBlocks(heights.Request.Tile.Scale) * unit;
 
-        for (var z = 0; z < samples; z++)
+        for (var z = 0; z < grid.Samples; z++)
         {
-            for (var x = 0; x < samples; x++)
+            for (var x = 0; x < grid.Samples; x++)
             {
-                var band = GetBand(heights[z * samples + x], interval);
-                var east = GetBand(heights[z * samples + Math.Min(x + 1, samples - 1)], interval);
-                var south = GetBand(heights[Math.Min(z + 1, samples - 1) * samples + x], interval);
+                var band = GetBand(grid[x, z], interval);
+                var east = GetBand(grid[Math.Min(x + 1, grid.Last), z], interval);
+                var south = GetBand(grid[x, Math.Min(z + 1, grid.Last)], interval);
                 if (band != east || band != south)
-                    Scale(bgra.Slice((z * samples + x) * BytesPerPixel, ColorChannels), ContourBrightness);
+                    Scale(bgra.Slice((z * grid.Samples + x) * BytesPerPixel, ColorChannels), ContourBrightness);
             }
         }
     }
@@ -94,23 +100,20 @@ internal static class HeightRelief
         _ => 64,
     };
 
-    /// <summary>
-    /// The brightness of the covered samples and of the ring of samples around them, row by row; the ring is taken from
-    /// the height tile as far as it reaches, so that biome tiles under the same height tile meet without a seam.
-    /// </summary>
-    private static void FillCoveredBrightness(ReadOnlySpan<short> heights, int samples, int scale, int unit, CoveredSamples covered, Span<double> brightness)
+    /// <summary>The brightness of the covered samples and of the ring of samples around them, row by row.</summary>
+    private static void FillCoveredBrightness(HeightGrid grid, int scale, int unit, CoveredSamples covered, Span<double> brightness)
     {
         var exaggeration = Math.Sqrt(scale) / 2;
         var stepsPerSample = (double)scale * unit;
-        var grid = covered.Count + 2;
+        var size = covered.Count + 2;
 
-        for (var row = 0; row < grid; row++)
+        for (var row = 0; row < size; row++)
         {
-            var z = Math.Clamp(covered.Z + row - 1, 0, samples - 1);
-            for (var column = 0; column < grid; column++)
+            var z = Math.Clamp(covered.Z + row - 1, grid.First, grid.Last);
+            for (var column = 0; column < size; column++)
             {
-                var x = Math.Clamp(covered.X + column - 1, 0, samples - 1);
-                brightness[row * grid + column] = 1 + BiomeReliefStrength * (GetSampleBrightness(heights, samples, x, z, stepsPerSample, exaggeration) - 1);
+                var x = Math.Clamp(covered.X + column - 1, grid.First, grid.Last);
+                brightness[row * size + column] = 1 + BiomeReliefStrength * (GetSampleBrightness(grid, x, z, stepsPerSample, exaggeration) - 1);
             }
         }
     }
@@ -132,12 +135,13 @@ internal static class HeightRelief
         return (cells, weights);
     }
 
-    private static double GetSampleBrightness(ReadOnlySpan<short> heights, int samples, int x, int z, double stepsPerSample, double exaggeration)
+    /// <summary>The brightness of a sample from its slope across the samples next to it, as far as the grid reaches.</summary>
+    private static double GetSampleBrightness(HeightGrid grid, int x, int z, double stepsPerSample, double exaggeration)
     {
-        var (north, south) = (Math.Max(z - 1, 0), Math.Min(z + 1, samples - 1));
-        var (west, east) = (Math.Max(x - 1, 0), Math.Min(x + 1, samples - 1));
-        var riseEast = GetSlope(heights[z * samples + east] - heights[z * samples + west], east - west, stepsPerSample) * exaggeration;
-        var riseSouth = GetSlope(heights[south * samples + x] - heights[north * samples + x], south - north, stepsPerSample) * exaggeration;
+        var (north, south) = (Math.Max(z - 1, grid.First), Math.Min(z + 1, grid.Last));
+        var (west, east) = (Math.Max(x - 1, grid.First), Math.Min(x + 1, grid.Last));
+        var riseEast = GetSlope(grid[east, z] - grid[west, z], east - west, stepsPerSample) * exaggeration;
+        var riseSouth = GetSlope(grid[x, south] - grid[x, north], south - north, stepsPerSample) * exaggeration;
         return GetBrightness(riseEast, riseSouth);
     }
 
@@ -160,5 +164,21 @@ internal static class HeightRelief
     {
         for (var index = 0; index < channels.Length; index++)
             channels[index] = (byte)Math.Min(byte.MaxValue, Math.Round(channels[index] * brightness));
+    }
+
+    /// <summary>The heights of a tile by the column and row of its own samples, from <see cref="First"/> to <see cref="Last"/> into its border.</summary>
+    private readonly ref struct HeightGrid(TileData tile)
+    {
+        private readonly ReadOnlySpan<short> _values = tile.Values;
+        private readonly int _stride = tile.Stride;
+        private readonly int _border = tile.Border;
+
+        public int Samples { get; } = tile.Samples;
+
+        public int First => -_border;
+
+        public int Last => Samples - 1 + _border;
+
+        public short this[int x, int z] => _values[(z + _border) * _stride + x + _border];
     }
 }

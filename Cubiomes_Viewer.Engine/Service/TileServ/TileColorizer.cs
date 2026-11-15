@@ -37,10 +37,12 @@ public sealed class TileColorizer : ITileColorizer
     {
         ArgumentNullException.ThrowIfNull(tile);
 
-        var samples = tile.HasValues ? tile.Values.Length : tile.Biomes.Length;
+        var samples = tile.HasValues ? tile.Samples * tile.Samples : tile.Biomes.Length;
         if (bgra.Length < samples * BytesPerPixel)
             throw new ArgumentException($"The pixel buffer holds {bgra.Length} bytes but {samples} samples need {samples * BytesPerPixel}.", nameof(bgra));
-        if (heights is not null && (!heights.HasValues || heights.Request != GetReliefTile(tile.Request, style)))
+        if (tile.HasValues && tile.Values.Length != tile.Stride * tile.Stride)
+            throw new ArgumentException($"The tile {tile} holds {tile.Values.Length} numbers instead of {tile.Stride * tile.Stride}.", nameof(tile));
+        if (heights is not null && (!heights.HasValues || heights.Values.Length != heights.Stride * heights.Stride || heights.Request != GetReliefTile(tile.Request, style)))
             throw new ArgumentException($"The tile {heights} does not hold the heights that shade the tile {tile} in this style.", nameof(heights));
 
         if (!tile.HasValues)
@@ -52,7 +54,7 @@ public sealed class TileColorizer : ITileColorizer
         }
 
         var layer = GetValues(tile.Request);
-        ColorizeValues(tile.Values, layer.GetRamp(style), layer.Unit, bgra);
+        ColorizeValues(tile, layer.GetRamp(style), layer.Unit, bgra);
         if (tile.Request.Layer == LayerMode.Height)
             AddRelief(tile, style.Height, layer.Unit, bgra);
     }
@@ -86,9 +88,9 @@ public sealed class TileColorizer : ITileColorizer
     private static void AddRelief(TileData tile, HeightStyle style, int unit, Span<byte> bgra)
     {
         if (style == HeightStyle.Shaded)
-            HeightRelief.Shade(tile.Values, tile.Samples, tile.Request.Tile.Scale, unit, bgra);
+            HeightRelief.Shade(tile, unit, bgra);
         else if (style == HeightStyle.Contours)
-            HeightRelief.DrawContours(tile.Values, tile.Samples, tile.Request.Tile.Scale, unit, bgra);
+            HeightRelief.DrawContours(tile, unit, bgra);
     }
 
     private void AddBiomeRelief(TileData tile, TileData heights, Span<byte> bgra)
@@ -97,7 +99,7 @@ public sealed class TileColorizer : ITileColorizer
             throw new ArgumentException($"The tile {tile} holds {tile.Biomes.Length} biomes instead of {tile.Samples * tile.Samples}.", nameof(tile));
 
         var covered = TilePyramid.GetCoveredSamples(tile.Request.Tile, tile.Samples, heights.Request.Tile, heights.Samples);
-        HeightRelief.ShadeCovered(heights.Values, heights.Samples, heights.Request.Tile.Scale, GetValues(heights.Request).Unit, covered, tile.Samples, bgra);
+        HeightRelief.ShadeCovered(heights, GetValues(heights.Request).Unit, covered, tile.Samples, bgra);
     }
 
     private LayerValues GetValues(TileRequest request)
@@ -116,11 +118,15 @@ public sealed class TileColorizer : ITileColorizer
         }
     }
 
-    private void ColorizeValues(ReadOnlySpan<short> values, ColorRamp ramp, int unit, Span<byte> bgra)
+    /// <summary>Paints the tile's own samples; the border it keeps of its neighbours' only feeds the relief.</summary>
+    private void ColorizeValues(TileData tile, ColorRamp ramp, int unit, Span<byte> bgra)
     {
         var table = _colorTables.GetOrAdd((ramp, unit), CreateColorTable);
-        for (var index = 0; index < values.Length; index++)
-            Write(bgra.Slice(index * BytesPerPixel, BytesPerPixel), table[(ushort)values[index]]);
+        for (var z = 0; z < tile.Samples; z++)
+        {
+            for (var x = 0; x < tile.Samples; x++)
+                Write(bgra.Slice((z * tile.Samples + x) * BytesPerPixel, BytesPerPixel), table[(ushort)tile.GetValue(x, z)]);
+        }
     }
 
     /// <summary>The colour of every number a sample can hold, at the index its bits give as an unsigned number.</summary>

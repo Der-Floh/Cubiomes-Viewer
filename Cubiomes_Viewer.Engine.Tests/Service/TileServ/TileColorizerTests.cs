@@ -118,8 +118,9 @@ public sealed class TileColorizerTests
     private static TileData CreateBiomeTile(params byte[] biomes)
         => new() { Request = new TileRequest(_world, LayerMode.Biomes, 64, new TileKey(4, 0, 0)), Samples = biomes.Length, Biomes = biomes };
 
+    /// <summary>A square tile of the numbers, row by row.</summary>
     private static TileData CreateValueTile(LayerMode layer, params short[] values)
-        => new() { Request = new TileRequest(_world, layer, 0, new TileKey(4, 0, 0)), Samples = values.Length, Values = values };
+        => new() { Request = new TileRequest(_world, layer, 0, new TileKey(4, 0, 0)), Samples = (int)Math.Sqrt(values.Length), Values = values };
 
     private static RgbColor ReadColor(byte[] pixels, int index)
     {

@@ -126,6 +126,20 @@ public sealed class TileColorizerReliefTests
     }
 
     [Fact]
+    public void Colorize_BiomeTilesUnderNeighbouringHeightTiles_MeetWithoutAJump()
+    {
+        static int GetBlocks(int x, int _) => 64 + (x - Samples) * (x - Samples) * BlocksPerStep;
+        var (westHeights, eastHeights) = (CreateBorderedHeightTile(new TileKey(4, 0, 0), GetBlocks), CreateBorderedHeightTile(new TileKey(4, 1, 0), GetBlocks));
+        var (west, east) = (Paint(CreateBiomeTile(new TileKey(1, 3, 0)), _relief, westHeights), Paint(CreateBiomeTile(new TileKey(1, 4, 0)), _relief, eastHeights));
+
+        var row = Enumerable.Range(0, Samples).Select(pixel => GetLight(west, pixel)).Concat(Enumerable.Range(0, Samples).Select(pixel => GetLight(east, pixel))).ToArray();
+
+        var steps = row.Zip(row.Skip(1), (left, right) => Math.Abs(right - left)).ToArray();
+        var largestInside = steps.Where((_, index) => index != Samples - 1).Max();
+        Assert.True(steps[Samples - 1] <= largestInside, $"The step between the tiles is {steps[Samples - 1]}, inside them at most {largestInside}.");
+    }
+
+    [Fact]
     public void Colorize_HeightsOfAnotherTile_Throws()
     {
         var tile = CreateBiomeTile(_tileAtOneToFour);
@@ -155,6 +169,18 @@ public sealed class TileColorizerReliefTests
             heights[index] = (short)(getBlocks(index % Samples, index / Samples) * Constants.HeightUnit);
 
         return new TileData { Request = GetHeightRequest(key), Samples = Samples, Values = heights };
+    }
+
+    /// <summary>A height tile cut from one surface, given by the column and row of the height samples, with the border height tiles keep.</summary>
+    private static TileData CreateBorderedHeightTile(TileKey key, Func<int, int, int> getBlocks)
+    {
+        const int Border = Constants.HeightTileBorder;
+        var stride = Samples + 2 * Border;
+        var heights = new short[stride * stride];
+        for (var index = 0; index < heights.Length; index++)
+            heights[index] = (short)(getBlocks(key.X * Samples + index % stride - Border, key.Z * Samples + index / stride - Border) * Constants.HeightUnit);
+
+        return new TileData { Request = GetHeightRequest(key), Samples = Samples, Border = Border, Values = heights };
     }
 
     private static TileRequest GetHeightRequest(TileKey key) => MapContent.For(_world, LayerMode.Height, 0, 0).GetRequest(key);

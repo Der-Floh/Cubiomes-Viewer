@@ -84,9 +84,12 @@ public static class TilePyramid
         return tiles;
     }
 
-    /// <summary>The generator area of a tile. <paramref name="blockY"/> is in blocks; coarser scales sample the vertical axis in cells of 4 blocks.</summary>
-    public static BiomeArea GetArea(TileKey tile, int samples, int blockY)
-        => new(tile.Scale, tile.X * samples, tile.Z * samples, samples, samples, tile.Scale == 1 ? blockY : blockY >> VerticalBiomeCellShift);
+    /// <summary>
+    /// The generator area of a tile, widened by <paramref name="border"/> samples on each side. <paramref name="blockY"/> is in
+    /// blocks; coarser scales sample the vertical axis in cells of 4 blocks.
+    /// </summary>
+    public static BiomeArea GetArea(TileKey tile, int samples, int blockY, int border = 0)
+        => new(tile.Scale, tile.X * samples - border, tile.Z * samples - border, samples + 2 * border, samples + 2 * border, tile.Scale == 1 ? blockY : blockY >> VerticalBiomeCellShift);
 
     /// <summary>
     /// The tile of another pyramid that covers <paramref name="tile"/> whole with samples no finer than its own, each

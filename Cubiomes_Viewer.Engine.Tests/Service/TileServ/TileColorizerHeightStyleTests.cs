@@ -89,6 +89,26 @@ public sealed class TileColorizerHeightStyleTests
     [Theory]
     [InlineData(HeightStyle.Shaded)]
     [InlineData(HeightStyle.Contours)]
+    public void Colorize_BorderedHeightTilesSideBySide_PaintWhatOneWideTilePaints(HeightStyle style)
+    {
+        static int GetBlocks(int x, int z) => 62 + (x - Samples) * (x - Samples) + 3 * x + z;
+        var (west, east, whole) = (CreateBorderedHeightTile(0, Samples, GetBlocks), CreateBorderedHeightTile(1, Samples, GetBlocks), CreateBorderedHeightTile(0, 2 * Samples, GetBlocks));
+
+        var (westPixels, eastPixels, wholePixels) = (Paint(west, style), Paint(east, style), Paint(whole, style));
+
+        for (var z = 0; z < Samples; z++)
+        {
+            for (var x = 0; x < Samples; x++)
+            {
+                Assert.Equal(GetChannels(wholePixels, z * 2 * Samples + x), GetChannels(westPixels, z * Samples + x));
+                Assert.Equal(GetChannels(wholePixels, z * 2 * Samples + Samples + x), GetChannels(eastPixels, z * Samples + x));
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData(HeightStyle.Shaded)]
+    [InlineData(HeightStyle.Contours)]
     [InlineData(HeightStyle.Grayscale)]
     public void Colorize_HeightStyleOnAnotherLayer_ChangesNothing(HeightStyle style)
     {
@@ -112,6 +132,18 @@ public sealed class TileColorizerHeightStyleTests
             heights[index] = (short)(getBlocks(index % Samples, index / Samples) * Constants.HeightUnit);
 
         return new TileData { Request = new TileRequest(_world, LayerMode.Height, 0, new TileKey(Scale, 0, 0)), Samples = Samples, Values = heights };
+    }
+
+    /// <summary>A height tile of a row of tiles <paramref name="samples"/> wide, cut from one surface with the border height tiles keep.</summary>
+    private static TileData CreateBorderedHeightTile(int tileX, int samples, Func<int, int, int> getBlocks)
+    {
+        const int Border = Constants.HeightTileBorder;
+        var stride = samples + 2 * Border;
+        var heights = new short[stride * stride];
+        for (var index = 0; index < heights.Length; index++)
+            heights[index] = (short)(getBlocks(tileX * samples + index % stride - Border, index / stride - Border) * Constants.HeightUnit);
+
+        return new TileData { Request = new TileRequest(_world, LayerMode.Height, 0, new TileKey(Scale, tileX, 0)), Samples = samples, Border = Border, Values = heights };
     }
 
     private static byte[] GetChannels(byte[] pixels, int sample) => pixels.AsSpan(sample * TileColorizer.BytesPerPixel, 3).ToArray();

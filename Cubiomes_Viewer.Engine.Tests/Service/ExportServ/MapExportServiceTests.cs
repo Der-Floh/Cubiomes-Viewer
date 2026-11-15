@@ -78,8 +78,8 @@ public sealed class MapExportServiceTests : IDisposable
         { "village potential 1.20.6", McVersion.V1_20_6, Dimension.Overworld, LayerMode.StructurePotential, 16, HeightStyle.Shaded, StructureType.Village, "fd0bc1f3b27e06d4b9d6bd6135f580afdcca876e2ed286ed06aa5eb49c6a3d3c" },
         { "ocean temperature 1.16.5", McVersion.V1_16_5, Dimension.Overworld, LayerMode.OceanTemperature, 16, HeightStyle.Shaded, null, "4757f263a3d3268cac6ca4d10b3ae1a3fee487a6b9316c756972e3b488ae6e56" },
         { "temperature 1.18.2", McVersion.V1_18_2, Dimension.Overworld, LayerMode.Temperature, 16, HeightStyle.Shaded, null, "5a6c409acfa175fec86c9d9733e90e020de3338661f839dc3883960367c25978" },
-        { "height shaded 1.21.3", McVersion.V1_21_3, Dimension.Overworld, LayerMode.Height, 16, HeightStyle.Shaded, null, "a78e0b6a083b6bb1cde344027a400e3ab3c1322297db39d441a51a605bfae1b4" },
-        { "height contours 1.12.2", McVersion.V1_12_2, Dimension.Overworld, LayerMode.Height, 16, HeightStyle.Contours, null, "d70e95fb3669103dde9eae4b47b77af977834485181834a5cc189c2dd115957f" },
+        { "height shaded 1.21.3", McVersion.V1_21_3, Dimension.Overworld, LayerMode.Height, 16, HeightStyle.Shaded, null, "4e127b30ebd273fb62b88f13b0f28bb234285bd3fd4ad8507777bd089e4d5f29" },
+        { "height contours 1.12.2", McVersion.V1_12_2, Dimension.Overworld, LayerMode.Height, 16, HeightStyle.Contours, null, "28e8e9435ca43d8fd591a50cbcfbb5b2b468ff7680b1a9ba091c4c6a03051a74" },
     };
 
     [Theory]
@@ -95,10 +95,10 @@ public sealed class MapExportServiceTests : IDisposable
 
     public static TheoryData<string, McVersion, Dimension, int, string> FixedShadedExports() => new()
     {
-        { "shaded biomes 1.21.3", McVersion.V1_21_3, Dimension.Overworld, 4, "759890a62c5d9c6ef9319d9106cc76ab4c4176819a6fde4972065dc0af1a9099" },
-        { "shaded biomes 1.21.3 at 1:1", McVersion.V1_21_3, Dimension.Overworld, 1, "198535ab9206feaa5dbb635530258cddce69911989760138ab07bc83cff4f87f" },
-        { "shaded biomes 1.12.2", McVersion.V1_12_2, Dimension.Overworld, 16, "30b58b8b31efcf6b6077793c0d8cb17682bcde61023f5a2229898f8fcc7ad1f0" },
-        { "shaded end 1.21.3", McVersion.V1_21_3, Dimension.End, 16, "7f0a5bea4aa3d5952bcd888e62698b0fd726f605453a0b2d2697f709755c251e" },
+        { "shaded biomes 1.21.3", McVersion.V1_21_3, Dimension.Overworld, 4, "e41c5a2b6375c4fc3a3d16812b05f1d4e1e6669bbe4176aeaec95fc27f2a3095" },
+        { "shaded biomes 1.21.3 at 1:1", McVersion.V1_21_3, Dimension.Overworld, 1, "02a16837ee3cbd8007b1398cec7ed76f3280828cd5e3317d0290fd9c989edfc9" },
+        { "shaded biomes 1.12.2", McVersion.V1_12_2, Dimension.Overworld, 16, "20448e4f1bdb4c43419c9c60e8b79214c0645b3cb8bb23901531ea3df252e278" },
+        { "shaded end 1.21.3", McVersion.V1_21_3, Dimension.End, 16, "25dfa22471bd2c260bc9390ce08b6b95e5cacfdd3f095fa14957489198ac0a4c" },
     };
 
     [Theory]

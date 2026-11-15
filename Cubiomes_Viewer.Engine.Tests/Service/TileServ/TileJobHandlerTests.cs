@@ -1,3 +1,4 @@
+using Cubiomes_Viewer.Engine.Data;
 using Cubiomes_Viewer.Engine.Data.Compute;
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Worlds;
@@ -38,10 +39,39 @@ public sealed class TileJobHandlerTests
 
                 var tile = _handler.Handle(new TileJob(request, Samples), context, CancellationToken.None);
 
+                var border = layer.Mode == LayerMode.Height ? Constants.HeightTileBorder : 0;
                 Assert.Equal(request, tile.Request);
+                Assert.Equal(border, tile.Border);
                 Assert.Equal(layer.Mode.HasBiomeSamples ? Samples * Samples : 0, tile.Biomes.Length);
-                Assert.Equal(layer.Mode.HasBiomeSamples ? 0 : Samples * Samples, tile.Values.Length);
-                Assert.Equal(Samples * Samples * (layer.Mode.HasBiomeSamples ? sizeof(byte) : sizeof(short)), tile.ByteSize);
+                Assert.Equal(layer.Mode.HasBiomeSamples ? 0 : tile.Stride * tile.Stride, tile.Values.Length);
+                Assert.Equal(layer.Mode.HasBiomeSamples ? Samples * Samples : tile.Values.Length * sizeof(short), tile.ByteSize);
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData(McVersion.V1_21_3, Dimension.Overworld, 4)]
+    [InlineData(McVersion.V1_21_3, Dimension.Overworld, 64)]
+    [InlineData(McVersion.V1_16_5, Dimension.Overworld, 4)]
+    [InlineData(McVersion.V1_16_5, Dimension.Overworld, 16)]
+    [InlineData(McVersion.V1_21_3, Dimension.End, 4)]
+    [InlineData(McVersion.V1_21_3, Dimension.End, 16)]
+    public void Handle_HeightTilesSideBySide_KeepTheSamplesOfTheOtherInTheirBorders(McVersion version, Dimension dimension, int scale)
+    {
+        const int Border = Constants.HeightTileBorder;
+        var content = MapContent.For(new WorldKey(262, version, dimension, GeneratorFlags.None), LayerMode.Height, 0, octaves: 0);
+        using var context = new WorkerContext(new CubiomesWorldGeneratorFactory());
+
+        var west = _handler.Handle(new TileJob(content.GetRequest(new TileKey(scale, -1, 2)), Samples), context, CancellationToken.None);
+        var east = _handler.Handle(new TileJob(content.GetRequest(new TileKey(scale, 0, 2)), Samples), context, CancellationToken.None);
+        var south = _handler.Handle(new TileJob(content.GetRequest(new TileKey(scale, -1, 3)), Samples), context, CancellationToken.None);
+
+        for (var along = -Border; along < Samples + Border; along++)
+        {
+            for (var into = -Border; into < Border; into++)
+            {
+                Assert.Equal(east.GetValue(into, along), west.GetValue(Samples + into, along));
+                Assert.Equal(south.GetValue(along, into), west.GetValue(along, Samples + into));
             }
         }
     }

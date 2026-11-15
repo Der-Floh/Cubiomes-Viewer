@@ -1,3 +1,4 @@
+using Cubiomes_Viewer.Engine.Data;
 using Cubiomes_Viewer.Engine.Data.Compute;
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Worlds;
@@ -17,11 +18,12 @@ public sealed class TileJobHandler : IJobHandler<TileJob, TileData>
 
         var request = job.Request;
         var generator = context.GetGenerator(request.World);
-        var area = TilePyramid.GetArea(request.Tile, job.Samples, request.Y);
+        var border = request.Layer == LayerMode.Height ? Constants.HeightTileBorder : 0;
+        var area = TilePyramid.GetArea(request.Tile, job.Samples, request.Y, border);
 
         return request.Layer.HasBiomeSamples
             ? new TileData { Request = request, Samples = job.Samples, Biomes = GenerateBiomes(generator, request.Layer, area) }
-            : new TileData { Request = request, Samples = job.Samples, Values = GenerateValues(generator, request, area) };
+            : new TileData { Request = request, Samples = job.Samples, Border = border, Values = GenerateValues(generator, request, area) };
     }
 
     private static byte[] GenerateBiomes(IWorldGenerator generator, LayerMode layer, BiomeArea area)

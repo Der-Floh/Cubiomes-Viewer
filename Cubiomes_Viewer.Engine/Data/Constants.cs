@@ -20,4 +20,10 @@ public static class Constants
 
     /// <summary>Surface heights are stored as whole numbers of this many steps per block.</summary>
     public const int HeightUnit = 16;
+
+    /// <summary>
+    /// The samples of its neighbours a height tile keeps on each side. The slope of a sample is measured across the samples
+    /// next to it, and light blended between samples needs the slope of the sample beyond the edge as well.
+    /// </summary>
+    public const int HeightTileBorder = 2;
 }
