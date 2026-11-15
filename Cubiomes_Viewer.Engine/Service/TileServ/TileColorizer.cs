@@ -6,6 +6,7 @@ using Cubiomes_Viewer.Engine.Data.Biomes;
 using Cubiomes_Viewer.Engine.Data.Colors;
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Worlds;
+using Cubiomes_Viewer.Engine.Extensions;
 using Cubiomes_Viewer.Engine.Service.LayerServ;
 using Cubiomes_Viewer.Engine.Service.StructureServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
@@ -32,17 +33,21 @@ public sealed class TileColorizer : ITileColorizer
         _structureFinder = structureFinder;
     }
 
-    public void Colorize(TileData tile, TileStyle style, Span<byte> bgra)
+    public void Colorize(TileData tile, TileStyle style, Span<byte> bgra, TileData? heights = null)
     {
         ArgumentNullException.ThrowIfNull(tile);
 
         var samples = tile.HasValues ? tile.Values.Length : tile.Biomes.Length;
         if (bgra.Length < samples * BytesPerPixel)
             throw new ArgumentException($"The pixel buffer holds {bgra.Length} bytes but {samples} samples need {samples * BytesPerPixel}.", nameof(bgra));
+        if (heights is not null && (!heights.HasValues || heights.Request != GetReliefTile(tile.Request, style)))
+            throw new ArgumentException($"The tile {heights} does not hold the heights that shade the tile {tile} in this style.", nameof(heights));
 
         if (!tile.HasValues)
         {
             ColorizeBiomes(tile.Biomes, GetBiomeColors(style, tile.Request.World.Version), bgra);
+            if (heights is not null)
+                AddBiomeRelief(tile, heights, bgra);
             return;
         }
 
@@ -50,6 +55,20 @@ public sealed class TileColorizer : ITileColorizer
         ColorizeValues(tile.Values, layer.GetRamp(style), layer.Unit, bgra);
         if (tile.Request.Layer == LayerMode.Height)
             AddRelief(tile, style.Height, layer.Unit, bgra);
+    }
+
+    public TileRequest? GetReliefTile(TileRequest tile, TileStyle style)
+    {
+        if (!style.BiomeRelief || !tile.Layer.ShowsBiomeMap)
+            return null;
+
+        var world = tile.World;
+        if (!_layerCatalog.IsAvailable(LayerMode.Height, world.Version, world.Dimension))
+            return null;
+
+        return TilePyramid.FindCoveringTile(TileMetrics.For(world, tile.Layer), tile.Tile, TileMetrics.For(world, LayerMode.Height)) is { } key
+            ? MapContent.For(world, LayerMode.Height, 0, 0).GetRequest(key)
+            : null;
     }
 
     /// <summary>The palette of the style, or that palette with every biome dimmed in which the structure type cannot generate.</summary>
@@ -70,6 +89,15 @@ public sealed class TileColorizer : ITileColorizer
             HeightRelief.Shade(tile.Values, tile.Samples, tile.Request.Tile.Scale, unit, bgra);
         else if (style == HeightStyle.Contours)
             HeightRelief.DrawContours(tile.Values, tile.Samples, tile.Request.Tile.Scale, unit, bgra);
+    }
+
+    private void AddBiomeRelief(TileData tile, TileData heights, Span<byte> bgra)
+    {
+        if (tile.Biomes.Length != tile.Samples * tile.Samples)
+            throw new ArgumentException($"The tile {tile} holds {tile.Biomes.Length} biomes instead of {tile.Samples * tile.Samples}.", nameof(tile));
+
+        var covered = TilePyramid.GetCoveredSamples(tile.Request.Tile, tile.Samples, heights.Request.Tile, heights.Samples);
+        HeightRelief.ShadeCovered(heights.Values, heights.Samples, heights.Request.Tile.Scale, GetValues(heights.Request).Unit, covered, tile.Samples, bgra);
     }
 
     private LayerValues GetValues(TileRequest request)

@@ -105,4 +105,51 @@ public sealed class TilePyramidTests
     [InlineData(McVersion.Beta1_7, Dimension.Overworld, 128)]
     public void For_World_PicksMetricsByGeneratorKind(McVersion version, Dimension dimension, int expectedTileSamples)
         => Assert.Equal(expectedTileSamples, TileMetrics.For(new WorldKey(0, version, dimension, GeneratorFlags.None)).TileSamples);
+
+    [Theory]
+    [InlineData(McVersion.V1_21_3, Dimension.Overworld, 1, -1, 5, 4, -1, 1)]
+    [InlineData(McVersion.V1_21_3, Dimension.Overworld, 4, -3, 7, 4, -3, 7)]
+    [InlineData(McVersion.V1_21_3, Dimension.Overworld, 4096, 2, -2, 4096, 2, -2)]
+    [InlineData(McVersion.V1_16_5, Dimension.Overworld, 1, -1, 3, 4, -1, 3)]
+    [InlineData(McVersion.V1_16_5, Dimension.Overworld, 64, 5, -5, 256, 5, -5)]
+    [InlineData(McVersion.V1_21_3, Dimension.End, 1, -1, 2, 4, -1, 1)]
+    [InlineData(McVersion.V1_21_3, Dimension.End, 16, 3, -3, 64, 1, -2)]
+    public void FindCoveringTile_HeightsOfABiomeTile_IsTheFinestHeightTileAroundIt(McVersion version, Dimension dimension, int scale, int x, int z, int expectedScale, int expectedX, int expectedZ)
+    {
+        var world = new WorldKey(0, version, dimension, GeneratorFlags.None);
+
+        var covering = TilePyramid.FindCoveringTile(TileMetrics.For(world, LayerMode.Biomes), new TileKey(scale, x, z), TileMetrics.For(world, LayerMode.Height));
+
+        Assert.Equal(new TileKey(expectedScale, expectedX, expectedZ), covering);
+    }
+
+    [Theory]
+    [InlineData(McVersion.V1_16_5, Dimension.Overworld, 256)]
+    [InlineData(McVersion.V1_21_3, Dimension.End, 64)]
+    [InlineData(McVersion.V1_21_3, Dimension.End, 4096)]
+    public void FindCoveringTile_NoHeightTileSpansTheBiomeTile_ReturnsNull(McVersion version, Dimension dimension, int scale)
+    {
+        var world = new WorldKey(0, version, dimension, GeneratorFlags.None);
+
+        Assert.Null(TilePyramid.FindCoveringTile(TileMetrics.For(world, LayerMode.Biomes), new TileKey(scale, 1, -1), TileMetrics.For(world, LayerMode.Height)));
+    }
+
+    [Theory]
+    [InlineData(1, -1, 5, 128, 4, -1, 1, 128, 96, 32, 32)]
+    [InlineData(4, 3, 3, 128, 4, 3, 3, 128, 0, 0, 128)]
+    [InlineData(4, 3, -3, 256, 16, 3, -3, 64, 0, 0, 64)]
+    [InlineData(16, 3, -3, 128, 64, 1, -2, 64, 32, 32, 32)]
+    public void GetCoveredSamples_TileInsideACoarserTile_LiesWhereItsBlocksAre(int scale, int x, int z, int samples, int coveringScale, int coveringX, int coveringZ, int coveringSamples, int expectedX, int expectedZ, int expectedCount)
+    {
+        var covered = TilePyramid.GetCoveredSamples(new TileKey(scale, x, z), samples, new TileKey(coveringScale, coveringX, coveringZ), coveringSamples);
+
+        Assert.Equal(new CoveredSamples(expectedX, expectedZ, expectedCount), covered);
+    }
+
+    [Theory]
+    [InlineData(4, 1, 0, 4, 0, 0)]
+    [InlineData(16, 0, 0, 4, 0, 0)]
+    [InlineData(1, -1, 0, 4, 0, 0)]
+    public void GetCoveredSamples_TileNotCoveredWhole_Throws(int scale, int x, int z, int coveringScale, int coveringX, int coveringZ)
+        => Assert.Throws<ArgumentException>(() => TilePyramid.GetCoveredSamples(new TileKey(scale, x, z), 128, new TileKey(coveringScale, coveringX, coveringZ), 128));
 }
