@@ -59,8 +59,10 @@ public sealed class MapSettings
         StructureType.Mansion,
         StructureType.AncientCity,
         StructureType.TrialChambers,
+        StructureType.AbandonedCamp,
         StructureType.Fortress,
         StructureType.Bastion,
+        StructureType.NetherFossil,
         StructureType.EndCity,
     ];
 }

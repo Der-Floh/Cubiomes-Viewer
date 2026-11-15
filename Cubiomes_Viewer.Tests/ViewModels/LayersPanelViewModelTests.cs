@@ -169,7 +169,7 @@ public sealed class LayersPanelViewModelTests : IDisposable
         _services.GetRequiredService<WorldSession>().Dimension = Dimension.Nether;
 
         Assert.Equal(LayerMode.StructurePotential, _main.Map.Layer);
-        Assert.Equal(["Nether fortress", "Bastion remnant", "Ruined portal"], _layers.PotentialStructures.Select(structure => structure.Display));
+        Assert.Equal(["Nether fortress", "Bastion remnant", "Ruined portal", "Nether fossil"], _layers.PotentialStructures.Select(structure => structure.Display));
         Assert.Equal(StructureType.Fortress, _layers.SelectedPotentialStructure?.Value);
         Assert.Equal(StructureType.Fortress, _main.Map.PotentialStructure);
     }
@@ -202,8 +202,8 @@ public sealed class LayersPanelViewModelTests : IDisposable
         _services.GetRequiredService<WorldSession>().Dimension = Dimension.Nether;
 
         Assert.False(_layers.IsOverworld);
-        Assert.Equal(["Nether fortress", "Bastion remnant", "Ruined portal"], _layers.Structures.Select(structure => structure.Toggle.Name));
-        Assert.Equal([true, true, false], _layers.Structures.Select(structure => structure.Toggle.IsChecked));
+        Assert.Equal(["Nether fortress", "Bastion remnant", "Ruined portal", "Nether fossil"], _layers.Structures.Select(structure => structure.Toggle.Name));
+        Assert.Equal([true, true, false, true], _layers.Structures.Select(structure => structure.Toggle.IsChecked));
     }
 
     [AvaloniaFact]
@@ -261,7 +261,8 @@ public sealed class LayersPanelViewModelTests : IDisposable
         Assert.Equal(["Nether wart room", "Blaze spawner"], fortress.Features.Select(feature => feature.Name));
         Assert.All(fortress.Features, feature => Assert.Equal(["With", "Without"], feature.Options.Select(option => option.Name)));
         Assert.Equal(["Housing units", "Hoglin stables", "Treasure room", "Bridge"], GetStructure("Bastion remnant").Features.Single().Options.Select(option => option.Name));
-        Assert.All(_layers.Structures, structure => Assert.True(structure.HasFeatures));
+        Assert.Equal(["Nether fortress", "Bastion remnant", "Ruined portal"], _layers.Structures.Where(structure => structure.HasFeatures).Select(structure => structure.Toggle.Name));
+        Assert.False(GetStructure("Nether fossil").HasFeatures);
         Assert.All(_layers.Structures.SelectMany(structure => structure.Features).SelectMany(feature => feature.Options), option => Assert.True(option.IsChecked));
         Assert.DoesNotContain(_layers.Structures, structure => structure.IsFiltered);
         Assert.Empty(_main.Map.HiddenStructureOptions);

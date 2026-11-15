@@ -51,6 +51,8 @@ public sealed class LocateServiceTests : IDisposable
         { StructureType.Treasure, McVersion.V1_21_3, 0, 0, 800 },
         { StructureType.Geode, McVersion.V1_21_3, -15, 17, 400 },
         { StructureType.Mineshaft, McVersion.V1_12_2, 1, 1, 400 },
+        { StructureType.AbandonedCamp, McVersion.V26_3, -800, 900, 3000 },
+        { StructureType.NetherFossil, McVersion.V1_21_3, 100, -100, 1000 },
     };
 
     [Theory]

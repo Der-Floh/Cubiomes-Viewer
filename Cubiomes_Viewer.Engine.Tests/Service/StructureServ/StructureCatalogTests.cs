@@ -41,7 +41,7 @@ public sealed class StructureCatalogTests
         var nether = _catalog.GetAvailable(McVersion.V1_21_3, Dimension.Nether).Select(structure => structure.Type);
         var end = _catalog.GetAvailable(McVersion.V1_21_3, Dimension.End).Select(structure => structure.Type);
 
-        Assert.Equal([StructureType.Fortress, StructureType.Bastion, StructureType.RuinedPortalNether], nether);
+        Assert.Equal([StructureType.Fortress, StructureType.Bastion, StructureType.RuinedPortalNether, StructureType.NetherFossil], nether);
         Assert.Equal([StructureType.EndCity, StructureType.EndGateway], end);
     }
 

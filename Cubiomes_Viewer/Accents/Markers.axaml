@@ -17,11 +17,13 @@
     <x:String x:Key="AncientCityIcon">/Assets/Icons/MapIcons/Structures/ancient_city.svg</x:String>
     <x:String x:Key="TrailRuinsIcon">/Assets/Icons/MapIcons/Structures/trail_ruins.svg</x:String>
     <x:String x:Key="TrialChambersIcon">/Assets/Icons/MapIcons/Structures/trial_chambers.svg</x:String>
+    <x:String x:Key="AbandonedCampIcon">/Assets/Icons/MapIcons/Structures/abandoned_camp.svg</x:String>
     <x:String x:Key="MineshaftIcon">/Assets/Icons/MapIcons/Structures/mineshaft.svg</x:String>
     <x:String x:Key="DesertWellIcon">/Assets/Icons/MapIcons/Structures/desert_well.svg</x:String>
     <x:String x:Key="GeodeIcon">/Assets/Icons/MapIcons/Structures/geode.svg</x:String>
     <x:String x:Key="FortressIcon">/Assets/Icons/MapIcons/Structures/fortress.svg</x:String>
     <x:String x:Key="BastionIcon">/Assets/Icons/MapIcons/Structures/bastion.svg</x:String>
+    <x:String x:Key="NetherFossilIcon">/Assets/Icons/MapIcons/Structures/nether_fossil.svg</x:String>
     <x:String x:Key="EndCityIcon">/Assets/Icons/MapIcons/Structures/end_city.svg</x:String>
     <x:String x:Key="EndGatewayIcon">/Assets/Icons/MapIcons/Structures/end_gateway.svg</x:String>
     <x:String x:Key="SpawnIcon">/Assets/Icons/MapIcons/Structures/spawn.svg</x:String>

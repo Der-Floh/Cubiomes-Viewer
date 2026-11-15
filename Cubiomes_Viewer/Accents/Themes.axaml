@@ -25,12 +25,14 @@
     <Color x:Key="Marker.AncientCity">#1c4a5a</Color>
     <Color x:Key="Marker.TrailRuins">#b0704a</Color>
     <Color x:Key="Marker.TrialChambers">#c2622d</Color>
+    <Color x:Key="Marker.AbandonedCamp">#2f7d6d</Color>
     <Color x:Key="Marker.Mineshaft">#616161</Color>
     <Color x:Key="Marker.DesertWell">#a8893a</Color>
     <Color x:Key="Marker.Geode">#9c5fd6</Color>
     <Color x:Key="Marker.Fortress">#8b1a1a</Color>
     <Color x:Key="Marker.Bastion">#37303b</Color>
     <Color x:Key="Marker.RuinedPortalNether">#7b1fa2</Color>
+    <Color x:Key="Marker.NetherFossil">#8a7a5e</Color>
     <Color x:Key="Marker.EndCity">#a569bd</Color>
     <Color x:Key="Marker.EndGateway">#0e7c86</Color>
     <Color x:Key="Marker.Spawn">#d32f2f</Color>

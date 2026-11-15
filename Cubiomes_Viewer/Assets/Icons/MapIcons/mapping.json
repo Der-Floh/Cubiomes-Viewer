@@ -28,7 +28,9 @@
         "trail_ruins",
         "treasure",
         "trial_chambers",
-        "village"
+        "village",
+        "abandoned_camp",
+        "nether_fossil"
     ],
     "Biomes": [
         "badlands_plateau",
