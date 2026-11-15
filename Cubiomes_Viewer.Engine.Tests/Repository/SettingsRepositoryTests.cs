@@ -32,6 +32,7 @@ public sealed class SettingsRepositoryTests : IDisposable
 
         Assert.Equal(AppTheme.System, settings.Appearance.Theme);
         Assert.Equal(MapSettings.DefaultCacheMegabytes, settings.Map.CacheMegabytes);
+        Assert.False(settings.Map.BiomeRelief);
     }
 
     [Fact]
@@ -42,7 +43,7 @@ public sealed class SettingsRepositoryTests : IDisposable
             Appearance = { Theme = AppTheme.Dark },
             Map =
             {
-                CacheMegabytes = 512, SmoothMotion = false, ShowGrid = false, MarkerSize = MarkerSize.Large, Pins = [new MapPin { Seed = -42, Dimension = Dimension.Nether, X = 7, Z = -9, Name = "Blaze farm", Icon = "Fortress" }],
+                CacheMegabytes = 512, SmoothMotion = false, ShowGrid = false, BiomeRelief = true, MarkerSize = MarkerSize.Large, Pins = [new MapPin { Seed = -42, Dimension = Dimension.Nether, X = 7, Z = -9, Name = "Blaze farm", Icon = "Fortress" }],
                 Measurements = [new MapMeasurement { Seed = -42, Dimension = Dimension.Nether, StartX = 1, StartZ = 2, EndX = -30, EndZ = 44, Name = "Tunnel" }],
             },
             World = { ShowExperimentalVersions = true, EstimateTerrain = false, Salts = [new StructureSaltSetting { Type = StructureType.Bastion, Salt = -7, IsReplacing = true }] },
@@ -60,6 +61,7 @@ public sealed class SettingsRepositoryTests : IDisposable
         Assert.Equal(512, loaded.Map.CacheMegabytes);
         Assert.False(loaded.Map.SmoothMotion);
         Assert.False(loaded.Map.ShowGrid);
+        Assert.True(loaded.Map.BiomeRelief);
         Assert.Equal(MarkerSize.Large, loaded.Map.MarkerSize);
         var pin = Assert.Single(loaded.Map.Pins);
         Assert.Equal((-42L, Dimension.Nether, 7, -9, "Blaze farm", "Fortress"), (pin.Seed, pin.Dimension, pin.X, pin.Z, pin.Name, pin.Icon));

@@ -76,13 +76,10 @@ public sealed class TileLayer : IMapLayer
 
         var metrics = TileMetrics.For(scene.Content.World, scene.Content.Layer);
         var fineScale = TilePyramid.SelectScale(metrics, scene.Viewport.BlocksPerPixel);
+        TileRequest[] fine = [.. GetRequests(scene.Content, scene, metrics, fineScale)];
+        TileRequest[] coarse = TilePyramid.GetCoarserScale(metrics, fineScale) is { } coarseScale ? [.. GetRequests(scene.Content, scene, metrics, coarseScale)] : [];
 
-        List<TileRequest> requests = [];
-        if (TilePyramid.GetCoarserScale(metrics, fineScale) is { } coarseScale)
-            requests.AddRange(GetRequests(scene.Content, scene, metrics, coarseScale));
-        requests.AddRange(GetRequests(scene.Content, scene, metrics, fineScale));
-
-        _tileService.SetVisibleTiles(requests);
+        _tileService.SetVisibleTiles([.. coarse, .. fine, .. GetReliefRequests([.. fine, .. coarse])]);
     }
 
     public void Render(DrawingContext context, MapScene scene)
@@ -105,6 +102,10 @@ public sealed class TileLayer : IMapLayer
     private static IEnumerable<TileRequest> GetRequests(MapContent content, MapScene scene, TileMetrics metrics, int scale)
         => TilePyramid.GetVisibleTiles(metrics, scale, scene.Viewport)
             .Select(content.GetRequest);
+
+    /// <summary>The height tiles that shade the given tiles in the current style, in their order and each once.</summary>
+    private IEnumerable<TileRequest> GetReliefRequests(IEnumerable<TileRequest> tiles)
+        => tiles.Select(tile => _colorizer.GetReliefTile(tile, Style)).OfType<TileRequest>().Distinct();
 
     /// <summary>Contents of the same layer of the same world share their tile grid and differ only in height or octave limit.</summary>
     private static bool IsVariantOf(MapContent standIn, MapContent content) => standIn.World == content.World && standIn.Layer == content.Layer;
@@ -145,27 +146,39 @@ public sealed class TileLayer : IMapLayer
         {
             _recency.Remove(node);
             _recency.AddFirst(node);
-            node.Value = node.Value with { Frame = _frame };
+            node.Value = AddArrivedRelief(node.Value) with { Frame = _frame };
             return node.Value.Bitmap;
         }
 
         if (!_tileService.TryGetTile(request, out var tile))
             return null;
 
-        var bitmap = CreateBitmap(tile);
-        _bitmaps.Add(request, _recency.AddFirst(new TileBitmap(request, bitmap, _frame)));
+        var relief = _colorizer.GetReliefTile(request, Style);
+        var heights = relief is { } reliefRequest && _tileService.TryGetTile(reliefRequest, out var loaded) ? loaded : null;
+        var bitmap = CreateBitmap(tile, heights);
+        _bitmaps.Add(request, _recency.AddFirst(new TileBitmap(request, bitmap, _frame, heights is null ? relief : null)));
         TrimBitmaps();
         return bitmap;
     }
 
-    private Bitmap CreateBitmap(TileData tile)
+    /// <summary>Paints a tile that was painted flat again, with relief, once the heights that shade it have loaded.</summary>
+    private TileBitmap AddArrivedRelief(TileBitmap entry)
+    {
+        if (entry.MissingRelief is not { } relief || !_tileService.TryGetTile(relief, out var heights) || !_tileService.TryGetTile(entry.Request, out var tile))
+            return entry;
+
+        entry.Bitmap.Dispose();
+        return entry with { Bitmap = CreateBitmap(tile, heights), MissingRelief = null };
+    }
+
+    private Bitmap CreateBitmap(TileData tile, TileData? heights)
     {
         var byteCount = tile.Samples * tile.Samples * TileColorizer.BytesPerPixel;
         if (_pixels.Length < byteCount)
             _pixels = new byte[byteCount];
 
         var pixels = _pixels.AsSpan(0, byteCount);
-        _colorizer.Colorize(tile, Style, pixels);
+        _colorizer.Colorize(tile, Style, pixels, heights);
         return _bitmapService.Create(pixels, tile.Samples, tile.Samples);
     }
 
@@ -188,5 +201,6 @@ public sealed class TileLayer : IMapLayer
         }
     }
 
-    private readonly record struct TileBitmap(TileRequest Request, Bitmap Bitmap, long Frame);
+    /// <summary>A painted tile; <see cref="MissingRelief"/> names the heights it still waits for when it was painted flat without them.</summary>
+    private readonly record struct TileBitmap(TileRequest Request, Bitmap Bitmap, long Frame, TileRequest? MissingRelief = null);
 }

@@ -555,6 +555,30 @@ public sealed class MapHostViewTests : IDisposable
     }
 
     [AvaloniaFact]
+    public async Task BiomeRelief_SwitchedOnThenOff_ShadesTheBiomesOnceTheirHeightsLoadAndRestoresThem()
+    {
+        _map.ShowGrid = false;
+        _map.Camera = new MapCamera(0, 0, 1);
+        Dispatcher.UIThread.RunJobs();
+        var tileService = _services.GetRequiredService<IMapTileService>();
+        var biomes = MapContent.For(_map.World, LayerMode.Biomes, _map.SampleHeight, octaves: 0);
+        await TestWait.UntilAsync(() => tileService.TryGetCachedBiome(biomes, 8, 8, out _) && tileService.PendingCount == 0, "The biome tiles were not generated in time.");
+        var flat = CaptureSpreadPixels();
+
+        _map.BiomeRelief = true;
+        var heights = MapContent.For(_map.World, LayerMode.Height, 0, octaves: 0);
+        await TestWait.UntilAsync(() => tileService.TryGetCachedValue(heights, 8, 8, out _) && tileService.PendingCount == 0, "The height tiles were not generated in time.");
+        var shaded = CaptureSpreadPixels();
+        _map.BiomeRelief = false;
+        var restored = CaptureSpreadPixels();
+
+        var changed = flat.Zip(shaded).Count(pair => pair.First != pair.Second);
+        Assert.True(changed > flat.Length / 10, $"Relief changed {changed} of {flat.Length} pixels.");
+        Assert.Equal(flat, restored);
+        Assert.Equal(0, tileService.PendingCount);
+    }
+
+    [AvaloniaFact]
     public async Task StructurePotential_OverABiomeWithoutTheStructure_DimsItWithoutNewTiles()
     {
         _map.ShowGrid = false;
@@ -644,6 +668,14 @@ public sealed class MapHostViewTests : IDisposable
         Dispatcher.UIThread.RunJobs();
         AvaloniaHeadlessPlatform.ForceRenderTimerTick();
         return Assert.IsType<WriteableBitmap>(_window.CaptureRenderedFrame(), exactMatch: false);
+    }
+
+    /// <summary>The colours of a grid of pixels spread evenly over the view.</summary>
+    private RgbColor[] CaptureSpreadPixels()
+    {
+        const int Step = 16;
+        using var frame = CaptureFrame();
+        return [.. Enumerable.Range(0, ViewSize / Step).SelectMany(row => Enumerable.Range(0, ViewSize / Step).Select(column => FramePixels.Read(frame, column * Step + Step / 2, row * Step + Step / 2)))];
     }
 
     private TextBlock GetCalloutTitle()

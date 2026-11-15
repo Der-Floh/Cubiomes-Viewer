@@ -50,6 +50,10 @@ public sealed partial class MapViewModel : ViewModelBase
     [ObservableProperty]
     public partial HeightStyle HeightStyle { get; set; } = HeightStyle.Shaded;
 
+    /// <summary>Whether the biome map is shaded by the heights of the terrain where the world has them.</summary>
+    [ObservableProperty]
+    public partial bool BiomeRelief { get; set; }
+
     /// <summary>The colours biomes are painted in; the default ones when it is <see langword="null"/>.</summary>
     [ObservableProperty]
     public partial BiomePalette? BiomeColors { get; set; }

@@ -9,6 +9,7 @@ using Avalonia.Threading;
 
 using Cubiomes_Viewer.Controls;
 using Cubiomes_Viewer.Controls.Map;
+using Cubiomes_Viewer.Engine.Data;
 using Cubiomes_Viewer.Engine.Data.Colors;
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Worlds;
@@ -31,6 +32,7 @@ public sealed class TileLayerTests
 
     private static readonly WorldKey _world = new(262, McVersion.V1_21_3, Dimension.Overworld, GeneratorFlags.None);
     private static readonly RgbColor _background = new(0, 0, 0);
+    private static readonly TileStyle _relief = new(BiomeRelief: true);
 
     [AvaloniaFact]
     public void Render_HeightChangedBeforeItsTilesArrive_ShowsThePreviousHeightUntilThen()
@@ -84,9 +86,56 @@ public sealed class TileLayerTests
         window.Close();
     }
 
-    private static (Window Window, MapView Map) Show(IMapTileService tiles, ITileBitmapService? bitmaps = null, int width = ViewSize, int height = ViewSize)
+    [AvaloniaFact]
+    public void UpdateScene_BiomeReliefOn_AsksForTheHeightsAfterEveryBiomeTile()
     {
-        var layer = new TileLayer(tiles, App.Services.GetRequiredService<ITileColorizer>(), bitmaps ?? App.Services.GetRequiredService<ITileBitmapService>());
+        var tiles = new FixedTileService();
+        tiles.Fill(_world.Seed, LowHeight, Desert);
+        var (window, map) = Show(tiles, style: _relief);
+
+        RenderCentre(window, map);
+
+        var firstHeights = tiles.Visible.ToList().FindIndex(request => request.Layer == LayerMode.Height);
+        Assert.True(firstHeights > 0, "No heights were asked for.");
+        Assert.All(tiles.Visible.Take(firstHeights), request => Assert.Equal(LayerMode.Biomes, request.Layer));
+        Assert.All(tiles.Visible.Skip(firstHeights), request => Assert.Equal(LayerMode.Height, request.Layer));
+        Assert.Equal(tiles.Visible.Count, tiles.Visible.Distinct().Count());
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void UpdateScene_BiomeReliefOff_AsksForNoHeights()
+    {
+        var tiles = new FixedTileService();
+        tiles.Fill(_world.Seed, LowHeight, Desert);
+        var (window, map) = Show(tiles);
+
+        RenderCentre(window, map);
+
+        Assert.NotEmpty(tiles.Visible);
+        Assert.DoesNotContain(tiles.Visible, request => request.Layer == LayerMode.Height);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void Render_HeightsArrivingAfterTheBiomes_ShadeTheTilesAlreadyShown()
+    {
+        var tiles = new FixedTileService();
+        tiles.Fill(_world.Seed, LowHeight, Desert);
+        var (window, map) = Show(tiles, style: _relief);
+        var flat = RenderCentre(window, map);
+
+        tiles.FillHeights((x, _) => 64 + x * 2);
+        var shaded = RenderCentre(window, map);
+
+        Assert.Equal(GetColor(Desert), flat);
+        Assert.True(shaded.Red + shaded.Green + shaded.Blue > flat.Red + flat.Green + flat.Blue, $"The tile facing the light is {shaded}, flat {flat}.");
+        window.Close();
+    }
+
+    private static (Window Window, MapView Map) Show(IMapTileService tiles, ITileBitmapService? bitmaps = null, int width = ViewSize, int height = ViewSize, TileStyle style = default)
+    {
+        var layer = new TileLayer(tiles, App.Services.GetRequiredService<ITileColorizer>(), bitmaps ?? App.Services.GetRequiredService<ITileBitmapService>()) { Style = style };
         var map = new MapView { World = _world, SampleHeight = LowHeight, Camera = new MapCamera(0, 0, 1), SmoothMotion = false, Background = Brushes.Black };
         map.AddLayer(layer);
         var window = new Window { Width = width, Height = height, Content = map };
@@ -118,12 +167,16 @@ public sealed class TileLayerTests
         }
     }
 
-    /// <summary>Has tiles of one biome for the heights of the seeds it was filled with, and none for any other.</summary>
+    /// <summary>
+    /// Has tiles of one biome for the heights of the seeds it was filled with, and none for any other; height tiles once
+    /// it is given their terrain. Keeps the tiles last asked for.
+    /// </summary>
     private sealed class FixedTileService : IMapTileService
     {
         private const int Samples = 4;
 
         private readonly Dictionary<(long Seed, int Y), byte> _biomes = [];
+        private Func<int, int, int>? _heightBlocks;
 
         public event Action? StateChanged
         {
@@ -135,19 +188,30 @@ public sealed class TileLayerTests
 
         public long CacheBudgetBytes { get; set; }
 
+        public IReadOnlyList<TileRequest> Visible { get; private set; } = [];
+
         public void Fill(long seed, int y, byte biome) => _biomes[(seed, y)] = biome;
+
+        /// <summary>Serves height tiles whose samples lie at the given blocks, by their column and row in the tile.</summary>
+        public void FillHeights(Func<int, int, int> getBlocks) => _heightBlocks = getBlocks;
 
         public bool TryGetTile(TileRequest request, [NotNullWhen(true)] out TileData? tile)
         {
-            tile = _biomes.TryGetValue((request.World.Seed, request.Y), out var biome)
-                ? new TileData { Request = request, Samples = Samples, Biomes = [.. Enumerable.Repeat(biome, Samples * Samples)] }
-                : null;
+            tile = request.Layer == LayerMode.Height ? CreateHeightTile(request) : CreateBiomeTile(request);
             return tile is not null;
         }
 
-        public void SetVisibleTiles(IReadOnlyList<TileRequest> requests)
-        {
-        }
+        public void SetVisibleTiles(IReadOnlyList<TileRequest> requests) => Visible = requests;
+
+        private TileData? CreateBiomeTile(TileRequest request)
+            => _biomes.TryGetValue((request.World.Seed, request.Y), out var biome)
+                ? new TileData { Request = request, Samples = Samples, Biomes = [.. Enumerable.Repeat(biome, Samples * Samples)] }
+                : null;
+
+        private TileData? CreateHeightTile(TileRequest request)
+            => _heightBlocks is { } getBlocks
+                ? new TileData { Request = request, Samples = Samples, Values = [.. Enumerable.Range(0, Samples * Samples).Select(index => (short)(getBlocks(index % Samples, index / Samples) * Constants.HeightUnit))] }
+                : null;
 
         public bool TryGetCachedBiome(MapContent content, int blockX, int blockZ, out int biome)
         {

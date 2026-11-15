@@ -57,6 +57,17 @@ public sealed class SettingsViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void BiomeRelief_SwitchedOn_ReachesTheMapAndIsStored()
+    {
+        Assert.False(_map.BiomeRelief);
+
+        _settings.BiomeRelief = true;
+
+        Assert.True(_map.BiomeRelief);
+        Assert.True(Stored.Map.BiomeRelief);
+    }
+
+    [AvaloniaFact]
     public void GridAndMarkers_Changed_ReachTheMapAndAreStored()
     {
         _settings.GridSpacing = 100;
@@ -110,6 +121,7 @@ public sealed class SettingsViewModelTests : IDisposable
         Stored.Map.ZoomLimits = [new StructureZoomLimit { Type = StructureType.Mansion, MaxBlocksPerPixel = 128 }];
         Stored.Export.CsvSeparator = CsvSeparator.Tab;
         Stored.Session.RestoreLastSession = false;
+        Stored.Map.BiomeRelief = true;
 
         _settings.ShowSettings();
 
@@ -117,6 +129,8 @@ public sealed class SettingsViewModelTests : IDisposable
         Assert.Equal(CsvSeparator.Tab, _settings.SelectedCsvSeparator?.Value);
         Assert.False(_settings.RestoreLastSession);
         Assert.Equal(128, _map.MarkerZoomLimits[StructureType.Mansion]);
+        Assert.True(_settings.BiomeRelief);
+        Assert.True(_map.BiomeRelief);
     }
 
     [AvaloniaFact]

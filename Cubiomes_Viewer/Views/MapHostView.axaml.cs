@@ -232,7 +232,7 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
         switch (e.PropertyName)
         {
             case nameof(MapViewModel.Layer) or nameof(MapViewModel.HeightStyle) or nameof(MapViewModel.PotentialStructure) or nameof(MapViewModel.BiomeColors)
-                or nameof(MapViewModel.ShowGrid) or nameof(MapViewModel.ShowSlimeChunks) or nameof(MapViewModel.ShowGatewayLinks)
+                or nameof(MapViewModel.BiomeRelief) or nameof(MapViewModel.ShowGrid) or nameof(MapViewModel.ShowSlimeChunks) or nameof(MapViewModel.ShowGatewayLinks)
                 or nameof(MapViewModel.ShowSpawn) or nameof(MapViewModel.ShowStrongholds) or nameof(MapViewModel.VisibleStructures) or nameof(MapViewModel.HiddenStructureOptions)
                 or nameof(MapViewModel.GridSpacing) or nameof(MapViewModel.GridMultiplier) or nameof(MapViewModel.MarkerScale) or nameof(MapViewModel.MarkerZoomLimits):
                 ShowOverlays();
@@ -259,7 +259,7 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
 
     private void ShowOverlays()
     {
-        _layers.Tiles.Style = new TileStyle(_map.HeightStyle, _map.Layer == LayerMode.StructurePotential ? _map.PotentialStructure : null, _map.BiomeColors);
+        _layers.Tiles.Style = new TileStyle(_map.HeightStyle, _map.Layer == LayerMode.StructurePotential ? _map.PotentialStructure : null, _map.BiomeColors, _map.BiomeRelief);
         _layers.Grid.IsVisible = _map.ShowGrid;
         _layers.Grid.BaseSpacing = _map.GridSpacing;
         _layers.Grid.Multiplier = _map.GridMultiplier;

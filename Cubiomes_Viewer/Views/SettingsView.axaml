@@ -21,6 +21,8 @@
             <Separator Classes="section"/>
             <TextBlock Classes="section" Text="{Binding MapLabel}"/>
             <CheckBox Content="{Binding SmoothMotionLabel}" IsChecked="{Binding SmoothMotion}"/>
+            <CheckBox Content="{Binding BiomeReliefLabel}" IsChecked="{Binding BiomeRelief}"/>
+            <TextBlock Classes="damp" Text="{Binding BiomeReliefHint}" TextWrapping="Wrap"/>
             <TextBlock Classes="field-label" Text="{Binding CacheLabel}"/>
             <NumericUpDown Value="{Binding CacheMegabytes}" Minimum="{Binding MinCacheMegabytes}" Maximum="{Binding MaxCacheMegabytes}" Increment="64" FormatString="0"/>
             <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
