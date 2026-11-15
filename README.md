@@ -1,14 +1,14 @@
 # Cubiomes Viewer
 
-A cross-platform Minecraft Java Edition seed finder and biome map viewer, built on top of the [cubiomes](https://github.com/Cubitect/cubiomes) world-generation library.
+A cross-platform Minecraft Java Edition seed finder and biome map viewer, built on top of the [cubiomes](https://github.com/Cubitect/cubiomes) world-generation library, in [xpple's maintained fork](https://github.com/xpple/cubiomes).
 
-![Cubiomes Viewer showing the structure types and the village filter in the Layers panel, next to the shaded 1.21.4 biome map of seed 262 with a pin named Home beside a river](docs/screenshot.png)
+![Cubiomes Viewer showing the structure types and the village filter in the Layers panel, next to the shaded 26.3 biome map of seed 262 with a pin named Home beside a river](docs/screenshot.png)
 
 [Open the web version](https://der-floh.github.io/Cubiomes-Viewer) · [Download for Windows, Linux or macOS](https://github.com/Der-Floh/Cubiomes-Viewer/releases)
 
 ## Features
 
-- **Biome map** of any seed from Beta 1.7 to 1.21.4, in the Overworld, Nether and End, with structures, strongholds, the spawn point and slime chunks marked.
+- **Biome map** of any seed from Beta 1.7 to 26.3, in the Overworld, Nether and End, with structures, strongholds, the spawn point and slime chunks marked.
 - **More layers**: climate parameters, surface heights, rivers, ocean temperatures and where a structure type can generate, plus optional relief shading of the biome map.
 - **Seed search** for seeds that meet a list of conditions, in the app or from the command line.
 - **Analysis** of the biomes, structures and locations around a point, for one seed or up to 1,000 found seeds.
@@ -79,7 +79,7 @@ cubiomes-viewer-cli --session search.json --out seeds.txt
 
 - **Appearance**: theme and interface size.
 - **Map**: smooth motion, relief shading of the biome map, tile cache, grid spacing, marker size, and how far out each structure type is marked.
-- **World generation**: the experimental versions (Beta 1.7, Beta 1.8, 1.0 and 1.21.4, the Winter Drop), the terrain estimate that leaves out some structures on low land from 1.18 on, and replaced structure salts, as servers and data packs use them.
+- **World generation**: the experimental versions (Beta 1.7, Beta 1.8 and 1.0), the terrain estimate that leaves out some structures on low land from 1.18 on, and replaced structure salts, as servers and data packs use them.
 - **Start**: open the last world and search, and keep the desktop window's size and position.
 - **Export**: the separator of CSV files.
 - **Updates** (desktop): the installed version, a check on request, and the check at start.
@@ -103,7 +103,7 @@ Installed desktop copies keep themselves up to date: at start the app looks for 
 Requirements:
 
 - .NET 10 SDK, with the `wasm-tools` workload for the Browser head.
-- A C compiler for the native `cvnative` library: clang, or the Visual Studio C++ build tools on Windows.
+- clang for the native `cvnative` library. On Windows it also needs the Visual Studio C++ build tools, whose installer can add clang as "C++ Clang Compiler for Windows"; cubiomes does not build with MSVC itself.
 
 Clone with submodules, then build and test:
 
@@ -140,7 +140,7 @@ dotnet run --project Cubiomes_Viewer.Cli -- --session search.json --out seeds.tx
 
 ### Tests
 
-- The engine tests compare map tiles, search and find-nearest results, analysis counts and exported pixels with the generator, and pin fourteen exports of fixed worlds by their hashes.
+- The engine tests compare map tiles, search and find-nearest results, analysis counts and exported pixels with the generator, and pin sixteen exports of fixed worlds by their hashes.
 - The CLI tests run example searches through the CLI and through the app's search and compare the seeds, also across a stop and a second run.
 - The self-test checks the generator, structures, strongholds, End gateways, the spawn point, slime chunks and the other layers against values recorded from the Windows build, which is how other platforms prove they generate identical worlds.
 
