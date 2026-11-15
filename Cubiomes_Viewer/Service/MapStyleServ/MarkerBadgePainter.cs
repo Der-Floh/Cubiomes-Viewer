@@ -7,14 +7,16 @@ namespace Cubiomes_Viewer.Service.MapStyleServ;
 
 /// <summary>
 /// Draws the badge of a marker on whole device pixels. Its pixel art glyph takes a whole number of device pixels per glyph
-/// pixel and its outline one such pixel; the padding between them brings the badge as near the size asked for as it gets.
-/// Badges of one size thus look alike wherever they land and however far the view is scaled.
+/// pixel, its outline one such pixel and its padding two, of which it may give up one device pixel to come nearer the size
+/// asked for. Badges of one size thus look alike wherever they land and however far the view is scaled.
 /// </summary>
 public static class MarkerBadgePainter
 {
     private const int OutlinePixels = 1;
-    private const int MostPaddingPixels = 2;
-    private const double CornerRatio = 5.0 / 22;
+    private const int PaddingPixels = 2;
+
+    /// <summary>How far the corners round per device pixel of outline and padding around the glyph; never far enough to reach it.</summary>
+    private const double CornerPerFramePixel = 5.0 / 3;
 
     /// <summary>
     /// The side of a badge asked to be about <paramref name="side"/> units, kept within <paramref name="maximumSide"/> as long as
@@ -39,7 +41,7 @@ public static class MarkerBadgePainter
         var badgeSide = layout.Side * pixels.PixelSize;
         var badge = new Rect(pixels.SnapX(center.X - badgeSide / 2), pixels.SnapY(center.Y - badgeSide / 2), badgeSide, badgeSide);
         var outlineWidth = layout.Outline * pixels.PixelSize;
-        var outerRadius = badgeSide * CornerRatio;
+        var outerRadius = (layout.Outline + layout.Padding) * CornerPerFramePixel * pixels.PixelSize;
         var innerRadius = Math.Max(0, outerRadius - outlineWidth);
 
         context.DrawRectangle(outline, null, badge, outerRadius, outerRadius);
@@ -52,7 +54,7 @@ public static class MarkerBadgePainter
     {
         public int Outline => Scale * OutlinePixels;
 
-        public int Side => Smallest(Scale) + 2 * Padding;
+        public int Side => Bare(Scale) + 2 * Padding;
 
         public static BadgeLayout For(double side, PixelGrid pixels, double maximumSide)
         {
@@ -64,15 +66,22 @@ public static class MarkerBadgePainter
             while (scale > 1 && Smallest(scale) > limit)
                 scale--;
 
-            var padding = Math.Clamp((int)Math.Floor((wanted - Smallest(scale)) / 2 + 0.5), 0, MostPaddingPixels * scale);
-            var room = (limit - Smallest(scale)) / 2;
+            var padding = Math.Clamp((int)Math.Floor((wanted - Bare(scale)) / 2 + 0.5), LeastPadding(scale), MostPadding(scale));
+            var room = (limit - Bare(scale)) / 2;
             return new BadgeLayout(scale, room < padding ? Math.Max(0, (int)Math.Floor(room)) : padding);
         }
 
         /// <summary>The side of a badge of this scale without padding.</summary>
-        private static int Smallest(int scale) => scale * (PixelGlyph.Pixels + 2 * OutlinePixels);
+        private static int Bare(int scale) => scale * (PixelGlyph.Pixels + 2 * OutlinePixels);
 
-        private static int Largest(int scale) => Smallest(scale) + 2 * MostPaddingPixels * scale;
+        private static int MostPadding(int scale) => scale * PaddingPixels;
+
+        /// <summary>A badge gives up at most one device pixel of its padding; more would crowd its glyph.</summary>
+        private static int LeastPadding(int scale) => MostPadding(scale) - 1;
+
+        private static int Smallest(int scale) => Bare(scale) + 2 * LeastPadding(scale);
+
+        private static int Largest(int scale) => Bare(scale) + 2 * MostPadding(scale);
 
         /// <summary>How far a side lies outside the sides a badge of this scale can take.</summary>
         private static double Distance(double wanted, int scale) => Math.Max(0, Math.Max(Smallest(scale) - wanted, wanted - Largest(scale)));

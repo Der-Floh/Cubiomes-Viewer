@@ -61,7 +61,7 @@ public sealed class MarkerBadgeTests
 
     [AvaloniaTheory]
     [InlineData(22, 1.25, 16)]
-    [InlineData(40, 1, 32)]
+    [InlineData(44, 1, 32)]
     [InlineData(30, 1.5, 32)]
     public void Render_AtAnySize_DrawsTheGlyphAWholeNumberOfDevicePixelsPerGlyphPixel(double side, double interfaceScale, int glyphPixels)
     {
