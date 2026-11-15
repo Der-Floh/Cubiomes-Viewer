@@ -13,9 +13,6 @@ public interface IVersionCatalog
     /// <summary>Finds a version by the name <see cref="GetName"/> gives it, in any letter case.</summary>
     bool TryGetVersion(string name, out McVersion version);
 
-    /// <summary>
-    /// Whether the generator supports a version less completely: the oldest ones and 1.21.4, the Winter Drop, which
-    /// this revision of cubiomes knew only from before its release.
-    /// </summary>
+    /// <summary>Whether the generator supports a version less completely: Beta 1.7, Beta 1.8 and 1.0.</summary>
     bool IsExperimental(McVersion version);
 }

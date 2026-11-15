@@ -18,7 +18,7 @@ public sealed partial class WorldSettingsViewModel : ObservableObject
 {
     public string Title { get; } = "World generation";
     public string ExperimentalVersionsLabel { get; } = "Show experimental versions";
-    public string ExperimentalVersionsHint { get; } = "Adds Beta 1.7, Beta 1.8, 1.0 and 1.21.4 (the Winter Drop), which the generator supports less completely.";
+    public string ExperimentalVersionsHint { get; } = "Adds Beta 1.7, Beta 1.8 and 1.0, which the generator supports less completely.";
     public string EstimateTerrainLabel { get; } = "Estimate the terrain";
     public string EstimateTerrainHint { get; } = "From 1.18 on, leaves out desert pyramids, jungle temples and woodland mansions where an estimate puts the land too low for them. The estimate can be wrong either way.";
     public string SaltsLabel { get; } = "Structure salts";

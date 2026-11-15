@@ -44,13 +44,13 @@ internal static class ReferenceStructureHash
         new("1.16 Nether", McVersion.V1_16_5, Dimension.Nether, _wideArea, 0x098d2173, StructureType.Fortress, StructureType.Bastion),
         new("1.12 Overworld", McVersion.V1_12_2, Dimension.Overworld, _wideArea, 0x35be51d1,
             StructureType.Village, StructureType.DesertPyramid, StructureType.Igloo, StructureType.Monument, StructureType.Mansion),
-        new("1.12 End", McVersion.V1_12_2, Dimension.End, _wideArea, 0xeda615cb, StructureType.EndCity),
+        new("1.12 End", McVersion.V1_12_2, Dimension.End, _wideArea, 0x0cd000e3, StructureType.EndCity),
     ];
 
     /// <summary>Variants and pieces of every structure of the listed types inside the area.</summary>
     public static IReadOnlyList<StructureCase> DetailCases { get; } =
     [
-        new("1.21 Overworld", McVersion.V1_21_3, Dimension.Overworld, _wideArea, 0xf46fab74,
+        new("1.21 Overworld", McVersion.V1_21_3, Dimension.Overworld, _wideArea, 0x4d86f7b8,
             StructureType.Village, StructureType.RuinedPortal, StructureType.Igloo, StructureType.AncientCity, StructureType.TrialChambers, StructureType.DesertPyramid),
         new("1.21 Nether", McVersion.V1_21_3, Dimension.Nether, _detailArea, 0xbbb192c2, StructureType.Fortress, StructureType.Bastion),
         new("1.21 End", McVersion.V1_21_3, Dimension.End, _wideArea, 0x88241018, StructureType.EndCity),
@@ -65,7 +65,7 @@ internal static class ReferenceStructureHash
 
     public static IReadOnlyList<(McVersion Version, uint Hash)> StrongholdHashes { get; } =
     [
-        (McVersion.V1_21_3, 0x2954cdf6),
+        (McVersion.V1_21_3, 0x73dea879),
         (McVersion.V1_16_5, 0xe3256cce),
         (McVersion.V1_12_2, 0x7997c40e),
         (McVersion.V1_8_9, 0x3763cd71),

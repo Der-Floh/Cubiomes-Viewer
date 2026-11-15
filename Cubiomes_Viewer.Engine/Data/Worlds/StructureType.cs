@@ -26,9 +26,11 @@ public enum StructureType
     Geode,
     Fortress,
     Bastion,
+    NetherFossil,
     EndCity,
     EndGateway,
     EndIsland,
     TrailRuins,
     TrialChambers,
+    AbandonedCamp,
 }

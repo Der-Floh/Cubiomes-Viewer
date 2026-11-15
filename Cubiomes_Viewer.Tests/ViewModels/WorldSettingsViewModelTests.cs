@@ -114,10 +114,10 @@ public sealed class WorldSettingsViewModelTests : IDisposable
 
         _viewModel.ShowExperimentalVersions = true;
 
-        Assert.DoesNotContain(McVersion.V1_21_WinterDrop, before);
-        Assert.DoesNotContain(McVersion.Beta1_7, before);
-        Assert.Contains(McVersion.V1_21_WinterDrop, _worldBar.Versions.Select(choice => choice.Value));
-        Assert.Equal(McVersion.V1_21_WinterDrop, _worldBar.Versions[0].Value);
+        Assert.DoesNotContain(McVersion.Beta1_8, before);
+        Assert.DoesNotContain(McVersion.V1_0_0, before);
+        Assert.Contains(McVersion.Beta1_8, _worldBar.Versions.Select(choice => choice.Value));
+        Assert.Equal(McVersion.Beta1_7, _worldBar.Versions[^1].Value);
         Assert.Equal(McVersion.V1_21_3, _worldBar.SelectedVersion?.Value);
     }
 

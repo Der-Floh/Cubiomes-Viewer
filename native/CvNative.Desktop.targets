@@ -15,6 +15,7 @@
   <ItemGroup>
     <CvNativeSource Include="$(CvNativeRoot)shim\**\*" />
     <CvNativeSource Include="$(CvNativeRoot)cubiomes\**\*.c;$(CvNativeRoot)cubiomes\**\*.h" />
+    <CvNativeSource Include="$(CvNativeRoot)build.ps1;$(CvNativeRoot)build.sh" />
   </ItemGroup>
 
   <Target Name="BuildCvNative" DependsOnTargets="RestoreCubiomesSources" Condition="'$(DesignTimeBuild)' != 'true'" Inputs="@(CvNativeSource)" Outputs="$(CvNativeLibraryPath)">

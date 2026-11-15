@@ -4,10 +4,12 @@ set -euo pipefail
 rid="${1:?Usage: build.sh <rid> (linux-x64, linux-arm64, osx-x64, osx-arm64)}"
 
 native_root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source_file="$native_root/shim/cvnative.c"
+shim_source="$native_root/shim/cvnative.c"
 output_dir="$native_root/bin/$rid"
+object_dir="$native_root/obj/$rid"
+shim_object="$object_dir/cvnative.o"
 lock_dir="$native_root/obj/$rid.lock"
-flags=(-std=gnu17 -O3 -fwrapv -ffp-contract=off -fvisibility=hidden -ffunction-sections -fdata-sections)
+flags=(-std=gnu17 -O3 -fwrapv -ffp-contract=off -fvisibility=hidden -ffunction-sections -fdata-sections -DCJSON_HIDE_SYMBOLS)
 macos_minimum="12.0"
 lock_attempts=600
 
@@ -20,10 +22,22 @@ case "$rid" in
         ;;
 esac
 
+# noise.c is compiled through shim/cv_noise.c; tests.c and tests/ are cubiomes' own test programs.
+collect_cubiomes_sources() {
+    sources=("$native_root/shim/cv_noise.c")
+    local file
+    while IFS= read -r file; do
+        sources+=("$file")
+    done < <(find "$native_root/cubiomes" -name '*.c' ! -path "$native_root/cubiomes/tests/*" \
+        ! -path "$native_root/cubiomes/tests.c" ! -path "$native_root/cubiomes/noise.c" | LC_ALL=C sort)
+}
+
 build_macos() {
     local arch="$1"
-    clang "${flags[@]}" -arch "$arch" -mmacosx-version-min="$macos_minimum" -dynamiclib -Wl,-dead_strip \
-        -install_name @rpath/libcvnative.dylib -o "$output" "$source_file"
+    local target=(-arch "$arch" -mmacosx-version-min="$macos_minimum")
+    clang "${flags[@]}" "${target[@]}" -c -o "$shim_object" "$shim_source"
+    clang "${flags[@]}" -w "${target[@]}" -dynamiclib -Wl,-dead_strip \
+        -install_name @rpath/libcvnative.dylib -o "$output" "$shim_object" "${sources[@]}"
 
     local minimum
     minimum="$(otool -l "$output" | awk '$1 == "minos" { print $2; exit }')"
@@ -64,16 +78,19 @@ if [[ ! -f "$native_root/cubiomes/generator.c" ]]; then
     exit 1
 fi
 
-mkdir -p "$output_dir" "$native_root/obj"
+mkdir -p "$output_dir" "$object_dir"
 acquire_lock
 if is_up_to_date; then
     echo "$output is up to date"
     exit 0
 fi
 
+# The shim is compiled with warnings on its own; cubiomes is third-party code, compiled and linked without them.
+collect_cubiomes_sources
 case "$rid" in
     linux-x64 | linux-arm64)
-        "${CC:-cc}" "${flags[@]}" -fPIC -shared -Wl,--gc-sections -o "$output" "$source_file" -lm
+        "${CC:-cc}" "${flags[@]}" -fPIC -c -o "$shim_object" "$shim_source"
+        "${CC:-cc}" "${flags[@]}" -w -fPIC -shared -Wl,--gc-sections -o "$output" "$shim_object" "${sources[@]}" -lm
         ;;
     osx-x64)
         build_macos x86_64

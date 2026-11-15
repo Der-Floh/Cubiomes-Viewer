@@ -6,27 +6,36 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $LibraryName = 'cvnative'
-$ClangFlags = @('-O3', '-fwrapv', '-ffp-contract=off', '-fvisibility=hidden')
-$MsvcFlags = @('/nologo', '/O2', '/fp:precise', '/W3', '/LD')
-$MsvcArchitectures = @{ 'win-x64' = 'x64'; 'win-arm64' = 'x64_arm64' }
+$CompileFlags = @('-std=gnu17', '-O3', '-fwrapv', '-ffp-contract=off', '-fvisibility=hidden', '-ffunction-sections', '-fdata-sections', '-DCJSON_HIDE_SYMBOLS')
 $ClangTargets = @{ 'win-x64' = 'x86_64-pc-windows-msvc'; 'win-arm64' = 'aarch64-pc-windows-msvc' }
+$VisualStudioClangComponent = 'Microsoft.VisualStudio.Component.VC.Llvm.Clang'
 
 $NativeRoot = $PSScriptRoot
-$Source = Join-Path $NativeRoot 'shim\cvnative.c'
+$CubiomesRoot = Join-Path $NativeRoot 'cubiomes'
 $OutputDirectory = Join-Path $NativeRoot "bin\$Rid"
 $ObjectDirectory = Join-Path $NativeRoot "obj\$Rid"
 $Output = Join-Path $OutputDirectory "$LibraryName.dll"
 
 function Assert-SupportedRid {
-    if (-not $MsvcArchitectures.ContainsKey($Rid)) {
-        throw "build.ps1 builds Windows targets only ($($MsvcArchitectures.Keys -join ', ')). Use build.sh for '$Rid'."
+    if (-not $ClangTargets.ContainsKey($Rid)) {
+        throw "build.ps1 builds Windows targets only ($($ClangTargets.Keys -join ', ')). Use build.sh for '$Rid'."
     }
 }
 
 function Assert-Sources {
-    if (-not (Test-Path (Join-Path $NativeRoot 'cubiomes\generator.c'))) {
+    if (-not (Test-Path (Join-Path $CubiomesRoot 'generator.c'))) {
         throw "cubiomes sources are missing. Run 'git submodule update --init' in the repository root."
     }
+}
+
+# noise.c is compiled through shim\cv_noise.c; tests.c and tests\ are cubiomes' own test programs.
+function Get-CubiomesSources {
+    $excluded = @((Join-Path $CubiomesRoot 'noise.c'), (Join-Path $CubiomesRoot 'tests.c'))
+    $testsDirectory = Join-Path $CubiomesRoot 'tests\'
+    $cubiomes = Get-ChildItem $CubiomesRoot -Recurse -File -Filter '*.c' |
+        Where-Object { $excluded -notcontains $_.FullName -and -not $_.FullName.StartsWith($testsDirectory, [StringComparison]::OrdinalIgnoreCase) } |
+        Sort-Object FullName
+    return @(Join-Path $NativeRoot 'shim\cv_noise.c') + @($cubiomes.FullName)
 }
 
 function Test-UpToDate {
@@ -36,63 +45,68 @@ function Test-UpToDate {
 
     $built = (Get-Item $Output).LastWriteTimeUtc
     $sources = @(Get-ChildItem (Join-Path $NativeRoot 'shim') -File -Recurse) +
-        @(Get-ChildItem (Join-Path $NativeRoot 'cubiomes') -File -Recurse -Include '*.c', '*.h') +
+        @(Get-ChildItem $CubiomesRoot -File -Recurse -Include '*.c', '*.h') +
         @(Get-Item $PSCommandPath)
     return -not ($sources | Where-Object { $_.LastWriteTimeUtc -gt $built })
 }
 
-function Find-VisualStudio {
+function Find-VisualStudioClang {
     $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
     if (-not (Test-Path $vswhere)) {
         return $null
     }
-    return & $vswhere -latest -prerelease -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+
+    $visualStudio = & $vswhere -latest -prerelease -products * -requires $VisualStudioClangComponent -property installationPath
+    if (-not $visualStudio) {
+        return $null
+    }
+
+    $hostArchitecture = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'ARM64' } else { 'x64' }
+    $clang = Join-Path $visualStudio "VC\Tools\Llvm\$hostArchitecture\bin\clang.exe"
+    if (Test-Path $clang) {
+        return $clang
+    }
+    return $null
 }
 
-function Invoke-Clang {
-    & clang "--target=$($ClangTargets[$Rid])" @ClangFlags -shared -o $Output $Source
+function Find-Clang {
+    $onPath = Get-Command clang -ErrorAction SilentlyContinue
+    if ($onPath) {
+        return $onPath.Source
+    }
+
+    $llvm = Join-Path $env:ProgramFiles 'LLVM\bin\clang.exe'
+    if (Test-Path $llvm) {
+        return $llvm
+    }
+
+    $visualStudioClang = Find-VisualStudioClang
+    if ($visualStudioClang) {
+        return $visualStudioClang
+    }
+
+    throw "clang was not found. Install LLVM, or add 'C++ Clang Compiler for Windows' in the Visual Studio Installer; cubiomes does not build with MSVC."
+}
+
+function Assert-ClangSucceeded {
     if ($LASTEXITCODE -ne 0) {
         throw "clang failed with exit code $LASTEXITCODE."
     }
 }
 
-function Invoke-Msvc {
-    param([string]$VisualStudioPath)
-
-    # cmd.exe reads a batch file in the console's code page but keeps the environment in Unicode, so paths go through it.
-    $env:CV_VCVARS = Join-Path $VisualStudioPath 'VC\Auxiliary\Build\vcvarsall.bat'
-    $env:CV_SOURCE = $Source
-    $env:CV_OBJECTS = "$ObjectDirectory\\"
-    $env:CV_OUTPUT = $Output
-    $env:CV_IMPORT_LIBRARY = Join-Path $ObjectDirectory "$LibraryName.lib"
-    $script = Join-Path $ObjectDirectory 'build.cmd'
-    Set-Content -Path $script -Encoding ascii -Value @(
-        '@echo off',
-        'set "PATH=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer;%PATH%"',
-        "call `"%CV_VCVARS%`" $($MsvcArchitectures[$Rid]) >nul",
-        'where cl >nul 2>nul || (echo cl.exe was not found after vcvarsall & exit /b 1)',
-        "cl $($MsvcFlags -join ' ') /Fo`"%CV_OBJECTS%`" /Fe`"%CV_OUTPUT%`" `"%CV_SOURCE%`" /link /IMPLIB:`"%CV_IMPORT_LIBRARY%`" || exit /b 1"
-    )
-
-    & cmd.exe /d /c $script
-    if ($LASTEXITCODE -ne 0) {
-        throw "MSVC failed with exit code $LASTEXITCODE."
-    }
-}
-
+# The shim is compiled with warnings on its own; cubiomes is third-party code, compiled and linked without them.
 function Invoke-Build {
-    if (Get-Command clang -ErrorAction SilentlyContinue) {
-        Write-Host "Building $LibraryName for $Rid with clang"
-        Invoke-Clang
-    }
-    else {
-        $visualStudio = Find-VisualStudio
-        if (-not $visualStudio) {
-            throw 'No C compiler found. Install LLVM (clang) or the Visual Studio C++ build tools.'
-        }
-        Write-Host "Building $LibraryName for $Rid with MSVC ($visualStudio)"
-        Invoke-Msvc -VisualStudioPath $visualStudio
-    }
+    $clang = Find-Clang
+    Write-Host "Building $LibraryName for $Rid with $clang"
+
+    $target = "--target=$($ClangTargets[$Rid])"
+    $shimObject = Join-Path $ObjectDirectory 'cvnative.o'
+    & $clang $target @CompileFlags -c -o $shimObject (Join-Path $NativeRoot 'shim\cvnative.c')
+    Assert-ClangSucceeded
+
+    $importLibrary = Join-Path $ObjectDirectory "$LibraryName.lib"
+    & $clang $target @CompileFlags -w -shared '-Wl,/OPT:REF' "-Wl,/IMPLIB:$importLibrary" -o $Output $shimObject @(Get-CubiomesSources)
+    Assert-ClangSucceeded
 
     Write-Host "Built $Output"
 }

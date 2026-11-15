@@ -35,4 +35,11 @@ public enum McVersion
     V1_21_1,
     V1_21_3,
     V1_21_WinterDrop,
+    V1_21_5,
+    V1_21_6,
+    V1_21_9,
+    V1_21_11,
+    V26_1,
+    V26_2,
+    V26_3,
 }

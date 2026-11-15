@@ -11,7 +11,7 @@
 #define CV_API
 #endif
 
-#define CV_ABI_VERSION 11
+#define CV_ABI_VERSION 12
 
 #define CV_BIOME_NONE 255
 #define CV_BIOME_COLOR_BYTES 768
@@ -29,7 +29,7 @@
 #define CV_LAYER_TEMPERATURE_CATEGORY 2
 #define CV_TEMPERATURE_SPECIAL 4
 #define CV_QUAD_OTHER 5
-#define CV_STRUCTURE_TYPES 25
+#define CV_STRUCTURE_TYPES 28
 #define CV_RULES_NO_TERRAIN_ESTIMATE 1
 
 enum cv_status
@@ -117,6 +117,9 @@ CV_API int32_t cv_gen_heights(cv_world *world, int32_t scale, int32_t x, int32_t
 /* Structures: a result of 1 means yes or found, 0 means no; positions are block coordinates. Functions with a world
    follow the rules of the world, the others the rules they are given. */
 CV_API int32_t cv_structure_config(int32_t stype, int32_t mc, int32_t *dimension, int32_t *region_blocks);
+
+/* cubiomes' name of a structure type, so the managed side can check that its numbering still matches. */
+CV_API const char *cv_structure_name(int32_t stype);
 
 /* Writes the salt the game uses for a structure type and returns 1 when the type generates in the version and its
    positions depend on the salt, 0 when they do not. */

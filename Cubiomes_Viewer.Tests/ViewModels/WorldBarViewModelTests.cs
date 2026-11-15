@@ -72,7 +72,7 @@ public sealed class WorldBarViewModelTests : IDisposable
     [AvaloniaFact]
     public void Versions_FromCatalog_AreListedNewestFirstWithoutTheExperimentalOnes()
     {
-        Assert.Equal(McVersion.V1_21_3, _viewModel.Versions[0].Value);
+        Assert.Equal(McVersion.V26_3, _viewModel.Versions[0].Value);
         Assert.Equal(McVersion.V1_1_0, _viewModel.Versions[^1].Value);
         Assert.Equal(_session.Version, _viewModel.SelectedVersion?.Value);
     }

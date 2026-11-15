@@ -8,7 +8,7 @@ namespace Cubiomes_Viewer.Engine.Interop;
 [StructLayout(LayoutKind.Sequential)]
 internal unsafe struct NativeRules
 {
-    public const int StructureTypes = 25;
+    public const int StructureTypes = 28;
 
     private const uint NoTerrainEstimate = 1;
 

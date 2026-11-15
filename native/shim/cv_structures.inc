@@ -3,148 +3,17 @@ static int cv_is_valid_structure(int32_t stype)
     return stype >= 0 && stype < FEATURE_NUM;
 }
 
-/* Feature only marks generation attempts before 1.13 and End_Island has no viability check in cubiomes. */
+/* Feature only marks generation attempts before 1.13, End_Island has no viability check in cubiomes, and strongholds
+   are placed in rings rather than regions (cv_strongholds). */
 static int cv_is_locatable_structure(int32_t stype)
 {
-    return cv_is_valid_structure(stype) && stype != Feature && stype != End_Island;
-}
-
-static int cv_is_salt_replaced(int32_t stype)
-{
-    return ((cv_rules_in_use()->salted >> stype) & 1u) != 0;
-}
-
-/* The biome cubiomes judges an outpost by, sampled where its outpost check samples it. */
-static int cv_outpost_biome(Generator *generator, int chunk_x, int chunk_z)
-{
-    if (generator->mc >= MC_1_18)
-    {
-        uint64_t rng = chunkGenerateRnd(generator->seed, chunk_x, chunk_z);
-        int offset_x, offset_z;
-        switch (nextInt(&rng, 4))
-        {
-        case 0: offset_x = +15; offset_z = +15; break;
-        case 1: offset_x = -15; offset_z = +15; break;
-        case 2: offset_x = -15; offset_z = -15; break;
-        default: offset_x = +15; offset_z = -15; break;
-        }
-        return getBiomeAt(generator, 0, (chunk_x * 32 + offset_x) / 2 >> 2, 319 >> 2, (chunk_z * 32 + offset_z) / 2 >> 2);
-    }
-
-    Layer *entry = generator->entry;
-    int biome;
-    if (generator->mc >= MC_1_16_1)
-    {
-        generator->entry = &generator->ls.layers[L_RIVER_MIX_4];
-        biome = getBiomeAt(generator, 0, chunk_x * 4 + 2, 319 >> 2, chunk_z * 4 + 2);
-    }
-    else
-    {
-        generator->entry = &generator->ls.layers[L_VORONOI_1];
-        biome = getBiomeAt(generator, 0, chunk_x * 16 + 9, 319 >> 2, chunk_z * 16 + 9);
-    }
-    generator->entry = entry;
-    return biome;
-}
-
-/* cubiomes keeps outposts away from the villages of the game's village salt; this is its outpost check with the salt
-   of the rules in use, for worlds that replace it. */
-static int cv_is_viable_outpost(Generator *generator, int x, int z)
-{
-    if (generator->mc <= MC_1_13)
-        return 0;
-
-    int chunk_x = x >> 4, chunk_z = z >> 4;
-    uint64_t rng = generator->seed;
-    setAttemptSeed(&rng, chunk_x, chunk_z);
-    if (nextInt(&rng, 5) != 0)
-        return 0;
-
-    StructureConfig village;
-    if (!getStructureConfig_override(Village, generator->mc, &village))
-        return 0;
-
-    int cx0 = chunk_x - 10, cx1 = chunk_x + 10, cz0 = chunk_z - 10, cz1 = chunk_z + 10;
-    for (int rz = floordiv(cz0, village.regionSize); rz <= floordiv(cz1, village.regionSize); rz++)
-    {
-        for (int rx = floordiv(cx0, village.regionSize); rx <= floordiv(cx1, village.regionSize); rx++)
-        {
-            Pos pos = getFeaturePos(village, generator->seed, rx, rz);
-            int cx = pos.x >> 4, cz = pos.z >> 4;
-            if (cx < cx0 || cx > cx1 || cz < cz0 || cz > cz1)
-                continue;
-            if (generator->mc >= MC_1_16_1 || isViableStructurePos(Village, generator, pos.x, pos.z, 0))
-                return 0;
-        }
-    }
-
-    int biome = cv_outpost_biome(generator, chunk_x, chunk_z);
-    return biome >= 0 && isViableFeatureBiome(generator->mc, Outpost, biome);
-}
-
-static int cv_is_viable_position(int32_t stype, Generator *generator, Pos pos)
-{
-    if (stype == Outpost && cv_is_salt_replaced(Village))
-        return cv_is_viable_outpost(generator, pos.x, pos.z);
-    return isViableStructurePos(stype, generator, pos.x, pos.z, 0);
-}
-
-/* cubiomes rolls whether a geode generates with the game's geode salt; this is its geode variant with the salt of the
-   rules in use, for worlds that replace it. */
-static int cv_get_geode_variant(StructureVariant *variant, int mc, uint64_t seed, int x, int z)
-{
-    StructureConfig geode;
-    getStructureConfig_override(Geode, mc, &geode);
-    memset(variant, 0, sizeof(*variant));
-    variant->start = -1;
-    variant->biome = -1;
-    variant->y = 320;
-
-    uint64_t population = getPopulationSeed(mc, seed, x & ~15, z & ~15) + geode.salt;
-    if (mc >= MC_1_18)
-    {
-        Xoroshiro xr;
-        xSetSeed(&xr, population);
-        if (xNextFloat(&xr) >= geode.rarity)
-            return 0;
-        variant->x = xNextIntJ(&xr, 16) - (x & 15);
-        variant->z = xNextIntJ(&xr, 16) - (z & 15);
-        variant->y = xNextIntJ(&xr, 1 + 30 + 58) - 58;
-        variant->size = xNextIntJ(&xr, 2) + 3;
-        xSkipN(&xr, 2);
-        variant->cracked = xNextFloat(&xr) < 0.95;
-    }
-    else
-    {
-        uint64_t rng;
-        setSeed(&rng, population);
-        if (nextFloat(&rng) >= geode.rarity)
-            return 0;
-        variant->x = nextInt(&rng, 16) - (x & 15);
-        variant->z = nextInt(&rng, 16) - (z & 15);
-        variant->y = nextInt(&rng, 1 + 46 - 6) + 6;
-        variant->size = nextInt(&rng, 2) + 3;
-        skipNextN(&rng, 2);
-        variant->cracked = nextFloat(&rng) < 0.95;
-    }
-
-    variant->x += 5;
-    variant->y += 5;
-    variant->z += 5;
-    return 1;
-}
-
-static int cv_get_variant(StructureVariant *variant, int32_t stype, const Generator *generator, int x, int z, int biome)
-{
-    if (stype == Geode && cv_is_salt_replaced(Geode))
-        return cv_get_geode_variant(variant, generator->mc, generator->seed, x, z);
-    return getVariant(variant, stype, generator->mc, generator->seed, x, z, biome);
+    return cv_is_valid_structure(stype) && stype != Feature && stype != End_Island && stype != Stronghold;
 }
 
 static int cv_can_generate_at(cv_world *world, int32_t stype, Pos pos)
 {
     Generator *generator = &world->generator;
-    if (!cv_is_viable_position(stype, generator, pos))
+    if (!isViableStructurePos(stype, generator, pos.x, pos.z, 0))
         return 0;
     if (stype == End_City)
         return isViableEndCityTerrain(generator, cv_surface(world), pos.x, pos.z) != 0;
@@ -194,10 +63,17 @@ static int cv_has_biome_rule(int32_t stype)
     case End_Gateway:
     case Trail_Ruins:
     case Trial_Chambers:
+    case Nether_Fossil:
+    case Abandoned_Camp:
         return 1;
     default:
         return 0;
     }
+}
+
+const char *cv_structure_name(int32_t stype)
+{
+    return cv_is_valid_structure(stype) ? struct2str(stype) : NULL;
 }
 
 int32_t cv_structure_biome_viable(int32_t stype, int32_t mc, int32_t biome)
@@ -388,7 +264,7 @@ static int32_t cv_find_structure_variant(cv_world *world, int32_t stype, int32_t
     Pos pos = {x, z};
     StructureVariant found;
     const Generator *generator = &world->generator;
-    if (!cv_get_variant(&found, stype, generator, x, z, cv_variant_biome(world, stype, pos)))
+    if (!getVariant(&found, stype, generator->mc, generator->seed, x, z, cv_variant_biome(world, stype, pos)))
         return 0;
 
     variant->abandoned = found.abandoned;

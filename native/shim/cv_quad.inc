@@ -21,7 +21,7 @@ static int cv_is_quad_type(int32_t stype)
 /* Fills 'config', with the salt of the rules in use, and returns 1 when the version has quads of the type. */
 static int cv_quad_config(int32_t stype, int32_t mc, StructureConfig *config)
 {
-    if (!cv_is_quad_type(stype) || !getStructureConfig_override(stype, mc, config))
+    if (!cv_is_quad_type(stype) || !getStructureConfig(stype, mc, config))
         return 0;
     return config->regionSize == 32 && config->chunkRange == 24;
 }
