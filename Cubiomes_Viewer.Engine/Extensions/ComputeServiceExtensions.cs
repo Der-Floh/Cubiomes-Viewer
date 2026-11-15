@@ -29,10 +29,10 @@ public static class ComputeServiceExtensions
                     for (; running.Count < maxRunning && next < jobs.Count; next++)
                         running.Add((compute.RunAsync(jobs[next], priority, stopping.Token), next));
 
-                    var finished = await Task.WhenAny(running.Select(entry => entry.Task));
+                    var finished = await Task.WhenAny(running.Select(entry => entry.Task)).ConfigureAwait(false);
                     var entry = running.Single(candidate => candidate.Task == finished);
                     running.Remove(entry);
-                    results[entry.Index] = await finished;
+                    results[entry.Index] = await finished.ConfigureAwait(false);
                     progress?.Report((done + 1.0) / jobs.Count);
                 }
 
@@ -42,7 +42,7 @@ public static class ComputeServiceExtensions
             {
                 stopping.Cancel();
                 foreach (var (task, _) in running)
-                    _ = task.ContinueWith(static failed => _ = failed.Exception, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+                    task.Forget();
             }
         }
     }

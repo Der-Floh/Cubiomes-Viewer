@@ -195,7 +195,30 @@ public sealed class MapExportServiceTests : IDisposable
         Assert.Empty(_export.FindProblems(request));
         Assert.Equal(2, warnings.Count);
         Assert.Contains("30,000,000,000 pixels per seed", warnings[0], StringComparison.Ordinal);
-        Assert.Contains("GB of memory for each band of rows", warnings[1], StringComparison.Ordinal);
+        Assert.Contains("GB of memory for the rows of tiles", warnings[1], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ExportAsync_StartedOnAThreadWithASynchronizationContext_DoesItsWorkElsewhere()
+    {
+        var context = new CountingSynchronizationContext();
+        var previous = SynchronizationContext.Current;
+        using var stream = new MemoryStream();
+        Task export;
+        SynchronizationContext.SetSynchronizationContext(context);
+        try
+        {
+            export = _export.ExportAsync(Request(World(262, McVersion.V1_21_3, Dimension.Overworld), LayerMode.Height, 16), stream, cancellationToken: TestContext.Current.CancellationToken);
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(previous);
+        }
+
+        await export;
+
+        Assert.True(stream.Length > 0);
+        Assert.Equal(0, context.Posts);
     }
 
     [Fact]
@@ -291,6 +314,20 @@ public sealed class MapExportServiceTests : IDisposable
             if (disposing)
                 _content.Dispose();
             base.Dispose(disposing);
+        }
+    }
+
+    /// <summary>Counts the work posted to it, which a user interface thread would have to do, and does that work on the thread pool.</summary>
+    private sealed class CountingSynchronizationContext : SynchronizationContext
+    {
+        private int _posts;
+
+        public int Posts => Volatile.Read(ref _posts);
+
+        public override void Post(SendOrPostCallback d, object? state)
+        {
+            Interlocked.Increment(ref _posts);
+            ThreadPool.QueueUserWorkItem(_ => d(state));
         }
     }
 }

@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 
 using Cubiomes_Viewer.Engine.Data.Analysis;
 using Cubiomes_Viewer.Engine.Data.Compute;
+using Cubiomes_Viewer.Engine.Data.Export;
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Search;
 using Cubiomes_Viewer.Engine.Data.SelfTests;
@@ -77,6 +78,7 @@ public static class ServiceCollectionExtensions
         services.AddJobHandler<StructureListJob, StructureListing, StructureListJobHandler>();
         services.AddJobHandler<QuadListJob, QuadListing, QuadListJobHandler>();
         services.AddJobHandler<ConditionLocationsJob, ConditionLocations, ConditionLocationsJobHandler>();
+        services.AddJobHandler<PngBandJob, PngBand, PngBandJobHandler>();
         if (OperatingSystem.IsBrowser())
             services.AddSingleton<IComputeService, InlineComputeService>();
         else

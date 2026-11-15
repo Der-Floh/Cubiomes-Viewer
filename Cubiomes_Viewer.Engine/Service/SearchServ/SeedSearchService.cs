@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 
 using Cubiomes_Viewer.Engine.Data.Compute;
 using Cubiomes_Viewer.Engine.Data.Search;
+using Cubiomes_Viewer.Engine.Extensions;
 using Cubiomes_Viewer.Engine.Service.ComputeServ;
 using Cubiomes_Viewer.Engine.Service.ConditionServ;
 
@@ -168,7 +169,8 @@ public sealed class SeedSearchService : ISeedSearchService
         finally
         {
             await stopping.CancelAsync();
-            Forget(running.Select(entry => entry.Batch));
+            foreach (var entry in running)
+                entry.Batch.Forget();
             _completed.Clear();
             _unfinished.Clear();
             UpdateProgress(setup);
@@ -394,12 +396,5 @@ public sealed class SeedSearchService : ISeedSearchService
                     search.ShowPreparation(share);
             }
         }
-    }
-
-    /// <summary>Batches nobody waits for any more must not surface as unobserved failures.</summary>
-    private static void Forget(IEnumerable<Task<SearchBatchResult>> batches)
-    {
-        foreach (var batch in batches)
-            _ = batch.ContinueWith(static task => _ = task.Exception, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
     }
 }

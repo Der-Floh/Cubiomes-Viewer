@@ -13,6 +13,10 @@ using Cubiomes_Viewer.Engine.Service.TileServ;
 
 namespace Cubiomes_Viewer.Engine.Service.ExportServ;
 
+/// <summary>
+/// Exports a layer as PNG images, one row of map tiles at a time. The next row of tiles is generated while the current one
+/// is coloured and written, and the work stays off the caller's thread wherever the runtime has other threads.
+/// </summary>
 public sealed class MapExportService : IMapExportService
 {
     /// <summary>Wider or higher images open in few programs; tiles open everywhere.</summary>
@@ -30,6 +34,9 @@ public sealed class MapExportService : IMapExportService
     private const int ColourBytesPerSample = sizeof(short) + RgbBytes + BgraBytes;
     private const double BytesPerGigabyte = 1L << 30;
 
+    /// <summary>The rows of tiles held at once: the one being written and the next, which is generated meanwhile.</summary>
+    private const int TileRowsInMemory = 2;
+
     private static readonly JobPriority _priority = new(JobPriorityClass.Background);
 
     private readonly IComputeService _compute;
@@ -44,6 +51,12 @@ public sealed class MapExportService : IMapExportService
     }
 
     private int MaxRunning => Math.Max(1, _compute.WorkerCount * JobsPerWorker);
+
+    /// <summary>
+    /// Where the bands of the PNG images are compressed: on the thread pool, or in the browser, whose one thread has no pool
+    /// to share the work with, on the Web Workers of the compute service.
+    /// </summary>
+    private IPngBandCompressor Compressor => OperatingSystem.IsBrowser() ? new ComputePngBandCompressor(_compute, _priority) : ThreadPoolPngBandCompressor.Instance;
 
     public IReadOnlyList<int> GetScales(WorldKey world, LayerMode layer) => TileMetrics.For(world, layer).Scales;
 
@@ -85,9 +98,9 @@ public sealed class MapExportService : IMapExportService
             warnings.Add(Format($"With {layout.PixelCount:N0} pixels per seed, the export takes long, and opening the image needs about {layout.PixelCount * ViewerBytesPerPixel / BytesPerGigabyte:N1} GB of memory."));
 
         var samples = TileMetrics.For(request.Worlds[0], request.Layer).TileSamples;
-        var memory = (long)layout.Width * samples * (request.Layer.HasBiomeSamples ? BiomeBytesPerSample : ColourBytesPerSample);
+        var memory = (long)layout.Width * samples * TileRowsInMemory * (request.Layer.HasBiomeSamples ? BiomeBytesPerSample : ColourBytesPerSample);
         if (memory > LargeMemoryBytes)
-            warnings.Add(Format($"While it runs, the export holds about {memory / BytesPerGigabyte:N1} GB of memory for each band of rows it writes."));
+            warnings.Add(Format($"While it runs, the export holds about {memory / BytesPerGigabyte:N1} GB of memory for the rows of tiles it generates and writes."));
 
         return warnings;
     }
@@ -98,29 +111,10 @@ public sealed class MapExportService : IMapExportService
         if (FindProblems(request) is [var problem, ..])
             throw new ArgumentException(problem, nameof(request));
 
-        var layout = request.GetLayout();
-        var rows = new RowProgress(progress, (long)layout.Height * request.Worlds.Count);
-        using var buffer = new DeferredWriteStream();
-
-        if (!request.IsArchive)
-        {
-            using var sink = WholeImageSink.Create(buffer, layout, GetFormat(request, request.Worlds[0]));
-            await RenderAsync(request, request.Worlds[0], layout, sink, buffer, destination, rows, cancellationToken);
-        }
+        if (OperatingSystem.IsBrowser())
+            await WriteAsync(request, destination, progress, cancellationToken).ConfigureAwait(false);
         else
-        {
-            using (var archive = new ZipArchive(buffer, ZipArchiveMode.Create, leaveOpen: true))
-            {
-                foreach (var world in request.Worlds)
-                {
-                    using var sink = CreateArchiveSink(archive, request, world, layout);
-                    await RenderAsync(request, world, layout, sink, buffer, destination, rows, cancellationToken);
-                }
-            }
-        }
-
-        await buffer.DrainToAsync(destination, cancellationToken);
-        await destination.FlushAsync(cancellationToken);
+            await Task.Run(() => WriteAsync(request, destination, progress, cancellationToken), cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>The name an image of a world gets inside an archive, or the prefix of the names of its tiles.</summary>
@@ -141,13 +135,41 @@ public sealed class MapExportService : IMapExportService
 
     private static string Format(FormattableString text) => text.ToString(CultureInfo.InvariantCulture);
 
-    private IImageRowSink CreateArchiveSink(ZipArchive archive, MapExportRequest request, WorldKey world, MapImageLayout layout)
+    private async Task WriteAsync(MapExportRequest request, Stream destination, IProgress<double>? progress, CancellationToken cancellationToken)
+    {
+        var layout = request.GetLayout();
+        var rows = new RowProgress(progress, (long)layout.Height * request.Worlds.Count);
+        var compressor = Compressor;
+        using var buffer = new DeferredWriteStream();
+
+        if (!request.IsArchive)
+        {
+            using var sink = WholeImageSink.Create(buffer, layout, GetFormat(request, request.Worlds[0]), compressor);
+            await RenderAsync(request, request.Worlds[0], layout, sink, buffer, destination, rows, cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            using (var archive = new ZipArchive(buffer, ZipArchiveMode.Create, leaveOpen: true))
+            {
+                foreach (var world in request.Worlds)
+                {
+                    using var sink = CreateArchiveSink(archive, request, world, layout, compressor);
+                    await RenderAsync(request, world, layout, sink, buffer, destination, rows, cancellationToken).ConfigureAwait(false);
+                }
+            }
+        }
+
+        await buffer.DrainToAsync(destination, cancellationToken).ConfigureAwait(false);
+        await destination.FlushAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    private IImageRowSink CreateArchiveSink(ZipArchive archive, MapExportRequest request, WorldKey world, MapImageLayout layout, IPngBandCompressor compressor)
     {
         var format = GetFormat(request, world);
         var name = GetEntryName(world, request.TileSize);
         return request.TileSize is { } tileSize
-            ? new TiledImageSink(archive, name, layout, tileSize, format)
-            : WholeImageSink.Create(archive, name, layout, format);
+            ? new TiledImageSink(archive, name, layout, tileSize, format, compressor)
+            : WholeImageSink.Create(archive, name, layout, format, compressor);
     }
 
     /// <summary>Layers of biomes keep one palette index per biome id, with the id of no biome transparent; other layers are painted.</summary>
@@ -156,36 +178,72 @@ public sealed class MapExportService : IMapExportService
             ? PngFormat.Indexed(_colorizer.GetBiomeColors(request.Style, world.Version), Constants.NoBiomeTileValue)
             : PngFormat.Rgb;
 
-    /// <summary>Generates the image one row of tiles at a time and passes the rows on as they are complete.</summary>
-    private async Task RenderAsync(MapExportRequest request, WorldKey world, MapImageLayout layout, IImageRowSink sink, DeferredWriteStream buffer, Stream destination, RowProgress rows, CancellationToken cancellationToken)
+    /// <summary>
+    /// Generates the image one row of tiles at a time and passes its rows on as they are complete; the next row of tiles is
+    /// generated meanwhile, so the workers do not wait for the image to be coloured, compressed and stored.
+    /// </summary>
+    private async Task RenderAsync(MapExportRequest request, WorldKey world, MapImageLayout layout, IImageRowSink sink, DeferredWriteStream buffer, Stream destination,
+        RowProgress rows, CancellationToken cancellationToken)
     {
-        var content = MapContent.For(world, request.Layer, request.SampleHeight, request.Octaves);
-        var samples = TileMetrics.For(world, request.Layer).TileSamples;
+        var tiles = new TileRowSource(MapContent.For(world, request.Layer, request.SampleHeight, request.Octaves), request.Scale, TileMetrics.For(world, request.Layer).TileSamples, layout);
         var bytesPerPixel = request.Layer.HasBiomeSamples ? 1 : RgbBytes;
-        var firstColumn = FloorDivide(layout.SampleX, samples);
-        var lastColumn = FloorDivide(layout.SampleX + layout.Width - 1, samples);
         var row = new byte[layout.Width * bytesPerPixel];
 
-        for (var tileZ = FloorDivide(layout.SampleZ, samples); tileZ <= FloorDivide(layout.SampleZ + layout.Height - 1, samples); tileZ++)
+        using var stopping = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        var next = GenerateAsync(tiles, tiles.FirstRow, stopping.Token);
+        try
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            ComputeJob<TileData>[] jobs = [.. Enumerable.Range(firstColumn, lastColumn - firstColumn + 1).Select(tileX => new TileJob(content.GetRequest(new TileKey(request.Scale, tileX, tileZ)), samples))];
-            var tiles = await _compute.RunAllAsync(jobs, _priority, MaxRunning, cancellationToken: cancellationToken);
-            var pixels = Array.ConvertAll(tiles, tile => GetPixels(tile, request.Style));
-
-            var top = Math.Max(tileZ * samples, layout.SampleZ);
-            var bottom = Math.Min((tileZ + 1) * samples, layout.SampleZ + layout.Height);
-            for (var sampleZ = top; sampleZ < bottom; sampleZ++)
+            for (var tileZ = tiles.FirstRow; tileZ <= tiles.LastRow; tileZ++)
             {
-                FillRow(row, pixels, firstColumn, samples, sampleZ - tileZ * samples, layout, bytesPerPixel);
-                sink.WriteRow(row);
-            }
+                cancellationToken.ThrowIfCancellationRequested();
+                var generated = await next.ConfigureAwait(false);
+                if (tileZ < tiles.LastRow)
+                    next = GenerateAsync(tiles, tileZ + 1, stopping.Token);
 
-            rows.Add(bottom - top);
-            await buffer.DrainToAsync(destination, cancellationToken);
+                var pixels = GetPixels(generated, request.Style);
+                var top = Math.Max(tileZ * tiles.Samples, layout.SampleZ);
+                var bottom = Math.Min((tileZ + 1) * tiles.Samples, layout.SampleZ + layout.Height);
+                for (var sampleZ = top; sampleZ < bottom; sampleZ++)
+                {
+                    FillRow(row, pixels, tiles.FirstColumn, tiles.Samples, sampleZ - tileZ * tiles.Samples, layout, bytesPerPixel);
+                    await sink.WriteRowAsync(row).ConfigureAwait(false);
+                }
+
+                rows.Add(bottom - top);
+                await buffer.DrainToAsync(destination, cancellationToken).ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            stopping.Cancel();
+            next.Forget();
         }
 
-        sink.Finish();
+        await sink.FinishAsync().ConfigureAwait(false);
+    }
+
+    private Task<TileData[]> GenerateAsync(TileRowSource tiles, int tileZ, CancellationToken cancellationToken)
+    {
+        ComputeJob<TileData>[] jobs = [.. Enumerable.Range(tiles.FirstColumn, tiles.LastColumn - tiles.FirstColumn + 1).Select(tileX =>
+            new TileJob(tiles.Content.GetRequest(new TileKey(tiles.Scale, tileX, tileZ)), tiles.Samples))];
+        return _compute.RunAllAsync(jobs, _priority, MaxRunning, cancellationToken: cancellationToken);
+    }
+
+    /// <summary>The pixels of a row of tiles, coloured side by side where the runtime has threads to share the work.</summary>
+    private byte[][] GetPixels(TileData[] tiles, TileStyle style)
+    {
+        var pixels = new byte[tiles.Length][];
+        if (OperatingSystem.IsBrowser())
+        {
+            for (var index = 0; index < tiles.Length; index++)
+                pixels[index] = GetPixels(tiles[index], style);
+        }
+        else
+        {
+            Parallel.For(0, tiles.Length, index => pixels[index] = GetPixels(tiles[index], style));
+        }
+
+        return pixels;
     }
 
     /// <summary>The bytes of a tile's pixels, row by row: biome ids, or red, green and blue.</summary>
@@ -222,6 +280,15 @@ public sealed class MapExportService : IMapExportService
     }
 
     private static int FloorDivide(int value, int divisor) => (int)Math.Floor(value / (double)divisor);
+
+    /// <summary>The map tiles an image is made of: what they show, at which scale, and the columns and rows of them it spans.</summary>
+    private sealed record TileRowSource(MapContent Content, int Scale, int Samples, MapImageLayout Layout)
+    {
+        public int FirstColumn => FloorDivide(Layout.SampleX, Samples);
+        public int LastColumn => FloorDivide(Layout.SampleX + Layout.Width - 1, Samples);
+        public int FirstRow => FloorDivide(Layout.SampleZ, Samples);
+        public int LastRow => FloorDivide(Layout.SampleZ + Layout.Height - 1, Samples);
+    }
 
     /// <summary>Reports the share of all rows of all images written so far.</summary>
     private sealed class RowProgress(IProgress<double>? progress, long total)

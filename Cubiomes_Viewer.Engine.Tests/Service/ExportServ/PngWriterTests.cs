@@ -1,17 +1,22 @@
 using Cubiomes_Viewer.Engine.Data.Colors;
+using Cubiomes_Viewer.Engine.Data.Compute;
 using Cubiomes_Viewer.Engine.Data.Export;
+using Cubiomes_Viewer.Engine.Extensions;
+using Cubiomes_Viewer.Engine.Service.ComputeServ;
 using Cubiomes_Viewer.Engine.Service.ExportServ;
+
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Cubiomes_Viewer.Engine.Tests.Service.ExportServ;
 
 public sealed class PngWriterTests
 {
     [Fact]
-    public void Image_EndsWithTheEndChunkEveryPngEndsWith()
+    public async Task Image_EndsWithTheEndChunkEveryPngEndsWith()
     {
         byte[] endChunk = [0, 0, 0, 0, (byte)'I', (byte)'E', (byte)'N', (byte)'D', 0xAE, 0x42, 0x60, 0x82];
 
-        var png = Write(PngFormat.Rgb, 1, [[1, 2, 3]]);
+        var png = await WriteAsync(PngFormat.Rgb, 1, [[1, 2, 3]]);
 
         Assert.Equal(endChunk, png[^endChunk.Length..]);
     }
@@ -29,23 +34,23 @@ public sealed class PngWriterTests
     }
 
     [Fact]
-    public void RgbImage_ReadsBackRowByRow()
+    public async Task RgbImage_ReadsBackRowByRow()
     {
         byte[][] rows = [[1, 2, 3, 250, 251, 252], [0, 0, 0, 255, 255, 255], [9, 8, 7, 1, 1, 1]];
 
-        var image = PngReader.Read(Write(PngFormat.Rgb, 2, rows));
+        var image = PngReader.Read(await WriteAsync(PngFormat.Rgb, 2, rows));
 
         Assert.Equal((2, 3, PngColorType.Rgb), (image.Width, image.Height, image.ColorType));
         Assert.Equal(rows.SelectMany(row => row), image.Pixels);
     }
 
     [Fact]
-    public void IndexedImage_KeepsItsPaletteAndTheTransparentEntry()
+    public async Task IndexedImage_KeepsItsPaletteAndTheTransparentEntry()
     {
         var format = PngFormat.Indexed([new RgbColor(10, 20, 30), new RgbColor(40, 50, 60), new RgbColor(70, 80, 90)], transparentIndex: 2);
         byte[][] rows = [[0, 1, 2, 1], [2, 2, 0, 0]];
 
-        var image = PngReader.Read(Write(format, 4, rows));
+        var image = PngReader.Read(await WriteAsync(format, 4, rows));
 
         Assert.Equal(PngColorType.Indexed, image.ColorType);
         Assert.Equal([10, 20, 30, 40, 50, 60, 70, 80, 90], image.Palette);
@@ -54,12 +59,12 @@ public sealed class PngWriterTests
     }
 
     [Fact]
-    public void LargeImage_IsCutIntoSeveralDataChunksAndStillReadsBack()
+    public async Task LargeImage_IsCutIntoSeveralDataChunksAndStillReadsBack()
     {
         var random = new Random(7);
         var rows = Enumerable.Range(0, 300).Select(_ => { var row = new byte[900]; random.NextBytes(row); return row; }).ToArray();
 
-        var png = Write(PngFormat.Rgb, 300, rows);
+        var png = await WriteAsync(PngFormat.Rgb, 300, rows);
 
         Assert.True(png.Length > 3 * 64 * 1024);
         Assert.Equal(rows.SelectMany(row => row), PngReader.Read(png).Pixels);
@@ -85,32 +90,48 @@ public sealed class PngWriterTests
     [Theory]
     [InlineData(2000, 1200, false)]
     [InlineData(4500, 1100, true)]
-    public void Image_LargerThanOneBand_IsJoinedIntoOneStreamThatReadsBack(int width, int height, bool isIndexed)
+    public async Task Image_LargerThanOneBand_IsJoinedIntoOneStreamThatReadsBack(int width, int height, bool isIndexed)
     {
         var format = isIndexed ? PngFormat.Indexed([.. Enumerable.Range(0, 256).Select(value => new RgbColor((byte)value, 0, 0))], transparentIndex: -1) : PngFormat.Rgb;
         var rows = Enumerable.Range(0, height).Select(row => CreateTerrainRow(width * format.BytesPerPixel, row)).ToArray();
 
-        var png = Write(format, width, rows);
+        var png = await WriteAsync(format, width, rows);
 
         Assert.True((long)width * format.BytesPerPixel * height > 4 << 20);
         Assert.Equal(rows.SelectMany(row => row), PngReader.Read(png).Pixels);
     }
 
-    [Fact]
-    public void Row_OfTheWrongLength_IsRefused()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Image_CompressedByWorkersOfAnotherRuntime_IsTheSameAsOnTheThreadPool(bool isIndexed)
     {
-        using var writer = new PngWriter(new MemoryStream(), 4, 1, PngFormat.Rgb);
+        using var services = new ServiceCollection().AddLogging().AddCubiomesEngine().BuildServiceProvider();
+        var workers = new ComputePngBandCompressor(new EnvelopeComputeService(services.GetRequiredService<ComputeWorkerHost>()), new JobPriority(JobPriorityClass.Background));
+        var format = isIndexed ? PngFormat.Indexed([.. Enumerable.Range(0, 256).Select(value => new RgbColor((byte)value, 0, 0))], transparentIndex: -1) : PngFormat.Rgb;
+        var rows = Enumerable.Range(0, 1200).Select(row => CreateTerrainRow(2000 * format.BytesPerPixel, row)).ToArray();
 
-        Assert.Throws<ArgumentException>(() => writer.WriteRow(new byte[4]));
+        var onThePool = await WriteAsync(format, 2000, rows);
+        var onWorkers = await WriteAsync(format, 2000, rows, workers);
+
+        Assert.Equal(onThePool, onWorkers);
     }
 
     [Fact]
-    public void Finish_BeforeEveryRowIsWritten_IsRefused()
+    public async Task Row_OfTheWrongLength_IsRefused()
+    {
+        using var writer = new PngWriter(new MemoryStream(), 4, 1, PngFormat.Rgb);
+
+        await Assert.ThrowsAsync<ArgumentException>(async () => await writer.WriteRowAsync(new byte[4]));
+    }
+
+    [Fact]
+    public async Task Finish_BeforeEveryRowIsWritten_IsRefused()
     {
         using var writer = new PngWriter(new MemoryStream(), 1, 2, PngFormat.Rgb);
-        writer.WriteRow(new byte[3]);
+        await writer.WriteRowAsync(new byte[3]);
 
-        Assert.Throws<InvalidOperationException>(writer.Finish);
+        await Assert.ThrowsAsync<InvalidOperationException>(writer.FinishAsync);
     }
 
     /// <summary>A row of smooth areas with sharp edges, as map layers have, that changes slowly from row to row.</summary>
@@ -122,16 +143,27 @@ public sealed class PngWriterTests
         return bytes;
     }
 
-    private static byte[] Write(PngFormat format, int width, byte[][] rows)
+    private static async Task<byte[]> WriteAsync(PngFormat format, int width, byte[][] rows, IPngBandCompressor? compressor = null)
     {
         using var stream = new MemoryStream();
-        using (var writer = new PngWriter(stream, width, rows.Length, format))
+        using (var writer = new PngWriter(stream, width, rows.Length, format, compressor ?? ThreadPoolPngBandCompressor.Instance))
         {
             foreach (var row in rows)
-                writer.WriteRow(row);
-            writer.Finish();
+                await writer.WriteRowAsync(row);
+            await writer.FinishAsync();
         }
 
         return stream.ToArray();
+    }
+
+    /// <summary>Runs each job as a Web Worker does: sent to a worker host as its envelope, and its result read back from the reply.</summary>
+    private sealed class EnvelopeComputeService(ComputeWorkerHost host) : IComputeService
+    {
+        private const int Workers = 2;
+
+        public int WorkerCount => Workers;
+
+        public Task<TResult> RunAsync<TResult>(ComputeJob<TResult> job, JobPriority priority, CancellationToken cancellationToken = default)
+            => Task.Run(() => ComputeEnvelope.DeserializeResponse<TResult>(host.Execute(ComputeEnvelope.SerializeJob(job))), cancellationToken);
     }
 }

@@ -22,6 +22,7 @@ namespace Cubiomes_Viewer.Engine.Data.Compute;
 [JsonDerivedType(typeof(StructureListJob), "structureList")]
 [JsonDerivedType(typeof(QuadListJob), "quadList")]
 [JsonDerivedType(typeof(ConditionLocationsJob), "conditionLocations")]
+[JsonDerivedType(typeof(PngBandJob), "pngBand")]
 public abstract record ComputeJob;
 
 public abstract record ComputeJob<TResult> : ComputeJob;

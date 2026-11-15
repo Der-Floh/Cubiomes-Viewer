@@ -17,19 +17,19 @@ internal sealed class WholeImageSink : IImageRowSink
     }
 
     /// <summary>Writes the image into a stream, which stays open.</summary>
-    public static WholeImageSink Create(Stream destination, MapImageLayout layout, PngFormat format)
-        => new(new PngWriter(destination, layout.Width, layout.Height, format), null);
+    public static WholeImageSink Create(Stream destination, MapImageLayout layout, PngFormat format, IPngBandCompressor compressor)
+        => new(new PngWriter(destination, layout.Width, layout.Height, format, compressor), null);
 
     /// <summary>Writes the image as one entry of an archive.</summary>
-    public static WholeImageSink Create(ZipArchive archive, string entryName, MapImageLayout layout, PngFormat format)
+    public static WholeImageSink Create(ZipArchive archive, string entryName, MapImageLayout layout, PngFormat format, IPngBandCompressor compressor)
     {
         var stream = archive.CreateEntry(entryName, CompressionLevel.NoCompression).Open();
-        return new WholeImageSink(new PngWriter(stream, layout.Width, layout.Height, format), stream);
+        return new WholeImageSink(new PngWriter(stream, layout.Width, layout.Height, format, compressor), stream);
     }
 
-    public void WriteRow(ReadOnlySpan<byte> row) => _writer.WriteRow(row);
+    public ValueTask WriteRowAsync(ReadOnlyMemory<byte> row) => _writer.WriteRowAsync(row);
 
-    public void Finish() => _writer.Finish();
+    public Task FinishAsync() => _writer.FinishAsync();
 
     public void Dispose()
     {
