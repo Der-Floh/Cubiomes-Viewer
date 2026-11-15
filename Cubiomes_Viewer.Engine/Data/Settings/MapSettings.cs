@@ -62,7 +62,6 @@ public sealed class MapSettings
         StructureType.AbandonedCamp,
         StructureType.Fortress,
         StructureType.Bastion,
-        StructureType.NetherFossil,
         StructureType.EndCity,
     ];
 }

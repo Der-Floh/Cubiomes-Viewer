@@ -31,7 +31,7 @@ public sealed class StructureCatalog : IStructureCatalog
         new(StructureType.Fortress, "Nether fortress", 8),
         new(StructureType.Bastion, "Bastion remnant", 8),
         new(StructureType.RuinedPortalNether, "Ruined portal", 8),
-        new(StructureType.NetherFossil, "Nether fossil", 1),
+        new(StructureType.NetherFossil, "Nether fossil", 0.5),
         new(StructureType.EndCity, "End city", 8),
         new(StructureType.EndGateway, "End gateway", 8),
     ];

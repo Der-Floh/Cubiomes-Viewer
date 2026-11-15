@@ -203,7 +203,7 @@ public sealed class LayersPanelViewModelTests : IDisposable
 
         Assert.False(_layers.IsOverworld);
         Assert.Equal(["Nether fortress", "Bastion remnant", "Ruined portal", "Nether fossil"], _layers.Structures.Select(structure => structure.Toggle.Name));
-        Assert.Equal([true, true, false, true], _layers.Structures.Select(structure => structure.Toggle.IsChecked));
+        Assert.Equal([true, true, false, false], _layers.Structures.Select(structure => structure.Toggle.IsChecked));
     }
 
     [AvaloniaFact]
