@@ -2,7 +2,7 @@
 
 A cross-platform Minecraft Java Edition seed finder and biome map viewer, built on top of the [cubiomes](https://github.com/Cubitect/cubiomes) world-generation library.
 
-![Cubiomes Viewer showing the structure types and the village filter in the Layers panel, next to the shaded biome map of seed 262 with a pin named Home on a village](docs/screenshot.png)
+![Cubiomes Viewer showing the structure types and the village filter in the Layers panel, next to the shaded 1.21.4 biome map of seed 262 with a pin named Home beside a river](docs/screenshot.png)
 
 [Open the web version](https://der-floh.github.io/Cubiomes-Viewer) · [Download for Windows, Linux or macOS](https://github.com/Der-Floh/Cubiomes-Viewer/releases)
 
