@@ -27,6 +27,8 @@ public sealed class MapMenuViewModelTests : IDisposable
     private readonly MapViewModel _map;
     private readonly WorldSession _session;
 
+    private IMapStyleService Styles => _services.GetRequiredService<IMapStyleService>();
+
     public MapMenuViewModelTests()
     {
         _menu = _services.GetRequiredService<MapMenuViewModel>();
@@ -259,7 +261,8 @@ public sealed class MapMenuViewModelTests : IDisposable
 
         Assert.Equal(Dimension.Nether, _session.Dimension);
         Assert.Equal(new MapCamera(-37.5, 125.5, 2), _map.Camera);
-        Assert.Equal(MapSelection.ForSpot("From the Overworld", new BlockPos(-38, 125), "Overworld X -300, Z 1000"), _map.Selection);
+        Assert.Equal(MapSelection.ForSpot("From the Overworld", new BlockPos(-38, 125), "Overworld X -300, Z 1000", Styles.GetDimensionMarker(Dimension.Overworld),
+            Styles.GetPinLook(MarkerNames.Of(Dimension.Overworld))), _map.Selection);
     }
 
     [AvaloniaFact]
@@ -271,7 +274,8 @@ public sealed class MapMenuViewModelTests : IDisposable
         _menu.OpenOtherDimensionCommand.Execute(null);
 
         Assert.Equal(Dimension.Overworld, _session.Dimension);
-        Assert.Equal(MapSelection.ForSpot("From the Nether", new BlockPos(100, -52), "Nether X 12, Z -7"), _map.Selection);
+        Assert.Equal(MapSelection.ForSpot("From the Nether", new BlockPos(100, -52), "Nether X 12, Z -7", Styles.GetDimensionMarker(Dimension.Nether),
+            Styles.GetPinLook(MarkerNames.Of(Dimension.Nether))), _map.Selection);
     }
 
     [AvaloniaFact]

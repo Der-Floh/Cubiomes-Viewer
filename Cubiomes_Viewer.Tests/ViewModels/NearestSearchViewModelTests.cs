@@ -56,7 +56,7 @@ public sealed class NearestSearchViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task FindAsync_Biome_ZoomsInUntilItsCellsShowAndRingsTheCell()
+    public async Task FindAsync_Biome_ZoomsInUntilItsCellsShowAndMarksTheCellWithItsPin()
     {
         var (nearest, map) = Open();
         var session = _services.GetRequiredService<WorldSession>();
@@ -67,7 +67,10 @@ public sealed class NearestSearchViewModelTests : IDisposable
         await nearest.FindAsync(new BiomeTarget("Plains", Plains), _origin);
 
         var picked = Assert.IsType<MapSelection>(map.Selection);
+        var styles = _services.GetRequiredService<IMapStyleService>();
         Assert.True(picked.IsSpot);
+        Assert.Same(styles.GetBiomeMarker(Plains), picked.Marker);
+        Assert.Same(styles.GetBiomePinLook(Plains), picked.SpotLook);
         Assert.Equal("Plains", picked.Name);
         Assert.Equal($"{BlockPosText.ToDistance(_origin, picked.Position)} at Y 63", picked.Note);
         Assert.Equal(TilePyramid.GetMaxBlocksPerPixel(TileMetrics.For(map.World, LayerMode.Biomes), 4), map.Camera.BlocksPerPixel);

@@ -92,6 +92,20 @@ public sealed class MapStyleServiceTests
     }
 
     [AvaloniaFact]
+    public void GetBiomePinLook_LightAndDarkBiomes_TintTheGlyphToStandOutOnTheFace()
+    {
+        const int SnowyPlains = 12;
+        const int DeepOcean = 24;
+        var biomes = new BiomeCatalog();
+        var styles = new MapStyleService(biomes, new VersionCatalog());
+        var deepOcean = biomes.DefaultPalette[DeepOcean];
+
+        Assert.Equal(GetColor("Marker.GlyphDark"), Assert.IsType<SvgImage>(styles.GetBiomePinLook(SnowyPlains).Glyph).CurrentColor);
+        Assert.Equal(Color.FromRgb(deepOcean.Red, deepOcean.Green, deepOcean.Blue), Assert.IsType<SvgImage>(styles.GetBiomePinLook(DeepOcean).Glyph).CurrentColor);
+        Assert.Same(styles.GetBiomePinLook(DeepOcean), styles.GetBiomePinLook(DeepOcean));
+    }
+
+    [AvaloniaFact]
     public void GetBiomeMarker_AskedTwice_GivesOutOneBadge()
     {
         const int Forest = 4;

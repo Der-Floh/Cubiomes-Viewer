@@ -14,6 +14,7 @@ using Cubiomes_Viewer.Engine.Service.WorldGenServ;
 using Cubiomes_Viewer.Service.AppAddressServ;
 using Cubiomes_Viewer.Service.ClipboardServ;
 using Cubiomes_Viewer.Service.MapLinkServ;
+using Cubiomes_Viewer.Service.MapStyleServ;
 using Cubiomes_Viewer.Service.NotificationServ;
 using Cubiomes_Viewer.Service.StorageServ;
 
@@ -87,10 +88,13 @@ public sealed partial class MapMenuViewModel : ViewModelBase
     private readonly IClipboardService _clipboardService;
     private readonly IStorageService _storageService;
     private readonly INotificationService _notificationService;
+    private readonly IMapStyleService _styleService;
 
     public MapMenuViewModel(MapViewModel map, NearestSearchViewModel nearest, WorldSession session, ISeedHistoryService seedHistory, IVersionCatalog versionCatalog, IMapLinkService mapLinks,
-        IAppAddressService address, IClipboardService clipboardService, IStorageService storageService, INotificationService notificationService) : base(notificationService)
+        IAppAddressService address, IClipboardService clipboardService, IStorageService storageService, INotificationService notificationService,
+        IMapStyleService styleService) : base(notificationService)
     {
+        _styleService = styleService;
         _map = map;
         _nearest = nearest;
         _session = session;
@@ -135,7 +139,7 @@ public sealed partial class MapMenuViewModel : ViewModelBase
     [RelayCommand]
     public void StopMeasuring() => _map.MeasureStart = null;
 
-    /// <summary>Opens the linked dimension at the block that lines up with the menu's block, and rings that block.</summary>
+    /// <summary>Opens the linked dimension at the block that lines up with the menu's block, and marks it with the pin of the dimension it came from.</summary>
     [RelayCommand(CanExecute = nameof(CanOpenOtherDimension))]
     public void OpenOtherDimension()
     {
@@ -146,7 +150,8 @@ public sealed partial class MapMenuViewModel : ViewModelBase
 
         _session.Dimension = dimension;
         _map.JumpTo(target);
-        _map.Selection = MapSelection.ForSpot(title, target, $"{from} {BlockPosText.ToBlock(origin)}");
+        _map.Selection = MapSelection.ForSpot(title, target, $"{from} {BlockPosText.ToBlock(origin)}", _styleService.GetDimensionMarker(from),
+            _styleService.GetPinLook(MarkerNames.Of(from)));
     }
 
     [RelayCommand(CanExecute = nameof(CanOpenShadowSeed))]

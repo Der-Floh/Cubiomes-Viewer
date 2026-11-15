@@ -165,7 +165,8 @@ public sealed partial class NearestSearchViewModel : ViewModelBase
         {
             StructureTarget structure => (MapSelection.ForStructure(structure.Name, _styleService.GetStructureMarker(structure.Type), found.Position, structure.Type, distance), double.PositiveInfinity),
             StrongholdTarget => (MapSelection.ForStronghold(found.Index ?? 0, _styleService.Stronghold, found.Position, distance), double.PositiveInfinity),
-            BiomeTarget biome => (MapSelection.ForSpot(biome.Name, found.Position, string.Create(CultureInfo.InvariantCulture, $"{distance} at Y {y}")), GetBiomeCellZoom()),
+            BiomeTarget biome => (MapSelection.ForSpot(biome.Name, found.Position, string.Create(CultureInfo.InvariantCulture, $"{distance} at Y {y}"),
+                _styleService.GetBiomeMarker(biome.Biome), _styleService.GetBiomePinLook(biome.Biome)), GetBiomeCellZoom()),
             _ => throw new NotSupportedException($"Unsupported target: {target}"),
         };
 

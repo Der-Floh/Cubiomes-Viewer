@@ -35,6 +35,9 @@ public sealed class MapStyleService : IMapStyleService
     private const double Gamma = 2.4;
     private const double ContrastOffset = 0.05;
 
+    /// <summary>The contrast WCAG asks of graphics against what lies next to them.</summary>
+    private const double GraphicsContrast = 3;
+
     private static readonly Uri _assetBaseUri = new($"avares://{typeof(MapStyleService).Assembly.GetName().Name}/");
 
     public double PinSize => Math.Max(PinSideLength * MarkerScale, PinPainter.SmallestSizeWithRoom);
@@ -54,6 +57,7 @@ public sealed class MapStyleService : IMapStyleService
     private readonly Dictionary<string, MapMarker> _markers = new(StringComparer.Ordinal);
     private readonly Dictionary<string, PinLook> _pinLooks = new(StringComparer.Ordinal);
     private readonly Dictionary<int, MapMarker> _biomeMarkers = [];
+    private readonly Dictionary<int, PinLook> _biomePinLooks = [];
     private Color? _slimeChunkColor;
     private Color? _measureColor;
     private Color? _outlineColor;
@@ -76,15 +80,24 @@ public sealed class MapStyleService : IMapStyleService
     {
         if (!_biomeMarkers.TryGetValue(biome, out var marker))
         {
-            var icon = _biomeCatalog.GetName(_versionCatalog.Newest, biome)
-                ?? throw new ArgumentOutOfRangeException(nameof(biome), biome, "The generator knows no biome with this id.");
             var color = _biomeCatalog.DefaultPalette[biome];
-            var fill = Color.FromRgb(color.Red, color.Green, color.Blue);
-            marker = new MapMarker(CreateBiomeGlyph(icon, GetContrastingGlyphColor(color)), new ImmutableSolidColorBrush(fill));
+            marker = new MapMarker(CreateBiomeGlyph(GetBiomeIcon(biome), GetContrastingGlyphColor(color)), new ImmutableSolidColorBrush(ToColor(color)));
             _biomeMarkers.Add(biome, marker);
         }
 
         return marker;
+    }
+
+    public PinLook GetBiomePinLook(int biome)
+    {
+        if (!_biomePinLooks.TryGetValue(biome, out var look))
+        {
+            var (icon, fill) = (GetBiomeIcon(biome), ToColor(_biomeCatalog.DefaultPalette[biome]));
+            look = new PinLook(icon, new ImmutableSolidColorBrush(fill), CreateBiomeGlyph(icon, GetGlyphColorOnFace(fill)));
+            _biomePinLooks.Add(biome, look);
+        }
+
+        return look;
     }
 
     public MapMarker GetDimensionMarker(Dimension dimension) => GetMarker(MarkerNames.Of(dimension));
@@ -157,6 +170,20 @@ public sealed class MapStyleService : IMapStyleService
         var againstDark = (luminance + ContrastOffset) / (GetLuminance(dark.R, dark.G, dark.B) + ContrastOffset);
         return againstLight >= againstDark ? light : dark;
     }
+
+    /// <summary>The colour of a pin's glyph on its face: the pin's own colour where it stands out there, the dark glyph colour otherwise.</summary>
+    private Color GetGlyphColorOnFace(Color fill)
+    {
+        var face = GlyphColor;
+        var (faceLight, fillLight) = (GetLuminance(face.R, face.G, face.B) + ContrastOffset, GetLuminance(fill.R, fill.G, fill.B) + ContrastOffset);
+        return Math.Max(faceLight, fillLight) / Math.Min(faceLight, fillLight) >= GraphicsContrast ? fill : GetResource<Color>(DarkGlyphColorKey);
+    }
+
+    /// <summary>The name a biome's glyph file has: the biome's name in the newest version.</summary>
+    private string GetBiomeIcon(int biome)
+        => _biomeCatalog.GetName(_versionCatalog.Newest, biome) ?? throw new ArgumentOutOfRangeException(nameof(biome), biome, "The generator knows no biome with this id.");
+
+    private static Color ToColor(RgbColor color) => Color.FromRgb(color.Red, color.Green, color.Blue);
 
     private static double GetLuminance(byte red, byte green, byte blue)
         => RedWeight * ToLinear(red) + GreenWeight * ToLinear(green) + BlueWeight * ToLinear(blue);

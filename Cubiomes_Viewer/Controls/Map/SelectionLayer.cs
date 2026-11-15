@@ -10,8 +10,8 @@ using Cubiomes_Viewer.Service.MapStyleServ;
 namespace Cubiomes_Viewer.Controls.Map;
 
 /// <summary>
-/// Draws the picked marker or pin larger than the others and above them, rings a picked spot, and outlines the boxes that belong to the pick,
-/// such as the pieces of a structure.
+/// Draws the picked marker or pin larger than the others and above them, marks a picked spot with its pin, and outlines the boxes that
+/// belong to the pick, such as the pieces of a structure.
 /// </summary>
 public sealed class SelectionLayer : IMapLayer
 {
@@ -20,8 +20,6 @@ public sealed class SelectionLayer : IMapLayer
 
     private const double BoxThickness = 1.5;
     private const byte BoxFillOpacity = 48;
-    private const double SpotThickness = 2;
-    private const double SpotOutlineThickness = 4;
     private const double BlockMiddle = 0.5;
     private static readonly RenderOptions _renderOptions = new() { EdgeMode = EdgeMode.Antialias };
 
@@ -57,8 +55,6 @@ public sealed class SelectionLayer : IMapLayer
     private ImmutableSolidColorBrush LineBrush => field ??= new ImmutableSolidColorBrush(_styleService.SelectionColor);
     private ImmutableSolidColorBrush FillBrush => field ??= new ImmutableSolidColorBrush(_styleService.SelectionColor, BoxFillOpacity / (double)byte.MaxValue);
     private IPen BoxPen => field ??= new ImmutablePen(LineBrush, BoxThickness);
-    private IPen SpotPen => field ??= new ImmutablePen(LineBrush, SpotThickness);
-    private IPen SpotOutlinePen => field ??= new ImmutablePen(new ImmutableSolidColorBrush(_styleService.OutlineColor), SpotOutlineThickness);
 
     public SelectionLayer(IMapStyleService styleService, MeasurePainter measurePainter)
     {
@@ -84,10 +80,10 @@ public sealed class SelectionLayer : IMapLayer
                 _styleService.DrawPin(context, _styleService.GetPinLook(pin.Icon), PinLayer.GetTip(scene.Viewport, pin), scene.Pixels, Magnification);
             else if (picked.Measurement is { } measurement)
                 _measurePainter.DrawKept(context, scene.Viewport, measurement, isPicked: true);
+            else if (picked.SpotLook is { } look)
+                _styleService.DrawPin(context, look, ToScreen(scene.Viewport, picked), scene.Pixels);
             else if (picked.Marker is { } marker)
                 _styleService.DrawMarker(context, marker, ToScreen(scene.Viewport, picked), scene.Pixels, Magnification);
-            else
-                DrawSpot(context, GetMarkerBounds(scene.Viewport, scene.Pixels, picked));
         }
     }
 
@@ -103,17 +99,12 @@ public sealed class SelectionLayer : IMapLayer
             return _styleService.GetPinBounds(PinLayer.GetTip(viewport, pin), Magnification);
         if (picked.Measurement is { } measurement)
             return _measurePainter.GetLabelBounds(viewport, measurement);
+        if (picked.IsSpot)
+            return _styleService.GetPinBounds(ToScreen(viewport, picked));
 
         var center = ToScreen(viewport, picked);
         var size = _styleService.GetMarkerSize(pixels, Magnification);
         return new Rect(center.X - size / 2, center.Y - size / 2, size, size);
-    }
-
-    private void DrawSpot(DrawingContext context, Rect bounds)
-    {
-        var radius = (bounds.Width - SpotOutlineThickness) / 2;
-        context.DrawEllipse(null, SpotOutlinePen, bounds.Center, radius, radius);
-        context.DrawEllipse(null, SpotPen, bounds.Center, radius, radius);
     }
 
     /// <summary>Where a pick lies on screen: a marker at its position, a spot in the middle of its block.</summary>

@@ -30,6 +30,12 @@ public interface IMapStyleService
     /// <summary>The badge of a biome: its glyph on the biome's default map colour, in white or dark, whichever stands out more.</summary>
     MapMarker GetBiomeMarker(int biome);
 
+    /// <summary>
+    /// A pin showing a biome's glyph, with its rim in the biome's default map colour and its glyph too where that colour stands out
+    /// on the pin's face, dark where it does not.
+    /// </summary>
+    PinLook GetBiomePinLook(int biome);
+
     /// <summary>The badge a dimension is picked by.</summary>
     MapMarker GetDimensionMarker(Dimension dimension);
 

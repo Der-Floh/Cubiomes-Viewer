@@ -379,25 +379,25 @@ public sealed class MapHostViewTests : IDisposable
     }
 
     [AvaloniaFact]
-    public void Spot_Picked_DrawsARingAroundItsBlockAndPlacesTheCalloutAboveIt()
+    public void Spot_Picked_DrawsItsPinOnItsBlockAndPlacesTheCalloutWithItsBadgeBesideIt()
     {
         var styleService = _services.GetRequiredService<IMapStyleService>();
         var block = new BlockPos(100, -50);
         ShowAtTheCenter(block);
+        var look = styleService.GetPinLook(MarkerNames.Of(Dimension.Overworld));
 
-        var spot = MapSelection.ForSpot("From the Overworld", block, "Overworld X 800, Z -400");
+        var spot = MapSelection.ForSpot("From the Overworld", block, "Overworld X 800, Z -400", styleService.GetDimensionMarker(Dimension.Overworld), look);
         _map.Selection = spot;
         var frame = CaptureFrame();
 
-        var ring = new SelectionLayer(styleService, new MeasurePainter(styleService)).GetMarkerBounds(GetMapView().Viewport, GetMapView().GetPixelGrid(), spot);
-        Assert.Equal(new Point(_center.X + 0.5, _center.Y + 0.5), ring.Center);
-        var selectionColor = new RgbColor(styleService.SelectionColor.R, styleService.SelectionColor.G, styleService.SelectionColor.B);
-        var row = (int)_center.Y;
-        Assert.Contains(selectionColor, Enumerable.Range((int)ring.Right - 4, 4).Select(x => FramePixels.Read(frame, x, row)));
-        Assert.NotEqual(selectionColor, FramePixels.Read(frame, (int)_center.X, row));
+        var pin = new SelectionLayer(styleService, new MeasurePainter(styleService)).GetMarkerBounds(GetMapView().Viewport, GetMapView().GetPixelGrid(), spot);
+        Assert.Equal(styleService.GetPinBounds(new Point(_center.X + 0.5, _center.Y + 0.5)), pin);
+        var head = new Point(pin.Center.X, pin.Top + pin.Width / 2);
+        Assert.Equal(ToRgb(look.Fill), FramePixels.Read(frame, (int)(head.X + pin.Width * 0.42), (int)head.Y));
+        Assert.True(GetCallout().GetVisualDescendants().OfType<MarkerBadge>().Single().IsEffectivelyVisible);
 
         var callout = GetCallout().Bounds;
-        Assert.True(callout.Bottom <= ring.Top - CalloutPlacement.Gap + 0.5, $"The callout reaches down to {callout.Bottom}.");
+        Assert.False(callout.Intersects(pin), $"The callout {callout} covers the pin {pin}.");
         Assert.Equal("From the Overworld", GetCalloutTitle().Text);
     }
 
@@ -410,7 +410,9 @@ public sealed class MapHostViewTests : IDisposable
 
         Assert.Equal(Dimension.Nether, _session.Dimension);
         Assert.Equal(new MapCamera(100.5, -49.5, 1), _map.Camera);
-        Assert.Equal(MapSelection.ForSpot("From the Overworld", new BlockPos(100, -50), "Overworld X 800, Z -400"), _map.Selection);
+        var styleService = _services.GetRequiredService<IMapStyleService>();
+        Assert.Equal(MapSelection.ForSpot("From the Overworld", new BlockPos(100, -50), "Overworld X 800, Z -400", styleService.GetDimensionMarker(Dimension.Overworld),
+            styleService.GetPinLook(MarkerNames.Of(Dimension.Overworld))), _map.Selection);
         Assert.False(menu.IsOpen, "The menu stayed open.");
     }
 
