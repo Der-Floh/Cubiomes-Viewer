@@ -42,7 +42,7 @@ public sealed class SettingsRepositoryTests : IDisposable
             Appearance = { Theme = AppTheme.Dark },
             Map =
             {
-                CacheMegabytes = 512, SmoothMotion = false, ShowGrid = false, Pins = [new MapPin { Seed = -42, Dimension = Dimension.Nether, X = 7, Z = -9, Name = "Blaze farm", Icon = "Fortress" }],
+                CacheMegabytes = 512, SmoothMotion = false, ShowGrid = false, MarkerSize = MarkerSize.Large, Pins = [new MapPin { Seed = -42, Dimension = Dimension.Nether, X = 7, Z = -9, Name = "Blaze farm", Icon = "Fortress" }],
                 Measurements = [new MapMeasurement { Seed = -42, Dimension = Dimension.Nether, StartX = 1, StartZ = 2, EndX = -30, EndZ = 44, Name = "Tunnel" }],
             },
             World = { ShowExperimentalVersions = true, EstimateTerrain = false, Salts = [new StructureSaltSetting { Type = StructureType.Bastion, Salt = -7, IsReplacing = true }] },
@@ -60,6 +60,7 @@ public sealed class SettingsRepositoryTests : IDisposable
         Assert.Equal(512, loaded.Map.CacheMegabytes);
         Assert.False(loaded.Map.SmoothMotion);
         Assert.False(loaded.Map.ShowGrid);
+        Assert.Equal(MarkerSize.Large, loaded.Map.MarkerSize);
         var pin = Assert.Single(loaded.Map.Pins);
         Assert.Equal((-42L, Dimension.Nether, 7, -9, "Blaze farm", "Fortress"), (pin.Seed, pin.Dimension, pin.X, pin.Z, pin.Name, pin.Icon));
         var measurement = Assert.Single(loaded.Map.Measurements);
@@ -101,6 +102,21 @@ public sealed class SettingsRepositoryTests : IDisposable
         var settings = await _repository.LoadAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(AppTheme.Dark, settings.Appearance.Theme);
+    }
+
+    [Theory]
+    [InlineData("Small", MarkerSize.Small)]
+    [InlineData("Normal", MarkerSize.Small)]
+    [InlineData("Large", MarkerSize.Normal)]
+    [InlineData("VeryLarge", MarkerSize.Large)]
+    public async Task LoadAsync_MarkerSizeOfTheFirstSchema_KeepsHowLargeMarkersAreDrawn(string stored, MarkerSize expected)
+    {
+        var content = Encoding.UTF8.GetBytes($$"""{ "schemaVersion": 1, "map": { "markerSize": "{{stored}}" } }""");
+        await _store.WriteAsync(SettingsRepository.StorageKey, content, TestContext.Current.CancellationToken);
+
+        var settings = await _repository.LoadAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal((expected, AppSettings.CurrentSchemaVersion), (settings.Map.MarkerSize, settings.SchemaVersion));
     }
 
     [Fact]

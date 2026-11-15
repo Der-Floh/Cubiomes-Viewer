@@ -69,16 +69,16 @@ public sealed class SettingsViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
-    public void MarkerSize_VeryLarge_DrawsMarkersLargerThanLargeAndIsStored()
+    public void MarkerSize_Large_DrawsMarkersLargerThanNormalAndIsStored()
     {
+        _settings.SelectedMarkerSize = _settings.MarkerSizes.Single(choice => choice.Value == MarkerSize.Normal);
+        var normal = _map.MarkerScale;
+
         _settings.SelectedMarkerSize = _settings.MarkerSizes.Single(choice => choice.Value == MarkerSize.Large);
-        var large = _map.MarkerScale;
 
-        _settings.SelectedMarkerSize = _settings.MarkerSizes.Single(choice => choice.Value == MarkerSize.VeryLarge);
-
-        Assert.True(_map.MarkerScale > large);
-        Assert.Equal(MarkerSize.VeryLarge, Stored.Map.MarkerSize);
-        Assert.Equal(["Small", "Normal", "Large", "Very large"], _settings.MarkerSizes.Select(choice => choice.Display));
+        Assert.True(_map.MarkerScale > normal);
+        Assert.Equal(MarkerSize.Large, Stored.Map.MarkerSize);
+        Assert.Equal(["Small", "Normal", "Large"], _settings.MarkerSizes.Select(choice => choice.Display));
     }
 
     [AvaloniaFact]

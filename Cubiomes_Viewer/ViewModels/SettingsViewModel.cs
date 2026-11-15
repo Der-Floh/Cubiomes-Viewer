@@ -20,9 +20,9 @@ namespace Cubiomes_Viewer.ViewModels;
 public sealed partial class SettingsViewModel : ViewModelBase
 {
     private const long BytesPerMegabyte = 1024 * 1024;
-    private const double SmallMarkerScale = 0.75;
-    private const double LargeMarkerScale = 2;
-    private const double VeryLargeMarkerScale = 3;
+    private const double SmallMarkerScale = 1;
+    private const double NormalMarkerScale = 2;
+    private const double LargeMarkerScale = 3;
     private const int MaxGridSpacing = 1_000_000;
 
     public string Title { get; } = "Settings";
@@ -110,7 +110,6 @@ public sealed partial class SettingsViewModel : ViewModelBase
         new() { Display = "Small", Value = MarkerSize.Small },
         new() { Display = "Normal", Value = MarkerSize.Normal },
         new() { Display = "Large", Value = MarkerSize.Large },
-        new() { Display = "Very large", Value = MarkerSize.VeryLarge },
     ];
 
     public ObservableCollection<ComboChoice<CsvSeparator>> CsvSeparators { get; } =
@@ -279,9 +278,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
     private static double GetMarkerScale(MarkerSize size) => size switch
     {
         MarkerSize.Small => SmallMarkerScale,
-        MarkerSize.Normal => 1,
+        MarkerSize.Normal => NormalMarkerScale,
         MarkerSize.Large => LargeMarkerScale,
-        MarkerSize.VeryLarge => VeryLargeMarkerScale,
         _ => throw new NotSupportedException($"Unsupported marker size: {size}"),
     };
 }
