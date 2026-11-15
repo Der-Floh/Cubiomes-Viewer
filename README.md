@@ -1,33 +1,114 @@
 # Cubiomes Viewer
 
-A cross-platform Minecraft Java Edition seed finder and biome map viewer for Desktop, Browser, Android and iOS, built with Avalonia UI on top of the [cubiomes](https://github.com/Cubitect/cubiomes) world-generation library.
+A cross-platform Minecraft Java Edition seed finder and biome map viewer, built on top of the [cubiomes](https://github.com/Cubitect/cubiomes) world-generation library.
 
-The project is in early development and has no release yet.
+![Cubiomes Viewer searching for seeds with mushroom fields near spawn, next to the shaded biome map of seed 262](docs/screenshot.png)
+
+[Open the web version](https://der-floh.github.io/Cubiomes-Viewer) · [Download for Windows, Linux or macOS](https://github.com/Der-Floh/Cubiomes-Viewer/releases)
+
+## Features
+
+- **Biome map** of any seed from Beta 1.7 to 1.21.3, in the Overworld, Nether and End, with structures, strongholds, the spawn point and slime chunks marked.
+- **More layers**: climate parameters, surface heights, rivers, ocean temperatures and where a structure type can generate, plus optional relief shading of the biome map.
+- **Seed search** for seeds that meet a list of conditions, in the app or from the command line.
+- **Analysis** of the biomes, structures and locations around a point, for one seed or up to 1,000 found seeds.
+- **Export** of any layer as PNG images of any size, whole or cut into tiles.
+- **Map tools**: pins, distance measurements, links to a spot, find nearest structure or biome, and the matching portal spot in the other dimension.
+- **Desktop and web**: Windows, Linux, macOS and the browser, with in-app updates on the desktop.
+
+### Map
+
+- Zoom from single blocks out to whole regions, and drag with the left or right mouse button.
+- The world bar sets the seed (or a random one), version, large biomes, dimension and the Y level biomes are read at; Shift + mouse wheel steps the Y level.
+- The status bar shows the biome or value, block and chunk under the pointer.
+- Layers: biomes, structure potential, climate parameters (temperature, humidity, continentalness, erosion, depth, weirdness), rivers, ocean temperatures and surface height, as far as the version has them.
+- Surface heights can be tinted, shaded, drawn as contour lines or in grey. Settings → Map can also shade the biome map by terrain height.
+- Markers for the structure types you choose, down to their variants, plus the world spawn, strongholds, slime chunks and End gateways.
+- Biomes in the default colours or in colour maps of your own, edited live on the map and shared as JSON files.
+- On the desktop, the map can move into a window of its own, for a second screen.
+
+### Right-click menu
+
+- Copy the block's coordinates, `/tp` command, chunk, region file or the seed.
+- Put a pin on the block, or measure the distance to another one. Pins and measurements are kept per seed and dimension and can be named.
+- **Copy link to this spot**: opens the web version on the same world and view, for example `https://der-floh.github.io/Cubiomes-Viewer/?seed=262&version=1.21.3&dimension=nether&x=100&z=-50&scale=4`. A link pasted into the seed box opens the same way, on the desktop too.
+- **Find nearest structure or biome**: like the game's `/locate`, as far out as the game looks. The map then flies to the result.
+- **Open in the Nether or Overworld**: the matching spot in the other dimension, for planning portals.
+
+### Seed search
+
+- **Conditions**, each required or excluded, and each able to look around where another one was found:
+  - structures, optionally of one kind (end cities with an end ship, abandoned villages, igloos with a basement, giant ruined portals), and four huts close enough for one farm
+  - biomes: one of them, each of them, a share of the area, or a patch of a size
+  - climate parameters of the 1.18+ Overworld, and the temperature categories of 1.7 to 1.17
+  - the world spawn, strongholds, slime chunks, and "any of" several conditions
+- **Seeds** from a range, a list, structure seeds (each with its 65,536 sister seeds) or the quad-hut bases.
+- **Fast**: a quick pass rules seeds out without generating biomes, about 68 million structure seeds a second on 15 desktop threads.
+- **Kept**: a stopped or interrupted search continues after a restart, and can be saved to and opened from a file.
+- **Examples** show what a search can look for, and any setup can be kept as a preset.
+
+### Command line
+
+`cubiomes-viewer-cli` runs a search saved with Save to file in the Search panel without the app, for example on a server:
+
+```bash
+cubiomes-viewer-cli --session search.json --out seeds.txt
+```
+
+- Seeds are printed as they are found, or written to the file given with `--out`; progress shows in the terminal.
+- Progress is saved back into the session file, so Ctrl+C stops the search, the same command continues it, and the app opens it where the CLI left off. `--reset` starts over.
+- `--selftest` runs the app's self-test.
+- Exit codes: 0 finished, 1 failed, 2 invalid arguments, 130 stopped.
+
+### Analysis
+
+- For the seed on the map, or up to 1,000 found seeds, in a square or circle around a point:
+  - **Biomes**: how many samples each biome has, and its sample nearest to the centre
+  - **Structures**: nearest first with their details, and quads of swamp huts, desert pyramids, jungle temples or igloos
+  - **Locations**: the spawn point, strongholds, and where the search conditions hold
+- Every list can be saved as a CSV file, and choosing a line opens its seed at that place on the map.
+
+### Export
+
+- Saves the layer the map shows as one PNG per seed, at any scale and size; several seeds, or an image cut into tiles, become a ZIP archive.
+- Biome PNGs keep the biome id as palette index, so tools can read the biomes back. Other layers, and a biome map shaded by terrain height, are written in colour.
+- Images are written row by row, so even huge ones need little memory; the panel warns about images many programs cannot open.
+- Strong compression: 3 to 24 % smaller than zlib's default level with a fixed PNG filter.
+
+### Settings
+
+- **Appearance**: theme and interface size.
+- **Map**: smooth motion, relief shading of the biome map, tile cache, grid spacing, marker size, and how far out each structure type is marked.
+- **World generation**: the experimental versions (Beta 1.7, Beta 1.8, 1.0 and the 1.21 Winter Drop), the terrain estimate that leaves out some structures on low land from 1.18 on, and replaced structure salts, as servers and data packs use them.
+- **Start**: open the last world and search, and keep the desktop window's size and position.
+- **Export**: the separator of CSV files.
+- **Updates** (desktop): the installed version, a check on request, and the check at start.
+- **Diagnostics**: Run self-test checks the generator against reference values and measures tile throughput, about 180–200 tiles/s on 16 desktop threads and 75–105 on 6 Web Workers.
 
 ## Installing
 
 Each release on [GitHub](https://github.com/Der-Floh/Cubiomes-Viewer/releases) carries:
 
-- Windows (x64 and ARM64): a setup and a portable zip. The setup is also on winget as `Der_Floh.CubiomesViewer`.
-- Linux (x64): an AppImage.
-- macOS (Apple Silicon and Intel): an installer package and a zipped app. Neither is signed, so macOS blocks the first start until it is allowed in System Settings → Privacy & Security → Open Anyway.
-- The command-line search for each of these systems, as a zip on Windows and a `.tar.gz` elsewhere.
+- **Windows** (x64 and ARM64): a setup and a portable zip. The setup is also on winget as `Der_Floh.CubiomesViewer`.
+- **Linux** (x64): an AppImage.
+- **macOS** (Apple Silicon and Intel): an installer package and a zipped app. Neither is signed, so macOS blocks the first start until it is allowed in System Settings → Privacy & Security → Open Anyway.
+- **Command line**: the search for each of these systems, as a zip on Windows and a `.tar.gz` elsewhere.
 
 The [web version](https://der-floh.github.io/Cubiomes-Viewer) needs no installation.
 
-Installed desktop copies keep themselves up to date. When the app starts it looks for a newer release on GitHub, downloads it in the background and installs it when the app closes; Settings → Updates shows the version, checks on request, restarts into a downloaded update right away and turns the check at start off.
+Installed desktop copies keep themselves up to date: at start the app looks for a newer release, downloads it in the background and installs it when the app closes. Settings → Updates restarts into a downloaded update right away or turns the check off.
 
 ## Building
 
 Requirements:
 
-- .NET 10 SDK with the `wasm-tools`, `android` and `ios` workloads for the respective heads.
+- .NET 10 SDK, with the `wasm-tools` workload for the Browser head.
 - A C compiler for the native `cvnative` library: clang, or the Visual Studio C++ build tools on Windows.
 
 Clone with submodules, then build and test:
 
 ```bash
-git clone --recurse-submodules <repository-url>
+git clone --recurse-submodules https://github.com/Der-Floh/Cubiomes-Viewer
 ```
 
 ```bash
@@ -36,7 +117,7 @@ dotnet test Cubiomes_Viewer.Engine.Tests
 
 The native library is built automatically when a head or test project is built and its output is missing or older than the sources. It can also be built directly with `native/build.ps1 -Rid win-x64`.
 
-Run the Desktop or Browser head:
+Run the Desktop or Browser head, or the command line from source:
 
 ```bash
 dotnet run --project Cubiomes_Viewer.Desktop
@@ -46,74 +127,22 @@ dotnet run --project Cubiomes_Viewer.Desktop
 dotnet run --project Cubiomes_Viewer.Browser
 ```
 
-### Releases
-
-Publishing a release on GitHub runs `.github/workflows/publish.yml`. The tag sets the version, such as `v1.2.0`; a prerelease tag such as `v1.2.0-beta.1` makes a prerelease, which installed copies do not update to. The workflow publishes the desktop app self-contained for win-x64, win-arm64, linux-x64, osx-arm64 and osx-x64 with the `release` publish profile and packs each with Velopack as `CubiomesViewer`, with one update channel per runtime and no deltas. The Linux native library is built by `native/build-manylinux.sh` in the `manylinux_2_28` container, which fails when the library needs a glibc newer than 2.28, and the macOS library is built for macOS 12 and newer. It installs and uninstalls each Windows setup, publishes the CLI for the same runtimes, uploads everything to the release together with the update feeds the installed apps read (`releases.<runtime>.json` and the `.nupkg` files), and then updates the winget package, whose first version has to be submitted by hand. `pages.yml` publishes the web version to GitHub Pages with each release that is not a prerelease. CI runs the engine and CLI tests on Windows, Linux (with the same container build) and macOS, so a platform that generates different worlds fails the golden tests, and it runs the UI tests on Windows, publishes the web version and installs a Windows setup.
-
-Release packages can be tried before they are published: pack two versions into one folder with `vpk pack` and the options `publish.yml` uses, install the older one with its setup and start it with the environment variable `CUBIOMES_VIEWER_UPDATE_FEED` set to that folder. It then updates from the folder instead of from GitHub.
-
-### Browser workers and storage
-
-Heavy work in the browser runs in a pool of Web Workers (one per logical processor minus one, at most six), each hosting its own small .NET runtime (`Cubiomes_Viewer.Browser.Worker`) with the engine and the natively linked generator. Jobs and results cross as serialized messages. A worker that fails is replaced and its job is given to another worker once; when the browser cannot start any worker, the same jobs run on the main thread instead. Settings and the search session are kept in IndexedDB.
-
-In development the Browser head references the worker project, which serves it under `/worker/`. On publish the worker is published separately and copied to `wwwroot/worker/`, because the WebAssembly SDK would otherwise merge the worker's assemblies into the main app's boot manifest. Always publish with `dotnet publish Cubiomes_Viewer.Browser -c Release`.
-
-### The map's right-click menu
-
-Right-clicking the map offers the clicked block's coordinates, `/tp` command, chunk, region file and the seed for the clipboard, and puts a pin on it. Measure distance from here draws a line from the block to the pointer with its length; a click keeps the line on the map, where it can be picked like a pin, named and removed, and a right click or Escape drops it instead. Kept measurements are stored per seed and dimension like pins. The menu also offers:
-
-- Copy link to this spot: a web address that opens the web version on the same world, layer and zoom, centred on the block, such as `https://der-floh.github.io/Cubiomes-Viewer/?seed=262&version=1.21.3&dimension=nether&x=100&z=-50&scale=4`. A link names the seed, the version as the version box shows it, the dimension, the block in the middle and the zoom in blocks per pixel, and adds `largebiomes`, `layer`, `y` and `octaves` where they differ from the defaults. Pasting a link into the seed box opens its view, on the desktop too. In the web version the address bar always holds the link to what the map shows, so a reload keeps the view and the address can be shared as it is.
-- Find nearest structure and Find nearest biome: like the game's `/locate`, the nearest structure of a type (listed with its marker) or stronghold, or biome (listed with a badge in its map colour), around the clicked block. The search runs outward on the compute workers in squares, nearest first, and stops once nothing further out can be nearer, so a near result comes quickly. It looks as far as the game does: a hundred regions of the structure type, but at least 6,400 blocks, and 6,400 blocks for biomes, which it reads in cells of 4 blocks at the map's Y level, as the map draws them. A card on the map shows how far it has looked and stops the search, as Escape does. The map then flies there and picks the find, with its distance in the callout, zooming in far enough for a biome's cells to show. The engine tests compare every result with looking at the whole range directly.
-- Open in the Nether or Open in the Overworld: the same spot in the other dimension, for planning portals. The Nether block is the Overworld one divided by 8 and rounded down; the Overworld block is the middle of the 8 by 8 blocks a Nether block stands for, where the game sends a player standing in the middle of it. The map jumps there at the same zoom and rings the block.
-
-### Seed search
-
-The Search panel finds seeds that meet a list of conditions, each counted or excluded and optionally looking around where another condition was found:
-
-- Structures, optionally of one kind (end cities with an end ship, abandoned villages, igloos with a basement, giant ruined portals), and four huts close enough for one farm.
-- Biomes: one of them, each of them, or a share of the area judged from random points that follow from the seed, which suits large 1.18+ areas a grid would take too long for.
-- Patches of biomes of a size, each found at its middle so that other conditions can look around it.
-- Climate parameters of the 1.18+ Overworld that lie in a range everywhere, somewhere or on average.
-- Temperature categories, which 1.7 to 1.17 settle at 1:1024 before any biome: a cheap first look for jungles, badlands or giant tree taigas.
-- The world spawn, strongholds and slime chunks in an area, and "any of" to accept one of several.
-
-Seeds are scanned in batches on the compute workers, in the version and biome size the map shows. A quick pass decides what it can without generating biomes (where structures attempt to generate, slime chunks) and leaves only the remaining seeds to the full pass; the engine tests check on random seeds that this never changes which seeds are found. The setup and the search are stored shortly after each change and every few seconds while a search runs, so a stopped or interrupted search continues after a restart, and both can be saved to and opened from a file.
-
-The seeds come from a range, from a list, from structure seeds, or from the quad-hut bases. A structure seed is the lower 48 bits of a seed, which alone decide where structures attempt to generate and where slime chunks are, so the quick pass looks at each structure seed once and only one it cannot rule out goes on with its 65,536 sister seeds; with 15 worker threads on Desktop that rules out about 68 million structure seeds a second. Workers may hand back part of a batch once they run out of time or have the matches the search still needs, and the search gives the rest to another batch. The quad-hut bases are the lower 48 bits of every seed that places four swamp huts, desert temples, jungle temples or igloos near the corner where four regions meet, each tried with all 65,536 upper halves, since only the biomes depend on those. The bases are found on the compute workers the first time a search needs them and kept in app data; the engine tests check them against the known totals: 74,474 ideal and 33,485 further classic constellations, 185,757 more with room for a 43-block drop and 462,029 more with all four huts in range of one point. Examples show what a search can look for, and any setup can be kept as a preset of your own.
-
-### Command line
-
-`Cubiomes_Viewer.Cli` builds `cubiomes-viewer-cli`, which runs a search saved with Save to file in the Search panel without the app, for example on a server:
-
 ```bash
 dotnet run --project Cubiomes_Viewer.Cli -- --session search.json --out seeds.txt
 ```
 
-It treats the session as the app's Search panel does after opening it: a stopped search whose setup is unchanged continues, any other one starts over, and `--reset` always starts over. Seeds go to the standard output, or with `--out` to a file, one per line as they are found; messages and progress go to the standard error, as a status line that updates in place in a terminal. The progress and the seeds are saved back into the session file every 10 seconds and when the search stops, so Ctrl+C stops it, running the same command again continues it, and opening the file in the app shows the search where the CLI left it. A session whose search finished lists its seeds without searching again. `--selftest` runs the checks of the app's self-test. The exit code is 0 when the search finished, 1 when it failed, 2 for invalid arguments and 130 when it was stopped before finishing. The CLI tests run example searches saved as session files through the CLI and through the app's search and compare the seeds, also across a stop and a second run.
+### Browser workers and storage
 
-### Analysis
+- Heavy work runs in a pool of Web Workers (one per logical processor minus one, at most six), each hosting a small .NET runtime (`Cubiomes_Viewer.Browser.Worker`) with the engine and the natively linked generator. Jobs and results cross as serialized messages.
+- A worker that fails is replaced and its job given to another worker once; when no worker can start, the jobs run on the main thread instead.
+- Settings and the search session are kept in IndexedDB.
+- In development the Browser head serves the worker project under `/worker/`. On publish the worker is published separately into `wwwroot/worker/`, because the WebAssembly SDK would otherwise merge its assemblies into the main app's boot manifest. Always publish with `dotnet publish Cubiomes_Viewer.Browser -c Release`.
 
-The Analysis panel looks more closely at the seed on the map, or at up to 1,000 found seeds in the version they were found in, in a square or circle around a point:
+### Tests
 
-- Biomes: how many samples of the area each biome has and where its sample nearest to the centre is, at a chosen spacing and height. Large areas are split into bands of rows on the compute workers; the engine tests check the counts against counting every sample of the area directly.
-- Structures: the structures of the chosen types, nearest first and with their details, and the quads of swamp huts, desert pyramids, jungle temples or igloos with how many of the four generate.
-- Locations: the spawn point, the strongholds in the area, and where the conditions of the Search panel hold for each seed.
-
-Every list can be saved as a CSV file, and choosing a line opens its seed at that place on the map.
-
-### Export
-
-The Export panel saves the layer the map shows, as the Layers panel sets it up, with one pixel per sample: biomes and every other layer, at any scale the layer has, over an area that starts as the visible one. Biome layers are written as PNG images whose palette index is the biome id, with the id of no biome transparent, so tools can read the biomes back from the file; other layers, and the biome map while it is shaded by terrain height, are written in colour. An export of the found seeds, or one cut into tiles, becomes a ZIP archive named after the seeds and tiles. Rows are generated on the compute workers and written as they are ready, so images of any size need little memory, and stopping removes the half-written file. There is no size limit; the panel warns when an image is wider or higher than many programs open (32,768 pixels), has more than about a billion pixels, or needs much memory while it runs. The images are compressed at the strongest zlib level in bands of rows on all cores; each band of a colour layer tries every PNG filter on its first rows and keeps the best, which makes exports 3 to 24 % smaller than one pass at zlib's default level with a fixed filter. oxipng at its highest level still saves another 2 to 12 %, at about a hundred times the time. The engine tests compare exported pixels with the generator and pin the content of fourteen exports of fixed worlds by their hashes.
-
-### Colours, world settings and preferences
-
-The Layers panel paints biomes in their default colours or in a colour map of your own. Its editor lists the biomes of the version on the map with a colour picker each, shows every change on the map at once, and keeps it only when saved; maps can be exported to and imported from JSON files that write colours as `#rrggbb`. Settings → Map can shade the biome map by terrain height: the surface heights are generated next to the biomes, in the Overworld from Beta 1.8 and in the End from 1.9, so hills, valleys and the ocean floor show through the biome colours. The switch is off at first: from 1.18 on the heights take about as long to generate as the biomes, in older versions and the End far longer, so the shading fills in after the colours. Exports use the colours and the shading the map shows.
-
-Settings → World generation offers the experimental versions (Beta 1.7, Beta 1.8, 1.0 and the 1.21 Winter Drop, which the generator supports less completely), switches off the terrain estimate that leaves out desert pyramids, jungle temples and woodland mansions on low land from 1.18 on, and replaces the salt of any structure type, as servers and data packs can. Replaced salts reach the map, searches and analysis alike; the engine tests check that a salt raised by some amount moves structures exactly as raising the seed by that amount does. Settings also set the grid spacing and how it widens when zoomed out, the marker size, how far out each structure type is marked, whether the last world and search open at start, whether the Desktop window keeps its size and position, and the separator of CSV files. On the desktop, the button below the rail moves the map into a window of its own, for a second screen.
-
-### Diagnostics
-
-Settings → Diagnostics → Run self-test checks the native generator against reference values and measures tile throughput on the compute workers of the current platform. Reference numbers from Release builds, for 64 biome tiles of 128×128 samples at 1:4 in 1.21: 180–200 tiles/s on 16 Desktop worker threads, 75–105 tiles/s on 6 Web Workers depending on what else the machine is doing, and about 20 tiles/s when the browser falls back to the main thread. The same button checks structures with their variants and pieces, strongholds, End gateways, the spawn point, slime chunks and the other map layers (climate parameters, rivers, ocean temperatures and surface heights) against values recorded from the Windows build, which is how other platforms prove they generate identical worlds. The published worker bundle is 6.8 MB (2.1 MB with Brotli).
+- The engine tests compare map tiles, search and find-nearest results, analysis counts and exported pixels with the generator, and pin fourteen exports of fixed worlds by their hashes.
+- The CLI tests run example searches through the CLI and through the app's search and compare the seeds, also across a stop and a second run.
+- The self-test checks the generator, structures, strongholds, End gateways, the spawn point, slime chunks and the other layers against values recorded from the Windows build, which is how other platforms prove they generate identical worlds.
 
 ## License
 
