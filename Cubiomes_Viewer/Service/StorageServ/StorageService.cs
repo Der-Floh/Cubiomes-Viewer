@@ -53,6 +53,7 @@ public sealed class StorageService : IStorageService
         ArgumentNullException.ThrowIfNull(writeAsync);
 
         _logger.LogDebug("Opening save picker: title={Title}", options.Title);
+        AvoidDoubledExtension(options);
         using var file = await StorageProvider.SaveFilePickerAsync(options);
         if (file is null)
         {
@@ -67,6 +68,17 @@ public sealed class StorageService : IStorageService
 
         _logger.LogDebug("Saved {File}", file.Name);
         return file.Name;
+    }
+
+    /// <summary>Drops the default extension from the suggested name on Android, where the save picker adds it once more.</summary>
+    private static void AvoidDoubledExtension(FilePickerSaveOptions options)
+    {
+        if (!OperatingSystem.IsAndroid() || options.SuggestedFileName is not { } name || options.DefaultExtension is not { Length: > 0 } extension)
+            return;
+
+        var suffix = extension.StartsWith('.') ? extension : $".{extension}";
+        if (name.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+            options.SuggestedFileName = name[..^suffix.Length];
     }
 
     internal async Task WriteReplacingAsync(string path, Func<Stream, Task> writeAsync)
