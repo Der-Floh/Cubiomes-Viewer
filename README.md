@@ -105,8 +105,6 @@ Nothing to install: [open the web version](https://der-floh.github.io/Cubiomes-V
 
 **Command line** (seed searches without the app): [Windows x64](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/cubiomes-viewer-cli-win-x64.zip) · [Windows ARM64](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/cubiomes-viewer-cli-win-arm64.zip) · [Linux x64](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/cubiomes-viewer-cli-linux-x64.tar.gz) · [macOS Apple Silicon](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/cubiomes-viewer-cli-osx-arm64.tar.gz) · [macOS Intel](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/cubiomes-viewer-cli-osx-x64.tar.gz)
 
-These links always lead to the newest version; older ones are on the [releases page](https://github.com/Der-Floh/Cubiomes-Viewer/releases).
-
 ## Building
 
 Requirements:
