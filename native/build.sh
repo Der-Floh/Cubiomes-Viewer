@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-rid="${1:?Usage: build.sh <rid> (linux-x64, linux-arm64, osx-x64, osx-arm64)}"
+rid="${1:?Usage: build.sh <rid> (linux-x64, linux-arm64, osx-x64, osx-arm64, android-arm64, android-x64)}"
 
 native_root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 shim_source="$native_root/shim/cvnative.c"
@@ -11,13 +11,14 @@ shim_object="$object_dir/cvnative.o"
 lock_dir="$native_root/obj/$rid.lock"
 flags=(-std=gnu17 -O3 -fwrapv -ffp-contract=off -fvisibility=hidden -ffunction-sections -fdata-sections -DCJSON_HIDE_SYMBOLS)
 macos_minimum="12.0"
+android_api_level=24
 lock_attempts=600
 
 case "$rid" in
-    linux-x64 | linux-arm64) output="$output_dir/libcvnative.so" ;;
+    linux-x64 | linux-arm64 | android-arm64 | android-x64) output="$output_dir/libcvnative.so" ;;
     osx-x64 | osx-arm64) output="$output_dir/libcvnative.dylib" ;;
     *)
-        echo "build.sh does not build '$rid'. Supported: linux-x64, linux-arm64, osx-x64, osx-arm64. Use build.ps1 for Windows targets." >&2
+        echo "build.sh does not build '$rid'. Supported: linux-x64, linux-arm64, osx-x64, osx-arm64, android-arm64, android-x64. Use build.ps1 for Windows targets." >&2
         exit 1
         ;;
 esac
@@ -45,6 +46,60 @@ build_macos() {
         echo "$output needs macOS $minimum instead of $macos_minimum." >&2
         exit 1
     fi
+}
+
+is_android_ndk() {
+    [[ -n "$1" && -f "$1/source.properties" ]]
+}
+
+# The NDK named by the environment, else the newest side-by-side NDK of an Android SDK, or its older single ndk-bundle.
+find_android_ndk() {
+    local candidate sdk newest
+    for candidate in "${ANDROID_NDK_HOME:-}" "${ANDROID_NDK_ROOT:-}" "${ANDROID_NDK_LATEST_HOME:-}"; do
+        if is_android_ndk "$candidate"; then
+            echo "$candidate"
+            return
+        fi
+    done
+
+    for sdk in "${ANDROID_HOME:-}" "${ANDROID_SDK_ROOT:-}" "$HOME/Android/Sdk" "$HOME/Library/Android/sdk"; do
+        [[ -n "$sdk" && -d "$sdk" ]] || continue
+        if [[ -d "$sdk/ndk" ]]; then
+            newest="$(find "$sdk/ndk" -mindepth 2 -maxdepth 2 -name source.properties -exec dirname {} \; | sort -V | tail -n 1)"
+            if [[ -n "$newest" ]]; then
+                echo "$newest"
+                return
+            fi
+        fi
+        if is_android_ndk "$sdk/ndk-bundle"; then
+            echo "$sdk/ndk-bundle"
+            return
+        fi
+    done
+
+    echo "The Android NDK was not found. Install it with the Android SDK manager, or set ANDROID_NDK_HOME to it." >&2
+    exit 1
+}
+
+build_android() {
+    local triple="$1"
+    local ndk host
+    ndk="$(find_android_ndk)"
+    case "$(uname -s)" in
+        Linux) host=linux-x86_64 ;;
+        Darwin) host=darwin-x86_64 ;;
+        *)
+            echo "build.sh cannot run the Android NDK on $(uname -s). Use build.ps1 on Windows." >&2
+            exit 1
+            ;;
+    esac
+
+    local clang="$ndk/toolchains/llvm/prebuilt/$host/bin/clang"
+    local target="--target=$triple$android_api_level"
+    "$clang" "$target" "${flags[@]}" -fPIC -c -o "$shim_object" "$shim_source"
+    # Devices with 16 KB memory pages only load libraries whose segments are aligned to them.
+    "$clang" "$target" "${flags[@]}" -w -fPIC -shared -Wl,--gc-sections -Wl,-z,max-page-size=16384 -s \
+        -o "$output" "$shim_object" "${sources[@]}" -lm
 }
 
 # Projects built side by side run this script at once; the lock lets one build and the others find it up to date.
@@ -97,6 +152,12 @@ case "$rid" in
         ;;
     osx-arm64)
         build_macos arm64
+        ;;
+    android-arm64)
+        build_android aarch64-linux-android
+        ;;
+    android-x64)
+        build_android x86_64-linux-android
         ;;
 esac
 

@@ -1,0 +1,31 @@
+<Project>
+  <Import Project="$(MSBuildThisFileDirectory)CvNative.Sources.targets" />
+
+  <PropertyGroup>
+    <CvNativeRoot>$(MSBuildThisFileDirectory)</CvNativeRoot>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <CvNativeSource Include="$(CvNativeRoot)shim\**\*" />
+    <CvNativeSource Include="$(CvNativeRoot)cubiomes\**\*.c;$(CvNativeRoot)cubiomes\**\*.h" />
+    <CvNativeSource Include="$(CvNativeRoot)build.ps1;$(CvNativeRoot)build.sh" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <CvNativeAndroidRid Include="$(RuntimeIdentifiers)" Condition="'$(RuntimeIdentifier)' == ''" />
+    <CvNativeAndroidRid Include="$(RuntimeIdentifier)" Condition="'$(RuntimeIdentifier)' != ''" />
+    <CvNativeAndroidRid Update="android-arm64" Abi="arm64-v8a" />
+    <CvNativeAndroidRid Update="android-x64" Abi="x86_64" />
+    <AndroidNativeLibrary Include="@(CvNativeAndroidRid->'$(CvNativeRoot)bin\%(Identity)\libcvnative.so')" />
+  </ItemGroup>
+
+  <Target Name="CheckCvNativeAndroidRids" BeforeTargets="BeforeBuild">
+    <Error Condition="'%(CvNativeAndroidRid.Abi)' == ''" Text="The native library is built for android-arm64 and android-x64, not for %(CvNativeAndroidRid.Identity)." />
+  </Target>
+
+  <Target Name="BuildCvNativeAndroid" BeforeTargets="BeforeBuild" DependsOnTargets="RestoreCubiomesSources;CheckCvNativeAndroidRids" Condition="'$(DesignTimeBuild)' != 'true'"
+          Inputs="@(CvNativeSource)" Outputs="$(CvNativeRoot)bin\%(CvNativeAndroidRid.Identity)\libcvnative.so">
+    <Exec Condition="$([MSBuild]::IsOSPlatform('Windows'))" Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(CvNativeRoot)build.ps1&quot; -Rid %(CvNativeAndroidRid.Identity)" />
+    <Exec Condition="!$([MSBuild]::IsOSPlatform('Windows'))" Command="bash &quot;$(CvNativeRoot)build.sh&quot; %(CvNativeAndroidRid.Identity)" />
+  </Target>
+</Project>
