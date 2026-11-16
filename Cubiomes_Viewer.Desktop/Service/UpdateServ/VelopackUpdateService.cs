@@ -36,6 +36,7 @@ public sealed class VelopackUpdateService : IUpdateService
 
     public string CurrentVersion => _manager.CurrentVersion?.ToString() ?? AppVersion.Current;
     public bool CanUpdate => _manager.IsInstalled;
+    public UpdateStyle Style => UpdateStyle.Background;
 
     public async Task<AppRelease?> FindNewerReleaseAsync(CancellationToken cancellationToken = default)
     {
@@ -50,7 +51,7 @@ public sealed class VelopackUpdateService : IUpdateService
         }
 
         _logger.LogInformation("Newest release: {Version}", _found?.TargetFullRelease.Version.ToString() ?? CurrentVersion);
-        return _found is null ? null : new AppRelease { Version = _found.TargetFullRelease.Version.ToString() };
+        return _found is null ? null : new AppRelease { Version = _found.TargetFullRelease.Version.ToString(), DownloadSize = _found.TargetFullRelease.Size };
     }
 
     public async Task DownloadAsync(AppRelease release, IProgress<int>? progress = null, CancellationToken cancellationToken = default)

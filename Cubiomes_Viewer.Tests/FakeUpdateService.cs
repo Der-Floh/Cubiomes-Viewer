@@ -8,12 +8,16 @@ internal sealed class FakeUpdateService : IUpdateService
 {
     public string CurrentVersion { get; init; } = "1.0.0";
     public bool CanUpdate { get; init; } = true;
+    public UpdateStyle Style { get; init; } = UpdateStyle.Background;
 
     /// <summary>The release the next check finds, or <see langword="null"/> for none.</summary>
     public AppRelease? Newer { get; init; }
 
     /// <summary>Why the next check fails, or <see langword="null"/> when it succeeds.</summary>
     public string? Failure { get; init; }
+
+    /// <summary>Why downloads fail, or <see langword="null"/> when they succeed.</summary>
+    public string? DownloadFailure { get; init; }
 
     public int Checks { get; private set; }
     public AppRelease? Downloaded { get; private set; }
@@ -28,6 +32,9 @@ internal sealed class FakeUpdateService : IUpdateService
 
     public Task DownloadAsync(AppRelease release, IProgress<int>? progress = null, CancellationToken cancellationToken = default)
     {
+        if (DownloadFailure is not null)
+            return Task.FromException(new UpdateException(DownloadFailure, new HttpRequestException(DownloadFailure)));
+
         progress?.Report(50);
         progress?.Report(100);
         Downloaded = release;

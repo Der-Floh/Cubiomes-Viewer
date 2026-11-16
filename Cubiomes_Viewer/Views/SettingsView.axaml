@@ -94,7 +94,8 @@
                     <TextBlock Classes="damp" Text="{Binding CheckAtStartHint}" TextWrapping="Wrap"/>
                     <WrapPanel Classes="card-actions">
                         <Button Classes="accent" Content="{Binding RestartLabel}" Command="{Binding RestartCommand}" IsVisible="{Binding IsReady}"/>
-                        <Button Content="{Binding CheckLabel}" Command="{Binding CheckCommand}" IsVisible="{Binding !IsReady}"/>
+                        <Button Classes="accent" Content="{Binding DownloadLabel}" Command="{Binding DownloadAndInstallCommand}" IsVisible="{Binding IsAvailable}"/>
+                        <Button Content="{Binding CheckLabel}" Command="{Binding CheckCommand}" IsVisible="{Binding IsCheckShown}"/>
                     </WrapPanel>
                     <TextBlock Classes="damp" Text="{Binding StatusText}" TextWrapping="Wrap" IsVisible="{Binding StatusText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
                 </StackPanel>

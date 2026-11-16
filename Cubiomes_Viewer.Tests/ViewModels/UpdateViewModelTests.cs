@@ -104,6 +104,68 @@ public sealed class UpdateViewModelTests : IDisposable
     }
 
     [Fact]
+    public async Task CheckAtStart_OnRequest_OffersTheReleaseAndDownloadsItOnceAsked()
+    {
+        var updates = new FakeUpdateService { Style = UpdateStyle.OnRequest, Newer = _newer with { DownloadSize = 52_400_000 } };
+        var viewModel = Create(updates);
+
+        await viewModel.CheckAtStartAsync();
+
+        Assert.Null(updates.Downloaded);
+        Assert.True(viewModel.IsAvailable);
+        Assert.False(viewModel.IsCheckShown);
+        Assert.False(viewModel.CheckCommand.CanExecute(null));
+        Assert.Equal("Version 1.1.0 is available (52 MB).", viewModel.StatusText);
+        var announcement = Assert.Single(Notifications.Notifications);
+        Assert.Equal("Cubiomes Viewer 1.1.0 is available (52 MB). Tap here to download and install it.", announcement.Message);
+        Assert.NotNull(announcement.OnClick);
+
+        announcement.OnClick();
+        await TestWait.UntilAsync(() => updates.Restarts == 1, "The offered release was not handed to the installer.");
+
+        Assert.Equal(updates.Newer, updates.Downloaded);
+        Assert.True(viewModel.IsReady);
+        Assert.False(viewModel.IsAvailable);
+    }
+
+    [Fact]
+    public async Task DownloadAndInstall_OfferedRelease_HandsTheDownloadToTheInstaller()
+    {
+        var updates = new FakeUpdateService { Style = UpdateStyle.OnRequest, Newer = _newer };
+        var viewModel = Create(updates);
+
+        await viewModel.CheckCommand.ExecuteAsync(null);
+        Assert.Null(updates.Downloaded);
+        Assert.Equal("Version 1.1.0 is available.", viewModel.StatusText);
+        await viewModel.DownloadAndInstallCommand.ExecuteAsync(null);
+
+        Assert.Equal(_newer, updates.Downloaded);
+        Assert.Equal(1, updates.Restarts);
+        Assert.True(viewModel.IsReady);
+        Assert.False(viewModel.IsAvailable);
+        Assert.False(viewModel.DownloadAndInstallCommand.CanExecute(null));
+        Assert.Equal("Install update", viewModel.RestartLabel);
+        Assert.Equal("Version 1.1.0 is downloaded. Confirm the installation when the system asks.", viewModel.StatusText);
+        Assert.Empty(Notifications.Notifications);
+    }
+
+    [Fact]
+    public async Task DownloadAndInstall_DownloadFails_ReportsItAndKeepsTheOffer()
+    {
+        var updates = new FakeUpdateService { Style = UpdateStyle.OnRequest, Newer = _newer, DownloadFailure = "Connection reset." };
+        var viewModel = Create(updates);
+
+        await viewModel.CheckCommand.ExecuteAsync(null);
+        await viewModel.DownloadAndInstallCommand.ExecuteAsync(null);
+
+        Assert.Equal(["Connection reset."], Notifications.Errors);
+        Assert.Equal("The download failed: Connection reset.", viewModel.StatusText);
+        Assert.Equal(0, updates.Restarts);
+        Assert.True(viewModel.IsAvailable);
+        Assert.True(viewModel.DownloadAndInstallCommand.CanExecute(null));
+    }
+
+    [Fact]
     public async Task CopyThatCannotUpdate_ShowsItsVersionAndChecksNothing()
     {
         var updates = new FakeUpdateService { CanUpdate = false, CurrentVersion = "2.0.0", Newer = _newer };

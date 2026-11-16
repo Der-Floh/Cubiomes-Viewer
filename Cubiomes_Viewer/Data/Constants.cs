@@ -5,6 +5,9 @@ public static class Constants
     public const string AppName = "Cubiomes Viewer";
     public const string RepositoryUrl = "https://github.com/Der-Floh/Cubiomes-Viewer";
 
+    /// <summary>The newest release that is not a prerelease, as GitHub's REST API describes it.</summary>
+    public const string LatestReleaseApiUrl = "https://api.github.com/repos/Der-Floh/Cubiomes-Viewer/releases/latest";
+
     /// <summary>The web version, which links to a view of the map point at; with the trailing slash its host serves it without a redirect.</summary>
     public const string WebAppUrl = "https://der-floh.github.io/Cubiomes-Viewer/";
     public const double ScreenDpi = 96;

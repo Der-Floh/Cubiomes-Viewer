@@ -9,6 +9,7 @@ public sealed class NoUpdateService : IUpdateService
 
     public string CurrentVersion => AppVersion.Current;
     public bool CanUpdate => false;
+    public UpdateStyle Style => UpdateStyle.Background;
 
     public Task<AppRelease?> FindNewerReleaseAsync(CancellationToken cancellationToken = default) => Task.FromResult<AppRelease?>(null);
 
