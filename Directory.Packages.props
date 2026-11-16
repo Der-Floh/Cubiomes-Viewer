@@ -12,6 +12,7 @@
     <PackageVersion Include="Avalonia.Controls.ColorPicker" Version="12.1.6" />
     <PackageVersion Include="Avalonia.Desktop" Version="12.1.6" />
     <PackageVersion Include="Avalonia.Browser" Version="12.1.6" />
+    <PackageVersion Include="Avalonia.Android" Version="12.1.6" />
     <PackageVersion Include="Avalonia.Skia" Version="12.1.6" />
     <PackageVersion Include="Avalonia.HarfBuzz" Version="12.1.6" />
     <PackageVersion Include="Avalonia.Headless.XUnit" Version="12.1.6" />

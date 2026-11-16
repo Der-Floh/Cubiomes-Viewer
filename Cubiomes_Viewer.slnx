@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="Cubiomes_Viewer.Android/Cubiomes_Viewer.Android.csproj" />
   <Project Path="Cubiomes_Viewer.Browser.Worker/Cubiomes_Viewer.Browser.Worker.csproj" />
   <Project Path="Cubiomes_Viewer.Browser/Cubiomes_Viewer.Browser.csproj" />
   <Project Path="Cubiomes_Viewer.Cli.Tests/Cubiomes_Viewer.Cli.Tests.csproj" />
