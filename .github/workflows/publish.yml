@@ -289,10 +289,18 @@ jobs:
           path: artifacts
           merge-multiple: true
 
+      # Installed apps only read releases.<runtime>.json, so vpk's legacy RELEASES-<runtime> and its upload list assets.<runtime>.json stay out.
       - name: Upload to release
         uses: Der-Floh/Der-Floh/.github/actions/github-release-upload@v1
         with:
-          files: ./artifacts/*
+          files: |
+            ./artifacts/${{ env.PACKAGE_NAME }}-*-Setup.exe
+            ./artifacts/${{ env.PACKAGE_NAME }}-*-Setup.pkg
+            ./artifacts/${{ env.PACKAGE_NAME }}-*-Portable.zip
+            ./artifacts/${{ env.PACKAGE_NAME }}-*.AppImage
+            ./artifacts/${{ env.PACKAGE_NAME }}-*-full.nupkg
+            ./artifacts/releases.*.json
+            ./artifacts/${{ env.CLI_NAME }}-*
 
   winget:
     name: WinGet
