@@ -4,7 +4,7 @@ A cross-platform Minecraft Java Edition seed finder and biome map viewer, built 
 
 ![Cubiomes Viewer showing the structure types and the village filter in the Layers panel, next to the shaded 26.3 biome map of seed 262 with a pin named Home beside a river](docs/screenshot.png)
 
-[Open the web version](https://der-floh.github.io/Cubiomes-Viewer) · [Download for Windows, Linux or macOS](https://github.com/Der-Floh/Cubiomes-Viewer/releases)
+[Open the web version](https://der-floh.github.io/Cubiomes-Viewer) · [Download for Windows, Linux or macOS](#download)
 
 ## Features
 
@@ -85,18 +85,27 @@ cubiomes-viewer-cli --session search.json --out seeds.txt
 - **Updates** (desktop): the installed version, a check on request, and the check at start.
 - **Diagnostics**: Run self-test checks the generator against reference values and measures tile throughput, about 180–200 tiles/s on 16 desktop threads and 75–105 on 6 Web Workers.
 
-## Installing
+## Download
 
-Each release on [GitHub](https://github.com/Der-Floh/Cubiomes-Viewer/releases) carries:
+| | Installer | Portable |
+| --- | --- | --- |
+| **Windows** x64 | [Setup.exe](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/CubiomesViewer-win-x64-Setup.exe) | [zip](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/CubiomesViewer-win-x64-Portable.zip) |
+| **Windows** ARM64 | [Setup.exe](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/CubiomesViewer-win-arm64-Setup.exe) | [zip](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/CubiomesViewer-win-arm64-Portable.zip) |
+| **macOS** Apple Silicon | [Setup.pkg](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/CubiomesViewer-osx-arm64-Setup.pkg) | [zip](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/CubiomesViewer-osx-arm64-Portable.zip) |
+| **macOS** Intel | [Setup.pkg](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/CubiomesViewer-osx-x64-Setup.pkg) | [zip](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/CubiomesViewer-osx-x64-Portable.zip) |
+| **Linux** x64 | [AppImage](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/CubiomesViewer-linux-x64.AppImage) | |
 
-- **Windows** (x64 and ARM64): a setup and a portable zip.<!-- The setup is also on winget as `Der_Floh.CubiomesViewer`. -->
-- **Linux** (x64): an AppImage.
-- **macOS** (Apple Silicon and Intel): an installer package and a zipped app. Neither is signed, so macOS blocks the first start until it is allowed in System Settings → Privacy & Security → Open Anyway.
-- **Command line**: the search for each of these systems, as a zip on Windows and a `.tar.gz` elsewhere.
+<!-- On Windows, the setup is also on winget: `winget install Der_Floh.CubiomesViewer`. -->
 
-The [web version](https://der-floh.github.io/Cubiomes-Viewer) needs no installation.
+Nothing to install: [open the web version](https://der-floh.github.io/Cubiomes-Viewer).
 
-Installed desktop copies keep themselves up to date: at start the app looks for a newer release, downloads it in the background and installs it when the app closes. Settings → Updates restarts into a downloaded update right away or turns the check off.
+- The app updates itself: at start it looks for a newer release, downloads it in the background and installs it when the app closes. Settings → Updates restarts into a downloaded update right away or turns the check off.
+- macOS: the app is not signed, so macOS blocks the first start until it is allowed in System Settings → Privacy & Security → Open Anyway.
+- Linux: make the AppImage executable before the first start (`chmod +x CubiomesViewer-linux-x64.AppImage`).
+
+**Command line** (seed searches without the app): [Windows x64](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/cubiomes-viewer-cli-win-x64.zip) · [Windows ARM64](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/cubiomes-viewer-cli-win-arm64.zip) · [Linux x64](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/cubiomes-viewer-cli-linux-x64.tar.gz) · [macOS Apple Silicon](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/cubiomes-viewer-cli-osx-arm64.tar.gz) · [macOS Intel](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/cubiomes-viewer-cli-osx-x64.tar.gz)
+
+These links always lead to the newest version; older ones are on the [releases page](https://github.com/Der-Floh/Cubiomes-Viewer/releases).
 
 ## Building
 
