@@ -90,6 +90,16 @@ public sealed partial class MainViewModel : ViewModelBase
     [RelayCommand]
     public void ToggleMapWindow() => IsMapUndocked = CanUndockMap && !IsMapUndocked;
 
+    /// <summary>Closes the open panel; false when none is open.</summary>
+    public bool TryClosePanel()
+    {
+        if (!IsPanelOpen)
+            return false;
+
+        SelectedPanelIndex = NoPanel;
+        return true;
+    }
+
     partial void OnSelectedPanelIndexChanged(int value)
     {
         if (CurrentPanel is IOpenablePanel panel)

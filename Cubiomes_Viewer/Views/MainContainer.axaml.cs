@@ -2,6 +2,7 @@ using System.ComponentModel;
 
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Interactivity;
 using Avalonia.Media;
 
 using Cubiomes_Viewer.Data;
@@ -22,14 +23,17 @@ public sealed partial class MainContainer : UserControl
     private readonly DesktopShellView _desktopShell;
     private readonly MobileShellView _mobileShell;
     private readonly MainViewModel _main;
+    private readonly MapHostViewModel _mapActions;
     private readonly INotificationService _notificationService;
     private readonly ITopLevelProvider _topLevelProvider;
     private readonly IUiZoomService _uiZoom;
+    private TopLevel? _topLevel;
+    private OpenPopupStack? _openPopups;
     private MapWindow? _mapWindow;
     private bool? _isCompact;
 
-    public MainContainer(MapHostView mapHost, DesktopShellView desktopShell, MobileShellView mobileShell, MainViewModel main, INotificationService notificationService,
-        ITopLevelProvider topLevelProvider, IUiZoomService uiZoom)
+    public MainContainer(MapHostView mapHost, DesktopShellView desktopShell, MobileShellView mobileShell, MainViewModel main, MapHostViewModel mapActions,
+        INotificationService notificationService, ITopLevelProvider topLevelProvider, IUiZoomService uiZoom)
     {
         InitializeComponent();
 
@@ -37,6 +41,7 @@ public sealed partial class MainContainer : UserControl
         _desktopShell = desktopShell;
         _mobileShell = mobileShell;
         _main = main;
+        _mapActions = mapActions;
         _notificationService = notificationService;
         _topLevelProvider = topLevelProvider;
         _uiZoom = uiZoom;
@@ -55,15 +60,26 @@ public sealed partial class MainContainer : UserControl
         base.OnDetachedFromVisualTree(e);
         _main.PropertyChanged -= OnMainChanged;
         _uiZoom.Changed -= OnUiZoomChanged;
+        if (_topLevel is not null)
+        {
+            _topLevel.BackRequested -= OnBackRequested;
+            _topLevel = null;
+        }
+        _openPopups?.Dispose();
+        _openPopups = null;
         if (_mapWindow is { } window)
             CloseMapWindow(window);
     }
 
     private void UserControl_AttachedToVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
     {
-        var topLevel = TopLevel.GetTopLevel(this);
-        if (topLevel is not null)
-            _topLevelProvider.SetTopLevel(topLevel);
+        _topLevel = TopLevel.GetTopLevel(this);
+        if (_topLevel is not null)
+        {
+            _topLevelProvider.SetTopLevel(_topLevel);
+            _topLevel.BackRequested += OnBackRequested;
+        }
+        _openPopups = new OpenPopupStack();
         _notificationService.Setup(MainWindowNotificationManager);
         _main.PropertyChanged += OnMainChanged;
         _uiZoom.Changed += OnUiZoomChanged;
@@ -71,6 +87,13 @@ public sealed partial class MainContainer : UserControl
         ShowZoom();
         UpdateLayoutMode(Bounds.Size);
         ShowMapWindow();
+    }
+
+    /// <summary>Back closes the newest menu first, then stops what is under way on the map, then closes the open panel, and only then leaves the app.</summary>
+    private void OnBackRequested(object? sender, RoutedEventArgs e)
+    {
+        if (!e.Handled)
+            e.Handled = _openPopups?.TryCloseNewest() == true || _mapActions.TryDismiss() || _main.TryClosePanel();
     }
 
     private void OnUiZoomChanged(object? sender, EventArgs e)

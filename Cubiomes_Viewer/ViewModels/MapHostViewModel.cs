@@ -25,7 +25,10 @@ public sealed partial class MapHostViewModel : ViewModelBase
 
     /// <summary>Stops a search for the nearest place, the measurement or the placing of a pin if one is under way, otherwise closes the details of the picked marker.</summary>
     [RelayCommand]
-    public void Dismiss()
+    public void Dismiss() => TryDismiss();
+
+    /// <summary>Does what <see cref="Dismiss"/> does; false when there was nothing to stop or close.</summary>
+    public bool TryDismiss()
     {
         if (Nearest.IsRunning)
             Nearest.Stop();
@@ -33,7 +36,11 @@ public sealed partial class MapHostViewModel : ViewModelBase
             Menu.StopMeasuring();
         else if (Map.IsPlacingPin)
             Map.IsPlacingPin = false;
-        else
+        else if (Selection.IsOpen)
             Selection.Close();
+        else
+            return false;
+
+        return true;
     }
 }
