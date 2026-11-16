@@ -71,14 +71,14 @@ The full text of the SIL Open Font License 1.1 is printed at the end.
 
 ## .NET
 
-The .NET runtime and libraries: the desktop builds and the command-line search carry the runtime with them, and the web version runs on its WebAssembly build. Among the libraries are `Microsoft.Extensions.Configuration`, `Microsoft.Extensions.DependencyInjection`, `Microsoft.Extensions.Logging`, `Microsoft.Extensions.Options`, `Microsoft.Extensions.Primitives`, `Microsoft.IO.RecyclableMemoryStream`, `System.CommandLine` and `System.IO.Hashing`. https://github.com/dotnet
+The .NET runtime and libraries: the desktop builds and the command-line search carry the runtime with them, the Android app carries its Android build with the bindings of .NET for Android (https://github.com/dotnet/android), and the web version runs on its WebAssembly build. Among the libraries are `Microsoft.Extensions.Configuration`, `Microsoft.Extensions.DependencyInjection`, `Microsoft.Extensions.Logging`, `Microsoft.Extensions.Options`, `Microsoft.Extensions.Primitives`, `Microsoft.IO.RecyclableMemoryStream`, `System.CommandLine` and `System.IO.Hashing`. https://github.com/dotnet
 
 - Licence: MIT. Copyright (c) .NET Foundation and Contributors; © Microsoft Corporation.
 - The notices of the software the runtime itself contains: https://github.com/dotnet/runtime/blob/main/THIRD-PARTY-NOTICES.TXT
 
 ## Avalonia
 
-The UI framework: `Avalonia`, `Avalonia.Browser`, `Avalonia.BuildServices`, `Avalonia.Controls.ColorPicker`, `Avalonia.Desktop`, `Avalonia.Fonts.Inter`, `Avalonia.FreeDesktop`, `Avalonia.FreeDesktop.AtSpi`, `Avalonia.HarfBuzz`, `Avalonia.Native`, `Avalonia.Remote.Protocol`, `Avalonia.Skia`, `Avalonia.Themes.Fluent`, `Avalonia.Win32` and `Avalonia.X11`. https://avaloniaui.net
+The UI framework: `Avalonia`, `Avalonia.Android`, `Avalonia.Browser`, `Avalonia.BuildServices`, `Avalonia.Controls.ColorPicker`, `Avalonia.Desktop`, `Avalonia.Fonts.Inter`, `Avalonia.FreeDesktop`, `Avalonia.FreeDesktop.AtSpi`, `Avalonia.HarfBuzz`, `Avalonia.Native`, `Avalonia.Remote.Protocol`, `Avalonia.Skia`, `Avalonia.Themes.Fluent`, `Avalonia.Win32` and `Avalonia.X11`. https://avaloniaui.net
 
 - Licence: MIT. Copyright 2013-2026 © The AvaloniaUI Project.
 - With it: `MicroCom.Runtime` (MIT, Copyright 2021 © Nikita Tsukanov, https://github.com/kekekeks/MicroCom) and, on Linux, `Tmds.DBus.Protocol` (MIT, Copyright Tom Deseyn, https://github.com/tmds/Tmds.DBus).
@@ -148,6 +148,15 @@ The MVVM helpers of the app's view models. https://github.com/CommunityToolkit/d
 Writes the CSV files of the Analysis panel. https://joshclose.github.io/CsvHelper/
 
 - Licence: Microsoft Public License (Ms-PL) or Apache License 2.0, used under the Apache License 2.0. Copyright © 2009-2026 Josh Close.
+
+## AndroidX and Kotlin
+
+The Android app is built on Google's AndroidX libraries (`androidx.activity`, `androidx.appcompat`, `androidx.core`, `androidx.lifecycle`, `androidx.window` and the others they use) and on Kotlin's standard library with `kotlinx.coroutines` and `kotlinx.serialization`, which come with their .NET bindings in the `Xamarin.AndroidX.*`, `Xamarin.Kotlin.*` and `Xamarin.KotlinX.*` packages.
+
+- AndroidX: Apache License 2.0. Copyright The Android Open Source Project. https://developer.android.com/jetpack/androidx
+- Kotlin, `kotlinx.coroutines` and `kotlinx.serialization`: Apache License 2.0. Copyright JetBrains s.r.o. and Kotlin Programming Language contributors. https://kotlinlang.org
+- With them: Guava's `ListenableFuture` (Apache License 2.0, Copyright The Guava Authors, https://github.com/google/guava), JetBrains' Java annotations (Apache License 2.0, Copyright JetBrains s.r.o., https://github.com/JetBrains/java-annotations) and JSpecify (Apache License 2.0, Copyright The JSpecify Authors, https://jspecify.dev).
+- The .NET bindings: MIT. Copyright (c) .NET Foundation and Contributors. https://github.com/dotnet/android-libraries
 
 ## Velopack
 

@@ -4,7 +4,7 @@ A cross-platform Minecraft Java Edition seed finder and biome map viewer, built 
 
 ![Cubiomes Viewer showing the structure types and the village filter in the Layers panel, next to the shaded 26.3 biome map of seed 262 with a pin named Home beside a river](docs/screenshot.png)
 
-[Open the web version](https://der-floh.github.io/Cubiomes-Viewer) · [Download for Windows, Linux or macOS](#download)
+[Open the web version](https://der-floh.github.io/Cubiomes-Viewer) · [Download for Windows, Linux, macOS or Android](#download)
 
 ## Features
 
@@ -14,7 +14,7 @@ A cross-platform Minecraft Java Edition seed finder and biome map viewer, built 
 - **Analysis** of the biomes, structures and locations around a point, for one seed or up to 1,000 found seeds.
 - **Export** of any layer as PNG images of any size, whole or cut into tiles.
 - **Map tools**: pins, distance measurements, links to a spot, find nearest structure or biome, and the matching portal spot in the other dimension.
-- **Desktop and web**: Windows, Linux, macOS and the browser, with in-app updates on the desktop.
+- **Desktop, Android and web**: Windows, Linux, macOS, Android phones and the browser, with in-app updates on the desktop and Android.
 
 ### Map
 
@@ -82,7 +82,7 @@ cubiomes-viewer-cli --session search.json --out seeds.txt
 - **World generation**: the experimental versions (Beta 1.7, Beta 1.8 and 1.0), the terrain estimate that leaves out some structures on low land from 1.18 on, and replaced structure salts, as servers and data packs use them.
 - **Start**: open the last world and search, and keep the desktop window's size and position.
 - **Export**: the separator of CSV files.
-- **Updates** (desktop): the installed version, a check on request, and the check at start.
+- **Updates** (desktop and Android): the installed version, a check on request, and the check at start.
 - **Diagnostics**: Run self-test checks the generator against reference values and measures tile throughput, about 180–200 tiles/s on 16 desktop threads and 75–105 on 6 Web Workers.
 
 ## Download
@@ -94,14 +94,16 @@ cubiomes-viewer-cli --session search.json --out seeds.txt
 | **macOS** Apple Silicon | [Setup.pkg](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/CubiomesViewer-osx-arm64-Setup.pkg) | [zip](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/CubiomesViewer-osx-arm64-Portable.zip) |
 | **macOS** Intel | [Setup.pkg](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/CubiomesViewer-osx-x64-Setup.pkg) | [zip](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/CubiomesViewer-osx-x64-Portable.zip) |
 | **Linux** x64 | [AppImage](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/CubiomesViewer-linux-x64.AppImage) | |
+| **Android** 7.0 and later | [APK](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/CubiomesViewer-android.apk) | |
 
 <!-- On Windows, the setup is also on winget: `winget install Der_Floh.CubiomesViewer`. -->
 
 Nothing to install: [open the web version](https://der-floh.github.io/Cubiomes-Viewer).
 
-- The app updates itself: at start it looks for a newer release, downloads it in the background and installs it when the app closes. Settings → Updates restarts into a downloaded update right away or turns the check off.
+- On the desktop the app updates itself: at start it looks for a newer release, downloads it in the background and installs it when the app closes. Settings → Updates restarts into a downloaded update right away or turns the check off.
 - macOS: the app is not signed, so macOS blocks the first start until it is allowed in System Settings → Privacy & Security → Open Anyway.
 - Linux: make the AppImage executable before the first start (`chmod +x CubiomesViewer-linux-x64.AppImage`).
+- Android: open the downloaded APK and, when Android asks, allow the browser or file manager to install apps. At start the app tells you about a newer release, which Settings → Updates downloads and hands to Android's installer, after you allow the app to install apps too.
 
 **Command line** (seed searches without the app): [Windows x64](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/cubiomes-viewer-cli-win-x64.zip) · [Windows ARM64](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/cubiomes-viewer-cli-win-arm64.zip) · [Linux x64](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/cubiomes-viewer-cli-linux-x64.tar.gz) · [macOS Apple Silicon](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/cubiomes-viewer-cli-osx-arm64.tar.gz) · [macOS Intel](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/cubiomes-viewer-cli-osx-x64.tar.gz)
 
@@ -109,8 +111,9 @@ Nothing to install: [open the web version](https://der-floh.github.io/Cubiomes-V
 
 Requirements:
 
-- .NET 10 SDK, with the `wasm-tools` workload for the Browser head.
+- .NET 10 SDK, with the `wasm-tools` workload for the Browser head and the `android` workload for the Android head.
 - clang for the native `cvnative` library. On Windows it also needs the Visual Studio C++ build tools, whose installer can add clang as "C++ Clang Compiler for Windows"; cubiomes does not build with MSVC itself.
+- For the Android head, the Android SDK and NDK (r27 or later), found through `ANDROID_HOME` and `ANDROID_NDK_HOME` or in their usual places.
 
 Clone with submodules, then build and test:
 
@@ -122,7 +125,7 @@ git clone --recurse-submodules https://github.com/Der-Floh/Cubiomes-Viewer
 dotnet test Cubiomes_Viewer.Engine.Tests
 ```
 
-The native library is built automatically when a head or test project is built and its output is missing or older than the sources. It can also be built directly with `native/build.ps1 -Rid win-x64`.
+The native library is built automatically when a head or test project is built and its output is missing or older than the sources. It can also be built directly with `native/build.ps1 -Rid win-x64`, or `-Rid android-arm64` and `-Rid android-x64` for Android.
 
 Run the Desktop or Browser head, or the command line from source:
 
@@ -136,6 +139,12 @@ dotnet run --project Cubiomes_Viewer.Browser
 
 ```bash
 dotnet run --project Cubiomes_Viewer.Cli -- --session search.json --out seeds.txt
+```
+
+The Android head runs on a connected phone or a running emulator:
+
+```bash
+dotnet build Cubiomes_Viewer.Android -t:Run
 ```
 
 ### Browser workers and storage

@@ -17,6 +17,7 @@ env:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
   PACKAGE_NAME: CubiomesViewer
   DESKTOP_PROJECT: Cubiomes_Viewer.Desktop/Cubiomes_Viewer.Desktop.csproj
+  ANDROID_PROJECT: Cubiomes_Viewer.Android/Cubiomes_Viewer.Android.csproj
 
 jobs:
   test:
@@ -118,8 +119,38 @@ jobs:
           package-name: ${{ env.PACKAGE_NAME }}
           version: ${{ env.PREVIEW_VERSION }}
 
+  android:
+    name: Package Android
+    runs-on: ubuntu-latest
+
+    env:
+      PREVIEW_VERSION: 0.0.1
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          submodules: true
+
+      - name: Setup .NET
+        uses: Der-Floh/Der-Floh/.github/actions/setup-dotnet@v1
+
+      - name: Publish
+        id: publish
+        uses: Der-Floh/Der-Floh/.github/actions/android-publish@v1
+        with:
+          project-path: ${{ env.ANDROID_PROJECT }}
+          version: ${{ env.PREVIEW_VERSION }}
+          apk-path: artifacts/${{ env.PACKAGE_NAME }}-android.apk
+          allow-debug-key: true
+
+      - name: Check the APK has the generator for both processors
+        env:
+          APK_PATH: ${{ steps.publish.outputs.apk-path }}
+        run: test "$(unzip -l "$APK_PATH" | grep -cE 'lib/(arm64-v8a|x86_64)/libcvnative\.so$')" -eq 2
+
   automerge:
-    needs: [test, browser, package]
+    needs: [test, browser, package, android]
     permissions:
       contents: write
       pull-requests: write
