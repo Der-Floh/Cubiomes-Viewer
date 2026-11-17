@@ -160,11 +160,11 @@ public sealed class StructureServicesTests : IDisposable
         Assert.NotEmpty(cityDetails.Pieces);
         Assert.Equal(expectedCity.Pieces, cityDetails.Pieces);
         Assert.Equal(expectedCity.Height, cityDetails.Height);
-        Assert.True(cityDetails.Height?.IsEstimate);
+        Assert.False(cityDetails.Height?.IsEstimate);
         Assert.NotNull(villageDetails.Variant);
         Assert.Equal(expectedVillage.Variant, villageDetails.Variant);
         Assert.Equal(expectedVillage.Height, villageDetails.Height);
-        Assert.True(villageDetails.Height?.IsEstimate);
+        Assert.False(villageDetails.Height?.IsEstimate);
         Assert.Empty(villageDetails.Pieces);
         Assert.Equal(_overworld, gateways.World);
         Assert.Equal(20, gateways.Gateways.Length);

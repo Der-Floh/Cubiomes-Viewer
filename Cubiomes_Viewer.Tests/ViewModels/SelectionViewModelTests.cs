@@ -191,10 +191,40 @@ public sealed class SelectionViewModelTests : IDisposable
         Assert.NotEmpty(expected.Pieces);
         Assert.NotNull(expected.Height);
         Assert.Equal(BlockPosText.ToLocation(position, expected.Height), _selection.PositionText);
-        Assert.Contains("Y ≈ ", _selection.PositionText, StringComparison.Ordinal);
+        Assert.Contains(", Y ", _selection.PositionText, StringComparison.Ordinal);
+        Assert.DoesNotContain("≈", _selection.PositionText, StringComparison.Ordinal);
         Assert.Equal(description, _selection.Details);
         Assert.Contains(_selection.Details, line => line.EndsWith("end ship", StringComparison.Ordinal));
         Assert.Equal(expected.Pieces.Select(piece => piece.Box), _selection.Boxes.TakeLast(expected.Pieces.Length));
+        Assert.Empty(GetErrors());
+    }
+
+    [AvaloniaFact]
+    public async Task Selection_Stronghold_LoadsTheBoxesOfItsRoomsAndWhereItsPortalRoomIs()
+    {
+        _session.Version = McVersion.V1_21_3;
+        var landmarks = await _computeService.RunAsync(new LandmarksJob(_map.World), _priority, TestContext.Current.CancellationToken);
+
+        _map.Selection = MapSelection.ForStronghold(0, _styleService.Stronghold, landmarks.Strongholds[0]);
+        await TestWait.UntilAsync(() => !_selection.IsLoading, "The rooms of the stronghold were not read in time.");
+
+        Assert.Equal("Stronghold 1", _selection.Title);
+        Assert.True(_selection.Boxes.Count > 10);
+        Assert.Contains(_selection.Details, line => line.StartsWith("Portal room at X ", StringComparison.Ordinal));
+        Assert.DoesNotContain("Y", _selection.PositionText, StringComparison.Ordinal);
+        Assert.Empty(GetErrors());
+    }
+
+    [AvaloniaFact]
+    public async Task Selection_Mineshaft_LoadsTheBoxesOfItsCorridors()
+    {
+        var position = await FindFirstAsync(StructureType.Mineshaft, new BlockArea(0, 0, 1024, 1024));
+
+        _map.Selection = CreateStructureSelection(StructureType.Mineshaft, position);
+        await TestWait.UntilAsync(() => !_selection.IsLoading, "The corridors of the mineshaft were not read in time.");
+
+        Assert.True(_selection.Boxes.Count > 1);
+        Assert.EndsWith(" pieces", _selection.Details[0], StringComparison.Ordinal);
         Assert.Empty(GetErrors());
     }
 
@@ -250,9 +280,9 @@ public sealed class SelectionViewModelTests : IDisposable
     private MapSelection CreateStructureSelection(StructureType type, BlockPos position)
         => new(type.ToString(), _styleService.GetStructureMarker(type), position, type);
 
-    private async Task<BlockPos> FindFirstAsync(StructureType type)
+    private async Task<BlockPos> FindFirstAsync(StructureType type, BlockArea? area = null)
     {
-        var request = new StructureAreaRequest(_map.World, type, _searchArea);
+        var request = new StructureAreaRequest(_map.World, type, area ?? _searchArea);
         var found = await _computeService.RunAsync(new StructureAreaJob(request), _priority, TestContext.Current.CancellationToken);
         return found.Positions[0];
     }

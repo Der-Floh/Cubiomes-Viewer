@@ -37,13 +37,13 @@ public sealed record MapSelection(string Name, MapMarker? Marker, BlockPos Posit
         return new MapSelection(name, marker, position, type, Note: note);
     }
 
-    /// <summary>A stronghold, named by its place in generation order as the map numbers them.</summary>
+    /// <summary>A stronghold, named by its place in generation order as the map numbers them, whose rooms the callout reads like a structure's.</summary>
     public static MapSelection ForStronghold(int index, MapMarker marker, BlockPos position, string? note = null)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(index);
         ArgumentNullException.ThrowIfNull(marker);
 
-        return new MapSelection($"{StrongholdName} {index + 1}", marker, position, Note: note);
+        return new MapSelection($"{StrongholdName} {index + 1}", marker, position, StructureType.Stronghold, Note: note);
     }
 
     public static MapSelection ForPin(MapPin pin)

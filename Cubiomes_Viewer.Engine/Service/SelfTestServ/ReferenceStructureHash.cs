@@ -41,7 +41,7 @@ internal static class ReferenceStructureHash
             StructureType.Treasure, StructureType.Mineshaft, StructureType.DesertWell, StructureType.Geode),
         new("1.21 Nether", McVersion.V1_21_3, Dimension.Nether, _wideArea, 0x6b2f4657,
             StructureType.Fortress, StructureType.Bastion, StructureType.RuinedPortalNether),
-        new("1.21 Nether fossils", McVersion.V1_21_3, Dimension.Nether, _denseArea, 0x54b83886, StructureType.NetherFossil),
+        new("1.21 Nether fossils", McVersion.V1_21_3, Dimension.Nether, _denseArea, 0x0d784b97, StructureType.NetherFossil),
         new("1.21 End", McVersion.V1_21_3, Dimension.End, _wideArea, 0xc26d0f8d, StructureType.EndCity),
         new("1.21 End gateways", McVersion.V1_21_3, Dimension.End, _outerEndArea, 0x8d017492, StructureType.EndGateway),
         new("1.16 Overworld", McVersion.V1_16_5, Dimension.Overworld, _wideArea, 0xe966815b,
@@ -59,7 +59,7 @@ internal static class ReferenceStructureHash
             StructureType.Village, StructureType.RuinedPortal, StructureType.Igloo, StructureType.AncientCity, StructureType.TrialChambers, StructureType.DesertPyramid),
         new("26.3 Overworld", McVersion.V26_3, Dimension.Overworld, _wideArea, 0xc4b322fd, StructureType.AbandonedCamp),
         new("1.21 Nether", McVersion.V1_21_3, Dimension.Nether, _detailArea, 0xbbb192c2, StructureType.Fortress, StructureType.Bastion),
-        new("1.21 Nether fossils", McVersion.V1_21_3, Dimension.Nether, _denseArea, 0x12bfb942, StructureType.NetherFossil),
+        new("1.21 Nether fossils", McVersion.V1_21_3, Dimension.Nether, _denseArea, 0x0b273260, StructureType.NetherFossil),
         new("1.21 End", McVersion.V1_21_3, Dimension.End, _wideArea, 0x88241018, StructureType.EndCity),
         new("1.12 Nether", McVersion.V1_12_2, Dimension.Nether, _detailArea, 0xf0d409ac, StructureType.Fortress),
     ];

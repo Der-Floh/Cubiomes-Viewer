@@ -1,5 +1,6 @@
 using System.Globalization;
 
+using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
@@ -98,8 +99,19 @@ public sealed class StructureDescriptionService : IStructureDescriptionService
             yield return Count(pieces.Count(piece => piece.Type == FortressPiece.BlazeSpawner), "blaze spawner");
             yield return Count(pieces.Count(piece => piece.Type == FortressPiece.NetherWartRoom), "nether wart room");
         }
+        else if (type == StructureType.Stronghold)
+        {
+            yield return Count(pieces.Count(piece => piece.Type == StrongholdPiece.Library), "library", "libraries");
+            var portalRoom = Array.FindIndex(pieces, piece => piece.Type == StrongholdPiece.PortalRoom);
+            if (portalRoom >= 0)
+                yield return $"Portal room at {BlockPosText.ToBlock(GetMiddle(pieces[portalRoom].Box))}";
+        }
     }
 
-    private static string Count(int count, string noun)
-        => string.Create(CultureInfo.InvariantCulture, $"{count} {noun}{(count == 1 ? string.Empty : "s")}");
+    private static BlockPos GetMiddle(BlockBox box) => new((box.MinX + box.MaxX) / 2, (box.MinZ + box.MaxZ) / 2);
+
+    private static string Count(int count, string noun) => Count(count, noun, noun + "s");
+
+    private static string Count(int count, string singular, string plural)
+        => string.Create(CultureInfo.InvariantCulture, $"{count} {(count == 1 ? singular : plural)}");
 }

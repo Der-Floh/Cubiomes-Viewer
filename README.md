@@ -24,7 +24,8 @@ A cross-platform Minecraft Java Edition seed finder and biome map viewer, built 
 - Layers: biomes, structure potential, climate parameters (temperature, humidity, continentalness, erosion, depth, weirdness), rivers, ocean temperatures and surface height, as far as the version has them.
 - Surface heights can be tinted, shaded, drawn as contour lines or in grey. Settings → Map can also shade the biome map by terrain height.
 - Markers for the structure types you choose, down to their variants, plus the world spawn, strongholds, slime chunks and End gateways.
-- Clicking a structure shows its variant, its pieces and its Y level: exact where the game fixes it (ancient cities, monuments, bastions, trial chambers), as a range where it moves by chance (fortresses, nether fossils), and estimated (≈) from the surface for structures that stand on the ground.
+- Clicking a structure shows its variant and its Y level, and draws the rooms of end cities, fortresses, strongholds and mineshafts on the map; a stronghold also tells where its portal room is.
+- The Y level is exact where the game fixes it or the terrain decides it: ancient cities, monuments, bastions, trial chambers, nether fossils, end cities, villages, woodland mansions and, from 1.20, jungle temples and swamp huts. Desert pyramids from 1.18 and some fortresses show the few levels the game picks from by chance, and other structures on the ground an estimate (≈). Exact terrain needs 1.14 or later; strongholds, mineshafts and ruined portals have no Y.
 - Biomes in the default colours or in colour maps of your own, edited live on the map and shared as JSON files.
 - On the desktop, the map can move into a window of its own, for a second screen.
 

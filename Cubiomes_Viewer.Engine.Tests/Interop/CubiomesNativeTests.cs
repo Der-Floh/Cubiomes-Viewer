@@ -37,6 +37,7 @@ public sealed class CubiomesNativeTests
         [StructureType.TrailRuins] = "trail_ruins",
         [StructureType.TrialChambers] = "trial_chambers",
         [StructureType.AbandonedCamp] = "abandoned_camp",
+        [StructureType.Stronghold] = "stronghold",
     };
 
     [Fact]

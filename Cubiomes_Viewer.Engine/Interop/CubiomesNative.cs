@@ -113,6 +113,14 @@ internal static unsafe partial class CubiomesNative
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial int GenerateHeights(nint world, int scale, int x, int z, int sizeX, int sizeZ, short* destination, int capacity);
 
+    [LibraryImport(LibraryName, EntryPoint = "cv_terrain_supported")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int TerrainSupported(int version, int dimension);
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_gen_surface")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int GenerateSurface(nint world, int x, int z, int sizeX, int sizeZ, short* destination, int capacity);
+
     [LibraryImport(LibraryName, EntryPoint = "cv_structure_config")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial int StructureConfig(int structureType, int version, int* dimension, int* regionBlocks);
@@ -148,6 +156,10 @@ internal static unsafe partial class CubiomesNative
     [LibraryImport(LibraryName, EntryPoint = "cv_structure_pieces")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial int StructurePieces(nint world, int structureType, int x, int z, NativePiece* pieces, int capacity);
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_structure_floor")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int StructureFloor(nint world, int structureType, int x, int z, int* y);
 
     [LibraryImport(LibraryName, EntryPoint = "cv_end_gateways")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]

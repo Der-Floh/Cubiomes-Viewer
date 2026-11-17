@@ -98,6 +98,31 @@ public sealed class StructureDescriptionServiceTests : IDisposable
     }
 
     [Fact]
+    public void Describe_Stronghold_CountsItsLibrariesAndPlacesItsPortalRoom()
+    {
+        StructurePiece[] pieces =
+        [
+            new(0, 0, 0, _box),
+            new(StrongholdPiece.Library, 0, 3, _box),
+            new(StrongholdPiece.PortalRoom, 0, 5, new BlockBox(100, 20, 200, 110, 27, 215)),
+        ];
+
+        var lines = _service.Describe(Create(StructureType.Stronghold, null, pieces), Version);
+
+        Assert.Equal(["3 pieces", "1 library", "Portal room at X 105, Z 207"], lines);
+    }
+
+    [Fact]
+    public void Describe_StrongholdWithSeveralLibraries_CountsThemInThePlural()
+    {
+        StructurePiece[] pieces = [new(StrongholdPiece.Library, 0, 1, _box), new(StrongholdPiece.Library, 0, 2, _box)];
+
+        var lines = _service.Describe(Create(StructureType.Stronghold, null, pieces), Version);
+
+        Assert.Equal(["2 pieces", "2 libraries"], lines);
+    }
+
+    [Fact]
     public void Describe_StructureWithoutDetails_SaysNothing()
     {
         Assert.Empty(_service.Describe(Create(StructureType.Mansion, null), Version));

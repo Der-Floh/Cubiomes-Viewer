@@ -33,4 +33,7 @@ public enum StructureType
     TrailRuins,
     TrialChambers,
     AbandonedCamp,
+
+    /// <summary>Placed in rings around the world's centre rather than in regions; only its details are read by type.</summary>
+    Stronghold,
 }

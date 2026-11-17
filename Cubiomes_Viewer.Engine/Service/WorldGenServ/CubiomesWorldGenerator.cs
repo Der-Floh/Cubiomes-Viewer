@@ -14,12 +14,17 @@ public sealed class CubiomesWorldGenerator : IWorldGenerator
     private const int EndGatewayCount = 20;
     private const int ValuesPerGateway = 4;
     private const int UnknownHeight = 320;
+    private const int Supported = 1;
 
     public McVersion Version { get; }
     public GeneratorFlags Flags { get; }
     public StructureRules Rules { get; }
 
+    public bool HasExactTerrain
+        => _dimension is { } dimension && CubiomesNativeException.ThrowIfError(CubiomesNative.TerrainSupported((int)Version, (int)dimension), nameof(HasExactTerrain)) == Supported;
+
     private readonly WorldHandle _world;
+    private Dimension? _dimension;
 
     public CubiomesWorldGenerator(McVersion version, GeneratorFlags flags, StructureRules? rules = null)
     {
@@ -41,7 +46,10 @@ public sealed class CubiomesWorldGenerator : IWorldGenerator
     }
 
     public void Apply(Dimension dimension, long seed)
-        => CubiomesNativeException.ThrowIfError(CubiomesNative.WorldApply(World, (int)dimension, unchecked((ulong)seed)), nameof(Apply));
+    {
+        CubiomesNativeException.ThrowIfError(CubiomesNative.WorldApply(World, (int)dimension, unchecked((ulong)seed)), nameof(Apply));
+        _dimension = dimension;
+    }
 
     public unsafe int GetBiomeAt(int scale, int x, int y, int z)
     {
@@ -93,6 +101,27 @@ public sealed class CubiomesWorldGenerator : IWorldGenerator
             var result = CubiomesNative.GenerateHeights(World, area.Scale, area.X, area.Z, area.SizeX, area.SizeZ, buffer, destination.Length);
             CubiomesNativeException.ThrowIfError(result, nameof(GenerateHeights));
         }
+    }
+
+    public unsafe void GenerateSurface(BlockArea area, Span<short> destination)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(area.SizeX);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(area.SizeZ);
+        if (destination.Length < area.SizeX * area.SizeZ)
+            throw new ArgumentException($"The destination holds {destination.Length} columns but the area has {area.SizeX * area.SizeZ}.", nameof(destination));
+
+        fixed (short* buffer = destination)
+        {
+            var result = CubiomesNative.GenerateSurface(World, area.X, area.Z, area.SizeX, area.SizeZ, buffer, destination.Length);
+            CubiomesNativeException.ThrowIfError(result, nameof(GenerateSurface));
+        }
+    }
+
+    public unsafe int? FindStructureFloor(StructureType type, BlockPos position)
+    {
+        int y;
+        var found = CubiomesNative.StructureFloor(World, (int)type, position.X, position.Z, &y);
+        return CubiomesNativeException.ThrowIfError(found, nameof(FindStructureFloor)) > 0 ? y : null;
     }
 
     public bool CanGenerateStructure(StructureType type, BlockPos position)

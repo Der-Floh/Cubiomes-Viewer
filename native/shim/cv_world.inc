@@ -9,6 +9,8 @@ struct cv_world
     BiomeNoise *octave_noise;
     int octave_parameter;
     int octave_count;
+    TerrainNoise *terrain;
+    int has_terrain;
     cv_rules rules;
 };
 
@@ -88,6 +90,7 @@ void cv_world_destroy(cv_world *world)
         return;
     free(world->cache);
     free(world->octave_noise);
+    free(world->terrain);
     free(world);
 }
 
@@ -98,6 +101,7 @@ int32_t cv_world_apply(cv_world *world, int32_t dim, uint64_t seed)
     applySeed(&world->generator, dim, seed);
     world->is_seeded = 1;
     world->has_surface = 0;
+    world->has_terrain = 0;
     world->octave_parameter = -1;
     return CV_OK;
 }

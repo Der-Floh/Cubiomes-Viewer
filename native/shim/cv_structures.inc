@@ -10,6 +10,26 @@ static int cv_is_locatable_structure(int32_t stype)
     return cv_is_valid_structure(stype) && stype != Feature && stype != End_Island && stype != Stronghold;
 }
 
+/* A nether fossil settles on the first floor below a height picked by chance and is left out when there is none above
+   the lava sea. Writes the Y of that floor where y is given. */
+static int32_t cv_find_nether_fossil_floor(cv_world *world, int32_t x, int32_t z, int32_t *y)
+{
+    const Generator *generator = &world->generator;
+    StructureVariant variant;
+    if (!getVariant(&variant, Nether_Fossil, generator->mc, generator->seed, x, z, -1))
+        return 0;
+
+    TerrainNoise *terrain = cv_terrain(world);
+    if (!terrain)
+        return CV_ERR_MEMORY;
+    if (!isViableNetherFossilTerrain(x >> 4, z >> 4, &variant, &terrain->base3dNoise, generator->mc))
+        return 0;
+    if (y)
+        *y = variant.y;
+    return 1;
+}
+
+/* 1 when a structure generates at a position its type attempts, 0 when it does not, or a negative status. */
 static int cv_can_generate_at(cv_world *world, int32_t stype, Pos pos)
 {
     Generator *generator = &world->generator;
@@ -17,6 +37,8 @@ static int cv_can_generate_at(cv_world *world, int32_t stype, Pos pos)
         return 0;
     if (stype == End_City)
         return isViableEndCityTerrain(generator, cv_surface(world), pos.x, pos.z) != 0;
+    if (stype == Nether_Fossil)
+        return cv_find_nether_fossil_floor(world, pos.x, pos.z, NULL);
     return !cv_estimates_terrain() || isViableStructureTerrain(stype, generator, pos.x, pos.z) != 0;
 }
 
@@ -166,7 +188,10 @@ static int32_t cv_collect_structures(cv_world *world, int32_t stype, int32_t mc,
                 continue;
             if (pos.x < x0 || pos.x >= x1 || pos.z < z0 || pos.z >= z1)
                 continue;
-            if (world && !cv_can_generate_at(world, stype, pos))
+            int viable = world ? cv_can_generate_at(world, stype, pos) : 1;
+            if (viable < 0)
+                return viable;
+            if (!viable)
                 continue;
             if (count >= capacity)
                 return CV_ERR_CAPACITY;
@@ -229,6 +254,25 @@ int32_t cv_structure_attempts_in_area(const cv_rules *rules, int32_t stype, int3
 typedef char cv_assert_end_ship[(END_SHIP == 12) ? 1 : -1];
 typedef char cv_assert_spawner[(BRIDGE_SPAWNER == 5) ? 1 : -1];
 typedef char cv_assert_nether_wart[(CORRIDOR_NETHER_WART == 13) ? 1 : -1];
+typedef char cv_assert_library[(SH_LIBRARY == 9) ? 1 : -1];
+typedef char cv_assert_portal_room[(SH_PORTAL_ROOM == 10) ? 1 : -1];
+
+/* Like cv_check_structure_world, for the details of one structure: strongholds have details too, in the Overworld. */
+static int cv_check_details_world(const cv_world *world, int32_t stype, int *exists)
+{
+    if (stype != Stronghold)
+    {
+        StructureConfig config;
+        return cv_check_structure_world(world, stype, &config, exists);
+    }
+    if (!world)
+        return CV_ERR_ARGUMENT;
+    if (!world->is_seeded || world->generator.dim != DIM_OVERWORLD)
+        return CV_ERR_STATE;
+
+    *exists = 1;
+    return CV_OK;
+}
 
 /* The biome that decides the variant: villages report it through their viability check, ruined portals use the chunk centre. */
 static int cv_variant_biome(cv_world *world, int32_t stype, Pos pos)
@@ -249,9 +293,8 @@ static int cv_variant_biome(cv_world *world, int32_t stype, Pos pos)
 
 static int32_t cv_find_structure_variant(cv_world *world, int32_t stype, int32_t x, int32_t z, cv_variant *variant)
 {
-    StructureConfig config;
     int exists = 0;
-    int status = cv_check_structure_world(world, stype, &config, &exists);
+    int status = cv_check_details_world(world, stype, &exists);
     if (status != CV_OK)
         return status;
     if (!variant)
@@ -295,26 +338,41 @@ int32_t cv_structure_variant(cv_world *world, int32_t stype, int32_t x, int32_t 
     return result;
 }
 
+/* The pieces cubiomes builds the way the game does. Strongholds and mineshafts keep the height they start at, as the game
+   moves them up or down by chance afterwards. */
+static int cv_generate_pieces(const Generator *generator, int32_t stype, int32_t x, int32_t z, Piece *found)
+{
+    switch (stype)
+    {
+    case End_City:
+        return getEndCityPieces(found, generator->seed, x >> 4, z >> 4);
+    case Fortress:
+        return getFortressPieces(found, CV_MAX_PIECES, generator->mc, generator->seed, x >> 4, z >> 4);
+    case Stronghold:
+        return generator->mc >= MC_1_8 ? getStrongholdPieces(found, CV_MAX_PIECES, generator->mc, generator->seed, x >> 4, z >> 4) : 0;
+    case Mineshaft:
+        return getMineshaftPieces(found, CV_MAX_PIECES, generator->mc, generator->seed, x >> 4, z >> 4);
+    default:
+        return 0;
+    }
+}
+
 int32_t cv_structure_pieces(cv_world *world, int32_t stype, int32_t x, int32_t z, cv_piece *pieces, int32_t capacity)
 {
-    StructureConfig config;
     int exists = 0;
-    int status = cv_check_structure_world(world, stype, &config, &exists);
+    int status = cv_check_details_world(world, stype, &exists);
     if (status != CV_OK)
         return status;
     if (!pieces || capacity < 0)
         return CV_ERR_ARGUMENT;
-    if (!exists || (stype != End_City && stype != Fortress))
+    if (!exists)
         return 0;
 
     Piece *found = (Piece *)calloc(CV_MAX_PIECES, sizeof(Piece));
     if (!found)
         return CV_ERR_MEMORY;
 
-    const Generator *generator = &world->generator;
-    int count = stype == End_City
-        ? getEndCityPieces(found, generator->seed, x >> 4, z >> 4)
-        : getFortressPieces(found, CV_MAX_PIECES, generator->mc, generator->seed, x >> 4, z >> 4);
+    int count = cv_generate_pieces(&world->generator, stype, x, z, found);
     if (count > capacity)
     {
         free(found);
@@ -335,4 +393,98 @@ int32_t cv_structure_pieces(cv_world *world, int32_t stype, int32_t x, int32_t z
     }
     free(found);
     return count;
+}
+
+/* ---- the height a structure is built at ---- */
+
+#define CV_SEA_LEVEL 63
+#define CV_MANSION_MIN_GROUND 60
+#define CV_MANSION_CORNER 7
+#define CV_MANSION_REACH 5
+
+/* The lowest air block above the ground or the sea, which is where the game's world-surface height map lies. */
+static int32_t cv_find_world_surface(cv_world *world, int32_t x, int32_t z, int32_t *y)
+{
+    int16_t ground;
+    int32_t status = cv_fill_surface(world, x, z, 1, 1, &ground);
+    if (status < 0)
+        return status;
+
+    *y = ground < CV_SEA_LEVEL ? CV_SEA_LEVEL : ground;
+    return 1;
+}
+
+/* A mansion is built on the lowest of four corners of a square that its rotation turns, and is left out below Y 60. */
+static int32_t cv_find_mansion_floor(cv_world *world, int32_t x, int32_t z, int32_t *y)
+{
+    const Generator *generator = &world->generator;
+    if (cv_terrain_supported(generator->mc, generator->dim) != 1)
+        return 0;
+
+    uint64_t rng = chunkGenerateRnd(generator->seed, x >> 4, z >> 4);
+    int rotation = nextInt(&rng, 4);
+    int reach_x = rotation == 1 || rotation == 2 ? -CV_MANSION_REACH : CV_MANSION_REACH;
+    int reach_z = rotation == 2 || rotation == 3 ? -CV_MANSION_REACH : CV_MANSION_REACH;
+    int corner_x = (x & ~15) + CV_MANSION_CORNER;
+    int corner_z = (z & ~15) + CV_MANSION_CORNER;
+    const int corners[4][2] = {{0, 0}, {0, reach_z}, {reach_x, 0}, {reach_x, reach_z}};
+
+    int32_t lowest = INT32_MAX;
+    for (int i = 0; i < 4; i++)
+    {
+        int32_t surface;
+        int32_t status = cv_find_world_surface(world, corner_x + corners[i][0], corner_z + corners[i][1], &surface);
+        if (status < 0)
+            return status;
+        if (surface < lowest)
+            lowest = surface;
+    }
+
+    if (lowest - 1 < CV_MANSION_MIN_GROUND)
+        return 0;
+    *y = lowest;
+    return 1;
+}
+
+static int32_t cv_find_end_city_floor(cv_world *world, int32_t x, int32_t z, int32_t *y)
+{
+    int height = isViableEndCityTerrain(&world->generator, cv_surface(world), x, z);
+    if (height <= 0)
+        return 0;
+
+    *y = height;
+    return 1;
+}
+
+static int32_t cv_find_structure_floor(cv_world *world, int32_t stype, int32_t x, int32_t z, int32_t *y)
+{
+    StructureConfig config;
+    int exists = 0;
+    int status = cv_check_structure_world(world, stype, &config, &exists);
+    if (status != CV_OK)
+        return status;
+    if (!y)
+        return CV_ERR_ARGUMENT;
+    if (!exists)
+        return 0;
+
+    switch (stype)
+    {
+    case End_City:
+        return cv_find_end_city_floor(world, x, z, y);
+    case Nether_Fossil:
+        return cv_find_nether_fossil_floor(world, x, z, y);
+    case Mansion:
+        return cv_find_mansion_floor(world, x, z, y);
+    default:
+        return 0;
+    }
+}
+
+int32_t cv_structure_floor(cv_world *world, int32_t stype, int32_t x, int32_t z, int32_t *y)
+{
+    const cv_rules *previous = cv_enter_rules(world ? &world->rules : NULL);
+    int32_t result = cv_find_structure_floor(world, stype, x, z, y);
+    cv_enter_rules(previous);
+    return result;
 }

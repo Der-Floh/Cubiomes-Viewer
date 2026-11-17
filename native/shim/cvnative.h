@@ -11,7 +11,7 @@
 #define CV_API
 #endif
 
-#define CV_ABI_VERSION 12
+#define CV_ABI_VERSION 13
 
 #define CV_BIOME_NONE 255
 #define CV_BIOME_COLOR_BYTES 768
@@ -24,6 +24,7 @@
 #define CV_END_GATEWAYS 20
 #define CV_CLIMATE_UNIT 10000
 #define CV_HEIGHT_UNIT 16
+#define CV_MAX_SURFACE_SIDE 64
 #define CV_LAYER_RIVER 0
 #define CV_LAYER_OCEAN_TEMPERATURE 1
 #define CV_LAYER_TEMPERATURE_CATEGORY 2
@@ -114,6 +115,12 @@ CV_API int32_t cv_gen_layer_u8(cv_world *world, int32_t layer, int32_t scale, in
 CV_API int32_t cv_height_supported(int32_t mc, int32_t dim);
 CV_API int32_t cv_gen_heights(cv_world *world, int32_t scale, int32_t x, int32_t z, int32_t sx, int32_t sz, int16_t *out, int32_t capacity);
 
+/* The exact terrain of cubiomes' terrain generator, in the Overworld from 1.14 and in the End from 1.9. cv_gen_surface
+   writes, row by row, the Y of the lowest air block above the highest solid block of each column, as the noise shapes
+   it before water, caves, ravines and anything on the ground; areas of up to CV_MAX_SURFACE_SIDE blocks a side. */
+CV_API int32_t cv_terrain_supported(int32_t mc, int32_t dim);
+CV_API int32_t cv_gen_surface(cv_world *world, int32_t x, int32_t z, int32_t sx, int32_t sz, int16_t *out, int32_t capacity);
+
 /* Structures: a result of 1 means yes or found, 0 means no; positions are block coordinates. Functions with a world
    follow the rules of the world, the others the rules they are given. */
 CV_API int32_t cv_structure_config(int32_t stype, int32_t mc, int32_t *dimension, int32_t *region_blocks);
@@ -137,10 +144,16 @@ CV_API int32_t cv_structures_in_area(cv_world *world, int32_t stype, int32_t x0,
    structure of the seed is among the attempts. */
 CV_API int32_t cv_structure_attempts_in_area(const cv_rules *rules, int32_t stype, int32_t mc, uint64_t seed, int32_t x0, int32_t z0, int32_t x1, int32_t z1, int32_t *positions, int32_t capacity);
 
-/* Details of a structure found by cv_structures_in_area. cv_structure_variant returns 1 when a variant is known;
-   cv_structure_pieces returns the number of pieces, which is 0 for types other than end cities and fortresses. */
+/* Details of a structure found by cv_structures_in_area, or of a stronghold in the Overworld. cv_structure_variant
+   returns 1 when a variant is known; cv_structure_pieces returns the number of pieces of an end city, fortress,
+   stronghold or mineshaft, and 0 for other types. Strongholds and mineshafts keep the height they start at. */
 CV_API int32_t cv_structure_variant(cv_world *world, int32_t stype, int32_t x, int32_t z, cv_variant *variant);
 CV_API int32_t cv_structure_pieces(cv_world *world, int32_t stype, int32_t x, int32_t z, cv_piece *pieces, int32_t capacity);
+
+/* The Y a structure found by cv_structures_in_area is built at, where the terrain tells it exactly: end cities, nether
+   fossils and, from 1.14, woodland mansions. Returns 1 when written, 0 when not known or when the terrain keeps the
+   structure from generating. */
+CV_API int32_t cv_structure_floor(cv_world *world, int32_t stype, int32_t x, int32_t z, int32_t *y);
 
 /* The 20 gateways around the main End island in generation order, each followed by the gateway it leads to:
    4 values (x, z, linked x, linked z) per gateway. The world must be applied to the End. */
