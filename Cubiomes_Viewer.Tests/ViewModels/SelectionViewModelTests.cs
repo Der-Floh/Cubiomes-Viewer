@@ -189,6 +189,9 @@ public sealed class SelectionViewModelTests : IDisposable
 
         var description = _services.GetRequiredService<IStructureDescriptionService>().Describe(expected, _map.World.Version);
         Assert.NotEmpty(expected.Pieces);
+        Assert.NotNull(expected.Height);
+        Assert.Equal(BlockPosText.ToLocation(position, expected.Height), _selection.PositionText);
+        Assert.Contains("Y ≈ ", _selection.PositionText, StringComparison.Ordinal);
         Assert.Equal(description, _selection.Details);
         Assert.Contains(_selection.Details, line => line.EndsWith("end ship", StringComparison.Ordinal));
         Assert.Equal(expected.Pieces.Select(piece => piece.Box), _selection.Boxes.TakeLast(expected.Pieces.Length));

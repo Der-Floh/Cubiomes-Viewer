@@ -119,6 +119,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IMapTileService, MapTileService>();
         services.AddSingleton<IStructureCatalog, StructureCatalog>();
         services.AddSingleton<IStructureFeatureCatalog, StructureFeatureCatalog>();
+        services.AddSingleton<IStructureHeightService, StructureHeightService>();
         services.AddSingleton<IStructureAreaService, StructureAreaService>();
         services.AddSingleton<IWorldLandmarkService, WorldLandmarkService>();
         services.AddSingleton<IEndGatewayService, EndGatewayService>();

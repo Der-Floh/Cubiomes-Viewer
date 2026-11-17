@@ -196,6 +196,7 @@ public sealed partial class SelectionViewModel : ViewModelBase
             if (_loading != loading)
                 return;
 
+            PositionText = BlockPosText.ToLocation(selection.Position, details.Height);
             foreach (var line in _descriptionService.Describe(details, world.Version))
                 Details.Add(line);
             Boxes = GetBoxes(details);

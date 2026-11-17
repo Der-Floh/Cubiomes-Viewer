@@ -151,15 +151,20 @@ public sealed class StructureServicesTests : IDisposable
         var villageDetails = ComputeEnvelope.DeserializeResponse<StructureDetails>(host.Execute(ComputeEnvelope.SerializeJob(villageJob)));
         var gateways = ComputeEnvelope.DeserializeResponse<EndGatewayData>(host.Execute(ComputeEnvelope.SerializeJob(gatewaysJob)));
 
-        var expectedCity = new StructureDetailsJobHandler().Handle(cityJob, context, CancellationToken.None);
-        var expectedVillage = new StructureDetailsJobHandler().Handle(villageJob, context, CancellationToken.None);
+        var handler = _services.GetRequiredService<StructureDetailsJobHandler>();
+        var expectedCity = handler.Handle(cityJob, context, CancellationToken.None);
+        var expectedVillage = handler.Handle(villageJob, context, CancellationToken.None);
         var expectedGateways = new EndGatewaysJobHandler().Handle(gatewaysJob, context, CancellationToken.None);
         Assert.Equal(city, cityDetails.Position);
         Assert.Null(cityDetails.Variant);
         Assert.NotEmpty(cityDetails.Pieces);
         Assert.Equal(expectedCity.Pieces, cityDetails.Pieces);
+        Assert.Equal(expectedCity.Height, cityDetails.Height);
+        Assert.True(cityDetails.Height?.IsEstimate);
         Assert.NotNull(villageDetails.Variant);
         Assert.Equal(expectedVillage.Variant, villageDetails.Variant);
+        Assert.Equal(expectedVillage.Height, villageDetails.Height);
+        Assert.True(villageDetails.Height?.IsEstimate);
         Assert.Empty(villageDetails.Pieces);
         Assert.Equal(_overworld, gateways.World);
         Assert.Equal(20, gateways.Gateways.Length);

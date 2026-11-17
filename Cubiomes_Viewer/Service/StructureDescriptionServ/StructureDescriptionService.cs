@@ -25,7 +25,6 @@ public sealed class StructureDescriptionService : IStructureDescriptionService
         if (details.Variant is { } variant)
         {
             lines.AddRange(DescribeVariant(details.Type, variant, version));
-            AddHeight(lines, details.Type, variant);
             AddSize(lines, details.Type, variant);
         }
 
@@ -65,12 +64,6 @@ public sealed class StructureDescriptionService : IStructureDescriptionService
             yield return "Buried underground";
         else if (variant.HasAirPocket)
             yield return "In an air pocket";
-    }
-
-    private static void AddHeight(List<string> lines, StructureType type, StructureVariant variant)
-    {
-        if (variant.Height is { } height)
-            lines.Add(string.Create(CultureInfo.InvariantCulture, $"{(type == StructureType.Geode ? "Around" : "At")} Y {height}"));
     }
 
     private static void AddSize(List<string> lines, StructureType type, StructureVariant variant)

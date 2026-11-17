@@ -54,13 +54,13 @@ public sealed class StructureDescriptionServiceTests : IDisposable
     }
 
     [Fact]
-    public void Describe_IglooAndGeode_TellTheirVariantHeightAndSize()
+    public void Describe_IglooAndGeode_TellTheirVariantAndSizeButLeaveTheHeightToThePosition()
     {
         var igloo = _service.Describe(Create(StructureType.Igloo, new StructureVariant { HasBasement = true, Box = _box }), Version);
         var geode = _service.Describe(Create(StructureType.Geode, new StructureVariant { IsCracked = true, Height = -20 }), Version);
 
         Assert.Equal(["Has a basement", "Size: 10 × 12 × 9 blocks"], igloo);
-        Assert.Equal(["Cracked open", "Around Y -20"], geode);
+        Assert.Equal(["Cracked open"], geode);
     }
 
     [Fact]

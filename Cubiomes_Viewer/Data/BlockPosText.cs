@@ -1,5 +1,6 @@
 using System.Globalization;
 
+using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 
 namespace Cubiomes_Viewer.Data;
@@ -16,12 +17,26 @@ public static class BlockPosText
     public static string ToChunk(BlockPos position)
         => string.Create(CultureInfo.InvariantCulture, $"{position.X >> ChunkShift}, {position.Z >> ChunkShift}");
 
-    /// <summary>The block's coordinates with their axes named.</summary>
-    public static string ToBlock(BlockPos position)
-        => string.Create(CultureInfo.InvariantCulture, $"X {position.X}, Z {position.Z}");
+    /// <summary>The block's coordinates with their axes named, with the height between them where it is known.</summary>
+    public static string ToBlock(BlockPos position, StructureHeight? height = null) => height is null
+        ? string.Create(CultureInfo.InvariantCulture, $"X {position.X}, Z {position.Z}")
+        : string.Create(CultureInfo.InvariantCulture, $"X {position.X}, {ToHeight(height)}, Z {position.Z}");
 
-    /// <summary>The block and its chunk, as shown where a position is described to the user.</summary>
-    public static string ToLocation(BlockPos position) => $"{ToBlock(position)}  ·  Chunk {ToChunk(position)}";
+    /// <summary>A structure's height: its level, the levels it lies between, or an estimate marked as one.</summary>
+    public static string ToHeight(StructureHeight height)
+    {
+        ArgumentNullException.ThrowIfNull(height);
+
+        return height switch
+        {
+            { IsEstimate: true } => string.Create(CultureInfo.InvariantCulture, $"Y ≈ {height.Lowest}"),
+            { IsRange: true } => string.Create(CultureInfo.InvariantCulture, $"Y {height.Lowest} to {height.Highest}"),
+            _ => string.Create(CultureInfo.InvariantCulture, $"Y {height.Lowest}"),
+        };
+    }
+
+    /// <summary>The block and its chunk, as shown where a position is described to the user, with the height where it is known.</summary>
+    public static string ToLocation(BlockPos position, StructureHeight? height = null) => $"{ToBlock(position, height)}  ·  Chunk {ToChunk(position)}";
 
     /// <summary>How far one block lies from another, named by where the distance is measured from.</summary>
     public static string ToDistance(BlockPos start, BlockPos end)

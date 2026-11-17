@@ -13,4 +13,13 @@ public sealed class StructureDetails
 
     /// <summary>The pieces of an end city or a fortress; empty for other types.</summary>
     public required StructurePiece[] Pieces { get; init; }
+
+    /// <summary>
+    /// The height the structure lies at, or <see langword="null"/> where it cannot be told. Only the details of a single picked
+    /// structure carry it, as estimating the surface would slow down searches that describe many.
+    /// </summary>
+    public StructureHeight? Height { get; init; }
+
+    public StructureDetails WithHeight(StructureHeight? height)
+        => new() { Type = Type, Position = Position, Variant = Variant, Pieces = Pieces, Height = height };
 }
