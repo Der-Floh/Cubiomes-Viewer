@@ -9,6 +9,7 @@ A cross-platform Minecraft Java Edition seed finder and biome map viewer, built 
 ## Features
 
 - **Biome map** of any seed from Beta 1.7 to 26.3, in the Overworld, Nether and End, with structures, strongholds, the spawn point and slime chunks marked.
+- **Structure details** on a click: the variant, the Y level, the rooms of larger structures and, if you turn it on, what the chests hold.
 - **More layers**: climate parameters, surface heights, rivers, ocean temperatures and where a structure type can generate, plus optional relief shading of the biome map.
 - **Seed search** for seeds that meet a list of conditions, in the app or from the command line.
 - **Analysis** of the biomes, structures and locations around a point, for one seed or up to 1,000 found seeds.
@@ -18,7 +19,7 @@ A cross-platform Minecraft Java Edition seed finder and biome map viewer, built 
 
 ### Map
 
-- Zoom from single blocks out to whole regions, and drag with the left or right mouse button.
+- Zoom from single blocks out to whole regions, and drag with the left or right mouse button; on a touch screen, drag with one finger and pinch to zoom.
 - The world bar sets the seed (or a random one), version, large biomes, dimension and the Y level biomes are read at; Shift + mouse wheel steps the Y level.
 - The status bar shows the biome or value, block and chunk under the pointer.
 - Layers: biomes, structure potential, climate parameters (temperature, humidity, continentalness, erosion, depth, weirdness), rivers, ocean temperatures and surface height, as far as the version has them.
@@ -31,6 +32,8 @@ A cross-platform Minecraft Java Edition seed finder and biome map viewer, built 
 - On the desktop, the map can move into a window of its own, for a second screen.
 
 ### Right-click menu
+
+Opens with a right-click on the map, or on a touch screen by touching and holding the map.
 
 - Copy the block's coordinates, `/tp` command, chunk, region file or the seed.
 - Put a pin on the block, or measure the distance to another one. Pins and measurements are kept per seed and dimension and can be named.
@@ -61,6 +64,7 @@ cubiomes-viewer-cli --session search.json --out seeds.txt
 
 - Seeds are printed as they are found, or written to the file given with `--out`; progress shows in the terminal.
 - Progress is saved back into the session file, so Ctrl+C stops the search, the same command continues it, and the app opens it where the CLI left off. `--reset` starts over.
+- Use a CLI at least as new as the app that saved the search. An older one leaves out what it does not know, such as a chest requirement, or cannot open the file.
 - `--selftest` runs the app's self-test.
 - Exit codes: 0 finished, 1 failed, 2 invalid arguments, 130 stopped.
 
@@ -98,7 +102,7 @@ cubiomes-viewer-cli --session search.json --out seeds.txt
 | **macOS** Apple Silicon | [Setup.pkg](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/CubiomesViewer-osx-arm64-Setup.pkg) | [zip](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/CubiomesViewer-osx-arm64-Portable.zip) |
 | **macOS** Intel | [Setup.pkg](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/CubiomesViewer-osx-x64-Setup.pkg) | [zip](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/CubiomesViewer-osx-x64-Portable.zip) |
 | **Linux** x64 | [AppImage](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/CubiomesViewer-linux-x64.AppImage) | |
-| **Android** 7.0 and later | [APK](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/CubiomesViewer-android.apk) | |
+| **Android** 64-bit, 7.0 and later | [APK](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/CubiomesViewer-android.apk) | |
 
 <!-- On Windows, the setup is also on winget: `winget install Der_Floh.CubiomesViewer`. -->
 
