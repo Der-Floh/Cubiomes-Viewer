@@ -36,6 +36,9 @@ public sealed partial class MainViewModel : ViewModelBase
     public partial int SelectedPanelIndex { get; set; } = NoPanel;
 
     public ViewModelBase? CurrentPanel => SelectedPanelIndex >= 0 && SelectedPanelIndex < _panels.Length ? _panels[SelectedPanelIndex] : null;
+
+    /// <summary>The view models of the panels, in the order of their buttons.</summary>
+    public IReadOnlyList<ViewModelBase> Panels => _panels;
     public bool IsPanelOpen => CurrentPanel is not null;
 
     /// <summary>Whether the map can get a window of its own, as on the desktop.</summary>

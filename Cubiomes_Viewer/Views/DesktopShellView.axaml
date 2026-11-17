@@ -39,7 +39,7 @@
             </Border>
 
             <Border Grid.Column="1" Classes="side-panel" IsVisible="{Binding IsPanelOpen}">
-                <controls:PanelHost Content="{Binding CurrentPanel}"/>
+                <controls:PanelHost Name="PanelSlot" Content="{Binding CurrentPanel}"/>
             </Border>
 
             <Panel Grid.Column="2" Name="MapSlot"/>

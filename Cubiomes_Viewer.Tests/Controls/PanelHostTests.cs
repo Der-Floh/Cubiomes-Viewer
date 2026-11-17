@@ -1,6 +1,8 @@
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.Headless.XUnit;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
 
 using Cubiomes_Viewer.Controls;
 
@@ -30,7 +32,7 @@ public sealed class PanelHostTests : IDisposable
 
         var view = Assert.Single(VisibleViews());
         Assert.Same(_layers, view.DataContext);
-        Assert.Equal("Layers", view.Text);
+        Assert.Equal("Layers", view.Content);
     }
 
     [AvaloniaFact]
@@ -52,7 +54,7 @@ public sealed class PanelHostTests : IDisposable
         _host.Content = _layers;
         _host.Content = _search;
 
-        Assert.Equal("Search", Assert.Single(VisibleViews()).Text);
+        Assert.Equal("Search", Assert.Single(VisibleViews()).Content);
         Assert.Equal(2, _host.Children.Count);
     }
 
@@ -65,13 +67,50 @@ public sealed class PanelHostTests : IDisposable
         Assert.Empty(VisibleViews());
     }
 
-    private TextBlock Build(TestPanel panel)
+    [AvaloniaFact]
+    public void PrepareWhenIdle_Panels_BuildsTheirViewsHiddenOnceTheAppIsIdle()
     {
-        _built.Add(panel);
-        return new TextBlock { Text = panel.Name };
+        _host.PrepareWhenIdle([_layers, _search]);
+        Assert.Empty(_built);
+
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal([_layers, _search], _built);
+        Assert.Empty(VisibleViews());
+        Assert.All(_host.Children, view => Assert.NotEmpty(view.GetVisualChildren()));
     }
 
-    private IEnumerable<TextBlock> VisibleViews() => _host.Children.OfType<TextBlock>().Where(view => view.IsVisible);
+    [AvaloniaFact]
+    public void Content_APreparedPanel_ShowsItsViewWithoutBuildingItAgain()
+    {
+        _host.PrepareWhenIdle([_layers]);
+        Dispatcher.UIThread.RunJobs();
+
+        _host.Content = _layers;
+
+        Assert.Equal("Layers", Assert.Single(VisibleViews()).Content);
+        Assert.Equal([_layers], _built);
+    }
+
+    [AvaloniaFact]
+    public void PrepareWhenIdle_APanelOpenAlready_BuildsOnlyTheOthers()
+    {
+        _host.Content = _layers;
+
+        _host.PrepareWhenIdle([_layers, _search]);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal([_layers, _search], _built);
+        Assert.Equal("Layers", Assert.Single(VisibleViews()).Content);
+    }
+
+    private Button Build(TestPanel panel)
+    {
+        _built.Add(panel);
+        return new Button { Content = panel.Name };
+    }
+
+    private IEnumerable<Button> VisibleViews() => _host.Children.OfType<Button>().Where(view => view.IsVisible);
 
     private sealed record TestPanel(string Name);
 }

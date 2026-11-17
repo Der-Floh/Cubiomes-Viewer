@@ -24,7 +24,7 @@
             </Border>
 
             <Border Classes="sheet" IsVisible="{Binding IsPanelOpen}">
-                <controls:PanelHost Content="{Binding CurrentPanel}"/>
+                <controls:PanelHost Name="PanelSlot" Content="{Binding CurrentPanel}"/>
             </Border>
         </Panel>
 
