@@ -50,6 +50,47 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
+
+            <StackPanel Classes="callout" IsVisible="{Binding ChestLoot.IsAvailable}">
+                <ToggleButton Classes="expander" IsChecked="{Binding ChestLoot.IsExpanded}">
+                    <Grid ColumnDefinitions="Auto,*">
+                        <controls:SvgIcon Classes="chevron" Source="{StaticResource ExpandIcon}"/>
+                        <TextBlock Grid.Column="1" Classes="condition-title" Text="{Binding ChestLoot.Header}" VerticalAlignment="Center"/>
+                    </Grid>
+                </ToggleButton>
+                <StackPanel Classes="callout" IsVisible="{Binding ChestLoot.IsExpanded}">
+                    <TextBlock Classes="damp" Text="{Binding ChestLoot.LoadingLabel}" IsVisible="{Binding ChestLoot.IsLoading}"/>
+                    <TextBlock Classes="damp" Text="{Binding ChestLoot.Message}" TextWrapping="Wrap"
+                               IsVisible="{Binding ChestLoot.Message, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                    <Border Classes="chest-list" IsVisible="{Binding ChestLoot.HasChests}">
+                        <ScrollViewer>
+                            <ItemsControl Classes="chests" ItemsSource="{Binding ChestLoot.Chests}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:ChestViewModel">
+                                        <StackPanel>
+                                            <ToggleButton Classes="expander" IsChecked="{Binding IsExpanded}">
+                                                <Grid ColumnDefinitions="Auto,*">
+                                                    <controls:SvgIcon Classes="chevron" Source="{StaticResource ExpandIcon}"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding Title}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                                </Grid>
+                                            </ToggleButton>
+                                            <ItemsControl Classes="chest-contents" ItemsSource="{Binding Contents}" IsVisible="{Binding IsExpanded}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="x:String">
+                                                        <TextBlock Text="{Binding}" TextWrapping="Wrap"/>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
+                    <TextBlock Classes="damp" Text="{Binding ChestLoot.Note}" TextWrapping="Wrap"
+                               IsVisible="{Binding ChestLoot.Note, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                </StackPanel>
+            </StackPanel>
         </StackPanel>
     </Border>
 

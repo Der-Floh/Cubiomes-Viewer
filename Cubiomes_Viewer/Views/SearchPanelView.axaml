@@ -22,6 +22,26 @@
                 <ComboBox Classes="fill" ItemsSource="{Binding Types}" SelectedItem="{Binding SelectedType}"/>
                 <TextBlock Classes="field-label" Text="{Binding TraitLabel}" IsVisible="{Binding HasTraits}"/>
                 <ComboBox Classes="fill" ItemsSource="{Binding Traits}" SelectedItem="{Binding SelectedTrait}" IsVisible="{Binding HasTraits}"/>
+                <ContentControl Content="{Binding Loot}"/>
+            </StackPanel>
+        </DataTemplate>
+        <DataTemplate x:DataType="vm:LootFieldsViewModel">
+            <StackPanel Classes="form" IsVisible="{Binding IsShown}">
+                <TextBlock Classes="field-label" Text="{Binding ItemLabel}"/>
+                <ComboBox Classes="fill" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}"/>
+                <StackPanel Classes="form" IsVisible="{Binding HasItem}">
+                    <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
+                        <TextBlock Classes="field-label" Text="{Binding CountLabel}"/>
+                        <TextBlock Grid.Column="1" Classes="field-label" Text="{Binding ScopeLabel}"/>
+                        <NumericUpDown Grid.Row="1" Value="{Binding MinCount}" Minimum="{Binding CountMinimum}" Maximum="{Binding CountMaximum}" Increment="1" FormatString="0"/>
+                        <ComboBox Grid.Row="1" Grid.Column="1" Classes="fill" ItemsSource="{Binding Scopes}" SelectedItem="{Binding SelectedScope}"/>
+                    </Grid>
+                    <TextBlock Classes="field-label" Text="{Binding EnchantmentLabel}" IsVisible="{Binding HasEnchantments}"/>
+                    <ComboBox Classes="fill" ItemsSource="{Binding Enchantments}" SelectedItem="{Binding SelectedEnchantment}" IsVisible="{Binding HasEnchantments}"/>
+                    <TextBlock Classes="field-label" Text="{Binding LevelLabel}" IsVisible="{Binding HasLevels}"/>
+                    <NumericUpDown Value="{Binding MinLevel}" Minimum="{Binding LevelMinimum}" Maximum="{Binding LevelMaximum}" Increment="1" FormatString="0"
+                                   IsVisible="{Binding HasLevels}"/>
+                </StackPanel>
             </StackPanel>
         </DataTemplate>
 
@@ -99,6 +119,7 @@
                 <TextBlock Classes="field-label" Text="{Binding PortalEyesLabel}"/>
                 <NumericUpDown Value="{Binding PortalEyes}" Minimum="{Binding PortalEyesMinimum}" Maximum="{Binding PortalEyesMaximum}" Increment="1" FormatString="0"/>
                 <TextBlock Classes="damp" Text="{Binding PortalEyesHint}" TextWrapping="Wrap"/>
+                <ContentControl Content="{Binding Loot}"/>
             </StackPanel>
         </DataTemplate>
 

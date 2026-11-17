@@ -33,6 +33,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
     public string SmoothMotionLabel { get; } = "Smooth motion";
     public string BiomeReliefLabel { get; } = "Shade the biome map by terrain height";
     public string BiomeReliefHint { get; } = "Hills and valleys show on the biome map. The heights are generated next to the biomes, so the map fills in more slowly. The Nether and Beta 1.7 have none.";
+    public string ChestLootLabel { get; } = "Show what chests hold";
+    public string ChestLootHint { get; } = "A picked structure lists its chests and what the game fills them with, and structure and stronghold conditions can ask for an item in them.";
     public string CacheLabel { get; } = "Tile cache (MB)";
     public string GridSpacingLabel { get; } = "Grid lines every, in blocks";
     public string GridMultiplierLabel { get; } = "Zoomed out, spaced wider by";
@@ -62,6 +64,9 @@ public sealed partial class SettingsViewModel : ViewModelBase
 
     [ObservableProperty]
     public partial bool BiomeRelief { get; set; }
+
+    [ObservableProperty]
+    public partial bool ShowChestLoot { get; set; }
 
     [ObservableProperty]
     public partial decimal? CacheMegabytes { get; set; } = MapSettings.DefaultCacheMegabytes;
@@ -132,6 +137,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     public SelfTestViewModel SelfTest { get; }
 
     private readonly MapViewModel _map;
+    private readonly SearchSetupViewModel _searchSetup;
     private readonly ISettingsService _settingsService;
     private readonly IThemeService _themeService;
     private readonly IUiZoomService _uiZoomService;
@@ -141,11 +147,12 @@ public sealed partial class SettingsViewModel : ViewModelBase
     private readonly IVersionCatalog _versionCatalog;
     private bool _isShowingSettings;
 
-    public SettingsViewModel(MapViewModel map, WorldSettingsViewModel world, UpdateViewModel updates, SelfTestViewModel selfTest, ISettingsService settingsService, IThemeService themeService,
-        IUiZoomService uiZoomService, IMapTileService tileService, IStructureCatalog structureCatalog, IStructureFinder structureFinder,
-        IVersionCatalog versionCatalog, IWindowService windowService)
+    public SettingsViewModel(MapViewModel map, SearchSetupViewModel searchSetup, WorldSettingsViewModel world, UpdateViewModel updates, SelfTestViewModel selfTest,
+        ISettingsService settingsService, IThemeService themeService, IUiZoomService uiZoomService, IMapTileService tileService, IStructureCatalog structureCatalog,
+        IStructureFinder structureFinder, IVersionCatalog versionCatalog, IWindowService windowService)
     {
         _map = map;
+        _searchSetup = searchSetup;
         _settingsService = settingsService;
         _themeService = themeService;
         _uiZoomService = uiZoomService;
@@ -181,6 +188,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
             SelectedUiZoom = UiZooms.FirstOrDefault(choice => choice.Value == settings.Appearance.UiZoom) ?? UiZooms[0];
             SmoothMotion = settings.Map.SmoothMotion;
             BiomeRelief = settings.Map.BiomeRelief;
+            ShowChestLoot = settings.Map.ShowChestLoot;
             CacheMegabytes = ClampCacheMegabytes(settings.Map.CacheMegabytes);
             GridSpacing = ClampGridSpacing(settings.Map.GridSpacing);
             SelectedGridMultiplier = GridMultipliers.FirstOrDefault(choice => choice.Value == settings.Map.GridMultiplier) ?? GridMultipliers[0];
@@ -201,6 +209,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
     partial void OnSmoothMotionChanged(bool value) => Store(settings => settings.Map.SmoothMotion = value);
 
     partial void OnBiomeReliefChanged(bool value) => Store(settings => settings.Map.BiomeRelief = value);
+
+    partial void OnShowChestLootChanged(bool value) => Store(settings => settings.Map.ShowChestLoot = value);
 
     partial void OnCacheMegabytesChanged(decimal? value)
     {
@@ -273,6 +283,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
         _uiZoomService.Apply(SelectedUiZoom?.Value ?? AppearanceSettings.DefaultUiZoom);
         _map.SmoothMotion = settings.Map.SmoothMotion;
         _map.BiomeRelief = settings.Map.BiomeRelief;
+        _map.ShowChestLoot = settings.Map.ShowChestLoot;
+        _searchSetup.ShowChestLoot = settings.Map.ShowChestLoot;
         _map.GridSpacing = ClampGridSpacing(settings.Map.GridSpacing);
         _map.GridMultiplier = SelectedGridMultiplier?.Value ?? MapSettings.DefaultGridMultiplier;
         _map.MarkerScale = GetMarkerScale(SelectedMarkerSize?.Value ?? MarkerSize.Normal);

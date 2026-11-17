@@ -30,6 +30,7 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
     private readonly IMapStyleService _styleService;
 
     private PinDrag? _pinDrag;
+    private bool _isCalloutInUse;
 
     private Cursor PlacingCursor => field ??= new Cursor(StandardCursorType.Cross);
     private Cursor MovingCursor => field ??= new Cursor(StandardCursorType.SizeAll);
@@ -74,6 +75,7 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
         Map.SizeChanged += OnMapSizeChanged;
         Map.PropertyChanged += OnMapViewPropertyChanged;
         Callout.SizeChanged += OnCalloutSizeChanged;
+        Callout.AddHandler(PointerPressedEvent, OnCalloutPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
         // The context flyout handles the bubbling event before other handlers see it, so listen while it tunnels.
         Map.AddHandler(ContextRequestedEvent, OnContextRequested, RoutingStrategies.Tunnel);
         Map.AddHandler(PointerPressedEvent, OnMapPointerPressed, RoutingStrategies.Tunnel);
@@ -101,6 +103,7 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
         Map.SizeChanged -= OnMapSizeChanged;
         Map.PropertyChanged -= OnMapViewPropertyChanged;
         Callout.SizeChanged -= OnCalloutSizeChanged;
+        Callout.RemoveHandler(PointerPressedEvent, OnCalloutPressed);
         Map.RemoveHandler(ContextRequestedEvent, OnContextRequested);
         Map.RemoveHandler(PointerPressedEvent, OnMapPointerPressed);
         Map.RemoveHandler(PointerMovedEvent, OnMapPointerMoved);
@@ -136,10 +139,15 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
     private void OnMapViewPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
         if (e.Property == MapView.CameraProperty || e.Property == BoundsProperty)
+        {
+            _isCalloutInUse = false;
             PlaceCallout();
+        }
     }
 
-    private void OnCalloutSizeChanged(object? sender, SizeChangedEventArgs e) => PlaceCallout();
+    private void OnCalloutSizeChanged(object? sender, SizeChangedEventArgs e) => PlaceCallout(keepTop: _isCalloutInUse);
+
+    private void OnCalloutPressed(object? sender, PointerPressedEventArgs e) => _isCalloutInUse = true;
 
     private void OnMapClicked(object? sender, MapClickEventArgs e)
     {
@@ -285,18 +293,24 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
     {
         _layers.Selection.Picked = _map.Selection;
         _layers.Selection.Boxes = _selection.Boxes;
+        _isCalloutInUse = false;
         PlaceCallout();
     }
 
-    /// <summary>Keeps the callout of the picked marker beside the marker while the map moves under it.</summary>
-    private void PlaceCallout()
+    /// <summary>
+    /// Keeps the callout of the picked marker beside the marker while the map moves under it. While the user works in the callout,
+    /// it keeps its top edge as it grows or shrinks, so what was clicked stays under the pointer.
+    /// </summary>
+    private void PlaceCallout(bool keepTop = false)
     {
         if (_map.Selection is not { } picked)
             return;
 
         Callout.Measure(Size.Infinity);
         var marker = _layers.Selection.GetMarkerBounds(Map.Viewport, Map.GetPixelGrid(), picked);
-        var position = CalloutPlacement.Place(Callout.DesiredSize, marker, Map.Bounds.Size);
+        var position = keepTop
+            ? CalloutPlacement.KeepTop(Canvas.GetTop(Callout), Callout.DesiredSize, marker, Map.Bounds.Size)
+            : CalloutPlacement.Place(Callout.DesiredSize, marker, Map.Bounds.Size);
         Canvas.SetLeft(Callout, position.X);
         Canvas.SetTop(Callout, position.Y);
     }

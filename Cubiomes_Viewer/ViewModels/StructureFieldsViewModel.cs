@@ -6,12 +6,13 @@ using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Search;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Extensions;
+using Cubiomes_Viewer.Engine.Service.LootServ;
 using Cubiomes_Viewer.Engine.Service.StructureServ;
 
 namespace Cubiomes_Viewer.ViewModels;
 
-/// <summary>Which structure a structure condition looks for, and what the structure has to have.</summary>
-public sealed partial class StructureFieldsViewModel : ObservableObject, IConditionFields
+/// <summary>Which structure a structure condition looks for, and what the structure and its chests have to have.</summary>
+public sealed partial class StructureFieldsViewModel : ObservableObject, IConditionFields, ILootConditionFields
 {
     private static readonly Dimension[] _dimensions = [Dimension.Overworld, Dimension.Nether, Dimension.End];
 
@@ -43,9 +44,18 @@ public sealed partial class StructureFieldsViewModel : ObservableObject, ICondit
     /// <summary>The traits structures of the chosen type can have, after "any".</summary>
     public ObservableCollection<ComboChoice<StructureTrait>> Traits { get; } = [];
 
+    public LootFieldsViewModel Loot { get; }
+
     public string Title => SelectedType?.Display ?? TypeLabel;
 
-    public string? Detail => _trait == StructureTrait.None ? null : SelectedTrait?.Display.ToLowerInvariant();
+    public string? Detail
+    {
+        get
+        {
+            string?[] parts = [_trait == StructureTrait.None ? null : SelectedTrait?.Display.ToLowerInvariant(), Loot.Detail];
+            return parts.Any(part => part is not null) ? string.Join(", ", parts.Where(part => part is not null)) : null;
+        }
+    }
 
     private readonly IStructureCatalog _catalog;
     private readonly Action _changed;
@@ -53,7 +63,7 @@ public sealed partial class StructureFieldsViewModel : ObservableObject, ICondit
     private StructureTrait _trait;
     private bool _isShowing;
 
-    public StructureFieldsViewModel(StructureCondition condition, McVersion version, IStructureCatalog catalog, Action changed)
+    public StructureFieldsViewModel(StructureCondition condition, McVersion version, IStructureCatalog catalog, ILootCatalog lootCatalog, Action changed)
     {
         ArgumentNullException.ThrowIfNull(condition);
 
@@ -61,14 +71,16 @@ public sealed partial class StructureFieldsViewModel : ObservableObject, ICondit
         _changed = changed;
         _type = condition.Type;
         _trait = condition.Trait;
+        Loot = new LootFieldsViewModel(condition.Loot, condition.Type, version, lootCatalog, changed);
         ShowVersion(version);
     }
 
     public SearchCondition Apply(SearchCondition condition)
-        => condition is StructureCondition structure ? structure with { Type = _type, Trait = _trait } : condition;
+        => condition is StructureCondition structure ? structure with { Type = _type, Trait = _trait, Loot = Loot.Requirement } : condition;
 
     public void ShowVersion(McVersion version)
     {
+        Loot.ShowVersion(version);
         var available = _dimensions.SelectMany(dimension => _catalog.GetAvailable(version, dimension)).Select(info => info.Type).ToHashSet();
         Show(() =>
         {
@@ -90,6 +102,7 @@ public sealed partial class StructureFieldsViewModel : ObservableObject, ICondit
         if (!_trait.AppliesTo(_type))
             _trait = StructureTrait.None;
         Show(ShowTraits);
+        Loot.ShowType(_type);
         _changed();
     }
 

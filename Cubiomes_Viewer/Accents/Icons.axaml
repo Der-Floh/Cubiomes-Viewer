@@ -17,5 +17,6 @@
     <controls:SvgIconSource x:Key="CloseIcon" Outlined="/Assets/Icons/close.svg"/>
     <controls:SvgIconSource x:Key="DeleteIcon" Outlined="/Assets/Icons/delete.svg" Filled="/Assets/Icons/delete_filled.svg"/>
     <controls:SvgIconSource x:Key="FilterIcon" Outlined="/Assets/Icons/filter_alt.svg" Filled="/Assets/Icons/filter_alt_filled.svg"/>
+    <controls:SvgIconSource x:Key="ExpandIcon" Outlined="/Assets/Icons/chevron_right.svg"/>
 
 </ResourceDictionary>

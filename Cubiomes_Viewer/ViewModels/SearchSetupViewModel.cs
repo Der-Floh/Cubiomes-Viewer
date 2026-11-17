@@ -43,6 +43,10 @@ public sealed partial class SearchSetupViewModel : ObservableObject
     [ObservableProperty]
     public partial bool HasProblems { get; set; }
 
+    /// <summary>Whether structure and stronghold conditions offer to ask their chests for an item, as the settings say.</summary>
+    [ObservableProperty]
+    public partial bool ShowChestLoot { get; set; }
+
     public SeedSourceViewModel Seeds { get; }
     public ObservableCollection<SearchConditionViewModel> Conditions { get; } = [];
     public IReadOnlyList<ConditionKindViewModel> ConditionKinds { get; }
@@ -96,7 +100,7 @@ public sealed partial class SearchSetupViewModel : ObservableObject
         {
             Conditions.Clear();
             foreach (var condition in setup.Definition.Conditions)
-                Conditions.Add(_factory.Create(condition, _session.Version, OnConditionEdited, OnConditionRemoved));
+                Conditions.Add(CreateCondition(condition));
 
             Seeds.Show(setup.Source);
             MaxResults = setup.MaxResults;
@@ -110,6 +114,12 @@ public sealed partial class SearchSetupViewModel : ObservableObject
 
     partial void OnMaxResultsChanged(decimal? value) => Refresh();
 
+    partial void OnShowChestLootChanged(bool value)
+    {
+        foreach (var condition in Conditions)
+            condition.ShowChestLoot(value);
+    }
+
     partial void OnSelectedWorkersChanged(ComboChoice<int>? value) => Refresh();
 
     private void AddCondition(ConditionDescriptor kind)
@@ -117,11 +127,18 @@ public sealed partial class SearchSetupViewModel : ObservableObject
         if (FindFreeId() is not { } id)
             return;
 
-        var condition = _factory.Create(kind.Create(id), _session.Version, OnConditionEdited, OnConditionRemoved);
+        var condition = CreateCondition(kind.Create(id));
         condition.IsExpanded = true;
         Conditions.Add(condition);
         ShowReferences();
         Refresh();
+    }
+
+    private SearchConditionViewModel CreateCondition(SearchCondition condition)
+    {
+        var created = _factory.Create(condition, _session.Version, OnConditionEdited, OnConditionRemoved);
+        created.ShowChestLoot(ShowChestLoot);
+        return created;
     }
 
     private int? FindFreeId()

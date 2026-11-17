@@ -25,6 +25,7 @@ A cross-platform Minecraft Java Edition seed finder and biome map viewer, built 
 - Surface heights can be tinted, shaded, drawn as contour lines or in grey. Settings → Map can also shade the biome map by terrain height.
 - Markers for the structure types you choose, down to their variants (such as nether fossils with a dried ghast, from 1.21.6), plus the world spawn, strongholds, slime chunks and End gateways.
 - Clicking a structure shows its variant and its Y level, and draws the rooms of end cities, fortresses, strongholds and mineshafts on the map; a stronghold also tells where its portal room is and, from 1.13, how many eyes of ender its end portal already holds.
+- With Settings → Map → Show what chests hold, the callout also lists the chests of desert pyramids, jungle temples, igloos, pillager outposts, shipwrecks, buried treasure, ruined portals, mineshafts, fortresses, bastions, end cities, strongholds and abandoned camps, each with what the game fills it with when it is first opened, from 1.13 on (outposts from 1.14, ruined portals from 1.16, bastions from 1.16.5, Nether ruined portals from 1.18, camps from 26.3). Chests have no Y; ruined portal and camp chests stand at estimated places, mineshafts may list a few minecarts the game leaves out, and bastions only the chests every bastion of their kind has.
 - The Y level is exact where the game fixes it or the terrain decides it: ancient cities, monuments, bastions, trial chambers, nether fossils, end cities, villages, woodland mansions and, from 1.20, jungle temples and swamp huts. Desert pyramids from 1.18 and some fortresses show the few levels the game picks from by chance, and other structures on the ground an estimate (≈). Exact terrain needs 1.14 or later; strongholds, mineshafts and ruined portals have no Y.
 - Biomes in the default colours or in colour maps of your own, edited live on the map and shared as JSON files.
 - On the desktop, the map can move into a window of its own, for a second screen.
@@ -40,10 +41,11 @@ A cross-platform Minecraft Java Edition seed finder and biome map viewer, built 
 ### Seed search
 
 - **Conditions**, each required or excluded, and each able to look around where another one was found:
-  - structures, optionally of one kind (end cities with an end ship, abandoned villages, igloos with a basement, giant ruined portals, nether fossils with a dried ghast), and four huts close enough for one farm
+  - structures, optionally of one kind (end cities with an end ship, abandoned villages, igloos with a basement, giant ruined portals, nether fossils with a dried ghast) or with an item in their chests, and four huts close enough for one farm
   - biomes: one of them, each of them, a share of the area, or a patch of a size
   - climate parameters of the 1.18+ Overworld, and the temperature categories of 1.7 to 1.17
-  - the world spawn, strongholds (optionally with eyes already in their end portal, from 1.13), slime chunks, and "any of" several conditions
+  - the world spawn, strongholds (optionally with eyes already in their end portal, from 1.13, or with an item in their chests), slime chunks, and "any of" several conditions
+- **Chest loot** (while Settings → Map shows what chests hold): an item the chests of the structures or strongholds hold, at least a number of it in one chest or in all chests together, optionally with an enchantment of a lowest level, such as an enchanted book with Mending.
 - **Seeds** from a range, a list, structure seeds (each with its 65,536 sister seeds) or the quad-hut bases.
 - **Fast**: a quick pass rules seeds out without generating biomes, about 68 million structure seeds a second on 15 desktop threads.
 - **Kept**: a stopped or interrupted search continues after a restart, and can be saved to and opened from a file.
@@ -80,7 +82,7 @@ cubiomes-viewer-cli --session search.json --out seeds.txt
 ### Settings
 
 - **Appearance**: theme and interface size.
-- **Map**: smooth motion, relief shading of the biome map, tile cache, grid spacing, marker size, and how far out each structure type is marked.
+- **Map**: smooth motion, relief shading of the biome map, what chests hold (off at first), tile cache, grid spacing, marker size, and how far out each structure type is marked.
 - **World generation**: the experimental versions (Beta 1.7, Beta 1.8 and 1.0), the terrain estimate that leaves out some structures on low land from 1.18 on, and replaced structure salts, as servers and data packs use them.
 - **Start**: open the last world and search, and keep the desktop window's size and position.
 - **Export**: the separator of CSV files.

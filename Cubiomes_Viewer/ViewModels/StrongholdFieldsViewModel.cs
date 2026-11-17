@@ -4,11 +4,12 @@ using CommunityToolkit.Mvvm.ComponentModel;
 
 using Cubiomes_Viewer.Engine.Data.Search;
 using Cubiomes_Viewer.Engine.Data.Worlds;
+using Cubiomes_Viewer.Engine.Service.LootServ;
 
 namespace Cubiomes_Viewer.ViewModels;
 
-/// <summary>How many eyes of ender the end portal of a stronghold a stronghold condition looks for already holds.</summary>
-public sealed partial class StrongholdFieldsViewModel : ObservableObject, IConditionFields
+/// <summary>How many eyes of ender the end portal of a stronghold a stronghold condition looks for already holds, and what its chests hold.</summary>
+public sealed partial class StrongholdFieldsViewModel : ObservableObject, IConditionFields, ILootConditionFields
 {
     public string Title { get; } = "Stronghold";
     public string PortalEyesLabel { get; } = "Eyes already in its end portal, at least";
@@ -19,19 +20,23 @@ public sealed partial class StrongholdFieldsViewModel : ObservableObject, ICondi
     [ObservableProperty]
     public partial decimal? PortalEyes { get; set; }
 
-    public string? Detail => Eyes switch
+    public LootFieldsViewModel Loot { get; }
+
+    public string? Detail
     {
-        0 => null,
-        StrongholdCondition.PortalFrames => "with its end portal open",
-        _ => string.Create(CultureInfo.InvariantCulture, $"with {Eyes}+ eyes in its portal"),
-    };
+        get
+        {
+            string?[] parts = [DescribeEyes(), Loot.Detail];
+            return parts.Any(part => part is not null) ? string.Join(", ", parts.Where(part => part is not null)) : null;
+        }
+    }
 
     private int Eyes => (int)Math.Clamp(Math.Round(PortalEyes ?? 0), PortalEyesMinimum, PortalEyesMaximum);
 
     private readonly Action _changed;
     private readonly bool _isShowing;
 
-    public StrongholdFieldsViewModel(StrongholdCondition condition, Action changed)
+    public StrongholdFieldsViewModel(StrongholdCondition condition, McVersion version, ILootCatalog lootCatalog, Action changed)
     {
         ArgumentNullException.ThrowIfNull(condition);
 
@@ -39,14 +44,20 @@ public sealed partial class StrongholdFieldsViewModel : ObservableObject, ICondi
         _isShowing = true;
         PortalEyes = condition.PortalEyes;
         _isShowing = false;
+        Loot = new LootFieldsViewModel(condition.Loot, StructureType.Stronghold, version, lootCatalog, changed);
     }
 
     public SearchCondition Apply(SearchCondition condition)
-        => condition is StrongholdCondition stronghold ? stronghold with { PortalEyes = Eyes } : condition;
+        => condition is StrongholdCondition stronghold ? stronghold with { PortalEyes = Eyes, Loot = Loot.Requirement } : condition;
 
-    public void ShowVersion(McVersion version)
+    public void ShowVersion(McVersion version) => Loot.ShowVersion(version);
+
+    private string? DescribeEyes() => Eyes switch
     {
-    }
+        0 => null,
+        StrongholdCondition.PortalFrames => "with its end portal open",
+        _ => string.Create(CultureInfo.InvariantCulture, $"with {Eyes}+ eyes in its portal"),
+    };
 
     partial void OnPortalEyesChanged(decimal? value)
     {

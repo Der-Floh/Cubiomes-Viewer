@@ -54,6 +54,10 @@ public sealed partial class MapViewModel : ViewModelBase
     [ObservableProperty]
     public partial bool BiomeRelief { get; set; }
 
+    /// <summary>Whether the callout of a picked structure lists what its chests hold.</summary>
+    [ObservableProperty]
+    public partial bool ShowChestLoot { get; set; }
+
     /// <summary>The colours biomes are painted in; the default ones when it is <see langword="null"/>.</summary>
     [ObservableProperty]
     public partial BiomePalette? BiomeColors { get; set; }

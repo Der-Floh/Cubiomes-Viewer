@@ -185,6 +185,13 @@ public sealed partial class SearchConditionViewModel : ObservableObject
 
     public void ShowVersion(McVersion version) => Fields?.ShowVersion(version);
 
+    /// <summary>Shows the loot fields of the condition, where it has any, while chest loot is on in the settings.</summary>
+    public void ShowChestLoot(bool isOn)
+    {
+        if (Fields is ILootConditionFields fields)
+            fields.Loot.ShowChestLoot(isOn);
+    }
+
     public void ShowProblems(IEnumerable<string> problems)
     {
         Problems.Clear();

@@ -2,6 +2,7 @@ using System.Runtime.InteropServices;
 
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
@@ -14,10 +15,12 @@ using Cubiomes_Viewer.Controls;
 using Cubiomes_Viewer.Controls.Map;
 using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Colors;
+using Cubiomes_Viewer.Engine.Data.Compute;
 using Cubiomes_Viewer.Engine.Data.Settings;
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Data.Worlds;
+using Cubiomes_Viewer.Engine.Service.ComputeServ;
 using Cubiomes_Viewer.Engine.Service.MeasurementServ;
 using Cubiomes_Viewer.Engine.Service.PinServ;
 using Cubiomes_Viewer.Engine.Service.StructureServ;
@@ -90,6 +93,29 @@ public sealed class MapHostViewTests : IDisposable
         var callout = GetCallout().Bounds;
         Assert.True(callout.Bottom <= _center.Y - styleService.GetMarkerSize(pixels, SelectionLayer.Magnification) / 2 - CalloutPlacement.Gap + 0.5, $"The callout reaches down to {callout.Bottom}.");
         Assert.InRange(callout.Center.X, _center.X - 1, _center.X + 1);
+    }
+
+    [AvaloniaFact]
+    public async Task ChestsExpander_Clicked_ListsTheChestsAndKeepsTheTopOfTheCallout()
+    {
+        (_window.Width, _window.Height) = (MenuViewWidth, MenuViewHeight);
+        _map.ShowChestLoot = true;
+        var selection = _services.GetRequiredService<SelectionViewModel>();
+        var styleService = _services.GetRequiredService<IMapStyleService>();
+        var shipwreck = await FindFirstAsync(StructureType.Shipwreck);
+        ShowAtTheCenter(shipwreck);
+        _map.Selection = MapSelection.ForStructure("Shipwreck", styleService.GetStructureMarker(StructureType.Shipwreck), shipwreck, StructureType.Shipwreck);
+        await TestWait.UntilAsync(() => !selection.IsLoading && !selection.ChestLoot.IsLoading, "The shipwreck was not read in time.");
+        HeadlessInput.Render();
+        var callout = GetCallout();
+        var before = callout.Bounds;
+
+        HeadlessInput.Click(callout.GetVisualDescendants().OfType<ToggleButton>().First(button => button.Classes.Contains("expander")));
+
+        Assert.True(selection.ChestLoot.IsExpanded);
+        Assert.True(callout.GetVisualDescendants().OfType<Border>().Single(border => border.Classes.Contains("chest-list")).IsEffectivelyVisible);
+        Assert.True(callout.Bounds.Height > before.Height, "The callout did not grow.");
+        Assert.Equal(before.Top, callout.Bounds.Top, 0.5);
     }
 
     [AvaloniaFact]
@@ -641,6 +667,13 @@ public sealed class MapHostViewTests : IDisposable
         var gateway = gateways.Gateways[0];
         ShowAtTheCenter(gateway.Position);
         return gateway;
+    }
+
+    private async Task<BlockPos> FindFirstAsync(StructureType type)
+    {
+        var request = new StructureAreaRequest(_map.World, type, new BlockArea(-2048, -2048, 4096, 4096));
+        var found = await _services.GetRequiredService<IComputeService>().RunAsync(new StructureAreaJob(request), new JobPriority(JobPriorityClass.Interactive), TestContext.Current.CancellationToken);
+        return found.Positions[0];
     }
 
     private void ShowAtTheCenter(BlockPos position)

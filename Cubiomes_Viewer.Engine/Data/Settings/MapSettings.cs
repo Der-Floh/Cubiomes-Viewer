@@ -31,6 +31,9 @@ public sealed class MapSettings
     /// <summary>Whether the biome map is shaded by the heights of the terrain where the world has them.</summary>
     public bool BiomeRelief { get; set; }
 
+    /// <summary>Whether picked structures list what their chests hold and searches can ask for an item in them.</summary>
+    public bool ShowChestLoot { get; set; }
+
     /// <summary>The name of the colour map biomes are painted with; the default colours when it is <see langword="null"/>.</summary>
     public string? ColorMap { get; set; }
 

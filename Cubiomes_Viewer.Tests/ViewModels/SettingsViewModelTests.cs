@@ -68,6 +68,19 @@ public sealed class SettingsViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void ShowChestLoot_SwitchedOn_ReachesTheMapAndIsStored()
+    {
+        Assert.False(_settings.ShowChestLoot);
+        Assert.False(_map.ShowChestLoot);
+
+        _settings.ShowChestLoot = true;
+
+        Assert.True(_map.ShowChestLoot);
+        Assert.True(_services.GetRequiredService<SearchSetupViewModel>().ShowChestLoot);
+        Assert.True(Stored.Map.ShowChestLoot);
+    }
+
+    [AvaloniaFact]
     public void GridAndMarkers_Changed_ReachTheMapAndAreStored()
     {
         _settings.GridSpacing = 100;
@@ -122,6 +135,7 @@ public sealed class SettingsViewModelTests : IDisposable
         Stored.Export.CsvSeparator = CsvSeparator.Tab;
         Stored.Session.RestoreLastSession = false;
         Stored.Map.BiomeRelief = true;
+        Stored.Map.ShowChestLoot = true;
 
         _settings.ShowSettings();
 
@@ -131,6 +145,8 @@ public sealed class SettingsViewModelTests : IDisposable
         Assert.Equal(128, _map.MarkerZoomLimits[StructureType.Mansion]);
         Assert.True(_settings.BiomeRelief);
         Assert.True(_map.BiomeRelief);
+        Assert.True(_settings.ShowChestLoot);
+        Assert.True(_map.ShowChestLoot);
     }
 
     [AvaloniaFact]

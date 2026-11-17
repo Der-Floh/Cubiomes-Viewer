@@ -92,6 +92,9 @@ public sealed partial class SelectionViewModel : ViewModelBase
 
     public ObservableCollection<string> Details { get; } = [];
 
+    /// <summary>The containers of the picked structure and what they hold.</summary>
+    public ChestLootViewModel ChestLoot { get; }
+
     private readonly MapViewModel _map;
     private readonly IComputeService _computeService;
     private readonly IStructureDescriptionService _descriptionService;
@@ -102,10 +105,11 @@ public sealed partial class SelectionViewModel : ViewModelBase
     private CancellationTokenSource? _loading;
     private MapPin? _shownPin;
 
-    public SelectionViewModel(MapViewModel map, IComputeService computeService, IStructureDescriptionService descriptionService, IPinService pinService,
+    public SelectionViewModel(MapViewModel map, ChestLootViewModel chestLoot, IComputeService computeService, IStructureDescriptionService descriptionService, IPinService pinService,
         IMeasurementService measurementService, IStructureCatalog structureCatalog, IMapStyleService styleService, INotificationService notificationService) : base(notificationService)
     {
         _map = map;
+        ChestLoot = chestLoot;
         _computeService = computeService;
         _descriptionService = descriptionService;
         _pinService = pinService;
