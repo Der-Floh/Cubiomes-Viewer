@@ -149,11 +149,48 @@ public sealed class CubiomesWorldGeneratorDetailsTests
 
         var details = generator.DescribeStructure(StructureType.Stronghold, stronghold);
 
-        Assert.Null(details.Variant);
         Assert.True(details.Pieces.Length > 10);
         Assert.Single(details.Pieces, piece => piece.Type == StrongholdPiece.PortalRoom);
         Assert.True(Contains(details.Pieces[0].Box, stronghold.X, stronghold.Z) || details.Pieces[0].Box.MinX >> 4 == stronghold.X >> 4);
         Assert.All(details.Pieces, piece => Assert.InRange(double.Hypot(piece.Box.MinX - stronghold.X, piece.Box.MinZ - stronghold.Z), 0, 256));
+    }
+
+    [Fact]
+    public void DescribeStructure_Strongholds_TellHowManyEyesTheirPortalHolds()
+    {
+        using var generator = CreateGenerator(McVersion.V1_21_3, Dimension.Overworld);
+
+        var variants = generator.FindStrongholds().Take(20)
+            .Select(stronghold => generator.DescribeStructure(StructureType.Stronghold, stronghold).Variant ?? throw new InvalidOperationException("A stronghold has no variant."))
+            .ToArray();
+
+        Assert.All(variants, variant => Assert.InRange(variant.PortalEyes, 0, 12));
+        Assert.True(variants.Select(variant => variant.PortalEyes).Distinct().Count() > 1, "Every portal held as many eyes.");
+        Assert.All(variants, variant => Assert.Null(variant.Height));
+    }
+
+    [Fact]
+    public void DescribeStructure_StrongholdBefore113_HasNoVariant()
+    {
+        using var generator = CreateGenerator(McVersion.V1_12_2, Dimension.Overworld);
+
+        Assert.Null(generator.DescribeStructure(StructureType.Stronghold, generator.FindStrongholds()[0]).Variant);
+    }
+
+    [Theory]
+    [InlineData(McVersion.V1_21_6, true)]
+    [InlineData(McVersion.V1_21_5, false)]
+    public void DescribeStructure_NetherFossils_HoldDriedGhastsFrom1216(McVersion version, bool someHoldOne)
+    {
+        using var generator = CreateGenerator(version, Dimension.Nether);
+
+        var ghasts = generator.FindStructures(StructureType.NetherFossil, new BlockArea(-1024, -1024, 2048, 2048))
+            .Select(fossil => generator.DescribeStructure(StructureType.NetherFossil, fossil).Variant?.HasDriedGhast ?? throw new InvalidOperationException("A nether fossil has no variant."))
+            .ToArray();
+
+        Assert.NotEmpty(ghasts);
+        Assert.Equal(someHoldOne, ghasts.Any(ghast => ghast));
+        Assert.Contains(false, ghasts);
     }
 
     [Fact]

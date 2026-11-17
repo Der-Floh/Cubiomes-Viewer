@@ -9,6 +9,8 @@ namespace Cubiomes_Viewer.Service.StructureDescriptionServ;
 
 public sealed class StructureDescriptionService : IStructureDescriptionService
 {
+    private const int PortalFrames = 12;
+
     private static readonly string[] _bastionTypes = ["Housing units", "Hoglin stables", "Treasure room", "Bridge"];
 
     private readonly IBiomeCatalog _biomeCatalog;
@@ -40,7 +42,16 @@ public sealed class StructureDescriptionService : IStructureDescriptionService
         StructureType.RuinedPortal or StructureType.RuinedPortalNether => DescribeRuinedPortal(variant),
         StructureType.Igloo => [variant.HasBasement ? "Has a basement" : "No basement"],
         StructureType.Geode => [variant.IsCracked ? "Cracked open" : "Closed shell"],
+        StructureType.NetherFossil when version >= McVersion.V1_21_6 => [variant.HasDriedGhast ? "Holds a dried ghast" : "No dried ghast"],
+        StructureType.Stronghold => [DescribePortal(variant.PortalEyes)],
         _ => [],
+    };
+
+    private static string DescribePortal(int eyes) => eyes switch
+    {
+        PortalFrames => "End portal: complete, all 12 eyes in place",
+        0 => "End portal: no eyes in place",
+        _ => string.Create(CultureInfo.InvariantCulture, $"End portal: {eyes} of 12 eyes in place"),
     };
 
     private IEnumerable<string> DescribeVillage(StructureVariant variant, McVersion version)

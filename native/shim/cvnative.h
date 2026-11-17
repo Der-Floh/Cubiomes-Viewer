@@ -11,7 +11,7 @@
 #define CV_API
 #endif
 
-#define CV_ABI_VERSION 13
+#define CV_ABI_VERSION 14
 
 #define CV_BIOME_NONE 255
 #define CV_BIOME_COLOR_BYTES 768
@@ -55,13 +55,16 @@ typedef struct cv_rules
     int32_t salts[CV_STRUCTURE_TYPES];
 } cv_rules;
 
-/* How one structure generates. The box is the first piece, relative to the structure position; its size is 0 when unknown. */
+/* How one structure generates. The box is the first piece, relative to the structure position; its size is 0 when unknown.
+   dried_ghast is 1 for a nether fossil holding a dried ghast (1.21.6+); portal_eyes counts the eyes of ender a
+   stronghold's end portal already holds (1.13+). */
 typedef struct cv_variant
 {
     int32_t abandoned, giant, underground, airpocket, basement, cracked;
     int32_t size, start, biome, rotation, mirror;
     int32_t x, y, z;
     int32_t sx, sy, sz;
+    int32_t dried_ghast, portal_eyes;
 } cv_variant;
 
 /* One piece of a structure with its bounding box in blocks; both corners are part of the piece. */
@@ -145,7 +148,7 @@ CV_API int32_t cv_structures_in_area(cv_world *world, int32_t stype, int32_t x0,
 CV_API int32_t cv_structure_attempts_in_area(const cv_rules *rules, int32_t stype, int32_t mc, uint64_t seed, int32_t x0, int32_t z0, int32_t x1, int32_t z1, int32_t *positions, int32_t capacity);
 
 /* Details of a structure found by cv_structures_in_area, or of a stronghold in the Overworld. cv_structure_variant
-   returns 1 when a variant is known; cv_structure_pieces returns the number of pieces of an end city, fortress,
+   returns 1 when a variant is known, which for a stronghold is how many eyes its portal holds; cv_structure_pieces returns the number of pieces of an end city, fortress,
    stronghold or mineshaft, and 0 for other types. Strongholds and mineshafts keep the height they start at. */
 CV_API int32_t cv_structure_variant(cv_world *world, int32_t stype, int32_t x, int32_t z, cv_variant *variant);
 CV_API int32_t cv_structure_pieces(cv_world *world, int32_t stype, int32_t x, int32_t z, cv_piece *pieces, int32_t capacity);

@@ -241,6 +241,8 @@ public sealed class CubiomesWorldGenerator : IWorldGenerator
             Rotation = variant.Rotation,
             Height = variant.Y == UnknownHeight ? null : variant.Y,
             Box = GetFirstPieceBox(position, variant),
+            HasDriedGhast = variant.DriedGhast != 0,
+            PortalEyes = variant.PortalEyes,
         };
     }
 

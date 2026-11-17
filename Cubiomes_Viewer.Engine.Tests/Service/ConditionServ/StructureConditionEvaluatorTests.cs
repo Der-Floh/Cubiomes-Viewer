@@ -140,6 +140,41 @@ public sealed class StructureConditionEvaluatorTests : IDisposable
         Assert.True(without > 0, "Every structure had the trait.");
     }
 
+    [Fact]
+    public void Evaluate_DriedGhast_KeepsTheNetherFossilsThatHoldOne()
+    {
+        const McVersion GhastVersion = McVersion.V1_21_6;
+        var withGhast = 0;
+        var without = 0;
+        for (long seed = 0; seed < 10; seed++)
+        {
+            var condition = new StructureCondition { Id = 1, Type = StructureType.NetherFossil, Trait = StructureTrait.DriedGhast, Area = SearchArea.Square(512) };
+            var generator = _bench.GetGenerator(GhastVersion, seed, Dimension.Nether);
+            var fossils = generator.FindStructures(StructureType.NetherFossil, condition.Area.ToBlocks(ConditionTestBench.Origin));
+            var expected = fossils.Where(position => generator.DescribeStructure(StructureType.NetherFossil, position).Variant?.HasDriedGhast == true).ToList();
+
+            var (status, matches) = _bench.Evaluate(condition, GhastVersion, seed, SearchPass.Full);
+
+            Assert.Equal(expected.Count > 0 ? MatchStatus.Matched : MatchStatus.Failed, status);
+            Assert.Equal(expected, matches);
+            withGhast += expected.Count;
+            without += fossils.Length - expected.Count;
+        }
+
+        Assert.True(withGhast > 0, "No nether fossil held a dried ghast.");
+        Assert.True(without > 0, "Every nether fossil held a dried ghast.");
+    }
+
+    [Fact]
+    public void Validate_DriedGhastBefore1216_IsAProblem()
+    {
+        var condition = new StructureCondition { Id = 1, Type = StructureType.NetherFossil, Trait = StructureTrait.DriedGhast };
+
+        var problems = TestEngine.CreateConditionValidator().Validate(ConditionTestBench.Define(McVersion.V1_21_5, condition));
+
+        Assert.Equal("Nether fossils hold dried ghasts from 1.21.6 on.", Assert.Single(problems).Message);
+    }
+
     [Theory]
     [InlineData(StructureType.EndCity, StructureTrait.Abandoned, "End city has no such kind.")]
     [InlineData(StructureType.Village, (StructureTrait)99, "Village has no such kind.")]

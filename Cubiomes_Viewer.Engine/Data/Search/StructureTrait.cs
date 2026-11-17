@@ -17,4 +17,7 @@ public enum StructureTrait
 
     /// <summary>A giant ruined portal.</summary>
     Giant,
+
+    /// <summary>A nether fossil holding a dried ghast, from 1.21.6 on.</summary>
+    DriedGhast,
 }

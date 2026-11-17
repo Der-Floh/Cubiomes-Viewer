@@ -211,6 +211,7 @@ public sealed class SelectionViewModelTests : IDisposable
         Assert.Equal("Stronghold 1", _selection.Title);
         Assert.True(_selection.Boxes.Count > 10);
         Assert.Contains(_selection.Details, line => line.StartsWith("Portal room at X ", StringComparison.Ordinal));
+        Assert.StartsWith("End portal: ", _selection.Details[0], StringComparison.Ordinal);
         Assert.DoesNotContain("Y", _selection.PositionText, StringComparison.Ordinal);
         Assert.Empty(GetErrors());
     }

@@ -23,8 +23,8 @@ A cross-platform Minecraft Java Edition seed finder and biome map viewer, built 
 - The status bar shows the biome or value, block and chunk under the pointer.
 - Layers: biomes, structure potential, climate parameters (temperature, humidity, continentalness, erosion, depth, weirdness), rivers, ocean temperatures and surface height, as far as the version has them.
 - Surface heights can be tinted, shaded, drawn as contour lines or in grey. Settings → Map can also shade the biome map by terrain height.
-- Markers for the structure types you choose, down to their variants, plus the world spawn, strongholds, slime chunks and End gateways.
-- Clicking a structure shows its variant and its Y level, and draws the rooms of end cities, fortresses, strongholds and mineshafts on the map; a stronghold also tells where its portal room is.
+- Markers for the structure types you choose, down to their variants (such as nether fossils with a dried ghast, from 1.21.6), plus the world spawn, strongholds, slime chunks and End gateways.
+- Clicking a structure shows its variant and its Y level, and draws the rooms of end cities, fortresses, strongholds and mineshafts on the map; a stronghold also tells where its portal room is and, from 1.13, how many eyes of ender its end portal already holds.
 - The Y level is exact where the game fixes it or the terrain decides it: ancient cities, monuments, bastions, trial chambers, nether fossils, end cities, villages, woodland mansions and, from 1.20, jungle temples and swamp huts. Desert pyramids from 1.18 and some fortresses show the few levels the game picks from by chance, and other structures on the ground an estimate (≈). Exact terrain needs 1.14 or later; strongholds, mineshafts and ruined portals have no Y.
 - Biomes in the default colours or in colour maps of your own, edited live on the map and shared as JSON files.
 - On the desktop, the map can move into a window of its own, for a second screen.
@@ -40,10 +40,10 @@ A cross-platform Minecraft Java Edition seed finder and biome map viewer, built 
 ### Seed search
 
 - **Conditions**, each required or excluded, and each able to look around where another one was found:
-  - structures, optionally of one kind (end cities with an end ship, abandoned villages, igloos with a basement, giant ruined portals), and four huts close enough for one farm
+  - structures, optionally of one kind (end cities with an end ship, abandoned villages, igloos with a basement, giant ruined portals, nether fossils with a dried ghast), and four huts close enough for one farm
   - biomes: one of them, each of them, a share of the area, or a patch of a size
   - climate parameters of the 1.18+ Overworld, and the temperature categories of 1.7 to 1.17
-  - the world spawn, strongholds, slime chunks, and "any of" several conditions
+  - the world spawn, strongholds (optionally with eyes already in their end portal, from 1.13), slime chunks, and "any of" several conditions
 - **Seeds** from a range, a list, structure seeds (each with its 65,536 sister seeds) or the quad-hut bases.
 - **Fast**: a quick pass rules seeds out without generating biomes, about 68 million structure seeds a second on 15 desktop threads.
 - **Kept**: a stopped or interrupted search continues after a restart, and can be saved to and opened from a file.

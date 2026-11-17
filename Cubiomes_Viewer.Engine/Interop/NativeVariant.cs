@@ -23,4 +23,6 @@ internal struct NativeVariant
     public int SizeX;
     public int SizeY;
     public int SizeZ;
+    public int DriedGhast;
+    public int PortalEyes;
 }

@@ -291,6 +291,63 @@ static int cv_variant_biome(cv_world *world, int32_t stype, Pos pos)
     return -1;
 }
 
+/* What getVariant writes for a height it does not know. */
+#define CV_UNKNOWN_Y 320
+
+static int cv_count_bits(uint32_t bits)
+{
+    int count = 0;
+    for (; bits; bits &= bits - 1)
+        count++;
+    return count;
+}
+
+/* From 1.21.6 a nether fossil holds a dried ghast by chance, once the game has found a floor for it. */
+static int32_t cv_has_dried_ghast(cv_world *world, int32_t x, int32_t z, const StructureVariant *found)
+{
+    const Generator *generator = &world->generator;
+    if (generator->mc < MC_1_21_6)
+        return 0;
+
+    TerrainNoise *terrain = cv_terrain(world);
+    if (!terrain)
+        return CV_ERR_MEMORY;
+
+    StructureVariant settled = *found;
+    if (!isViableNetherFossilTerrain(x >> 4, z >> 4, &settled, &terrain->base3dNoise, generator->mc))
+        return 0;
+    return netherFossilHasGhast(x >> 4, z >> 4, generator->seed, &settled) != 0;
+}
+
+/* A stronghold's variant is how many of the twelve frames of its end portal already hold an eye of ender, from 1.13 on. */
+static int32_t cv_find_stronghold_variant(cv_world *world, int32_t x, int32_t z, cv_variant *variant)
+{
+    const Generator *generator = &world->generator;
+    StructureSaltConfig salts;
+    if (generator->mc < MC_1_8 || !getStructureSaltConfig(Stronghold, generator->mc, -1, &salts))
+        return 0;
+
+    Piece *pieces = (Piece *)calloc(CV_MAX_PIECES, sizeof(Piece));
+    if (!pieces)
+        return CV_ERR_MEMORY;
+
+    int count = getStrongholdLoot(pieces, CV_MAX_PIECES, salts, generator->mc, generator->seed, x >> 4, z >> 4);
+    int found = 0;
+    for (int i = 0; i < count && !found; i++)
+    {
+        if (pieces[i].type != SH_PORTAL_ROOM)
+            continue;
+        variant->portal_eyes = cv_count_bits((uint32_t)pieces[i].additionalData);
+        found = 1;
+    }
+    free(pieces);
+
+    variant->start = -1;
+    variant->biome = -1;
+    variant->y = CV_UNKNOWN_Y;
+    return found;
+}
+
 static int32_t cv_find_structure_variant(cv_world *world, int32_t stype, int32_t x, int32_t z, cv_variant *variant)
 {
     int exists = 0;
@@ -303,6 +360,8 @@ static int32_t cv_find_structure_variant(cv_world *world, int32_t stype, int32_t
     memset(variant, 0, sizeof(*variant));
     if (!exists)
         return 0;
+    if (stype == Stronghold)
+        return cv_find_stronghold_variant(world, x, z, variant);
 
     Pos pos = {x, z};
     StructureVariant found;
@@ -327,6 +386,13 @@ static int32_t cv_find_structure_variant(cv_world *world, int32_t stype, int32_t
     variant->sx = found.sx;
     variant->sy = found.sy;
     variant->sz = found.sz;
+    if (stype == Nether_Fossil)
+    {
+        int32_t ghast = cv_has_dried_ghast(world, x, z, &found);
+        if (ghast < 0)
+            return ghast;
+        variant->dried_ghast = ghast;
+    }
     return 1;
 }
 

@@ -261,8 +261,8 @@ public sealed class LayersPanelViewModelTests : IDisposable
         Assert.Equal(["Nether wart room", "Blaze spawner"], fortress.Features.Select(feature => feature.Name));
         Assert.All(fortress.Features, feature => Assert.Equal(["With", "Without"], feature.Options.Select(option => option.Name)));
         Assert.Equal(["Housing units", "Hoglin stables", "Treasure room", "Bridge"], GetStructure("Bastion remnant").Features.Single().Options.Select(option => option.Name));
-        Assert.Equal(["Nether fortress", "Bastion remnant", "Ruined portal"], _layers.Structures.Where(structure => structure.HasFeatures).Select(structure => structure.Toggle.Name));
-        Assert.False(GetStructure("Nether fossil").HasFeatures);
+        Assert.Equal(["Nether fortress", "Bastion remnant", "Ruined portal", "Nether fossil"], _layers.Structures.Where(structure => structure.HasFeatures).Select(structure => structure.Toggle.Name));
+        Assert.Equal(["Dried ghast"], GetStructure("Nether fossil").Features.Select(feature => feature.Name));
         Assert.All(_layers.Structures.SelectMany(structure => structure.Features).SelectMany(feature => feature.Options), option => Assert.True(option.IsChecked));
         Assert.DoesNotContain(_layers.Structures, structure => structure.IsFiltered);
         Assert.Empty(_main.Map.HiddenStructureOptions);

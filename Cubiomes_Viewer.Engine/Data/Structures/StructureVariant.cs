@@ -30,4 +30,10 @@ public sealed record StructureVariant
 
     /// <summary>The first piece of the structure, or <see langword="null"/> when its size is unknown.</summary>
     public BlockBox? Box { get; init; }
+
+    /// <summary>Whether a nether fossil holds a dried ghast, which the game places in some of them from 1.21.6 on.</summary>
+    public bool HasDriedGhast { get; init; }
+
+    /// <summary>How many of the twelve frames of a stronghold's end portal already hold an eye of ender; known from 1.13 on.</summary>
+    public int PortalEyes { get; init; }
 }

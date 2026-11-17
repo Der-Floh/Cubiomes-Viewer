@@ -5,7 +5,7 @@ public static class Constants
     public const string AppDataFolderName = "Cubiomes Viewer";
 
     public const string NativeLibraryName = "cvnative";
-    public const int NativeAbiVersion = 13;
+    public const int NativeAbiVersion = 14;
 
     /// <summary>The most samples the native generator makes along one side of an area (CV_MAX_AREA_SIDE).</summary>
     public const int MaxAreaSideSamples = 4096;

@@ -122,6 +122,33 @@ public sealed class StructureDescriptionServiceTests : IDisposable
         Assert.Equal(["2 pieces", "2 libraries"], lines);
     }
 
+    [Theory]
+    [InlineData(0, "End portal: no eyes in place")]
+    [InlineData(3, "End portal: 3 of 12 eyes in place")]
+    [InlineData(12, "End portal: complete, all 12 eyes in place")]
+    public void Describe_StrongholdWithAVariant_TellsHowManyEyesItsPortalHolds(int eyes, string expected)
+    {
+        var lines = _service.Describe(Create(StructureType.Stronghold, new StructureVariant { PortalEyes = eyes }), Version);
+
+        Assert.Equal([expected], lines);
+    }
+
+    [Theory]
+    [InlineData(McVersion.V1_21_6, true, "Holds a dried ghast")]
+    [InlineData(McVersion.V1_21_6, false, "No dried ghast")]
+    public void Describe_NetherFossilFrom1216_TellsWhetherItHoldsADriedGhast(McVersion version, bool hasGhast, string expected)
+    {
+        var lines = _service.Describe(Create(StructureType.NetherFossil, new StructureVariant { HasDriedGhast = hasGhast }), version);
+
+        Assert.Equal([expected], lines);
+    }
+
+    [Fact]
+    public void Describe_NetherFossilBefore1216_SaysNothingOfGhasts()
+    {
+        Assert.Empty(_service.Describe(Create(StructureType.NetherFossil, new StructureVariant()), McVersion.V1_21_5));
+    }
+
     [Fact]
     public void Describe_StructureWithoutDetails_SaysNothing()
     {

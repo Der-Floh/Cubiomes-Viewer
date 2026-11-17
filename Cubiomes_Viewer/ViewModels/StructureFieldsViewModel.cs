@@ -22,6 +22,7 @@ public sealed partial class StructureFieldsViewModel : ObservableObject, ICondit
         new() { Display = "Abandoned", Value = StructureTrait.Abandoned },
         new() { Display = "With a basement", Value = StructureTrait.Basement },
         new() { Display = "Giant", Value = StructureTrait.Giant },
+        new() { Display = "With a dried ghast", Value = StructureTrait.DriedGhast },
     ];
 
     public string TypeLabel { get; } = "Structure";

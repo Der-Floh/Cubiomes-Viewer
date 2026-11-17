@@ -39,6 +39,7 @@ public sealed class StructureFeatureCatalog : IStructureFeatureCatalog
     private static readonly Definition _endShip = Presence("endShip", "End ship", static details => HasPiece(details, EndCityPiece.Ship));
     private static readonly Definition _netherWartRoom = Presence("netherWartRoom", "Nether wart room", static details => HasPiece(details, FortressPiece.NetherWartRoom));
     private static readonly Definition _blazeSpawner = Presence("blazeSpawner", "Blaze spawner", static details => HasPiece(details, FortressPiece.BlazeSpawner));
+    private static readonly Definition _driedGhast = Presence("driedGhast", "Dried ghast", static details => details.Variant?.HasDriedGhast);
 
     private readonly ConcurrentDictionary<(StructureType Type, McVersion Version), Layout> _layouts = new();
 
@@ -62,7 +63,7 @@ public sealed class StructureFeatureCatalog : IStructureFeatureCatalog
     private Layout GetLayout(StructureType type, McVersion version)
         => _layouts.GetOrAdd((type, version), static key => Layout.Create(GetDefinitions(key.Type, key.Version)));
 
-    /// <summary>The features the generator can tell apart: village types from 1.14, abandoned villages from 1.10.</summary>
+    /// <summary>The features the generator can tell apart: village types from 1.14, abandoned villages from 1.10, dried ghasts from 1.21.6.</summary>
     private static Definition[] GetDefinitions(StructureType type, McVersion version) => type switch
     {
         StructureType.Village when version >= McVersion.V1_14_4 => [_villageType, _villagers],
@@ -74,6 +75,7 @@ public sealed class StructureFeatureCatalog : IStructureFeatureCatalog
         StructureType.Geode => [_shell],
         StructureType.EndCity => [_endShip],
         StructureType.Fortress => [_netherWartRoom, _blazeSpawner],
+        StructureType.NetherFossil when version >= McVersion.V1_21_6 => [_driedGhast],
         _ => [],
     };
 

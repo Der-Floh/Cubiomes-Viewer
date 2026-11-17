@@ -1,9 +1,13 @@
 using Cubiomes_Viewer.Engine.Data.Search;
 using Cubiomes_Viewer.Engine.Data.Worlds;
+using Cubiomes_Viewer.Engine.Service.WorldGenServ;
 
 namespace Cubiomes_Viewer.Engine.Service.ConditionServ;
 
-/// <summary>Strongholds in an area. They move to suitable biomes, so the quick pass cannot tell.</summary>
+/// <summary>
+/// Strongholds in an area, optionally with eyes of ender already in their end portal. They move to suitable biomes, so the
+/// quick pass cannot tell.
+/// </summary>
 public sealed class StrongholdConditionEvaluator : ConditionEvaluator<StrongholdCondition>
 {
     /// <summary>
@@ -17,6 +21,7 @@ public sealed class StrongholdConditionEvaluator : ConditionEvaluator<Stronghold
 
     private const McVersion FirstVersion = McVersion.Beta1_8;
     private const McVersion FirstRingVersion = McVersion.V1_9_4;
+    private const McVersion FirstPortalEyesVersion = McVersion.V1_13_2;
     private const int StrongholdsBeforeRings = 3;
     private const int MaxMatches = 128;
     private const int DefaultRadius = 3072;
@@ -27,7 +32,7 @@ public sealed class StrongholdConditionEvaluator : ConditionEvaluator<Stronghold
     {
         ConditionType = typeof(StrongholdCondition),
         Name = "Stronghold",
-        Description = "Strongholds lie in the area.",
+        Description = "Strongholds lie in the area, optionally with eyes of ender already in their end portal.",
         Create = id => new StrongholdCondition { Id = id, Area = SearchArea.Circle(DefaultRadius) },
         Cost = SearchCost,
         MaxCount = MaxMatches,
@@ -49,6 +54,10 @@ public sealed class StrongholdConditionEvaluator : ConditionEvaluator<Stronghold
     {
         if (definition.Version < FirstVersion)
             yield return "This version has no strongholds.";
+        else if (condition.PortalEyes is < 0 or > StrongholdCondition.PortalFrames)
+            yield return "An end portal has 12 frames for eyes of ender.";
+        else if (condition.PortalEyes > 0 && definition.Version < FirstPortalEyesVersion)
+            yield return "The eyes in a stronghold's end portal are known from 1.13 on.";
     }
 
     protected override MatchStatus Evaluate(StrongholdCondition condition, BlockPos reference, SearchSeedContext context, SearchPass pass, List<BlockPos> matches)
@@ -57,15 +66,19 @@ public sealed class StrongholdConditionEvaluator : ConditionEvaluator<Stronghold
             return MatchStatus.Unknown;
 
         var strongholds = context.GetPositions(CountStrongholdsWithin(context.Version, GetReach(condition.Area, reference)));
-        var count = strongholds.Length == 0 ? 0 : context.GetGenerator(Dimension.Overworld).FindStrongholds(strongholds);
+        var generator = context.GetGenerator(Dimension.Overworld);
+        var count = strongholds.Length == 0 ? 0 : generator.FindStrongholds(strongholds);
         foreach (var stronghold in strongholds[..count])
         {
-            if (condition.Area.Contains(reference, stronghold))
+            if (condition.Area.Contains(reference, stronghold) && HasPortalEyes(generator, stronghold, condition.PortalEyes))
                 matches.Add(stronghold);
         }
 
         return Decide(condition, reference, matches);
     }
+
+    private static bool HasPortalEyes(IWorldGenerator generator, BlockPos stronghold, int eyes)
+        => eyes == 0 || generator.DescribeStructure(StructureType.Stronghold, stronghold).Variant?.PortalEyes >= eyes;
 
     /// <summary>The furthest the area reaches from the world origin.</summary>
     private static double GetReach(SearchArea area, BlockPos reference)

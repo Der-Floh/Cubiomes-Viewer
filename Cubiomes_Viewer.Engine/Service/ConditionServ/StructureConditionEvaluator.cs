@@ -48,6 +48,8 @@ public sealed class StructureConditionEvaluator : ConditionEvaluator<StructureCo
         var name = _structureCatalog.GetInfo(condition.Type).Name;
         if (!Enum.IsDefined(condition.Trait) || !condition.Trait.AppliesTo(condition.Type))
             yield return $"{name} has no such kind.";
+        else if (condition.Trait == StructureTrait.DriedGhast && definition.Version < McVersion.V1_21_6)
+            yield return "Nether fossils hold dried ghasts from 1.21.6 on.";
 
         if (!_structureFinder.TryGetPlacement(condition.Type, definition.Version, out var placement))
             yield return $"{name} does not generate in this version.";

@@ -246,6 +246,36 @@ public sealed class SearchPanelViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void StrongholdFields_PortalEyes_GoIntoTheConditionAndItsSummary()
+    {
+        _session.Version = McVersion.V1_21_3;
+        var stronghold = Add<StrongholdCondition>();
+        var fields = Assert.IsType<StrongholdFieldsViewModel>(stronghold.Fields);
+
+        fields.PortalEyes = 3;
+
+        Assert.Equal(3, Assert.IsType<StrongholdCondition>(Assert.Single(Setup.Setup.Definition.Conditions)).PortalEyes);
+        Assert.Equal("1 · Stronghold", stronghold.Header);
+        Assert.StartsWith("with 3+ eyes in its portal · ", stronghold.Summary, StringComparison.Ordinal);
+        Assert.True(Setup.IsValid);
+
+        fields.PortalEyes = 12;
+
+        Assert.StartsWith("with its end portal open · ", stronghold.Summary, StringComparison.Ordinal);
+    }
+
+    [AvaloniaFact]
+    public void StrongholdFields_PortalEyesBefore113_ShowTheProblem()
+    {
+        _session.Version = McVersion.V1_12_2;
+        var stronghold = Add<StrongholdCondition>();
+
+        ((StrongholdFieldsViewModel)stronghold.Fields!).PortalEyes = 1;
+
+        Assert.Equal(["The eyes in a stronghold's end portal are known from 1.13 on."], stronghold.Problems);
+    }
+
+    [AvaloniaFact]
     public void TemperatureCategoryFields_InANoiseVersion_ShowTheProblem()
     {
         _session.Version = McVersion.V1_21_3;

@@ -97,6 +97,43 @@ public sealed class LandmarkConditionEvaluatorTests : IDisposable
         => Assert.Equal(expected, StrongholdConditionEvaluator.CountStrongholdsWithin(version, blocks));
 
     [Fact]
+    public void Stronghold_PortalEyes_KeepsTheStrongholdsWhosePortalHoldsThatManyEyes()
+    {
+        const McVersion EyesVersion = McVersion.V1_21_3;
+        var area = SearchArea.Circle(9000);
+        var kept = 0;
+        var left = 0;
+        for (long seed = 0; seed < 6; seed++)
+        {
+            var generator = _bench.GetGenerator(EyesVersion, seed);
+            var strongholds = generator.FindStrongholds().Where(stronghold => area.Contains(ConditionTestBench.Origin, stronghold)).ToList();
+            var expected = strongholds.Where(stronghold => generator.DescribeStructure(StructureType.Stronghold, stronghold).Variant?.PortalEyes >= 2).ToList();
+
+            var (status, matches) = _bench.Evaluate(new StrongholdCondition { Id = 1, Area = area, PortalEyes = 2 }, EyesVersion, seed, SearchPass.Full);
+
+            Assert.Equal(expected.Count > 0 ? MatchStatus.Matched : MatchStatus.Failed, status);
+            Assert.Equal(expected, matches);
+            kept += expected.Count;
+            left += strongholds.Count - expected.Count;
+        }
+
+        Assert.True(kept > 0, "No portal held two eyes.");
+        Assert.True(left > 0, "Every portal held two eyes.");
+    }
+
+    [Theory]
+    [InlineData(McVersion.V1_12_2, 1, "The eyes in a stronghold's end portal are known from 1.13 on.")]
+    [InlineData(McVersion.V1_21_3, 13, "An end portal has 12 frames for eyes of ender.")]
+    public void Validate_StrongholdPortalEyesTheVersionOrPortalCannotHave_IsAProblem(McVersion version, int eyes, string expected)
+    {
+        var condition = new StrongholdCondition { Id = 1, PortalEyes = eyes };
+
+        var problems = TestEngine.CreateConditionValidator().Validate(ConditionTestBench.Define(version, condition));
+
+        Assert.Equal(expected, Assert.Single(problems).Message);
+    }
+
+    [Fact]
     public void Stronghold_QuickPass_CannotTell()
         => Assert.Equal(MatchStatus.Unknown, _bench.Evaluate(new StrongholdCondition { Id = 1 }, Version, 3, SearchPass.Quick).Status);
 

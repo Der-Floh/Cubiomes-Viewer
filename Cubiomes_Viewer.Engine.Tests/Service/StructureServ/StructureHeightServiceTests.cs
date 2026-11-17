@@ -183,7 +183,8 @@ public sealed class StructureHeightServiceTests : IDisposable
 
         var height = _service.Find(generator, Dimension.Overworld, details);
 
-        Assert.True(height?.IsEstimate);
+        Assert.NotNull(height);
+        Assert.True(height.IsEstimate);
         Assert.InRange(height.Lowest, SeaLevel, 100);
     }
 
@@ -217,7 +218,8 @@ public sealed class StructureHeightServiceTests : IDisposable
 
         var height = _service.Find(generator, Dimension.Overworld, generator.DescribeStructure(StructureType.OceanRuin, ruin));
 
-        Assert.True(height?.IsEstimate);
+        Assert.NotNull(height);
+        Assert.True(height.IsEstimate);
         Assert.InRange(height.Lowest, -64, SeaLevel + 8);
     }
 

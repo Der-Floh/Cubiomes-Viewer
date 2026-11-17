@@ -41,6 +41,7 @@ public sealed class SearchConditionFactory
         BiomePatchCondition patch => new BiomePatchFieldsViewModel(patch, version, DimensionChoices.Create(_styleService), _biomeCatalog, _styleService, changed),
         ClimateCondition climate => new ClimateFieldsViewModel(climate, version, _layerCatalog, changed),
         TemperatureCategoryCondition temperature => new TemperatureCategoryFieldsViewModel(temperature, changed),
+        StrongholdCondition stronghold => new StrongholdFieldsViewModel(stronghold, changed),
         _ => null,
     };
 }

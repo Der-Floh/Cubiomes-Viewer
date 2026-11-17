@@ -26,6 +26,7 @@ public sealed class StructureFeatureCatalogTests
         { StructureType.Igloo, Version, Dimension.Overworld, Side },
         { StructureType.Geode, Version, Dimension.Overworld, GeodeSide },
         { StructureType.EndCity, Version, Dimension.End, Side },
+        { StructureType.NetherFossil, McVersion.V1_21_6, Dimension.Nether, GeodeSide },
     };
 
     [Theory]
@@ -75,6 +76,19 @@ public sealed class StructureFeatureCatalogTests
         Assert.Equal(["size"], GetKeys(StructureType.RuinedPortalNether, Version));
         Assert.Equal(["netherWartRoom", "blazeSpawner"], GetKeys(StructureType.Fortress, Version));
         Assert.Empty(_catalog.GetFeatures(StructureType.DesertPyramid, Version));
+        Assert.Empty(_catalog.GetFeatures(StructureType.NetherFossil, Version));
+        Assert.Equal(["driedGhast"], GetKeys(StructureType.NetherFossil, McVersion.V1_21_6));
+    }
+
+    [Fact]
+    public void GetOptions_NetherFossils_SayWhetherTheyHoldADriedGhast()
+    {
+        var with = _catalog.GetFeatures(StructureType.NetherFossil, McVersion.V1_21_6).Single().Options.Single(option => option.Key == "with");
+        var fossils = Describe(StructureType.NetherFossil, McVersion.V1_21_6, Dimension.Nether, 2048);
+
+        Assert.Contains(fossils, fossil => fossil.Variant?.HasDriedGhast == true);
+        Assert.Contains(fossils, fossil => fossil.Variant?.HasDriedGhast == false);
+        Assert.All(fossils, fossil => Assert.Equal(fossil.Variant?.HasDriedGhast == true, (_catalog.GetOptions(fossil, McVersion.V1_21_6) & with.Bit) != 0));
     }
 
     [Fact]

@@ -16,6 +16,7 @@ public static class StructureTraitExtensions
             StructureTrait.Abandoned => type == StructureType.Village,
             StructureTrait.Basement => type == StructureType.Igloo,
             StructureTrait.Giant => type is StructureType.RuinedPortal or StructureType.RuinedPortalNether,
+            StructureTrait.DriedGhast => type == StructureType.NetherFossil,
             _ => false,
         };
 
@@ -30,6 +31,7 @@ public static class StructureTraitExtensions
                 StructureTrait.Abandoned => details.Variant?.IsAbandoned == true,
                 StructureTrait.Basement => details.Variant?.HasBasement == true,
                 StructureTrait.Giant => details.Variant?.IsGiant == true,
+                StructureTrait.DriedGhast => details.Variant?.HasDriedGhast == true,
                 _ => throw new NotSupportedException($"Unsupported structure trait: {trait}"),
             };
         }
