@@ -8,8 +8,9 @@ namespace Cubiomes_Viewer.Controls;
 
 /// <summary>
 /// Draws an icon whose shapes fill with currentColor in the foreground of the control around it, as a PathIcon draws a
-/// geometry: its outlined form, or its filled form while <see cref="IsFilled"/> is set. Unlike the Svg control it loads
-/// the files at once on the UI thread, so no icon appears late.
+/// geometry: its outlined form, or its filled form while <see cref="IsFilled"/> is set. Unlike the Svg control it has
+/// its images at once, so no icon appears late; they come from <see cref="SvgImageCache"/>, which parses each file
+/// once per colour for all icons.
 /// </summary>
 public sealed class SvgIcon : Control
 {
@@ -18,8 +19,6 @@ public sealed class SvgIcon : Control
     public static readonly StyledProperty<bool> IsFilledProperty = AvaloniaProperty.Register<SvgIcon, bool>(nameof(IsFilled));
 
     public static readonly StyledProperty<IBrush?> ForegroundProperty = TextElement.ForegroundProperty.AddOwner<SvgIcon>();
-
-    private static readonly Uri _assetBaseUri = new($"avares://{typeof(SvgIcon).Assembly.GetName().Name}/");
 
     private SvgImage? _outlined;
     private SvgImage? _filled;
@@ -61,21 +60,13 @@ public sealed class SvgIcon : Control
     {
         base.OnPropertyChanged(change);
 
-        if (change.Property == SourceProperty)
-        {
-            _outlined = Load(Source?.Outlined);
-            _filled = Load(Source?.Filled);
-        }
-
         if (change.Property == SourceProperty || change.Property == ForegroundProperty)
         {
             var color = (Foreground as ISolidColorBrush)?.Color;
-            if (_outlined is not null)
-                _outlined.CurrentColor = color;
-            if (_filled is not null)
-                _filled.CurrentColor = color;
+            _outlined = GetImage(Source?.Outlined, color);
+            _filled = GetImage(Source?.Filled, color);
         }
     }
 
-    private static SvgImage? Load(string? path) => string.IsNullOrEmpty(path) ? null : new SvgImage { Source = SvgSource.Load(path, _assetBaseUri) };
+    private static SvgImage? GetImage(string? path, Color? color) => string.IsNullOrEmpty(path) ? null : SvgImageCache.Get(path, color);
 }

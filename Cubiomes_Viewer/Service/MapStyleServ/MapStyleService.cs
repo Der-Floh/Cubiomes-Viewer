@@ -5,6 +5,7 @@ using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Avalonia.Svg.Skia;
 
+using Cubiomes_Viewer.Controls;
 using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Colors;
 using Cubiomes_Viewer.Engine.Data.Worlds;
@@ -37,8 +38,6 @@ public sealed class MapStyleService : IMapStyleService
 
     /// <summary>The contrast WCAG asks of graphics against what lies next to them.</summary>
     private const double GraphicsContrast = 3;
-
-    private static readonly Uri _assetBaseUri = new($"avares://{typeof(MapStyleService).Assembly.GetName().Name}/");
 
     public double PinSize => Math.Max(PinSideLength * MarkerScale, PinPainter.SmallestSizeWithRoom);
 
@@ -159,7 +158,7 @@ public sealed class MapStyleService : IMapStyleService
     private static SvgImage CreateBiomeGlyph(string icon, Color color)
         => LoadGlyph(string.Format(CultureInfo.InvariantCulture, BiomeIconPathFormat, icon), color);
 
-    private static SvgImage LoadGlyph(string path, Color color) => new() { Source = SvgSource.Load(path, _assetBaseUri), CurrentColor = color };
+    private static SvgImage LoadGlyph(string path, Color color) => SvgImageCache.Get(path, color);
 
     /// <summary>The light or the dark glyph colour, whichever stands out more against a badge, judged by relative luminance as in WCAG.</summary>
     private static Color GetContrastingGlyphColor(RgbColor background)

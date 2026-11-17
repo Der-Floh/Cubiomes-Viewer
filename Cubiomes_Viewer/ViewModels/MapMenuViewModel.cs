@@ -204,7 +204,7 @@ public sealed partial class MapMenuViewModel : ViewModelBase
 
         items.Clear();
         foreach (var target in targets)
-            items.Add(new NearestTargetViewModel(target, _nearest.GetMarker(target), FindNearestAsync));
+            items.Add(new NearestTargetViewModel(target, _nearest.GetMarker, FindNearestAsync));
     }
 
     private string GetImageFileName()

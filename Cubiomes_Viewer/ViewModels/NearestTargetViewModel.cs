@@ -11,19 +11,24 @@ public sealed class NearestTargetViewModel
     public NearestTarget Target { get; }
     public string Name => Target.Name;
 
-    /// <summary>The badge of the target: a structure's or the strongholds' marker, or a biome's badge.</summary>
-    public MapMarker Marker { get; }
+    /// <summary>
+    /// The badge of the target: a structure's or the strongholds' marker, or a biome's badge. It is made when the menu
+    /// first shows it, as making the badges of every target takes long and the menus are rarely opened.
+    /// </summary>
+    public MapMarker Marker => field ??= _markerOf(Target);
 
     public IAsyncRelayCommand FindCommand { get; }
 
-    public NearestTargetViewModel(NearestTarget target, MapMarker marker, Func<NearestTarget, Task> find)
+    private readonly Func<NearestTarget, MapMarker> _markerOf;
+
+    public NearestTargetViewModel(NearestTarget target, Func<NearestTarget, MapMarker> markerOf, Func<NearestTarget, Task> find)
     {
         ArgumentNullException.ThrowIfNull(target);
-        ArgumentNullException.ThrowIfNull(marker);
+        ArgumentNullException.ThrowIfNull(markerOf);
         ArgumentNullException.ThrowIfNull(find);
 
         Target = target;
-        Marker = marker;
+        _markerOf = markerOf;
         FindCommand = new AsyncRelayCommand(() => find(target), AsyncRelayCommandOptions.AllowConcurrentExecutions);
     }
 }
