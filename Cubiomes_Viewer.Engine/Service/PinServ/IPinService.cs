@@ -14,6 +14,12 @@ public interface IPinService
 
     MapPin Add(long seed, Dimension dimension, BlockPos position);
 
+    /// <summary>
+    /// Puts down copies of pins, such as those a link shares, with their names and looks. A pin on a block that already holds a pin
+    /// of its map is left out, so that the same pins put down again add nothing. Returns the pins put down.
+    /// </summary>
+    IReadOnlyList<MapPin> AddCopies(IEnumerable<MapPin> pins);
+
     /// <summary>Moves a pin to another block of its map.</summary>
     void Move(MapPin pin, BlockPos position);
 

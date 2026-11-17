@@ -7,6 +7,7 @@ using Cubiomes_Viewer.Engine.Data.Settings;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Repository.AppDataRepo;
 using Cubiomes_Viewer.Engine.Repository.SettingsRepo;
+using Cubiomes_Viewer.Engine.Service.PinServ;
 using Cubiomes_Viewer.Engine.Service.SeedServ;
 using Cubiomes_Viewer.Engine.Service.SettingsServ;
 using Cubiomes_Viewer.Service.AppAddressServ;
@@ -179,6 +180,44 @@ public sealed class MainViewModelTests : IDisposable
         Assert.Empty(Notifications.Notifications);
         Assert.Equal(262, _services.GetRequiredService<WorldSession>().Seed);
         Assert.Equal($"{RecordingAppAddressService.TestLinkBase}?seed=262&version=1.21.3&dimension=overworld&x=10&z=-4&scale=2", Assert.Single(Address.Shown));
+    }
+
+    [AvaloniaFact]
+    public async Task Initialization_StartLinkWithPins_AddsThoseOnBlocksWithoutAPinAndShowsThemAll()
+    {
+        var stored = new AppSettings
+        {
+            View = { Seed = 1 },
+            Map = { Pins = [new MapPin { Seed = 262, Dimension = Dimension.Nether, X = 100, Z = -50, Name = "Base" }] },
+        };
+        await _services.GetRequiredService<ISettingsRepository>().SaveAsync(stored, TestContext.Current.CancellationToken);
+        Address.StartAddress = $"{RecordingAppAddressService.TestLinkBase}?seed=262&version=1.16&dimension=nether&x=100&z=-50&scale=2&pin=100,-50,Home&pin=8,9,Farm,Village";
+
+        var main = _services.GetRequiredService<MainViewModel>();
+        await main.Initialization;
+
+        var pins = _services.GetRequiredService<IPinService>().GetPins(262, Dimension.Nether);
+        Assert.Empty(Notifications.Notifications);
+        Assert.Equal([("Base", (string?)null), ("Farm", "Village")], pins.Select(pin => (pin.Name, pin.Icon)));
+        Assert.EndsWith("&scale=2&pin=100,-50,Base&pin=8,9,Farm,Village", Address.Shown[^1], StringComparison.Ordinal);
+    }
+
+    [AvaloniaFact]
+    public async Task PinChanges_AfterInitialization_AreShownInTheAddressBar()
+    {
+        var main = _services.GetRequiredService<MainViewModel>();
+        await main.Initialization;
+        var session = _services.GetRequiredService<WorldSession>();
+        var pins = _services.GetRequiredService<IPinService>();
+
+        var pin = pins.Add(session.Seed, session.Dimension, new BlockPos(4, 5));
+        Assert.EndsWith("&pin=4,5", Address.Shown[^1], StringComparison.Ordinal);
+
+        pins.Rename(pin, "Home");
+        Assert.EndsWith("&pin=4,5,Home", Address.Shown[^1], StringComparison.Ordinal);
+
+        pins.Remove(pin);
+        Assert.DoesNotContain("&pin=", Address.Shown[^1], StringComparison.Ordinal);
     }
 
     [AvaloniaFact]

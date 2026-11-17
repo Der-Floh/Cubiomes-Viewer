@@ -28,6 +28,27 @@ public sealed class PinService : IPinService
         return pin;
     }
 
+    public IReadOnlyList<MapPin> AddCopies(IEnumerable<MapPin> pins)
+    {
+        ArgumentNullException.ThrowIfNull(pins);
+
+        var taken = Pins.Select(GetSpot).ToHashSet();
+        List<MapPin> added = [];
+        foreach (var pin in pins)
+        {
+            if (!taken.Add(GetSpot(pin)))
+                continue;
+
+            var copy = new MapPin { Seed = pin.Seed, Dimension = pin.Dimension, X = pin.X, Z = pin.Z, Name = ToName(pin.Name), Icon = pin.Icon };
+            Pins.Add(copy);
+            added.Add(copy);
+        }
+
+        if (added.Count > 0)
+            StoreChange();
+        return added;
+    }
+
     public void Move(MapPin pin, BlockPos position)
     {
         ArgumentNullException.ThrowIfNull(pin);
@@ -43,7 +64,7 @@ public sealed class PinService : IPinService
     {
         ArgumentNullException.ThrowIfNull(pin);
 
-        var trimmed = string.IsNullOrWhiteSpace(name) ? null : name.Trim();
+        var trimmed = ToName(name);
         if (string.Equals(pin.Name, trimmed, StringComparison.Ordinal))
             return;
 
@@ -75,4 +96,8 @@ public sealed class PinService : IPinService
         _settingsService.RequestSave();
         Changed?.Invoke();
     }
+
+    private static string? ToName(string? name) => string.IsNullOrWhiteSpace(name) ? null : name.Trim();
+
+    private static (long Seed, Dimension Dimension, int X, int Z) GetSpot(MapPin pin) => (pin.Seed, pin.Dimension, pin.X, pin.Z);
 }

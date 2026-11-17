@@ -32,7 +32,7 @@ A cross-platform Minecraft Java Edition seed finder and biome map viewer, built 
 
 - Copy the block's coordinates, `/tp` command, chunk, region file or the seed.
 - Put a pin on the block, or measure the distance to another one. Pins and measurements are kept per seed and dimension and can be named.
-- **Copy link to this spot**: opens the web version on the same world and view, for example `https://der-floh.github.io/Cubiomes-Viewer/?seed=262&version=1.21.3&dimension=nether&x=100&z=-50&scale=4`. A link pasted into the seed box opens the same way, on the desktop too.
+- **Copy link to this spot**: opens the web version on the same world and view, with up to 100 pins of that map, for example `https://der-floh.github.io/Cubiomes-Viewer/?seed=262&version=1.21.3&dimension=nether&x=100&z=-50&scale=4&pin=120,-40,Base`. A link pasted into the seed box opens the same way, on the desktop too. Opening a link adds its pins to yours, except on blocks that have a pin already.
 - **Find nearest structure or biome**: like the game's `/locate`, as far out as the game looks. The map then flies to the result.
 - **Open in the Nether or Overworld**: the matching spot in the other dimension, for planning portals.
 

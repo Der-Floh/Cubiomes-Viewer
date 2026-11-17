@@ -129,9 +129,9 @@ public sealed partial class MapMenuViewModel : ViewModelBase
     [RelayCommand]
     public Task CopySeedAsync() => CopyAsync(Seed);
 
-    /// <summary>Copies a link to the open view centred on the menu's block, at the zoom the map has.</summary>
+    /// <summary>Copies a link to the open view centred on the menu's block, at the zoom the map has, with the pins of the map.</summary>
     [RelayCommand]
-    public Task CopyLinkAsync() => CopyAsync(_mapLinks.Format(MapLink.Of(_session, _map.Camera) with { Center = Position }, _address.LinkBase));
+    public Task CopyLinkAsync() => CopyAsync(_mapLinks.Format(_map.GetLink() with { Center = Position }, _address.LinkBase));
 
     [RelayCommand]
     public void ToggleMeasuring() => _map.MeasureStart = _map.IsMeasuring ? null : Position;

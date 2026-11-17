@@ -12,6 +12,7 @@ public sealed class MapLinkServiceTests
 {
     private const string LinkBase = RecordingAppAddressService.TestLinkBase;
     private static readonly MapLink _open = new(1, McVersion.V1_20_6, Dimension.Overworld, true, new BlockPos(5, 6), 8, LayerMode.Temperature, 64, 2);
+    private static readonly MapLink _view = new(262, McVersion.V1_21_3, Dimension.Nether, false, new BlockPos(100, -50), 4, LayerMode.Biomes, ViewSettings.DefaultSampleHeight, 0);
 
     private readonly MapLinkService _links = new(new VersionCatalog(), new SeedParser());
 
@@ -115,6 +116,82 @@ public sealed class MapLinkServiceTests
         Assert.Equal(new BlockPos(30_000_000, -30_000_000), link.Center);
         Assert.Equal(4096, link.BlocksPerPixel);
         Assert.Equal(320, link.SampleHeight);
+        Assert.Null(problem);
+    }
+
+    [Fact]
+    public void Format_Pins_WritesOneParameterEachWithOnlyThePartsTheyHave()
+    {
+        var link = _view with
+        {
+            Pins = [new(new BlockPos(100, -50)), new(new BlockPos(1, 2), "Home"), new(new BlockPos(3, 4), Icon: "Village"), new(new BlockPos(5, 6), "Base, east + 1", "Monument")],
+        };
+
+        Assert.EndsWith("&scale=4&pin=100,-50&pin=1,2,Home&pin=3,4,,Village&pin=5,6,Base%2C%20east%20%2B%201,Monument", _links.Format(link, LinkBase), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Format_MorePinsThanALinkCarries_WritesTheFirstOnes()
+    {
+        var link = _view with { Pins = [.. Enumerable.Range(0, MapLinkService.MaxPins + 5).Select(index => new LinkPin(new BlockPos(index, 0)))] };
+
+        var address = _links.Format(link, LinkBase);
+
+        Assert.Equal(MapLinkService.MaxPins, address.Split("&pin=").Length - 1);
+        Assert.EndsWith($"&pin={MapLinkService.MaxPins - 1},0", address, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TryParse_FormattedLinkWithPins_ReadsTheSamePins()
+    {
+        var link = _view with
+        {
+            Pins = [new(new BlockPos(-7, 3_000)), new(new BlockPos(1, 2), "Home, sweet + home"), new(new BlockPos(3, 4), Icon: "AncientCity"), new(new BlockPos(5, 6), "Grotte für Erz ⛏", "Spawn")],
+        };
+
+        Assert.True(_links.TryParse(_links.Format(link, LinkBase), _open, out var read, out var problem));
+
+        Assert.Equal(link, read);
+        Assert.Null(problem);
+    }
+
+    [Fact]
+    public void TryParse_UnreadablePins_AreLeftOutAndCounted()
+    {
+        Assert.True(_links.TryParse("?seed=262&pin=1,2&pin=abc,5&pin=7&PIN=1,2,a,b,c&Pin=3,4,,Village", _open, out var link, out var problem));
+
+        Assert.Equal([new LinkPin(new BlockPos(1, 2)), new LinkPin(new BlockPos(3, 4), Icon: "Village")], link.Pins);
+        Assert.Equal("3 of the link's pins could not be read and were left out.", problem);
+    }
+
+    [Fact]
+    public void TryParse_UnreadableValueAndPin_NamesBoth()
+    {
+        Assert.True(_links.TryParse("?seed=262&version=1.99&pin=x", _open, out var link, out var problem));
+
+        Assert.Empty(link.Pins);
+        Assert.Equal("The link's version could not be read and stays as it is. One of the link's pins could not be read and was left out.", problem);
+    }
+
+    [Fact]
+    public void TryParse_MorePinsThanALinkCarries_KeepsTheFirstOnes()
+    {
+        var query = "?seed=262" + string.Concat(Enumerable.Range(0, MapLinkService.MaxPins + 5).Select(index => $"&pin={index},0"));
+
+        Assert.True(_links.TryParse(query, _open, out var link, out var problem));
+
+        Assert.Equal(MapLinkService.MaxPins, link.Pins.Count);
+        Assert.Equal(new BlockPos(MapLinkService.MaxPins - 1, 0), link.Pins[^1].Position);
+        Assert.Equal("The link has more than 100 pins; only the first 100 are added.", problem);
+    }
+
+    [Fact]
+    public void TryParse_LongAndBlankPinNames_AreCutOrLeftOut()
+    {
+        Assert.True(_links.TryParse($"?seed=1&pin=1,2,{new string('a', 80)}&pin=3,4,%20%20,Village", _open, out var link, out var problem));
+
+        Assert.Equal(new string('a', MapLinkService.MaxPinTextLength), link.Pins[0].Name);
+        Assert.Equal(new LinkPin(new BlockPos(3, 4), Icon: "Village"), link.Pins[1]);
         Assert.Null(problem);
     }
 

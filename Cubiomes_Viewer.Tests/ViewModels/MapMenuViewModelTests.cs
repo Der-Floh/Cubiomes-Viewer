@@ -94,6 +94,25 @@ public sealed class MapMenuViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
+    public async Task CopyLink_MapWithPins_CarriesThePinsOfThatMapOnly()
+    {
+        _session.Seed = 262;
+        _session.Version = McVersion.V1_21_3;
+        _map.Camera = new MapCamera(0, 0, 2);
+        var pins = _services.GetRequiredService<IPinService>();
+        var home = pins.Add(262, Dimension.Overworld, new BlockPos(10, -20));
+        pins.Rename(home, "Home");
+        pins.SetIcon(home, "Village");
+        pins.Add(262, Dimension.Nether, new BlockPos(1, 1));
+        pins.Add(263, Dimension.Overworld, new BlockPos(2, 2));
+
+        await _menu.CopyLinkCommand.ExecuteAsync(null);
+
+        var clipboard = (RecordingClipboardService)_services.GetRequiredService<IClipboardService>();
+        Assert.EndsWith("&scale=2&pin=10,-20,Home,Village", Assert.Single(clipboard.Texts), StringComparison.Ordinal);
+    }
+
+    [AvaloniaFact]
     public void ToggleMeasuring_Executed_StartsAtTheMenuPositionAndStopsAgain()
     {
         _menu.ToggleMeasuringCommand.Execute(null);

@@ -1,3 +1,4 @@
+using Cubiomes_Viewer.Engine.Data.Settings;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.PinServ;
 using Cubiomes_Viewer.Engine.Tests.Service.SettingsServ;
@@ -27,6 +28,53 @@ public sealed class PinServiceTests
         Assert.Equal((262L, Dimension.Overworld, -40, 96, (string?)null), (pin.Seed, pin.Dimension, pin.X, pin.Z, pin.Icon));
         Assert.Equal(3, _settings.Current.Map.Pins.Count);
         Assert.Equal((3, 3), (_changes, _settings.SaveRequests));
+    }
+
+    [Fact]
+    public void AddCopies_SharedPins_AddsCopiesWithTheirNamesAndLooksAndTellsOnce()
+    {
+        MapPin[] shared =
+        [
+            new() { Seed = 262, Dimension = Dimension.Overworld, X = 10, Z = 20, Name = "  Home ", Icon = "Village" },
+            new() { Seed = 262, Dimension = Dimension.Nether, X = 1, Z = 2 },
+        ];
+
+        var added = _pins.AddCopies(shared);
+
+        Assert.Equal(2, added.Count);
+        Assert.DoesNotContain(added, pin => shared.Contains(pin));
+        Assert.Equal((262L, Dimension.Overworld, 10, 20, "Home", "Village"), (added[0].Seed, added[0].Dimension, added[0].X, added[0].Z, added[0].Name, added[0].Icon));
+        Assert.Equal([added[1]], _pins.GetPins(262, Dimension.Nether));
+        Assert.Equal((1, 1), (_changes, _settings.SaveRequests));
+    }
+
+    [Fact]
+    public void AddCopies_PinOnABlockThatHoldsOneAlready_IsLeftOutAndTheOldOneKept()
+    {
+        var own = _pins.Add(262, Dimension.Overworld, new BlockPos(10, 20));
+        _pins.Rename(own, "Base");
+
+        var added = _pins.AddCopies(
+        [
+            new() { Seed = 262, Dimension = Dimension.Overworld, X = 10, Z = 20, Name = "Home" },
+            new() { Seed = 262, Dimension = Dimension.Overworld, X = 30, Z = 40, Name = "Farm" },
+            new() { Seed = 262, Dimension = Dimension.Overworld, X = 30, Z = 40, Name = "Farm again" },
+        ]);
+
+        Assert.Equal(["Farm"], added.Select(pin => pin.Name));
+        Assert.Equal(["Base", "Farm"], _pins.GetPins(262, Dimension.Overworld).Select(pin => pin.Name));
+    }
+
+    [Fact]
+    public void AddCopies_NothingNew_TellsNothing()
+    {
+        _pins.Add(262, Dimension.Overworld, new BlockPos(10, 20));
+        _changes = 0;
+
+        var added = _pins.AddCopies([new() { Seed = 262, Dimension = Dimension.Overworld, X = 10, Z = 20 }]);
+
+        Assert.Empty(added);
+        Assert.Equal(0, _changes);
     }
 
     [Fact]

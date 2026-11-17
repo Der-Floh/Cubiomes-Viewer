@@ -189,8 +189,9 @@ public sealed partial class MapViewModel : ViewModelBase
         => Navigate(CenterOn(block) with { BlocksPerPixel = Math.Min(Camera.BlocksPerPixel, maxBlocksPerPixel) }, animate: true);
 
     /// <summary>
-    /// Opens the view a link carries: its world and layer, then its place straight away. The version and dimension come before the layer,
-    /// because a world without the layer falls back to biomes.
+    /// Opens the view a link carries: its world and layer, then its place straight away, and adds its pins to those of the map, except
+    /// where the map has a pin on the same block already. The version and dimension come before the layer, because a world without the
+    /// layer falls back to biomes.
     /// </summary>
     public void Open(MapLink link)
     {
@@ -203,8 +204,13 @@ public sealed partial class MapViewModel : ViewModelBase
         _session.Octaves = link.Octaves;
         _session.SampleHeight = link.SampleHeight;
         _session.Seed = link.Seed;
+        _pinService.AddCopies(link.Pins.Select(pin => pin.ToPin(link.Seed, link.Dimension)));
         JumpTo(link.Camera);
     }
+
+    /// <summary>A link to the open view, with the pins of its map.</summary>
+    public MapLink GetLink()
+        => MapLink.Of(_session, Camera) with { Pins = [.. _pinService.GetPins(_session.Seed, _session.Dimension).Select(LinkPin.Of)] };
 
     /// <summary>Puts a pin on a block of the open map, stops placing pins and picks the new pin, so its look can be chosen.</summary>
     public void PlacePin(BlockPos block)

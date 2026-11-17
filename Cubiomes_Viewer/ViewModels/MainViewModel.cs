@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Input;
 using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Service.AppDataServ;
+using Cubiomes_Viewer.Engine.Service.PinServ;
 using Cubiomes_Viewer.Engine.Service.SeedServ;
 using Cubiomes_Viewer.Engine.Service.SettingsServ;
 using Cubiomes_Viewer.Service.AppAddressServ;
@@ -65,11 +66,12 @@ public sealed partial class MainViewModel : ViewModelBase
     private readonly IUnreadableDataService _unreadable;
     private readonly IMapLinkService _mapLinks;
     private readonly IAppAddressService _address;
+    private readonly IPinService _pinService;
     private readonly INotificationService _notifications;
     private bool _isInitialized;
     private string? _startLinkProblem;
 
-    public MainViewModel(WorldBarViewModel worldBar, MapViewModel map, LayersPanelViewModel layersPanel, SearchPanelViewModel searchPanel, AnalysisPanelViewModel analysisPanel, ExportViewModel exportPanel, SettingsViewModel settingsPanel, WorldSession session, ISettingsService settingsService, ISeedHistoryService seedHistory, ISeedParser seedParser, IUnreadableDataService unreadable, IMapLinkService mapLinks, IAppAddressService address, IWindowService windowService, INotificationService notificationService) : base(notificationService)
+    public MainViewModel(WorldBarViewModel worldBar, MapViewModel map, LayersPanelViewModel layersPanel, SearchPanelViewModel searchPanel, AnalysisPanelViewModel analysisPanel, ExportViewModel exportPanel, SettingsViewModel settingsPanel, WorldSession session, ISettingsService settingsService, ISeedHistoryService seedHistory, ISeedParser seedParser, IUnreadableDataService unreadable, IMapLinkService mapLinks, IAppAddressService address, IPinService pinService, IWindowService windowService, INotificationService notificationService) : base(notificationService)
     {
         CanUndockMap = windowService.HasWindows;
         WorldBar = worldBar;
@@ -85,6 +87,7 @@ public sealed partial class MainViewModel : ViewModelBase
         _unreadable = unreadable;
         _mapLinks = mapLinks;
         _address = address;
+        _pinService = pinService;
         _notifications = notificationService;
 
         Initialization = RunGuardedAsync(InitializeAsync);
@@ -122,6 +125,7 @@ public sealed partial class MainViewModel : ViewModelBase
         _session.PropertyChanged += OnSessionChanged;
         Map.PropertyChanged += OnMapChanged;
         _seedHistory.Changed += StoreView;
+        _pinService.Changed += ShowAddress;
         _isInitialized = true;
         if (isLinkOpened)
             StoreView();
@@ -152,11 +156,11 @@ public sealed partial class MainViewModel : ViewModelBase
             _notifications.ShowWarning(problem);
     }
 
-    /// <summary>Puts a link to the view in the address bar, where there is one.</summary>
+    /// <summary>Puts a link to the view and its pins in the address bar, where there is one.</summary>
     private void ShowAddress()
     {
         if (_address.HasAddressBar)
-            _address.ShowAddress(_mapLinks.Format(MapLink.Of(_session, Map.Camera), _address.LinkBase));
+            _address.ShowAddress(_mapLinks.Format(Map.GetLink(), _address.LinkBase));
     }
 
     private void ShowUnreadableCopies()
