@@ -1,7 +1,9 @@
 using Cubiomes_Viewer.Engine.Data.Search;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Extensions;
+using Cubiomes_Viewer.Engine.Service.LootServ;
 using Cubiomes_Viewer.Engine.Service.StructureServ;
+using Cubiomes_Viewer.Engine.Service.WorldGenServ;
 
 namespace Cubiomes_Viewer.Engine.Service.ConditionServ;
 
@@ -27,11 +29,13 @@ public sealed class StructureConditionEvaluator : ConditionEvaluator<StructureCo
 
     private readonly IStructureFinder _structureFinder;
     private readonly IStructureCatalog _structureCatalog;
+    private readonly ILootCatalog _lootCatalog;
 
-    public StructureConditionEvaluator(IStructureFinder structureFinder, IStructureCatalog structureCatalog)
+    public StructureConditionEvaluator(IStructureFinder structureFinder, IStructureCatalog structureCatalog, ILootCatalog lootCatalog)
     {
         _structureFinder = structureFinder;
         _structureCatalog = structureCatalog;
+        _lootCatalog = lootCatalog;
     }
 
     protected override Dimension GetDimension(StructureCondition condition, McVersion version)
@@ -55,6 +59,12 @@ public sealed class StructureConditionEvaluator : ConditionEvaluator<StructureCo
             yield return $"{name} does not generate in this version.";
         else if (CountRegionsAtMost(condition.Area, placement) > MaxRegions)
             yield return $"The area is too large for {name}: it may span at most {MaxRegions} regions of {placement.RegionBlocks} blocks.";
+
+        if (condition.Loot is { } loot)
+        {
+            foreach (var problem in LootProblems.Find(loot, condition.Type, name, definition.Version, _lootCatalog))
+                yield return problem;
+        }
     }
 
     protected override MatchStatus Evaluate(StructureCondition condition, BlockPos reference, SearchSeedContext context, SearchPass pass, List<BlockPos> matches)
@@ -73,12 +83,16 @@ public sealed class StructureConditionEvaluator : ConditionEvaluator<StructureCo
         {
             if (!condition.Area.Contains(reference, position))
                 continue;
-            if (generator is null || condition.Trait == StructureTrait.None || condition.Trait.IsIn(generator.DescribeStructure(condition.Type, position)))
+            if (generator is null || IsMatch(condition, generator, position))
                 matches.Add(position);
         }
 
         return pass == SearchPass.Quick ? DecideCandidates(condition, reference, matches) : Decide(condition, reference, matches);
     }
+
+    private static bool IsMatch(StructureCondition condition, IWorldGenerator generator, BlockPos position)
+        => (condition.Trait == StructureTrait.None || condition.Trait.IsIn(generator.DescribeStructure(condition.Type, position)))
+            && (condition.Loot is not { } loot || LootMatcher.Holds(generator, condition.Type, position, loot));
 
     /// <summary>The most regions the area can touch wherever its reference point lies.</summary>
     private static long CountRegionsAtMost(SearchArea area, StructurePlacement placement)

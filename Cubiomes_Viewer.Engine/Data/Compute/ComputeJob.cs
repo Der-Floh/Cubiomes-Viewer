@@ -11,6 +11,7 @@ namespace Cubiomes_Viewer.Engine.Data.Compute;
 [JsonDerivedType(typeof(TileJob), "tile")]
 [JsonDerivedType(typeof(StructureAreaJob), "structureArea")]
 [JsonDerivedType(typeof(StructureDetailsJob), "structureDetails")]
+[JsonDerivedType(typeof(StructureLootJob), "structureLoot")]
 [JsonDerivedType(typeof(LandmarksJob), "landmarks")]
 [JsonDerivedType(typeof(EndGatewaysJob), "endGateways")]
 [JsonDerivedType(typeof(SlimeAreaJob), "slimeArea")]

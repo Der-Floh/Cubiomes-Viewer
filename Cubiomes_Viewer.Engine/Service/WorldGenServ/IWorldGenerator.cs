@@ -1,4 +1,5 @@
 using Cubiomes_Viewer.Engine.Data;
+using Cubiomes_Viewer.Engine.Data.Loot;
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Data.Worlds;
@@ -87,6 +88,19 @@ public interface IWorldGenerator : IDisposable
     /// from generating. The dimension of the structure type must be applied.
     /// </summary>
     int? FindStructureFloor(StructureType type, BlockPos position);
+
+    /// <summary>
+    /// Rolls what the containers of a structure found by <see cref="FindStructures"/>, or of a stronghold, hold when they are first
+    /// opened. <see langword="null"/> when the generator cannot tell the loot of the type in the version, or of this structure.
+    /// The dimension of the structure type must be applied.
+    /// </summary>
+    StructureLoot? FindLoot(StructureType type, BlockPos position);
+
+    /// <summary>
+    /// Counts the items a query asks for in the containers of a structure, as <see cref="FindLoot"/> would roll them, without
+    /// listing them. <see langword="null"/> where <see cref="FindLoot"/> is.
+    /// </summary>
+    LootCount? CountLoot(StructureType type, BlockPos position, LootQuery query);
 
     /// <summary>
     /// Finds the gateways around the main End island and where they lead, in the order they appear.

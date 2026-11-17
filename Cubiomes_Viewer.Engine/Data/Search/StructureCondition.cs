@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 using Cubiomes_Viewer.Engine.Data.Worlds;
 
 namespace Cubiomes_Viewer.Engine.Data.Search;
@@ -9,4 +11,8 @@ public sealed record StructureCondition : SearchCondition
 
     /// <summary>What the structures have to have besides their type; only the full pass can tell.</summary>
     public StructureTrait Trait { get; init; } = StructureTrait.None;
+
+    /// <summary>An item the containers of the structures have to hold; only the full pass can tell.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public LootRequirement? Loot { get; init; }
 }

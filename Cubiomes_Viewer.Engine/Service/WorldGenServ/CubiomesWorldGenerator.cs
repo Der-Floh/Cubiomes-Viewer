@@ -1,5 +1,6 @@
 using System.Buffers;
 
+using Cubiomes_Viewer.Engine.Data.Loot;
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Data.Worlds;
@@ -14,6 +15,9 @@ public sealed class CubiomesWorldGenerator : IWorldGenerator
     private const int EndGatewayCount = 20;
     private const int ValuesPerGateway = 4;
     private const int UnknownHeight = 320;
+    private const int LootContainerCapacity = 64;
+    private const int MaxLootContainerCapacity = 4_096;
+    private const int StacksPerContainer = 27;
     private const int Supported = 1;
 
     public McVersion Version { get; }
@@ -122,6 +126,29 @@ public sealed class CubiomesWorldGenerator : IWorldGenerator
         int y;
         var found = CubiomesNative.StructureFloor(World, (int)type, position.X, position.Z, &y);
         return CubiomesNativeException.ThrowIfError(found, nameof(FindStructureFloor)) > 0 ? y : null;
+    }
+
+    public StructureLoot? FindLoot(StructureType type, BlockPos position)
+    {
+        var capacity = LootContainerCapacity;
+        StructureLoot? loot;
+        while (!TryFindLoot(type, position, capacity, out loot))
+            capacity *= 2;
+
+        return loot;
+    }
+
+    public unsafe LootCount? CountLoot(StructureType type, BlockPos position, LootQuery query)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+
+        var native = NativeLootConverter.ToNativeQuery(query);
+        int most, total;
+        var containers = CubiomesNative.StructureLootCount(World, (int)type, position.X, position.Z, &native, &most, &total);
+        if (containers == (int)NativeStatus.Unsupported)
+            return null;
+
+        return new LootCount(CubiomesNativeException.ThrowIfError(containers, nameof(CountLoot)), most, total);
     }
 
     public bool CanGenerateStructure(StructureType type, BlockPos position)
@@ -272,6 +299,35 @@ public sealed class CubiomesWorldGenerator : IWorldGenerator
         finally
         {
             ArrayPool<NativePiece>.Shared.Return(buffer);
+        }
+    }
+
+    /// <returns><see langword="false"/> when the structure has more containers than <paramref name="capacity"/>.</returns>
+    private unsafe bool TryFindLoot(StructureType type, BlockPos position, int capacity, out StructureLoot? loot)
+    {
+        var containers = ArrayPool<NativeLootContainer>.Shared.Rent(capacity);
+        var stacks = ArrayPool<NativeLootStack>.Shared.Rent(capacity * StacksPerContainer);
+        try
+        {
+            int count;
+            fixed (NativeLootContainer* containerBuffer = containers)
+            fixed (NativeLootStack* stackBuffer = stacks)
+                count = CubiomesNative.StructureLoot(World, (int)type, position.X, position.Z, containerBuffer, containers.Length, stackBuffer, stacks.Length);
+
+            loot = null;
+            if (count == (int)NativeStatus.InsufficientCapacity && capacity < MaxLootContainerCapacity)
+                return false;
+            if (count == (int)NativeStatus.Unsupported)
+                return true;
+
+            count = CubiomesNativeException.ThrowIfError(count, nameof(FindLoot));
+            loot = StructureLoot.Of(NativeLootConverter.ToContainers(containers.AsSpan(0, count), stacks, Version));
+            return true;
+        }
+        finally
+        {
+            ArrayPool<NativeLootStack>.Shared.Return(stacks);
+            ArrayPool<NativeLootContainer>.Shared.Return(containers);
         }
     }
 

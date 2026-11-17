@@ -176,4 +176,60 @@ internal static unsafe partial class CubiomesNative
     [LibraryImport(LibraryName, EntryPoint = "cv_slime_chunks")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial int SlimeChunks(ulong seed, int chunkX, int chunkZ, int sizeX, int sizeZ, byte* destination, int capacity);
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_loot_supported")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int LootSupported(int structureType, int version);
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_structure_loot")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int StructureLoot(nint world, int structureType, int x, int z, NativeLootContainer* containers, int containerCapacity, NativeLootStack* stacks, int stackCapacity);
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_structure_loot_count")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int StructureLootCount(nint world, int structureType, int x, int z, NativeLootQuery* query, int* most, int* total);
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_loot_items")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int LootItems(int structureType, int version, int* items, int* kinds, int capacity);
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_loot_enchantments")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int LootEnchantments(int structureType, int version, int item, int* enchantments, int* levels, int capacity);
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_loot_item_count")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int LootItemCount();
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_loot_item_name")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial nint LootItemName(int item, int version);
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_loot_enchantment_count")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int LootEnchantmentCount();
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_loot_enchantment_name")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial nint LootEnchantmentName(int enchantment);
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_loot_enchantment_max_level")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int LootEnchantmentMaxLevel(int enchantment);
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_loot_effect_count")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int LootEffectCount();
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_loot_effect_name")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial nint LootEffectName(int effect);
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_loot_table_count")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial int LootTableCount();
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_loot_table_name")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial nint LootTableName(int table);
 }

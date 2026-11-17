@@ -8,8 +8,8 @@ namespace Cubiomes_Viewer.Cli.Tests;
 
 /// <summary>
 /// Session files as the app saves them: example presets of the app cut down to a few seeds, written by the engine's
-/// session repository. They cover seed ranges and structure seeds, structures, biomes, the spawn, strongholds and
-/// slime chunks.
+/// session repository. They cover seed ranges and structure seeds, structures, biomes, the spawn, strongholds, slime
+/// chunks and chest loot.
 /// </summary>
 internal static class FixtureSessions
 {
@@ -18,7 +18,7 @@ internal static class FixtureSessions
     private const string Folder = "Fixtures";
     private const string Extension = ".json";
 
-    public static IReadOnlyList<string> Names { get; } = [SlimeChunks, "village-by-spawn", "mushroom-fields", "four-villages", "end-ship", "stronghold"];
+    public static IReadOnlyList<string> Names { get; } = [SlimeChunks, "village-by-spawn", "mushroom-fields", "four-villages", "end-ship", "stronghold", "chest-loot"];
 
     private static readonly SearchSessionRepository _repository = new(new FileSystemAppDataStore(Path.GetTempPath()));
 

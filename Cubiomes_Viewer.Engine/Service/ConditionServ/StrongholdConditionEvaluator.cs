@@ -1,12 +1,13 @@
 using Cubiomes_Viewer.Engine.Data.Search;
 using Cubiomes_Viewer.Engine.Data.Worlds;
+using Cubiomes_Viewer.Engine.Service.LootServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
 
 namespace Cubiomes_Viewer.Engine.Service.ConditionServ;
 
 /// <summary>
-/// Strongholds in an area, optionally with eyes of ender already in their end portal. They move to suitable biomes, so the
-/// quick pass cannot tell.
+/// Strongholds in an area, optionally with eyes of ender already in their end portal or an item in their chests. They move to
+/// suitable biomes, so the quick pass cannot tell.
 /// </summary>
 public sealed class StrongholdConditionEvaluator : ConditionEvaluator<StrongholdCondition>
 {
@@ -19,6 +20,7 @@ public sealed class StrongholdConditionEvaluator : ConditionEvaluator<Stronghold
     /// <summary>How much further out each following ring lies.</summary>
     public const int RingSpacingBlocks = 3072;
 
+    private const string StrongholdName = "Stronghold";
     private const McVersion FirstVersion = McVersion.Beta1_8;
     private const McVersion FirstRingVersion = McVersion.V1_9_4;
     private const McVersion FirstPortalEyesVersion = McVersion.V1_13_2;
@@ -31,12 +33,19 @@ public sealed class StrongholdConditionEvaluator : ConditionEvaluator<Stronghold
     public override ConditionDescriptor Descriptor { get; } = new()
     {
         ConditionType = typeof(StrongholdCondition),
-        Name = "Stronghold",
+        Name = StrongholdName,
         Description = "Strongholds lie in the area, optionally with eyes of ender already in their end portal.",
         Create = id => new StrongholdCondition { Id = id, Area = SearchArea.Circle(DefaultRadius) },
         Cost = SearchCost,
         MaxCount = MaxMatches,
     };
+
+    private readonly ILootCatalog _lootCatalog;
+
+    public StrongholdConditionEvaluator(ILootCatalog lootCatalog)
+    {
+        _lootCatalog = lootCatalog;
+    }
 
     /// <summary>How many strongholds, in generation order, can lie within a distance of the world origin.</summary>
     public static int CountStrongholdsWithin(McVersion version, double blocks)
@@ -53,11 +62,21 @@ public sealed class StrongholdConditionEvaluator : ConditionEvaluator<Stronghold
     protected override IEnumerable<string> Validate(StrongholdCondition condition, SearchDefinition definition)
     {
         if (definition.Version < FirstVersion)
+        {
             yield return "This version has no strongholds.";
-        else if (condition.PortalEyes is < 0 or > StrongholdCondition.PortalFrames)
+            yield break;
+        }
+
+        if (condition.PortalEyes is < 0 or > StrongholdCondition.PortalFrames)
             yield return "An end portal has 12 frames for eyes of ender.";
         else if (condition.PortalEyes > 0 && definition.Version < FirstPortalEyesVersion)
             yield return "The eyes in a stronghold's end portal are known from 1.13 on.";
+
+        if (condition.Loot is { } loot)
+        {
+            foreach (var problem in LootProblems.Find(loot, StructureType.Stronghold, StrongholdName, definition.Version, _lootCatalog))
+                yield return problem;
+        }
     }
 
     protected override MatchStatus Evaluate(StrongholdCondition condition, BlockPos reference, SearchSeedContext context, SearchPass pass, List<BlockPos> matches)
@@ -70,12 +89,16 @@ public sealed class StrongholdConditionEvaluator : ConditionEvaluator<Stronghold
         var count = strongholds.Length == 0 ? 0 : generator.FindStrongholds(strongholds);
         foreach (var stronghold in strongholds[..count])
         {
-            if (condition.Area.Contains(reference, stronghold) && HasPortalEyes(generator, stronghold, condition.PortalEyes))
+            if (condition.Area.Contains(reference, stronghold) && IsMatch(condition, generator, stronghold))
                 matches.Add(stronghold);
         }
 
         return Decide(condition, reference, matches);
     }
+
+    private static bool IsMatch(StrongholdCondition condition, IWorldGenerator generator, BlockPos stronghold)
+        => HasPortalEyes(generator, stronghold, condition.PortalEyes)
+            && (condition.Loot is not { } loot || LootMatcher.Holds(generator, StructureType.Stronghold, stronghold, loot));
 
     private static bool HasPortalEyes(IWorldGenerator generator, BlockPos stronghold, int eyes)
         => eyes == 0 || generator.DescribeStructure(StructureType.Stronghold, stronghold).Variant?.PortalEyes >= eyes;

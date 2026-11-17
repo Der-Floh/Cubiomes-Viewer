@@ -11,7 +11,7 @@
 #define CV_API
 #endif
 
-#define CV_ABI_VERSION 14
+#define CV_ABI_VERSION 15
 
 #define CV_BIOME_NONE 255
 #define CV_BIOME_COLOR_BYTES 768
@@ -74,6 +74,35 @@ typedef struct cv_piece
     int32_t x0, y0, z0;
     int32_t x1, y1, z1;
 } cv_piece;
+
+#define CV_LOOT_STACKS 27
+#define CV_LOOT_ENCHANTMENTS 16
+#define CV_LOOT_PLAIN 1
+#define CV_LOOT_ENCHANTED 2
+
+/* One stack of items in a container: loot item, count, a potion or stew effect (-1 for none) and its duration in
+   ticks, and the enchantments with their levels. */
+typedef struct cv_loot_stack
+{
+    int32_t item, count, effect, effect_ticks;
+    int32_t enchantment_count;
+    int32_t enchantments[CV_LOOT_ENCHANTMENTS];
+    int32_t levels[CV_LOOT_ENCHANTMENTS];
+} cv_loot_stack;
+
+/* One chest, barrel or dispenser: its loot table (cv_loot_table_name), where it stands, and its stacks. */
+typedef struct cv_loot_container
+{
+    int32_t table, x, z;
+    int32_t first_stack, stack_count;
+} cv_loot_container;
+
+/* Stacks of a loot item that count: kinds is CV_LOOT_PLAIN, CV_LOOT_ENCHANTED or both; with an enchantment above 0
+   only stacks carrying it at min_level or higher count. */
+typedef struct cv_loot_query
+{
+    int32_t item, kinds, enchantment, min_level;
+} cv_loot_query;
 
 #ifdef __cplusplus
 extern "C"
@@ -157,6 +186,33 @@ CV_API int32_t cv_structure_pieces(cv_world *world, int32_t stype, int32_t x, in
    fossils and, from 1.14, woodland mansions. Returns 1 when written, 0 when not known or when the terrain keeps the
    structure from generating. */
 CV_API int32_t cv_structure_floor(cv_world *world, int32_t stype, int32_t x, int32_t z, int32_t *y);
+
+/* The loot of structure chests (cv_loot.inc), from 1.13 on and only for the types whose chests cubiomes places.
+   cv_loot_supported returns 1 when a type's loot can be read in a version. cv_structure_loot writes the containers of
+   a structure and their stacks and returns how many containers there are; CV_ERR_UNSUPPORTED where the loot cannot be
+   told. cv_structure_loot_count rolls the same chests and writes how many matching items lie in the fullest
+   container and in all of them together. */
+CV_API int32_t cv_loot_supported(int32_t stype, int32_t mc);
+CV_API int32_t cv_structure_loot(cv_world *world, int32_t stype, int32_t x, int32_t z, cv_loot_container *containers,
+    int32_t container_capacity, cv_loot_stack *stacks, int32_t stack_capacity);
+CV_API int32_t cv_structure_loot_count(cv_world *world, int32_t stype, int32_t x, int32_t z, const cv_loot_query *query,
+    int32_t *most, int32_t *total);
+
+/* What the chests of a structure type can hold in a version: each loot item with the kinds it comes in, and for one
+   item the enchantments it can carry with the highest level of each. */
+CV_API int32_t cv_loot_items(int32_t stype, int32_t mc, int32_t *items, int32_t *kinds, int32_t capacity);
+CV_API int32_t cv_loot_enchantments(int32_t stype, int32_t mc, int32_t item, int32_t *enchantments, int32_t *levels, int32_t capacity);
+
+/* Names of loot items ("minecraft:diamond"), enchantments ("mending"), effects and tables; NULL for an unknown id. */
+CV_API int32_t cv_loot_item_count(void);
+CV_API const char *cv_loot_item_name(int32_t item, int32_t mc);
+CV_API int32_t cv_loot_enchantment_count(void);
+CV_API const char *cv_loot_enchantment_name(int32_t enchantment);
+CV_API int32_t cv_loot_enchantment_max_level(int32_t enchantment);
+CV_API int32_t cv_loot_effect_count(void);
+CV_API const char *cv_loot_effect_name(int32_t effect);
+CV_API int32_t cv_loot_table_count(void);
+CV_API const char *cv_loot_table_name(int32_t table);
 
 /* The 20 gateways around the main End island in generation order, each followed by the gateway it leads to:
    4 values (x, z, linked x, linked z) per gateway. The world must be applied to the End. */

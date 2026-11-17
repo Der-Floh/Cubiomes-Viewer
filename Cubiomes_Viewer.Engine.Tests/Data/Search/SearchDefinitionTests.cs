@@ -24,6 +24,18 @@ public sealed class SearchDefinitionTests
     }
 
     [Fact]
+    public void Equals_LootDiffers_IsNotEqual()
+    {
+        var requirement = new LootRequirement { Item = "minecraft:diamond", MinCount = 5 };
+        var condition = new StructureCondition { Id = 1, Type = StructureType.EndCity, Loot = requirement };
+
+        Assert.Equal(condition, condition with { Loot = requirement with { } });
+        Assert.NotEqual(condition, condition with { Loot = null });
+        Assert.NotEqual(condition, condition with { Loot = requirement with { Scope = LootScope.AllChests } });
+        Assert.NotEqual(condition, condition with { Loot = requirement with { Enchantment = new LootEnchantment { Id = "minecraft:mending" } } });
+    }
+
+    [Fact]
     public void Flags_LargeBiomes_KeepTheOceanVariantsOfTheMap()
     {
         Assert.Equal(GeneratorFlags.ForceOceanVariants, new SearchDefinition().Flags);

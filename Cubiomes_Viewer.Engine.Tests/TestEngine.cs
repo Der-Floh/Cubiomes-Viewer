@@ -2,6 +2,7 @@ using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Service.ConditionServ;
 using Cubiomes_Viewer.Engine.Service.SearchServ;
 using Cubiomes_Viewer.Engine.Service.LayerServ;
+using Cubiomes_Viewer.Engine.Service.LootServ;
 using Cubiomes_Viewer.Engine.Service.StructureServ;
 using Cubiomes_Viewer.Engine.Service.TileServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
@@ -19,14 +20,14 @@ internal static class TestEngine
 
     public static ConditionRegistry CreateConditionRegistry() => new(
     [
-        new StructureConditionEvaluator(new CubiomesStructureFinder(), CreateStructureCatalog()),
+        new StructureConditionEvaluator(new CubiomesStructureFinder(), CreateStructureCatalog(), new LootCatalog()),
         new QuadHutConditionEvaluator(new CubiomesQuadFinder(), new CubiomesStructureFinder(), CreateStructureCatalog()),
         new BiomeConditionEvaluator(new BiomeCatalog()),
         new BiomePatchConditionEvaluator(new BiomeCatalog()),
         new ClimateConditionEvaluator(CreateLayerCatalog()),
         new TemperatureCategoryConditionEvaluator(),
         new SpawnConditionEvaluator(),
-        new StrongholdConditionEvaluator(),
+        new StrongholdConditionEvaluator(new LootCatalog()),
         new SlimeChunkConditionEvaluator(new CubiomesSlimeChunkFinder()),
         new AnyOfConditionEvaluator(),
     ]);

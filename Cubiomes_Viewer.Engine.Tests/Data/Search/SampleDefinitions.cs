@@ -18,13 +18,20 @@ internal static class SampleDefinitions
             new StructureCondition { Id = 1, Type = StructureType.Village, Trait = StructureTrait.Abandoned, Area = SearchArea.Circle(500), Count = 2, Anchor = MatchAnchor.Nearest },
             new BiomeCondition { Id = 2, RelativeTo = 1, Biomes = BiomeSet.Of(1, 129), Match = BiomeMatch.All, Dimension = Dimension.Overworld, Scale = 4, Y = 80, MinShare = 0.35, Samples = 750 },
             new SpawnCondition { Id = 3, Area = SearchArea.Rectangle(-10, -20, 30, 40) },
-            new StrongholdCondition { Id = 4, Count = 0, PortalEyes = 3 },
+            new StrongholdCondition
+            {
+                Id = 4,
+                Count = 0,
+                PortalEyes = 3,
+                Loot = new LootRequirement { Item = "minecraft:enchanted_book", MinCount = 2, Scope = LootScope.AllChests, Enchantment = new LootEnchantment { Id = "minecraft:unbreaking", MinLevel = 2 } },
+            },
             new AnyOfCondition { Id = 5 },
             new SlimeChunkCondition { Id = 6, RelativeTo = 5, Count = 12, Anchor = MatchAnchor.Center },
             new QuadHutCondition { Id = 7, Type = StructureType.Igloo, Quality = QuadQuality.Classic, Count = 2 },
             new BiomePatchCondition { Id = 9, Biomes = BiomeSet.Of(21, 149), Dimension = Dimension.Overworld, MinChunks = 450, Scale = 64, Y = 100, Count = 3, Anchor = MatchAnchor.Center },
             new TemperatureCategoryCondition { Id = 10, RelativeTo = 9, Category = TemperatureCategory.SpecialWarm, Area = SearchArea.Circle(5000), Count = 2, Anchor = MatchAnchor.Nearest },
             new ClimateCondition { Id = 8, RelativeTo = 7, Parameter = ClimateParameter.Erosion, Min = -0.375, Max = 0.05, Match = ClimateMatch.OnAverage, Scale = 16, Y = -20, Count = 0 },
+            new StructureCondition { Id = 11, Type = StructureType.EndCity, Area = SearchArea.Square(3000), Loot = new LootRequirement { Item = "minecraft:diamond", MinCount = 5 } },
         ],
     };
 }

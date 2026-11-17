@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Cubiomes_Viewer.Engine.Data.Analysis;
 using Cubiomes_Viewer.Engine.Data.Compute;
 using Cubiomes_Viewer.Engine.Data.Export;
+using Cubiomes_Viewer.Engine.Data.Loot;
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Search;
 using Cubiomes_Viewer.Engine.Data.SelfTests;
@@ -15,6 +16,7 @@ namespace Cubiomes_Viewer.Engine.Service.ComputeServ;
 [JsonSerializable(typeof(TileData))]
 [JsonSerializable(typeof(StructureAreaData))]
 [JsonSerializable(typeof(StructureDetails))]
+[JsonSerializable(typeof(StructureLoot))]
 [JsonSerializable(typeof(WorldLandmarks))]
 [JsonSerializable(typeof(EndGatewayData))]
 [JsonSerializable(typeof(SlimeAreaData))]
