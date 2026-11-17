@@ -18,7 +18,7 @@ internal static class SampleDefinitions
             new StructureCondition { Id = 1, Type = StructureType.Village, Trait = StructureTrait.Abandoned, Area = SearchArea.Circle(500), Count = 2, Anchor = MatchAnchor.Nearest },
             new BiomeCondition { Id = 2, RelativeTo = 1, Biomes = BiomeSet.Of(1, 129), Match = BiomeMatch.All, Dimension = Dimension.Overworld, Scale = 4, Y = 80, MinShare = 0.35, Samples = 750 },
             new SpawnCondition { Id = 3, Area = SearchArea.Rectangle(-10, -20, 30, 40) },
-            new StrongholdCondition { Id = 4, Count = 0 },
+            new StrongholdCondition { Id = 4, Count = 0, PortalEyes = 3 },
             new AnyOfCondition { Id = 5 },
             new SlimeChunkCondition { Id = 6, RelativeTo = 5, Count = 12, Anchor = MatchAnchor.Center },
             new QuadHutCondition { Id = 7, Type = StructureType.Igloo, Quality = QuadQuality.Classic, Count = 2 },
