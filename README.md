@@ -19,24 +19,25 @@ A cross-platform Minecraft Java Edition seed finder and biome map viewer, built 
 
 ### Map
 
-- Zoom from single blocks out to whole regions, and drag with the left or right mouse button; on a touch screen, drag with one finger and pinch to zoom.
-- The world bar sets the seed (or a random one), version, large biomes, dimension and the Y level biomes are read at; Shift + mouse wheel steps the Y level.
+- Zoom from single blocks out to whole regions with the wheel, the buttons or a double-click (with Shift it zooms out), and drag with the left or right mouse button; on a touch screen, drag with one finger and pinch to zoom.
+- **Back and Forward** return the map to where it was before a jump, such as opening a found seed, an analysis line or a recent seed, and go there again; moving the map by hand stays within a step. On the desktop the mouse's side buttons and Alt+Left/Right do the same, on Android the Back gesture, and in the browser its own Back and Forward.
+- The world bar sets the seed (or a random one), version, large biomes, dimension and the Y level biomes are read at; Shift + mouse wheel steps the Y level. A typed seed waits with an arrow until Enter opens it, and Esc puts the open one back.
 - The status bar shows the biome or value, block and chunk under the pointer, the map scale and the app version. While an image export, an analysis or a seed search through a limited range of seeds runs, it fills from the left to show how far it has come.
 - Layers: biomes, structure potential, climate parameters (temperature, humidity, continentalness, erosion, depth, weirdness), rivers, ocean temperatures and surface height, as far as the version has them.
 - Surface heights can be tinted, shaded, drawn as contour lines or in grey. Settings → Map can also shade the biome map by terrain height.
-- Markers for the structure types you choose, down to their variants (such as nether fossils with a dried ghast, from 1.21.6), plus the world spawn, strongholds, slime chunks and End gateways.
+- Markers for the structure types you choose, down to their variants (such as nether fossils with a dried ghast, from 1.21.6), plus the world spawn, strongholds, slime chunks and End gateways. Markers and pins too close together to tell apart show as one with their number, and clicking it zooms in on them.
 - Clicking a structure shows its variant and its Y level, and draws the rooms of end cities, fortresses, strongholds and mineshafts on the map; a stronghold also tells where its portal room is and, from 1.13, how many eyes of ender its end portal already holds.
 - With Settings → Map → Show what chests hold, the callout also lists the chests of desert pyramids, jungle temples, igloos, pillager outposts, shipwrecks, buried treasure, ruined portals, mineshafts, fortresses, bastions, end cities, strongholds and abandoned camps, each with what the game fills it with when it is first opened, from 1.13 on (outposts from 1.14, ruined portals from 1.16, bastions from 1.16.5, Nether ruined portals from 1.18, camps from 26.3). Chests have no Y; ruined portal and camp chests stand at estimated places, mineshafts may list a few minecarts the game leaves out, and bastions only the chests every bastion of their kind has.
 - The Y level is exact where the game fixes it or the terrain decides it: ancient cities, monuments, bastions, trial chambers, nether fossils, end cities, villages, woodland mansions and, from 1.20, jungle temples and swamp huts. Desert pyramids from 1.18 and some fortresses show the few levels the game picks from by chance, and other structures on the ground an estimate (≈). Exact terrain needs 1.14 or later; strongholds, mineshafts and ruined portals have no Y.
 - Biomes in the default colours or in colour maps of your own, edited live on the map and shared as JSON files.
-- On the desktop, the map can move into a window of its own, for a second screen.
+- On the desktop, the map can move into a window of its own, for a second screen, and the side panel can be dragged wider at its edge.
 
 ### Right-click menu
 
 Opens with a right-click on the map, or on a touch screen by touching and holding the map.
 
 - Copy the block's coordinates, `/tp` command, chunk, region file or the seed.
-- Put a pin on the block, or measure the distance to another one. Pins and measurements are kept per seed and dimension and can be named.
+- Put a pin on the block, or measure the distance to another one. Pins and measurements are kept per seed and dimension and can be named; the Layers panel lists the pins of the map, and choosing one goes there.
 - **Copy link to this spot**: opens the web version on the same world and view, with up to 100 pins of that map, for example `https://der-floh.github.io/Cubiomes-Viewer/?seed=262&version=1.21.3&dimension=nether&x=100&z=-50&scale=4&pin=120,-40,Base`. A link pasted into the seed box opens the same way, on the desktop too. Opening a link adds its pins to yours, except on blocks that have a pin already.
 - **Find nearest structure or biome**: like the game's `/locate`, as far out as the game looks. The map then flies to the result.
 - **Open in the Nether or Overworld**: the matching spot in the other dimension, for planning portals.
