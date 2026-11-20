@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Globalization;
 
 using Avalonia.Platform.Storage;
@@ -63,6 +64,7 @@ public abstract partial class AnalysisTabViewModel : ViewModelBase
     private readonly INotificationService _notifications;
     private CancellationTokenSource? _stopping;
     private CsvTable? _table;
+    private bool _isOpening;
 
     protected AnalysisTabViewModel(AnalysisScopeViewModel scope, WorldSession session, MapViewModel map, ISeedHistoryService seedHistory, IStorageService storage, ICsvService csv, ISettingsService settingsService, IProgressService progress, INotificationService notifications) : base(notifications)
     {
@@ -75,6 +77,7 @@ public abstract partial class AnalysisTabViewModel : ViewModelBase
         _csv = csv;
         _progress = progress;
         _notifications = notifications;
+        map.PropertyChanged += OnMapChanged;
     }
 
     /// <summary>Runs the analysis on the scope's seeds in the view the map showed when the run started.</summary>
@@ -147,18 +150,34 @@ public abstract partial class AnalysisTabViewModel : ViewModelBase
         StatusText = result.Status;
     }
 
-    /// <summary>Shows the seed of the line, in its version, dimension and biome size, at the place of the line.</summary>
+    /// <summary>Shows the seed of the line, in its version, dimension and biome size, at the place of the line, and picks what the line found there.</summary>
     partial void OnSelectedRowChanged(AnalysisRow? value)
     {
         if (value is null)
             return;
 
-        _session.Version = value.World.Version;
-        _session.LargeBiomes = value.World.Flags.HasFlag(GeneratorFlags.LargeBiomes);
-        _session.Dimension = value.World.Dimension;
-        _session.Seed = value.World.Seed;
-        _seedHistory.Add(value.World.Seed);
-        if (value.Position is { } position)
-            _map.GoTo(position.X, position.Z);
+        _isOpening = true;
+        try
+        {
+            _session.Version = value.World.Version;
+            _session.LargeBiomes = value.World.Flags.HasFlag(GeneratorFlags.LargeBiomes);
+            _session.Dimension = value.World.Dimension;
+            _session.Seed = value.World.Seed;
+            _seedHistory.Add(value.World.Seed);
+            if (value.Position is { } position)
+                _map.GoTo(position.X, position.Z);
+            _map.Selection = value.Pick;
+        }
+        finally
+        {
+            _isOpening = false;
+        }
+    }
+
+    /// <summary>Lets go of the chosen line once the map picks something else or nothing, so that choosing the line again opens it again.</summary>
+    private void OnMapChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (!_isOpening && e.PropertyName == nameof(MapViewModel.Selection) && SelectedRow is { } row && !Equals(_map.Selection, row.Pick))
+            SelectedRow = null;
     }
 }

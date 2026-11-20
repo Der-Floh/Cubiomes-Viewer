@@ -119,6 +119,25 @@ public sealed class MapHostViewTests : IDisposable
     }
 
     [AvaloniaFact]
+    public async Task PickedStronghold_WhileStrongholdsAreHidden_IsDrawnUntilTheMapIsClickedBeside()
+    {
+        var styleService = _services.GetRequiredService<IMapStyleService>();
+        var stronghold = await ShowFirstStrongholdAtTheCenterAsync();
+        (_map.ShowStrongholds, _map.ShowSpawn, _map.VisibleStructures) = (false, false, new HashSet<StructureType>());
+        var hidden = CaptureAroundTheCenter();
+
+        _map.Selection = MapSelection.ForStronghold(0, styleService.Stronghold, stronghold);
+        var picked = CaptureAroundTheCenter();
+        Click(new Point(ViewSize / 4, ViewSize * 3 / 4));
+        Dispatcher.UIThread.RunJobs();
+
+        var changed = hidden.Zip(picked).Count(pair => pair.First != pair.Second);
+        Assert.True(changed > hidden.Length / 2, $"Only {changed} of {hidden.Length} pixels around the stronghold changed when it was picked.");
+        Assert.Null(_map.Selection);
+        Assert.Equal(hidden, CaptureAroundTheCenter());
+    }
+
+    [AvaloniaFact]
     public async Task Click_BesideTheMarkers_ClosesTheCallout()
     {
         await ShowSpawnAtTheCenterAsync();
@@ -655,6 +674,26 @@ public sealed class MapHostViewTests : IDisposable
         var spawn = Assert.NotNull(landmarks?.Spawn);
         ShowAtTheCenter(spawn);
         return spawn;
+    }
+
+    private async Task<BlockPos> ShowFirstStrongholdAtTheCenterAsync()
+    {
+        var landmarkService = _services.GetRequiredService<IWorldLandmarkService>();
+        await TestWait.UntilAsync(() => landmarkService.TryGetLandmarks(_map.World, out _), "The landmarks were not found in time.");
+        landmarkService.TryGetLandmarks(_map.World, out var landmarks);
+
+        Assert.NotNull(landmarks);
+        var stronghold = landmarks.Strongholds[0];
+        ShowAtTheCenter(stronghold);
+        return stronghold;
+    }
+
+    /// <summary>The colours of the square of pixels a normal marker covers in the middle of the view.</summary>
+    private RgbColor[] CaptureAroundTheCenter()
+    {
+        var half = (int)(_services.GetRequiredService<IMapStyleService>().GetMarkerSize(GetMapView().GetPixelGrid()) / 2);
+        using var frame = CaptureFrame();
+        return [.. Enumerable.Range(-half, 2 * half).SelectMany(dy => Enumerable.Range(-half, 2 * half).Select(dx => FramePixels.Read(frame, (int)_center.X + dx, (int)_center.Y + dy)))];
     }
 
     private async Task<EndGateway> ShowFirstGatewayAtTheCenterAsync()

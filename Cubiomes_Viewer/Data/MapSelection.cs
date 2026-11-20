@@ -14,6 +14,7 @@ public sealed record MapSelection(string Name, MapMarker? Marker, BlockPos Posit
     MapMeasurement? Measurement = null, PinLook? SpotLook = null)
 {
     public const string PinName = "Pin";
+    public const string SpawnName = "World spawn";
     public const string StrongholdName = "Stronghold";
     public const string MeasurementName = "Measurement";
 
@@ -44,6 +45,12 @@ public sealed record MapSelection(string Name, MapMarker? Marker, BlockPos Posit
         ArgumentNullException.ThrowIfNull(marker);
 
         return new MapSelection($"{StrongholdName} {index + 1}", marker, position, StructureType.Stronghold, Note: note);
+    }
+
+    public static MapSelection ForSpawn(MapMarker marker, BlockPos position)
+    {
+        ArgumentNullException.ThrowIfNull(marker);
+        return new MapSelection(SpawnName, marker, position);
     }
 
     public static MapSelection ForPin(MapPin pin)

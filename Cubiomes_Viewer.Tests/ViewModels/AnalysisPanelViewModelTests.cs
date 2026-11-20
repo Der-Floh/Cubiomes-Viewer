@@ -9,6 +9,7 @@ using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.AnalysisServ;
 using Cubiomes_Viewer.Engine.Service.SearchServ;
 using Cubiomes_Viewer.Service.NotificationServ;
+using Cubiomes_Viewer.Service.MapStyleServ;
 using Cubiomes_Viewer.Service.ProgressServ;
 using Cubiomes_Viewer.Service.StorageServ;
 using Cubiomes_Viewer.ViewModels;
@@ -96,7 +97,7 @@ public sealed class AnalysisPanelViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task Biomes_LineChosen_OpensTheSeedAtTheNearestSample()
+    public async Task Biomes_LineOfAnotherSeedChosen_OpensTheSeedAtTheNearestSampleAndStaysChosen()
     {
         await Biomes.RunCommand.ExecuteAsync(null);
         _session.Seed = 7;
@@ -105,8 +106,79 @@ public sealed class AnalysisPanelViewModelTests : IDisposable
         Biomes.SelectedRow = row;
 
         var position = Assert.NotNull(row.Position);
+        Assert.Same(row, Biomes.SelectedRow);
         Assert.Equal(Seed, _session.Seed);
         Assert.Equal((position.X, position.Z), ((int)_map.Camera.CenterX, (int)_map.Camera.CenterZ));
+        var pick = _map.Selection;
+        Assert.NotNull(pick);
+        Assert.True(pick.IsSpot);
+        Assert.Equal((row.Title, position), (pick.Name, pick.Position));
+    }
+
+    [AvaloniaFact]
+    public async Task Structures_LineChosen_PicksTheStructureWhileItsMarkersAreHidden()
+    {
+        _map.VisibleStructures = new HashSet<StructureType>();
+        ShowMap(blocksPerPixel: 4);
+        await Structures.RunCommand.ExecuteAsync(null);
+        var row = Structures.Rows[0];
+
+        Structures.SelectedRow = row;
+
+        var pick = _map.Selection;
+        Assert.NotNull(pick);
+        Assert.Equal(StructureType.Village, pick.Structure);
+        Assert.Equal((row.Title, row.Position), (pick.Name, (BlockPos?)pick.Position));
+        Assert.Equal(_services.GetRequiredService<IMapStyleService>().GetStructureMarker(StructureType.Village), pick.Marker);
+    }
+
+    [AvaloniaFact]
+    public async Task Locations_StrongholdAndSpawnChosen_ArePickedAsTheMapPicksThem()
+    {
+        Locations.ShowConditions = false;
+        ShowMap(blocksPerPixel: 8);
+        await Locations.RunCommand.ExecuteAsync(null);
+        var styleService = _services.GetRequiredService<IMapStyleService>();
+        var stronghold = Locations.Rows.First(row => row.Title.StartsWith("Stronghold ", StringComparison.Ordinal));
+        var spawn = Locations.Rows.Single(row => row.Title == "World spawn");
+
+        Locations.SelectedRow = stronghold;
+        var strongholdPick = _map.Selection;
+        Locations.SelectedRow = spawn;
+
+        Assert.NotNull(strongholdPick);
+        Assert.Equal((stronghold.Title, StructureType.Stronghold, stronghold.Position), (strongholdPick.Name, strongholdPick.Structure, (BlockPos?)strongholdPick.Position));
+        Assert.Equal(MapSelection.ForSpawn(styleService.Spawn, Assert.NotNull(spawn.Position)), _map.Selection);
+    }
+
+    [AvaloniaFact]
+    public async Task Locations_PickClearedOnTheMap_LetsGoOfTheLineSoThatChoosingItAgainPicksItAgain()
+    {
+        Locations.ShowConditions = false;
+        ShowMap(blocksPerPixel: 8);
+        await Locations.RunCommand.ExecuteAsync(null);
+        var stronghold = Locations.Rows.First(row => row.Title.StartsWith("Stronghold ", StringComparison.Ordinal));
+        Locations.SelectedRow = stronghold;
+
+        _map.Selection = null;
+        var released = Locations.SelectedRow;
+        Locations.SelectedRow = stronghold;
+
+        Assert.Null(released);
+        Assert.Same(stronghold, Locations.SelectedRow);
+        Assert.Equal(stronghold.Pick, _map.Selection);
+    }
+
+    [AvaloniaFact]
+    public async Task Locations_LineOfAConditionThatMarksNoSingleThing_LeavesNothingPicked()
+    {
+        UseConditions(new SlimeChunkCondition { Id = 1, Count = 1 });
+        await Locations.RunCommand.ExecuteAsync(null);
+        Locations.SelectedRow = Locations.Rows.Single(row => row.Title == "World spawn");
+
+        Locations.SelectedRow = Locations.Rows.First(row => row.Title.StartsWith("1 · ", StringComparison.Ordinal));
+
+        Assert.Null(_map.Selection);
     }
 
     [AvaloniaFact]

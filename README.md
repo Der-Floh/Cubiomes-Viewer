@@ -75,7 +75,7 @@ cubiomes-viewer-cli --session search.json --out seeds.txt
   - **Biomes**: how many samples each biome has, and its sample nearest to the middle of the map
   - **Structures**: nearest first with their details, and quads of swamp huts, desert pyramids, jungle temples or igloos
   - **Locations**: the spawn point, the strongholds in view, and where the search conditions hold. Conditions around the world origin look in what the map shows; those relative to another, and those limited by findings, look as the search does.
-- Every list can be saved as a CSV file, and choosing a line opens its seed at that place on the map.
+- Every list can be saved as a CSV file, and choosing a line opens its seed at that place on the map and picks what it found there, such as a stronghold, which shows even while its kind is hidden on the map, until you click elsewhere.
 
 ### Export
 

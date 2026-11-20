@@ -12,6 +12,7 @@ using Cubiomes_Viewer.Engine.Service.SeedServ;
 using Cubiomes_Viewer.Engine.Service.SettingsServ;
 using Cubiomes_Viewer.Engine.Service.StructureServ;
 using Cubiomes_Viewer.Service.CsvServ;
+using Cubiomes_Viewer.Service.MapStyleServ;
 using Cubiomes_Viewer.Service.NotificationServ;
 using Cubiomes_Viewer.Service.ProgressServ;
 using Cubiomes_Viewer.Service.StorageServ;
@@ -43,8 +44,9 @@ public sealed partial class LocationAnalysisViewModel : AnalysisTabViewModel
     private readonly ISeedSearchService _search;
     private readonly IConditionRegistry _conditionRegistry;
     private readonly IStructureCatalog _structureCatalog;
+    private readonly IMapStyleService _styleService;
 
-    public LocationAnalysisViewModel(AnalysisScopeViewModel scope, IAnalysisService analysis, ISearchSessionService searchSession, ISeedSearchService search, IConditionRegistry conditionRegistry, IStructureCatalog structureCatalog, WorldSession session, MapViewModel map, ISeedHistoryService seedHistory, IStorageService storage, ICsvService csv, ISettingsService settingsService, IProgressService progress, INotificationService notifications)
+    public LocationAnalysisViewModel(AnalysisScopeViewModel scope, IAnalysisService analysis, ISearchSessionService searchSession, ISeedSearchService search, IConditionRegistry conditionRegistry, IStructureCatalog structureCatalog, IMapStyleService styleService, WorldSession session, MapViewModel map, ISeedHistoryService seedHistory, IStorageService storage, ICsvService csv, ISettingsService settingsService, IProgressService progress, INotificationService notifications)
         : base(scope, session, map, seedHistory, storage, csv, settingsService, progress, notifications)
     {
         _analysis = analysis;
@@ -52,6 +54,7 @@ public sealed partial class LocationAnalysisViewModel : AnalysisTabViewModel
         _search = search;
         _conditionRegistry = conditionRegistry;
         _structureCatalog = structureCatalog;
+        _styleService = styleService;
     }
 
     protected override async Task<AnalysisResult> AnalyseAsync(AnalysisView view, IProgress<double> progress, CancellationToken cancellationToken)
@@ -119,30 +122,41 @@ public sealed partial class LocationAnalysisViewModel : AnalysisTabViewModel
 
     private Dimension LooksIn(SearchCondition condition, McVersion version) => _conditionRegistry.GetEvaluator(condition).GetDimension(condition, version);
 
-    private static void AddLandmarks(WorldKey world, WorldLandmarks landmarks, AnalysisView view, List<AnalysisRow> rows, CsvTable table)
+    private void AddLandmarks(WorldKey world, WorldLandmarks landmarks, AnalysisView view, List<AnalysisRow> rows, CsvTable table)
     {
         if (landmarks.Spawn is { } spawn)
-            Add(world, "World spawn", spawn, null, view.Reference, rows, table);
+            Add(world, MapSelection.SpawnName, spawn, null, view.Reference, MapSelection.ForSpawn(_styleService.Spawn, spawn), rows, table);
 
         var shown = landmarks.Strongholds
             .Select((position, index) => (Position: position, Number: index + 1))
             .Where(stronghold => view.Contains(stronghold.Position))
             .OrderBy(stronghold => stronghold.Position.SquaredDistanceTo(view.Reference));
         foreach (var (position, number) in shown)
-            Add(world, Format($"Stronghold {number}"), position, null, view.Reference, rows, table);
+            Add(world, Format($"{MapSelection.StrongholdName} {number}"), position, null, view.Reference, MapSelection.ForStronghold(number - 1, _styleService.Stronghold, position, BlockPosText.ToDistance(view.Reference, position)), rows, table);
     }
 
     private void AddConditions(WorldKey world, SearchDefinition definition, ConditionLocations locations, BlockPos reference, List<AnalysisRow> rows, CsvTable table)
     {
         var conditions = definition.Conditions.ToDictionary(condition => condition.Id);
         foreach (var place in locations.Places.OrderBy(place => place.ConditionId).ThenBy(place => place.Position.SquaredDistanceTo(reference)))
-            Add(world with { Dimension = place.Dimension }, Format($"{place.ConditionId} · {Describe(conditions[place.ConditionId])}"), place.Position, locations.IsMatch, reference, rows, table);
+        {
+            var condition = conditions[place.ConditionId];
+            Add(world with { Dimension = place.Dimension }, Format($"{place.ConditionId} · {Describe(condition)}"), place.Position, locations.IsMatch, reference, Pick(condition, place.Position, reference), rows, table);
+        }
     }
 
-    private static void Add(WorldKey world, string name, BlockPos position, bool? meetsConditions, BlockPos reference, List<AnalysisRow> rows, CsvTable table)
+    /// <summary>What the map picks at the place of a condition: the structure or stronghold it found; the other kinds mark no single thing.</summary>
+    private MapSelection? Pick(SearchCondition condition, BlockPos position, BlockPos reference) => condition switch
+    {
+        StructureCondition structure => MapSelection.ForStructure(_structureCatalog.GetInfo(structure.Type).Name, _styleService.GetStructureMarker(structure.Type), position, structure.Type, BlockPosText.ToDistance(reference, position)),
+        StrongholdCondition => MapSelection.ForStructure(MapSelection.StrongholdName, _styleService.Stronghold, position, StructureType.Stronghold, BlockPosText.ToDistance(reference, position)),
+        _ => null,
+    };
+
+    private static void Add(WorldKey world, string name, BlockPos position, bool? meetsConditions, BlockPos reference, MapSelection? pick, List<AnalysisRow> rows, CsvTable table)
     {
         var detail = DescribePosition(position, reference) + (meetsConditions == false ? " · the seed does not meet every condition" : string.Empty);
-        rows.Add(new AnalysisRow(name, detail, world, position));
+        rows.Add(new AnalysisRow(name, detail, world, position, pick));
         table.Add(Format($"{world.Seed}"), name, Format($"{position.X}"), Format($"{position.Z}"), Format($"{position.DistanceTo(reference):0.#}"), meetsConditions switch { true => "yes", false => "no", null => string.Empty });
     }
 

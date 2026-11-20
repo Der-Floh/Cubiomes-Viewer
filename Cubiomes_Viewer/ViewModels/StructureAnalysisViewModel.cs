@@ -129,7 +129,8 @@ public sealed partial class StructureAnalysisViewModel : AnalysisTabViewModel
         var name = _structureCatalog.GetInfo(request.Type).Name;
         var details = entry.Details is { } known ? string.Join(", ", _descriptions.Describe(known, request.World.Version)) : string.Empty;
         var position = DescribePosition(entry.Position, request.Reference);
-        var row = new AnalysisRow(name, details.Length > 0 ? $"{position} · {details}" : position, request.World with { Dimension = dimension }, entry.Position);
+        var pick = MapSelection.ForStructure(name, _styleService.GetStructureMarker(request.Type), entry.Position, request.Type, BlockPosText.ToDistance(request.Reference, entry.Position));
+        var row = new AnalysisRow(name, details.Length > 0 ? $"{position} · {details}" : position, request.World with { Dimension = dimension }, entry.Position, pick);
         return (request.World, row, [Format($"{request.World.Seed}"), name, Format($"{entry.Position.X}"), Format($"{entry.Position.Z}"), Format($"{entry.Position.DistanceTo(request.Reference):0.#}"), details]);
     }
 

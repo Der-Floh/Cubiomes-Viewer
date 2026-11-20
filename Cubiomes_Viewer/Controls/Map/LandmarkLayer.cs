@@ -11,7 +11,6 @@ namespace Cubiomes_Viewer.Controls.Map;
 /// <summary>Marks the spawn point and the strongholds of the Overworld.</summary>
 public sealed class LandmarkLayer : IMarkerLayer
 {
-    private const string SpawnName = "World spawn";
 
     private static readonly RenderOptions _markerRenderOptions = new() { EdgeMode = EdgeMode.Antialias };
 
@@ -74,7 +73,7 @@ public sealed class LandmarkLayer : IMarkerLayer
             return null;
 
         if (ShowSpawn && landmarks.Spawn is { } spawn && IsHit(scene, spawn, position))
-            return new MapSelection(SpawnName, _styleService.Spawn, spawn);
+            return MapSelection.ForSpawn(_styleService.Spawn, spawn);
 
         if (!ShowStrongholds)
             return null;

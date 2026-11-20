@@ -12,6 +12,7 @@ using Cubiomes_Viewer.Engine.Service.SeedServ;
 using Cubiomes_Viewer.Engine.Service.SettingsServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
 using Cubiomes_Viewer.Service.CsvServ;
+using Cubiomes_Viewer.Service.MapStyleServ;
 using Cubiomes_Viewer.Service.NotificationServ;
 using Cubiomes_Viewer.Service.ProgressServ;
 using Cubiomes_Viewer.Service.StorageServ;
@@ -50,40 +51,44 @@ public sealed partial class BiomeAnalysisViewModel : AnalysisTabViewModel
 
     private readonly IAnalysisService _analysis;
     private readonly IBiomeCatalog _biomeCatalog;
+    private readonly IMapStyleService _styleService;
 
-    public BiomeAnalysisViewModel(AnalysisScopeViewModel scope, IAnalysisService analysis, IBiomeCatalog biomeCatalog, WorldSession session, MapViewModel map, ISeedHistoryService seedHistory, IStorageService storage, ICsvService csv, ISettingsService settingsService, IProgressService progress, INotificationService notifications)
+    public BiomeAnalysisViewModel(AnalysisScopeViewModel scope, IAnalysisService analysis, IBiomeCatalog biomeCatalog, IMapStyleService styleService, WorldSession session, MapViewModel map, ISeedHistoryService seedHistory, IStorageService storage, ICsvService csv, ISettingsService settingsService, IProgressService progress, INotificationService notifications)
         : base(scope, session, map, seedHistory, storage, csv, settingsService, progress, notifications)
     {
         _analysis = analysis;
         _biomeCatalog = biomeCatalog;
+        _styleService = styleService;
         SelectedScale = Scales.First(choice => choice.Value == DefaultScale);
     }
 
     protected override async Task<AnalysisResult> AnalyseAsync(AnalysisView view, IProgress<double> progress, CancellationToken cancellationToken)
     {
         var worlds = Scope.GetWorlds(view.Dimension);
-        BiomeCensusRequest[] requests = [.. worlds.Select(world => new BiomeCensusRequest(world, view.Area, view.Reference, SelectedScale?.Value ?? DefaultScale, (int)Math.Round(Height ?? ViewSettings.DefaultSampleHeight)))];
+        var y = (int)Math.Round(Height ?? ViewSettings.DefaultSampleHeight);
+        BiomeCensusRequest[] requests = [.. worlds.Select(world => new BiomeCensusRequest(world, view.Area, view.Reference, SelectedScale?.Value ?? DefaultScale, y))];
         if (_analysis.FindBiomeProblems(requests[0]) is [var problem, ..])
             throw new InvalidOperationException(problem);
 
         var census = await _analysis.CountBiomesAsync(requests, progress, cancellationToken);
-        return new AnalysisResult(CreateRows(worlds, census, view.Reference), CreateTable(worlds, census), DescribeTotal(worlds, census));
+        return new AnalysisResult(CreateRows(worlds, census, view.Reference, y), CreateTable(worlds, census), DescribeTotal(worlds, census));
     }
 
     /// <summary>One line per biome over all worlds, the biome that covers most first.</summary>
-    private List<AnalysisRow> CreateRows(IReadOnlyList<WorldKey> worlds, IReadOnlyList<BiomeCensus> census, BlockPos reference)
+    private List<AnalysisRow> CreateRows(IReadOnlyList<WorldKey> worlds, IReadOnlyList<BiomeCensus> census, BlockPos reference, int y)
     {
         var total = census.Sum(result => (long)result.Samples);
         return [.. census
             .SelectMany((result, index) => result.Tallies.Select(tally => (World: worlds[index], Tally: tally)))
             .GroupBy(entry => entry.Tally.Biome)
-            .Select(group => CreateRow(group.Key, [.. group], total, worlds.Count, reference))
+            .Select(group => CreateRow(group.Key, [.. group], total, worlds.Count, reference, y))
             .OrderByDescending(row => row.Samples)
             .ThenBy(row => row.Row.Title, StringComparer.Ordinal)
             .Select(row => row.Row)];
     }
 
-    private (AnalysisRow Row, long Samples) CreateRow(int biome, IReadOnlyList<(WorldKey World, BiomeTally Tally)> entries, long total, int worldCount, BlockPos reference)
+    /// <summary>The line of a biome, which picks its nearest sample on the map as a spot, as finding the nearest biome does.</summary>
+    private (AnalysisRow Row, long Samples) CreateRow(int biome, IReadOnlyList<(WorldKey World, BiomeTally Tally)> entries, long total, int worldCount, BlockPos reference, int y)
     {
         var samples = entries.Sum(entry => (long)entry.Tally.Samples);
         var share = total > 0 ? (double)samples / total : 0;
@@ -91,7 +96,9 @@ public sealed partial class BiomeAnalysisViewModel : AnalysisTabViewModel
         var detail = worldCount == 1
             ? Format($"{share:P1} · {samples:N0} samples · nearest {DescribePosition(nearest.Nearest, reference)}")
             : Format($"{share:P1} of all samples · in {entries.Count:N0} of {worldCount:N0} seeds");
-        return (new AnalysisRow(GetName(world.Version, biome), detail, world, nearest.Nearest), samples);
+        var name = GetName(world.Version, biome);
+        var pick = MapSelection.ForSpot(name, nearest.Nearest, Format($"{BlockPosText.ToDistance(reference, nearest.Nearest)} at Y {y}"), _styleService.GetBiomeMarker(biome), _styleService.GetBiomePinLook(biome));
+        return (new AnalysisRow(name, detail, world, nearest.Nearest, pick), samples);
     }
 
     private CsvTable CreateTable(IReadOnlyList<WorldKey> worlds, IReadOnlyList<BiomeCensus> census)
