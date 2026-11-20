@@ -1,4 +1,5 @@
 using Cubiomes_Viewer.Engine.Data.Compute;
+using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Extensions;
 using Cubiomes_Viewer.Engine.Service.ComputeServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
@@ -85,6 +86,25 @@ public sealed class ComputeServiceTests
 
         Assert.Throws<InvalidOperationException>(
             () => { _ = service.RunAsync(new EchoJob(1), new JobPriority(JobPriorityClass.Visible), TestContext.Current.CancellationToken); });
+    }
+
+    [Fact]
+    public async Task InlineService_DisposedWhileAJobRuns_LetsItFinishOnItsGeneratorAndFailsTheQueuedOnes()
+    {
+        var held = new HeldGeneratorHandler();
+        var service = new InlineComputeService(new JobHandlerRegistry([JobHandlerRegistration.Create(new EchoHandler(_executionOrder)), JobHandlerRegistration.Create(held)]), _generatorFactory);
+        var running = service.RunAsync(new HeldGeneratorJob(new WorldKey(262, McVersion.V1_21_3, Dimension.Overworld, GeneratorFlags.None)), new JobPriority(JobPriorityClass.Interactive), TestContext.Current.CancellationToken);
+        Assert.True(held.Entered.Wait(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
+        var queued = service.RunAsync(new EchoJob(1), new JobPriority(JobPriorityClass.Visible), TestContext.Current.CancellationToken);
+
+        service.Dispose();
+        held.Released.Set();
+
+        Assert.InRange(await running, 0, byte.MaxValue);
+        await Assert.ThrowsAsync<ObjectDisposedException>(() => queued);
+        Assert.Empty(_executionOrder);
+        Assert.Throws<ObjectDisposedException>(
+            () => { _ = service.RunAsync(new EchoJob(2), new JobPriority(JobPriorityClass.Visible), TestContext.Current.CancellationToken); });
     }
 
     [Fact]
@@ -179,6 +199,23 @@ public sealed class ComputeServiceTests
             Entered.Set();
             Released.Wait(cancellationToken);
             return true;
+        }
+    }
+
+    private sealed record HeldGeneratorJob(WorldKey World) : ComputeJob<int>;
+
+    /// <summary>Takes its generator, holds the worker until it is released, and only then asks the generator for a biome.</summary>
+    private sealed class HeldGeneratorHandler : IJobHandler<HeldGeneratorJob, int>
+    {
+        public ManualResetEventSlim Entered { get; } = new();
+        public ManualResetEventSlim Released { get; } = new();
+
+        public int Handle(HeldGeneratorJob job, IWorkerContext context, CancellationToken cancellationToken)
+        {
+            var generator = context.GetGenerator(job.World);
+            Entered.Set();
+            Released.Wait(cancellationToken);
+            return generator.GetBiomeAt(4, 0, 16, 0);
         }
     }
 

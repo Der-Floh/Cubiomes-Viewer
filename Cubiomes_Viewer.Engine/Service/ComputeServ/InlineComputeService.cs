@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 using Cubiomes_Viewer.Engine.Data.Compute;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
 
@@ -16,6 +18,7 @@ public sealed class InlineComputeService : IComputeService, IDisposable
     private readonly ComputeQueue<IComputeWorkItem> _queue = new();
     private readonly object _gate = new();
     private bool _isPumping;
+    private bool _isDisposed;
 
     public InlineComputeService(JobHandlerRegistry handlers, IWorldGeneratorFactory generatorFactory)
     {
@@ -28,23 +31,43 @@ public sealed class InlineComputeService : IComputeService, IDisposable
         ArgumentNullException.ThrowIfNull(job);
 
         var item = new ComputeWorkItem<TResult>(job, _handlers.Resolve(job), cancellationToken);
-        _queue.Enqueue(item, priority);
-        StartPump();
+        if (Enqueue(item, priority))
+            _ = PumpAsync();
         return item.Task;
     }
 
-    public void Dispose() => _context.Dispose();
+    /// <summary>Fails the jobs still waiting; the generators are freed once no job runs on them any more.</summary>
+    public void Dispose()
+    {
+        bool isIdle;
+        lock (_gate)
+        {
+            if (_isDisposed)
+                return;
 
-    private void StartPump()
+            _isDisposed = true;
+            isIdle = !_isPumping;
+        }
+
+        foreach (var item in _queue.Complete())
+            item.Abandon(new ObjectDisposedException(nameof(InlineComputeService)));
+        if (isIdle)
+            _context.Dispose();
+    }
+
+    /// <summary>Queues the item and says whether the pump has to be started for it.</summary>
+    private bool Enqueue(IComputeWorkItem item, JobPriority priority)
     {
         lock (_gate)
         {
+            ObjectDisposedException.ThrowIf(_isDisposed, this);
+            _queue.Enqueue(item, priority);
             if (_isPumping)
-                return;
-            _isPumping = true;
-        }
+                return false;
 
-        _ = PumpAsync();
+            _isPumping = true;
+            return true;
+        }
     }
 
     private async Task PumpAsync()
@@ -53,17 +76,28 @@ public sealed class InlineComputeService : IComputeService, IDisposable
         {
             await Task.Yield();
 
-            IComputeWorkItem? item;
-            lock (_gate)
-            {
-                if (!_queue.TryDequeue(out item))
-                {
-                    _isPumping = false;
-                    return;
-                }
-            }
+            if (!TryTakeNext(out var item))
+                return;
 
             item.Execute(_context);
         }
+    }
+
+    /// <summary>Takes the next job, or stops the pump and frees the generators if the service was disposed while it ran.</summary>
+    private bool TryTakeNext([NotNullWhen(true)] out IComputeWorkItem? item)
+    {
+        lock (_gate)
+        {
+            if (!_isDisposed && _queue.TryDequeue(out item))
+                return true;
+
+            item = null;
+            _isPumping = false;
+            if (!_isDisposed)
+                return false;
+        }
+
+        _context.Dispose();
+        return false;
     }
 }
