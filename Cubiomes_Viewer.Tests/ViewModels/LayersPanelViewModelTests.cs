@@ -161,6 +161,21 @@ public sealed class LayersPanelViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
+    public async Task SelectedLayer_WithoutBiomes_HidesTheBiomeColours()
+    {
+        await _main.Initialization;
+        var onBiomes = _layers.IsBiomeMapShown;
+
+        _layers.SelectedLayer = _layers.Layers.Single(layer => layer.Value == LayerMode.Temperature);
+        var onTemperature = _layers.IsBiomeMapShown;
+        _layers.SelectedLayer = _layers.Layers.Single(layer => layer.Value == LayerMode.StructurePotential);
+
+        Assert.True(onBiomes);
+        Assert.False(onTemperature);
+        Assert.True(_layers.IsBiomeMapShown);
+    }
+
+    [AvaloniaFact]
     public async Task Dimension_ChangedWhileThePotentialIsShown_OffersTheStructuresOfThatDimension()
     {
         await _main.Initialization;

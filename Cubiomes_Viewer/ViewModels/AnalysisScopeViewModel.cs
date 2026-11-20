@@ -18,7 +18,8 @@ public sealed partial class AnalysisScopeViewModel : ObservableObject
     public const int MaxSeeds = 1000;
 
     public string SeedsLabel { get; } = "Seeds";
-    public string Hint { get; } = "The analyses look at what the map shows, in the dimension it shows; zoom out to look further. Found seeds are each looked at in the same place.";
+    public string Hint { get; } = "The analyses look at what the map shows; zoom out to look further.";
+    public string HintDetails { get; } = "They look in the dimension the map shows, and look at each found seed in the same place.";
 
     [ObservableProperty]
     public partial ComboChoice<SeedScope>? SelectedSeeds { get; set; }
@@ -75,7 +76,7 @@ public sealed partial class AnalysisScopeViewModel : ObservableObject
         _shownFound = found;
         var wanted = SelectedSeeds?.Value ?? SeedScope.ThisSeed;
         SeedChoices.Clear();
-        SeedChoices.Add(new ComboChoice<SeedScope> { Display = "The visible map", Value = SeedScope.ThisSeed });
+        SeedChoices.Add(new ComboChoice<SeedScope> { Display = "The seed on the map", Value = SeedScope.ThisSeed });
 
         if (found > 0)
         {

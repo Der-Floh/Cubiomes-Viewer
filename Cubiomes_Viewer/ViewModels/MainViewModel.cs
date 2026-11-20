@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 
 using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Maps;
+using Cubiomes_Viewer.Engine.Data.Settings;
 using Cubiomes_Viewer.Engine.Service.AppDataServ;
 using Cubiomes_Viewer.Engine.Service.PinServ;
 using Cubiomes_Viewer.Engine.Service.SeedServ;
@@ -19,6 +20,8 @@ namespace Cubiomes_Viewer.ViewModels;
 public sealed partial class MainViewModel : ViewModelBase
 {
     public const int NoPanel = -1;
+    public const double MinPanelWidth = 260;
+    public const double MaxPanelWidth = 720;
 
     public string LayersLabel { get; } = "Layers";
     public string SearchLabel { get; } = "Search";
@@ -42,6 +45,10 @@ public sealed partial class MainViewModel : ViewModelBase
     /// <summary>The view models of the panels, in the order of their buttons.</summary>
     public IReadOnlyList<ViewModelBase> Panels => _panels;
     public bool IsPanelOpen => CurrentPanel is not null;
+
+    /// <summary>How wide the side panel is on the desktop; dragging its edge changes it.</summary>
+    [ObservableProperty]
+    public partial double PanelWidth { get; set; } = AppearanceSettings.DefaultPanelWidth;
 
     /// <summary>Whether the map can get a window of its own, as on the desktop.</summary>
     public bool CanUndockMap { get; }
@@ -114,9 +121,22 @@ public sealed partial class MainViewModel : ViewModelBase
             panel.OnOpened();
     }
 
+    /// <summary>Widens or narrows the side panel by a dragged distance, within its limits.</summary>
+    public void ResizePanel(double distance) => PanelWidth = Math.Clamp(PanelWidth + distance, MinPanelWidth, MaxPanelWidth);
+
+    partial void OnPanelWidthChanged(double value)
+    {
+        if (!_isInitialized)
+            return;
+
+        _settingsService.Current.Appearance.PanelWidth = value;
+        _settingsService.RequestSave();
+    }
+
     private async Task InitializeAsync()
     {
         await _settingsService.LoadAsync();
+        PanelWidth = Math.Clamp(_settingsService.Current.Appearance.PanelWidth, MinPanelWidth, MaxPanelWidth);
         var restore = _settingsService.Current.Session.RestoreLastSession;
         ShowStoredView(restore);
         var isLinkOpened = OpenStartLink();

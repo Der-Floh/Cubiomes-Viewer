@@ -81,13 +81,14 @@
         <DataTemplate x:DataType="vm:BiomePatchFieldsViewModel">
             <StackPanel Classes="form">
                 <ContentControl Content="{Binding Picker}"/>
-                <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
-                    <TextBlock Classes="field-label" Text="{Binding MinChunksLabel}"/>
-                    <NumericUpDown Grid.Row="1" Value="{Binding MinChunks}" Minimum="{Binding MinChunksMinimum}" Maximum="{Binding MinChunksMaximum}" Increment="10" FormatString="0"/>
-                    <TextBlock Grid.Column="1" Classes="field-label" Text="{Binding ScaleLabel}"/>
-                    <ComboBox Grid.Row="1" Grid.Column="1" Classes="fill" ItemsSource="{Binding Scales}" SelectedItem="{Binding SelectedScale}"/>
-                </Grid>
-                <TextBlock Classes="damp" Text="{Binding PatchHint}" TextWrapping="Wrap"/>
+                <controls:InfoHint Text="{Binding PatchHint}">
+                    <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
+                        <TextBlock Classes="field-label" Text="{Binding MinChunksLabel}"/>
+                        <NumericUpDown Grid.Row="1" Value="{Binding MinChunks}" Minimum="{Binding MinChunksMinimum}" Maximum="{Binding MinChunksMaximum}" Increment="10" FormatString="0"/>
+                        <TextBlock Grid.Column="1" Classes="field-label" Text="{Binding ScaleLabel}"/>
+                        <ComboBox Grid.Row="1" Grid.Column="1" Classes="fill" ItemsSource="{Binding Scales}" SelectedItem="{Binding SelectedScale}"/>
+                    </Grid>
+                </controls:InfoHint>
                 <TextBlock Classes="field-label" Text="{Binding HeightLabel}"/>
                 <NumericUpDown Value="{Binding Height}" Minimum="{Binding MinHeight}" Maximum="{Binding MaxHeight}" Increment="8" FormatString="0"/>
             </StackPanel>
@@ -98,13 +99,14 @@
                 <ContentControl Content="{Binding Picker}"/>
                 <TextBlock Classes="field-label" Text="{Binding MatchLabel}"/>
                 <ComboBox Classes="fill" ItemsSource="{Binding Matches}" SelectedItem="{Binding SelectedMatch}"/>
-                <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" IsVisible="{Binding IsShare}">
-                    <TextBlock Classes="field-label" Text="{Binding ShareLabel}"/>
-                    <NumericUpDown Grid.Row="1" Value="{Binding SharePercent}" Minimum="{Binding MinSharePercent}" Maximum="{Binding MaxSharePercent}" Increment="5" FormatString="0"/>
-                    <TextBlock Grid.Column="1" Classes="field-label" Text="{Binding SamplesLabel}"/>
-                    <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding Samples}" Minimum="{Binding MinSamples}" Maximum="{Binding MaxSamples}" Increment="100" FormatString="0"/>
-                </Grid>
-                <TextBlock Classes="damp" Text="{Binding ShareHint}" TextWrapping="Wrap" IsVisible="{Binding IsShare}"/>
+                <controls:InfoHint Text="{Binding ShareHint}" IsVisible="{Binding IsShare}">
+                    <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
+                        <TextBlock Classes="field-label" Text="{Binding ShareLabel}"/>
+                        <NumericUpDown Grid.Row="1" Value="{Binding SharePercent}" Minimum="{Binding MinSharePercent}" Maximum="{Binding MaxSharePercent}" Increment="5" FormatString="0"/>
+                        <TextBlock Grid.Column="1" Classes="field-label" Text="{Binding SamplesLabel}"/>
+                        <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding Samples}" Minimum="{Binding MinSamples}" Maximum="{Binding MaxSamples}" Increment="100" FormatString="0"/>
+                    </Grid>
+                </controls:InfoHint>
                 <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
                     <TextBlock Classes="field-label" Text="{Binding ScaleLabel}" IsVisible="{Binding !IsShare}"/>
                     <ComboBox Grid.Row="1" Classes="fill" ItemsSource="{Binding Scales}" SelectedItem="{Binding SelectedScale}" IsVisible="{Binding !IsShare}"/>
@@ -116,18 +118,20 @@
 
         <DataTemplate x:DataType="vm:StrongholdFieldsViewModel">
             <StackPanel Classes="form">
-                <TextBlock Classes="field-label" Text="{Binding PortalEyesLabel}"/>
+                <controls:InfoHint Text="{Binding PortalEyesHint}">
+                    <TextBlock Classes="field-label" Text="{Binding PortalEyesLabel}"/>
+                </controls:InfoHint>
                 <NumericUpDown Value="{Binding PortalEyes}" Minimum="{Binding PortalEyesMinimum}" Maximum="{Binding PortalEyesMaximum}" Increment="1" FormatString="0"/>
-                <TextBlock Classes="damp" Text="{Binding PortalEyesHint}" TextWrapping="Wrap"/>
                 <ContentControl Content="{Binding Loot}"/>
             </StackPanel>
         </DataTemplate>
 
         <DataTemplate x:DataType="vm:TemperatureCategoryFieldsViewModel">
             <StackPanel Classes="form">
-                <TextBlock Classes="field-label" Text="{Binding CategoryLabel}"/>
+                <controls:InfoHint Text="{Binding CategoryHint}">
+                    <TextBlock Classes="field-label" Text="{Binding CategoryLabel}"/>
+                </controls:InfoHint>
                 <ComboBox Classes="fill" ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategory}"/>
-                <TextBlock Classes="damp" Text="{Binding CategoryHint}" TextWrapping="Wrap"/>
             </StackPanel>
         </DataTemplate>
 
@@ -158,10 +162,13 @@
                 <StackPanel Classes="form">
                     <Grid ColumnDefinitions="*,Auto">
                         <ToggleButton Classes="condition-header" IsChecked="{Binding IsExpanded}">
-                            <StackPanel>
-                                <TextBlock Classes="condition-title" Text="{Binding Header}"/>
-                                <TextBlock Classes="damp" Text="{Binding Summary}" TextWrapping="Wrap"/>
-                            </StackPanel>
+                            <Grid ColumnDefinitions="Auto,*">
+                                <controls:SvgIcon Classes="chevron" Source="{StaticResource ExpandIcon}"/>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Classes="condition-title" Text="{Binding Header}"/>
+                                    <TextBlock Classes="damp" Text="{Binding Summary}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Grid>
                         </ToggleButton>
                         <Button Grid.Column="1" Classes="card-close" Command="{Binding RemoveCommand}" ToolTip.Tip="{Binding RemoveLabel}">
                             <controls:SvgIcon Source="{StaticResource CloseIcon}"/>
@@ -212,110 +219,139 @@
         </DataTemplate>
     </UserControl.DataTemplates>
 
-    <ScrollViewer>
-        <StackPanel Classes="panel">
-            <TextBlock Classes="title" Text="{Binding Title}"/>
+    <Grid RowDefinitions="*,Auto">
+        <ScrollViewer>
+            <StackPanel Classes="panel">
+                <TextBlock Classes="title" Text="{Binding Title}"/>
 
-            <StackPanel Classes="form" DataContext="{Binding Presets}" x:DataType="vm:SearchPresetsViewModel">
-                <DropDownButton Classes="fill" Content="{Binding ExamplesLabel}">
-                    <DropDownButton.Flyout>
-                        <MenuFlyout ItemsSource="{Binding Examples}" Placement="BottomEdgeAlignedLeft">
-                            <MenuFlyout.ItemContainerTheme>
-                                <ControlTheme TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}" x:DataType="vm:PresetEntryViewModel">
-                                    <Setter Property="Header" Value="{Binding Name}"/>
-                                    <Setter Property="Command" Value="{Binding OpenCommand}"/>
-                                    <Setter Property="ToolTip.Tip" Value="{Binding Description}"/>
-                                </ControlTheme>
-                            </MenuFlyout.ItemContainerTheme>
-                        </MenuFlyout>
-                    </DropDownButton.Flyout>
-                </DropDownButton>
-                <TextBlock Classes="field-label" Text="{Binding UserPresetsLabel}" IsVisible="{Binding HasUserPresets}"/>
-                <ItemsControl Classes="presets" ItemsSource="{Binding UserPresets}" IsVisible="{Binding HasUserPresets}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="vm:PresetEntryViewModel">
-                            <Grid ColumnDefinitions="*,Auto">
-                                <Button Classes="preset" Content="{Binding Name}" Command="{Binding OpenCommand}"/>
-                                <Button Grid.Column="1" Classes="card-close" Command="{Binding DeleteCommand}" ToolTip.Tip="{Binding DeleteLabel}">
-                                    <controls:SvgIcon Source="{StaticResource CloseIcon}"/>
-                                </Button>
-                            </Grid>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </StackPanel>
-
-            <Separator Classes="section"/>
-            <StackPanel Classes="form" DataContext="{Binding Setup}" x:DataType="vm:SearchSetupViewModel">
-                <TextBlock Classes="damp" Text="{Binding VersionText}" TextWrapping="Wrap"/>
-
-                <TextBlock Classes="section" Text="{Binding ConditionsLabel}"/>
-                <TextBlock Classes="damp" Text="{Binding NoConditionsHint}" TextWrapping="Wrap" IsVisible="{Binding !HasConditions}"/>
-                <ItemsControl Classes="conditions" ItemsSource="{Binding Conditions}"/>
-                <DropDownButton Classes="fill" Content="{Binding AddConditionLabel}">
-                    <DropDownButton.Flyout>
-                        <MenuFlyout ItemsSource="{Binding ConditionKinds}" Placement="BottomEdgeAlignedLeft">
-                            <MenuFlyout.ItemContainerTheme>
-                                <ControlTheme TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}" x:DataType="vm:ConditionKindViewModel">
-                                    <Setter Property="Header" Value="{Binding Name}"/>
-                                    <Setter Property="Command" Value="{Binding AddCommand}"/>
-                                    <Setter Property="ToolTip.Tip" Value="{Binding Description}"/>
-                                </ControlTheme>
-                            </MenuFlyout.ItemContainerTheme>
-                        </MenuFlyout>
-                    </DropDownButton.Flyout>
-                </DropDownButton>
+                <StackPanel Classes="form" DataContext="{Binding Presets}" x:DataType="vm:SearchPresetsViewModel">
+                    <DropDownButton Classes="fill" Content="{Binding ExamplesLabel}">
+                        <DropDownButton.Flyout>
+                            <MenuFlyout ItemsSource="{Binding Examples}" Placement="BottomEdgeAlignedLeft">
+                                <MenuFlyout.ItemContainerTheme>
+                                    <ControlTheme TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}" x:DataType="vm:PresetEntryViewModel">
+                                        <Setter Property="Header" Value="{Binding Name}"/>
+                                        <Setter Property="Command" Value="{Binding OpenCommand}"/>
+                                        <Setter Property="ToolTip.Tip" Value="{Binding Description}"/>
+                                    </ControlTheme>
+                                </MenuFlyout.ItemContainerTheme>
+                            </MenuFlyout>
+                        </DropDownButton.Flyout>
+                    </DropDownButton>
+                    <TextBlock Classes="field-label" Text="{Binding UserPresetsLabel}" IsVisible="{Binding HasUserPresets}"/>
+                    <ItemsControl Classes="presets" ItemsSource="{Binding UserPresets}" IsVisible="{Binding HasUserPresets}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:PresetEntryViewModel">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <Button Classes="preset" Content="{Binding Name}" Command="{Binding OpenCommand}"/>
+                                    <Button Grid.Column="1" Classes="card-close" Command="{Binding DeleteCommand}" ToolTip.Tip="{Binding DeleteLabel}">
+                                        <controls:SvgIcon Source="{StaticResource CloseIcon}"/>
+                                    </Button>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
 
                 <Separator Classes="section"/>
-                <TextBlock Classes="section" Text="{Binding SeedsLabel}"/>
-                <StackPanel Classes="form" DataContext="{Binding Seeds}" x:DataType="vm:SeedSourceViewModel">
-                    <TextBlock Classes="field-label" Text="{Binding SourceLabel}"/>
-                    <ComboBox Classes="fill" ItemsSource="{Binding Kinds}" SelectedItem="{Binding SelectedKind}"/>
+                <StackPanel Classes="form" DataContext="{Binding Setup}" x:DataType="vm:SearchSetupViewModel">
+                    <TextBlock Classes="damp" Text="{Binding VersionText}" TextWrapping="Wrap"/>
 
-                    <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" IsVisible="{Binding IsRangeSource}">
-                        <TextBlock Classes="field-label" Text="{Binding FirstSeedLabel}"/>
-                        <TextBox Grid.Row="1" Text="{Binding FirstSeedText}"/>
-                        <TextBlock Grid.Column="1" Classes="field-label" Text="{Binding LastSeedLabel}"/>
-                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding LastSeedText}" PlaceholderText="{Binding LastSeedPlaceholder}"/>
+                    <TextBlock Classes="section" Text="{Binding ConditionsLabel}"/>
+                    <TextBlock Classes="damp" Text="{Binding NoConditionsHint}" TextWrapping="Wrap" IsVisible="{Binding !HasConditions}"/>
+                    <ItemsControl Classes="conditions" ItemsSource="{Binding Conditions}"/>
+                    <DropDownButton Classes="fill" Content="{Binding AddConditionLabel}">
+                        <DropDownButton.Flyout>
+                            <MenuFlyout ItemsSource="{Binding ConditionKinds}" Placement="BottomEdgeAlignedLeft">
+                                <MenuFlyout.ItemContainerTheme>
+                                    <ControlTheme TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}" x:DataType="vm:ConditionKindViewModel">
+                                        <Setter Property="Header" Value="{Binding Name}"/>
+                                        <Setter Property="Command" Value="{Binding AddCommand}"/>
+                                        <Setter Property="ToolTip.Tip" Value="{Binding Description}"/>
+                                    </ControlTheme>
+                                </MenuFlyout.ItemContainerTheme>
+                            </MenuFlyout>
+                        </DropDownButton.Flyout>
+                    </DropDownButton>
+
+                    <Separator Classes="section"/>
+                    <TextBlock Classes="section" Text="{Binding SeedsLabel}"/>
+                    <StackPanel Classes="form" DataContext="{Binding Seeds}" x:DataType="vm:SeedSourceViewModel">
+                        <TextBlock Classes="field-label" Text="{Binding SourceLabel}"/>
+                        <ComboBox Classes="fill" ItemsSource="{Binding Kinds}" SelectedItem="{Binding SelectedKind}"/>
+
+                        <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" IsVisible="{Binding IsRangeSource}">
+                            <TextBlock Classes="field-label" Text="{Binding FirstSeedLabel}"/>
+                            <TextBox Grid.Row="1" Text="{Binding FirstSeedText}"/>
+                            <TextBlock Grid.Column="1" Classes="field-label" Text="{Binding LastSeedLabel}"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding LastSeedText}" PlaceholderText="{Binding LastSeedPlaceholder}"/>
+                        </Grid>
+
+                        <StackPanel Classes="form" IsVisible="{Binding IsQuadSource}">
+                            <TextBlock Classes="field-label" Text="{Binding QuadTypeLabel}"/>
+                            <ComboBox Classes="fill" ItemsSource="{Binding QuadTypes}" SelectedItem="{Binding SelectedQuadType}"/>
+                            <TextBlock Classes="field-label" Text="{Binding QuadQualityLabel}"/>
+                            <ComboBox Classes="fill" ItemsSource="{Binding QuadQualities}" SelectedItem="{Binding SelectedQuadQuality}"/>
+                            <controls:InfoHint Text="{Binding QuadHint}">
+                                <TextBlock Classes="field-label" Text="{Binding QuadRegionLabel}"/>
+                            </controls:InfoHint>
+                            <Grid Classes="pair" ColumnDefinitions="*,*">
+                                <NumericUpDown Value="{Binding QuadRegionX}" Minimum="{Binding MinRegion}" Maximum="{Binding MaxRegion}" Increment="1" FormatString="0"/>
+                                <NumericUpDown Grid.Column="1" Value="{Binding QuadRegionZ}" Minimum="{Binding MinRegion}" Maximum="{Binding MaxRegion}" Increment="1" FormatString="0"/>
+                            </Grid>
+                        </StackPanel>
+
+                        <StackPanel Classes="form" IsVisible="{Binding IsListSource}">
+                            <TextBox Classes="seed-list" Text="{Binding SeedListText}" PlaceholderText="{Binding SeedListPlaceholder}"/>
+                            <TextBlock Classes="damp" Text="{Binding SeedListSummary}"/>
+                        </StackPanel>
+
+                        <StackPanel Classes="form" IsVisible="{Binding IsStructureSeedSource}">
+                            <controls:InfoHint Text="{Binding StructureSeedHint}">
+                                <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
+                                    <TextBlock Classes="field-label" Text="{Binding FirstStructureSeedLabel}"/>
+                                    <TextBox Grid.Row="1" Text="{Binding FirstStructureSeedText}"/>
+                                    <TextBlock Grid.Column="1" Classes="field-label" Text="{Binding LastStructureSeedLabel}"/>
+                                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding LastStructureSeedText}" PlaceholderText="{Binding LastSeedPlaceholder}"/>
+                                </Grid>
+                            </controls:InfoHint>
+                        </StackPanel>
+                    </StackPanel>
+                    <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
+                        <TextBlock Classes="field-label" Text="{Binding MaxResultsLabel}"/>
+                        <NumericUpDown Grid.Row="1" Value="{Binding MaxResults}" Minimum="1" Maximum="{Binding MaxResultsLimit}" Increment="10" FormatString="0"/>
+                        <TextBlock Grid.Column="1" Classes="field-label" Text="{Binding WorkersLabel}" IsVisible="{Binding HasWorkerChoices}"/>
+                        <ComboBox Grid.Row="1" Grid.Column="1" Classes="fill" ItemsSource="{Binding WorkerChoices}" SelectedItem="{Binding SelectedWorkers}" IsVisible="{Binding HasWorkerChoices}"/>
                     </Grid>
-
-                    <StackPanel Classes="form" IsVisible="{Binding IsQuadSource}">
-                        <TextBlock Classes="field-label" Text="{Binding QuadTypeLabel}"/>
-                        <ComboBox Classes="fill" ItemsSource="{Binding QuadTypes}" SelectedItem="{Binding SelectedQuadType}"/>
-                        <TextBlock Classes="field-label" Text="{Binding QuadQualityLabel}"/>
-                        <ComboBox Classes="fill" ItemsSource="{Binding QuadQualities}" SelectedItem="{Binding SelectedQuadQuality}"/>
-                        <TextBlock Classes="field-label" Text="{Binding QuadRegionLabel}"/>
-                        <Grid Classes="pair" ColumnDefinitions="*,*">
-                            <NumericUpDown Value="{Binding QuadRegionX}" Minimum="{Binding MinRegion}" Maximum="{Binding MaxRegion}" Increment="1" FormatString="0"/>
-                            <NumericUpDown Grid.Column="1" Value="{Binding QuadRegionZ}" Minimum="{Binding MinRegion}" Maximum="{Binding MaxRegion}" Increment="1" FormatString="0"/>
-                        </Grid>
-                        <TextBlock Classes="damp" Text="{Binding QuadHint}" TextWrapping="Wrap"/>
-                    </StackPanel>
-
-                    <StackPanel Classes="form" IsVisible="{Binding IsListSource}">
-                        <TextBox Classes="seed-list" Text="{Binding SeedListText}" PlaceholderText="{Binding SeedListPlaceholder}"/>
-                        <TextBlock Classes="damp" Text="{Binding SeedListSummary}"/>
-                    </StackPanel>
-
-                    <StackPanel Classes="form" IsVisible="{Binding IsStructureSeedSource}">
-                        <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
-                            <TextBlock Classes="field-label" Text="{Binding FirstStructureSeedLabel}"/>
-                            <TextBox Grid.Row="1" Text="{Binding FirstStructureSeedText}"/>
-                            <TextBlock Grid.Column="1" Classes="field-label" Text="{Binding LastStructureSeedLabel}"/>
-                            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding LastStructureSeedText}" PlaceholderText="{Binding LastSeedPlaceholder}"/>
-                        </Grid>
-                        <TextBlock Classes="damp" Text="{Binding StructureSeedHint}" TextWrapping="Wrap"/>
-                    </StackPanel>
+                    <ItemsControl ItemsSource="{Binding Problems}" ItemTemplate="{StaticResource ProblemTemplate}" IsVisible="{Binding HasProblems}"/>
                 </StackPanel>
-                <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
-                    <TextBlock Classes="field-label" Text="{Binding MaxResultsLabel}"/>
-                    <NumericUpDown Grid.Row="1" Value="{Binding MaxResults}" Minimum="1" Maximum="{Binding MaxResultsLimit}" Increment="10" FormatString="0"/>
-                    <TextBlock Grid.Column="1" Classes="field-label" Text="{Binding WorkersLabel}" IsVisible="{Binding HasWorkerChoices}"/>
-                    <ComboBox Grid.Row="1" Grid.Column="1" Classes="fill" ItemsSource="{Binding WorkerChoices}" SelectedItem="{Binding SelectedWorkers}" IsVisible="{Binding HasWorkerChoices}"/>
-                </Grid>
-                <ItemsControl ItemsSource="{Binding Problems}" ItemTemplate="{StaticResource ProblemTemplate}" IsVisible="{Binding HasProblems}"/>
-            </StackPanel>
 
+                <Separator Classes="section"/>
+                <StackPanel Classes="form" DataContext="{Binding Results}" x:DataType="vm:SearchResultsViewModel">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Classes="section" Text="{Binding Title}"/>
+                        <Button Grid.Column="1" Classes="compact" Content="{Binding CopyLabel}" Command="{Binding CopyCommand}" IsVisible="{Binding HasSeeds}"/>
+                    </Grid>
+                    <TextBlock Classes="damp" Text="{Binding NoSeedsLabel}" IsVisible="{Binding !HasSeeds}"/>
+                    <TextBlock Classes="damp" Text="{Binding OpenHint}" TextWrapping="Wrap" IsVisible="{Binding HasSeeds}"/>
+                    <ListBox Classes="results" ItemsSource="{Binding Seeds}" SelectedItem="{Binding SelectedSeed}" IsVisible="{Binding HasSeeds}"/>
+                </StackPanel>
+
+                <Separator Classes="section"/>
+                <TextBlock Classes="section" Text="{Binding SessionLabel}"/>
+                <TextBlock Classes="damp" Text="{Binding SessionHint}" TextWrapping="Wrap"/>
+                <Grid Classes="pair" ColumnDefinitions="*,Auto" DataContext="{Binding Presets}" x:DataType="vm:SearchPresetsViewModel">
+                    <TextBox Text="{Binding NewName}" PlaceholderText="{Binding NamePlaceholder}"/>
+                    <Button Grid.Column="1" Content="{Binding SaveLabel}" Command="{Binding SaveCommand}"/>
+                </Grid>
+                <WrapPanel Classes="card-actions">
+                    <Button Content="{Binding SaveLabel}" Command="{Binding SaveSessionCommand}"/>
+                    <Button Content="{Binding OpenLabel}" Command="{Binding OpenSessionCommand}"/>
+                </WrapPanel>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Border Grid.Row="1" Classes="panel-footer">
             <StackPanel Classes="form" DataContext="{Binding Run}" x:DataType="vm:SearchRunViewModel">
                 <WrapPanel Classes="card-actions">
                     <Button Classes="accent" Content="{Binding StartLabel}" Command="{Binding StartCommand}" IsVisible="{Binding IsStartShown}"/>
@@ -326,30 +362,7 @@
                 <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap" IsVisible="{Binding HasSearch}"/>
                 <TextBlock Classes="damp" Text="{Binding ProgressText}" TextWrapping="Wrap" IsVisible="{Binding HasSearch}"/>
             </StackPanel>
-
-            <Separator Classes="section"/>
-            <StackPanel Classes="form" DataContext="{Binding Results}" x:DataType="vm:SearchResultsViewModel">
-                <Grid ColumnDefinitions="*,Auto">
-                    <TextBlock Classes="section" Text="{Binding Title}"/>
-                    <Button Grid.Column="1" Classes="compact" Content="{Binding CopyLabel}" Command="{Binding CopyCommand}" IsVisible="{Binding HasSeeds}"/>
-                </Grid>
-                <TextBlock Classes="damp" Text="{Binding NoSeedsLabel}" IsVisible="{Binding !HasSeeds}"/>
-                <TextBlock Classes="damp" Text="{Binding OpenHint}" TextWrapping="Wrap" IsVisible="{Binding HasSeeds}"/>
-                <ListBox Classes="results" ItemsSource="{Binding Seeds}" SelectedItem="{Binding SelectedSeed}" IsVisible="{Binding HasSeeds}"/>
-            </StackPanel>
-
-            <Separator Classes="section"/>
-            <TextBlock Classes="section" Text="{Binding SessionLabel}"/>
-            <TextBlock Classes="damp" Text="{Binding SessionHint}" TextWrapping="Wrap"/>
-            <Grid Classes="pair" ColumnDefinitions="*,Auto" DataContext="{Binding Presets}" x:DataType="vm:SearchPresetsViewModel">
-                <TextBox Text="{Binding NewName}" PlaceholderText="{Binding NamePlaceholder}"/>
-                <Button Grid.Column="1" Content="{Binding SaveLabel}" Command="{Binding SaveCommand}"/>
-            </Grid>
-            <WrapPanel Classes="card-actions">
-                <Button Content="{Binding SaveLabel}" Command="{Binding SaveSessionCommand}"/>
-                <Button Content="{Binding OpenLabel}" Command="{Binding OpenSessionCommand}"/>
-            </WrapPanel>
-        </StackPanel>
-    </ScrollViewer>
+        </Border>
+    </Grid>
 
 </UserControl>

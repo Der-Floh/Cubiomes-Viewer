@@ -22,6 +22,8 @@ public sealed partial class WorldBarViewModel : ViewModelBase
 
     public string SeedPlaceholder { get; } = "Seed or link (empty for random)";
     public string FromLinkHint { get; } = "from link";
+    public string PendingSeedHint { get; } = "Enter opens it";
+    public string OpenSeedLabel { get; } = "Open this seed (Enter). Esc puts the open seed back.";
     public string RandomSeedLabel { get; } = "Random seed";
     public string RecentSeedsLabel { get; } = "Recent";
     public string LargeBiomesLabel { get; } = "Large biomes";
@@ -38,9 +40,11 @@ public sealed partial class WorldBarViewModel : ViewModelBase
     public decimal MaxSampleHeight { get; } = Constants.MaxSampleHeight;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsSeedPending), nameof(SeedStatus))]
     public partial string SeedText { get; set; } = string.Empty;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SeedStatus))]
     public partial string SeedHint { get; set; } = string.Empty;
 
     [ObservableProperty]
@@ -69,6 +73,12 @@ public sealed partial class WorldBarViewModel : ViewModelBase
     public partial bool IncludeExperimentalVersions { get; set; }
 
     public bool IsLargeBiomesAvailable => _session.Version >= FirstLargeBiomesVersion;
+
+    /// <summary>Whether the seed box holds something other than the open seed, which Enter opens and Escape puts back.</summary>
+    public bool IsSeedPending => !string.Equals(SeedText.Trim(), FormatSeed(_session.Seed), StringComparison.Ordinal);
+
+    /// <summary>The note beside the seed box: how to open a typed seed while one waits, else where the open seed came from.</summary>
+    public string SeedStatus => IsSeedPending ? PendingSeedHint : SeedHint;
 
     /// <summary>The versions offered, newest first.</summary>
     public ObservableCollection<ComboChoice<McVersion>> Versions { get; } = [];
@@ -146,6 +156,9 @@ public sealed partial class WorldBarViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    public void RevertSeed() => SeedText = FormatSeed(_session.Seed);
+
+    [RelayCommand]
     public void RandomSeed() => OpenSeed(_seedParser.Parse(null));
 
     [RelayCommand]
@@ -211,6 +224,8 @@ public sealed partial class WorldBarViewModel : ViewModelBase
         LargeBiomes = _session.LargeBiomes;
         SampleHeight = _session.SampleHeight;
         OnPropertyChanged(nameof(IsLargeBiomesAvailable));
+        OnPropertyChanged(nameof(IsSeedPending));
+        OnPropertyChanged(nameof(SeedStatus));
     }
 
     /// <summary>

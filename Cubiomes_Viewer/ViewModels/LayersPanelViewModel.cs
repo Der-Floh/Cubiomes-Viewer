@@ -11,6 +11,7 @@ using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Settings;
 using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Data.Worlds;
+using Cubiomes_Viewer.Engine.Extensions;
 using Cubiomes_Viewer.Engine.Service.LayerServ;
 using Cubiomes_Viewer.Engine.Service.SettingsServ;
 using Cubiomes_Viewer.Engine.Service.StructureServ;
@@ -57,6 +58,10 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
 
     [ObservableProperty]
     public partial bool IsPotentialShown { get; set; }
+
+    /// <summary>Whether the shown layer draws biomes, the only layers the biome colours apply to.</summary>
+    [ObservableProperty]
+    public partial bool IsBiomeMapShown { get; set; } = true;
 
     [ObservableProperty]
     public partial bool ShowGrid { get; set; } = true;
@@ -210,6 +215,7 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
             SelectedOctaves = OctaveChoices.First(choice => choice.Value == octaves);
             HasOctaves = layer.MaxOctaves > 0;
             IsHeightShown = layer.Mode == LayerMode.Height;
+            IsBiomeMapShown = layer.Mode.ShowsBiomeMap;
             ShowPotentialStructures(layer.Mode);
         });
 

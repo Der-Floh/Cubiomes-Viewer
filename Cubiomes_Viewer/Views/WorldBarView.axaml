@@ -11,10 +11,16 @@
     <Border Classes="world-bar">
         <WrapPanel>
             <WrapPanel Classes="toolbar-group">
-                <TextBox Classes="seed" Text="{Binding SeedText}" PlaceholderText="{Binding SeedPlaceholder}">
+                <TextBox Classes="seed" Classes.pending="{Binding IsSeedPending}" Text="{Binding SeedText}" PlaceholderText="{Binding SeedPlaceholder}">
                     <TextBox.KeyBindings>
                         <KeyBinding Gesture="Enter" Command="{Binding ApplySeedCommand}"/>
+                        <KeyBinding Gesture="Escape" Command="{Binding RevertSeedCommand}"/>
                     </TextBox.KeyBindings>
+                    <TextBox.InnerRightContent>
+                        <Button Classes="seed-open" Command="{Binding ApplySeedCommand}" ToolTip.Tip="{Binding OpenSeedLabel}" IsVisible="{Binding IsSeedPending}">
+                            <controls:SvgIcon Source="{StaticResource ForwardIcon}"/>
+                        </Button>
+                    </TextBox.InnerRightContent>
                 </TextBox>
                 <Button Classes="icon" Command="{Binding RandomSeedCommand}" ToolTip.Tip="{Binding RandomSeedLabel}">
                     <controls:SvgIcon Source="{StaticResource DiceIcon}"/>
@@ -31,7 +37,7 @@
                         </MenuFlyout>
                     </DropDownButton.Flyout>
                 </DropDownButton>
-                <TextBlock Classes="field-label" Text="{Binding SeedHint}"/>
+                <TextBlock Classes="field-label" Classes.pending="{Binding IsSeedPending}" Text="{Binding SeedStatus}"/>
             </WrapPanel>
 
             <WrapPanel Classes="toolbar-group">

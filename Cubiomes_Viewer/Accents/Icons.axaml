@@ -18,5 +18,8 @@
     <controls:SvgIconSource x:Key="DeleteIcon" Outlined="/Assets/Icons/delete.svg" Filled="/Assets/Icons/delete_filled.svg"/>
     <controls:SvgIconSource x:Key="FilterIcon" Outlined="/Assets/Icons/filter_alt.svg" Filled="/Assets/Icons/filter_alt_filled.svg"/>
     <controls:SvgIconSource x:Key="ExpandIcon" Outlined="/Assets/Icons/chevron_right.svg"/>
+    <controls:SvgIconSource x:Key="BackIcon" Outlined="/Assets/Icons/arrow_back.svg"/>
+    <controls:SvgIconSource x:Key="ForwardIcon" Outlined="/Assets/Icons/arrow_forward.svg"/>
+    <controls:SvgIconSource x:Key="InfoIcon" Outlined="/Assets/Icons/info.svg" Filled="/Assets/Icons/info_filled.svg"/>
 
 </ResourceDictionary>

@@ -42,7 +42,8 @@ public sealed partial class ExportViewModel : ViewModelBase, IOpenablePanel
     private static readonly FilePickerFileType _zipFiles = new("ZIP archives") { Patterns = ["*.zip"], MimeTypes = ["application/zip"] };
 
     public string Title { get; } = "Export";
-    public string Hint { get; } = "Saves the layer the map shows, as the Layers panel sets it up, with one pixel per sample. Markers and the grid are left out.";
+    public string Hint { get; } = "Saves the layer the map shows as a PNG image.";
+    public string HintDetails { get; } = "It looks as the Layers panel sets it up, with one pixel per sample. Markers and the grid are left out.";
     public string SeedsLabel { get; } = "Seeds";
     public string FromLabel { get; } = "From X and Z";
     public string ToLabel { get; } = "To X and Z, included";

@@ -38,7 +38,7 @@
                 </Grid>
             </Border>
 
-            <Border Grid.Column="1" Classes="side-panel" IsVisible="{Binding IsPanelOpen}">
+            <Border Grid.Column="1" Classes="side-panel" Width="{Binding PanelWidth}" IsVisible="{Binding IsPanelOpen}">
                 <controls:PanelHost Name="PanelSlot" Content="{Binding CurrentPanel}"/>
             </Border>
 
@@ -47,6 +47,7 @@
                 <TextBlock Classes="damp" Text="{Binding MapWindowHint}"/>
                 <Button Content="{Binding DockMapLabel}" Command="{Binding ToggleMapWindowCommand}"/>
             </StackPanel>
+            <Thumb Grid.Column="2" Classes="panel-resizer" IsVisible="{Binding IsPanelOpen}" DragDelta="OnPanelResizerDragged"/>
         </Grid>
 
         <views:StatusBarView Grid.Row="2" DataContext="{Binding StatusBar}"/>

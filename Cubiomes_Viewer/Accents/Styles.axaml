@@ -53,6 +53,42 @@
     <Style Selector="TextBlock.damp">
         <Setter Property="Foreground" Value="{DynamicResource FontColorDamp}"/>
     </Style>
+
+    <Style Selector="controls|InfoHint">
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                    <ContentPresenter Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                                      VerticalAlignment="Center"/>
+                    <ToggleButton Grid.Column="1" Classes="info" IsChecked="{TemplateBinding IsOpen, Mode=TwoWay}" ToolTip.Tip="{TemplateBinding ToggleTip}">
+                        <controls:SvgIcon Source="{StaticResource InfoIcon}"/>
+                    </ToggleButton>
+                    <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Classes="damp info-text" Text="{TemplateBinding Text}" TextWrapping="Wrap"
+                               IsVisible="{TemplateBinding IsOpen}"/>
+                </Grid>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+    <Style Selector="ToggleButton.info">
+        <Setter Property="Padding" Value="4"/>
+        <Setter Property="Margin" Value="4,0,0,0"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Foreground" Value="{DynamicResource FontColorDamp}"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="ToggleButton.info controls|SvgIcon">
+        <Setter Property="Width" Value="16"/>
+        <Setter Property="Height" Value="16"/>
+    </Style>
+    <Style Selector="ToggleButton.info:checked /template/ ContentPresenter#PART_ContentPresenter, ToggleButton.info:pointerover /template/ ContentPresenter#PART_ContentPresenter, ToggleButton.info:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource AccentColor}"/>
+    </Style>
+    <Style Selector="TextBlock.info-text">
+        <Setter Property="Margin" Value="0,4,0,0"/>
+    </Style>
     <Style Selector="TextBlock.success">
         <Setter Property="Foreground" Value="{DynamicResource SuccessColor}"/>
     </Style>
@@ -103,6 +139,24 @@
     <Style Selector="TextBox.seed">
         <Setter Property="MinWidth" Value="180"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="TextBox.seed.pending /template/ Border#PART_BorderElement">
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentColor}"/>
+    </Style>
+    <Style Selector="Button.seed-open">
+        <Setter Property="Padding" Value="4"/>
+        <Setter Property="Margin" Value="0,0,2,0"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource AccentColor}"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.seed-open controls|SvgIcon">
+        <Setter Property="Width" Value="16"/>
+        <Setter Property="Height" Value="16"/>
+    </Style>
+    <Style Selector="TextBlock.field-label.pending">
+        <Setter Property="Foreground" Value="{DynamicResource AccentColor}"/>
     </Style>
     <Style Selector="NumericUpDown.compact">
         <Setter Property="MinWidth" Value="110"/>
@@ -229,10 +283,23 @@
     </Style>
 
     <Style Selector="Border.side-panel">
-        <Setter Property="Width" Value="320"/>
         <Setter Property="Background" Value="{DynamicResource RegionColor}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
         <Setter Property="BorderThickness" Value="0,0,1,0"/>
+    </Style>
+    <Style Selector="Thumb.panel-resizer">
+        <Setter Property="Width" Value="6"/>
+        <Setter Property="HorizontalAlignment" Value="Left"/>
+        <Setter Property="Cursor" Value="SizeWestEast"/>
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Name="PART_Line" Background="Transparent"/>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+    <Style Selector="Thumb.panel-resizer:pointerover /template/ Border#PART_Line, Thumb.panel-resizer:pressed /template/ Border#PART_Line">
+        <Setter Property="Background" Value="{DynamicResource AccentColor}"/>
+        <Setter Property="Opacity" Value="0.6"/>
     </Style>
     <Style Selector="Border.sheet">
         <Setter Property="Background" Value="{DynamicResource RegionColor}"/>
@@ -245,6 +312,15 @@
     <Style Selector="StackPanel.panel">
         <Setter Property="Margin" Value="16"/>
         <Setter Property="Spacing" Value="8"/>
+    </Style>
+    <Style Selector="Border.panel-footer">
+        <Setter Property="Background" Value="{DynamicResource RegionColor}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
+        <Setter Property="BorderThickness" Value="0,1,0,0"/>
+        <Setter Property="Padding" Value="16,10,16,12"/>
+    </Style>
+    <Style Selector="Border.panel-footer WrapPanel.card-actions">
+        <Setter Property="Margin" Value="0"/>
     </Style>
 
     <Style Selector="Grid.pair">
@@ -358,7 +434,6 @@
         <Setter Property="Padding" Value="8,0"/>
     </Style>
     <Style Selector="ListBox.results">
-        <Setter Property="MaxHeight" Value="240"/>
         <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="4"/>
@@ -402,7 +477,7 @@
     <Style Selector="ToggleButton.expander">
         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
     </Style>
-    <Style Selector="ToggleButton.expander controls|SvgIcon.chevron">
+    <Style Selector="ToggleButton.expander controls|SvgIcon.chevron, ToggleButton.condition-header controls|SvgIcon.chevron">
         <Setter Property="Width" Value="16"/>
         <Setter Property="Height" Value="16"/>
         <Setter Property="Margin" Value="0,0,4,0"/>
@@ -414,7 +489,11 @@
             </Transitions>
         </Setter>
     </Style>
-    <Style Selector="ToggleButton.expander:checked controls|SvgIcon.chevron">
+    <Style Selector="ToggleButton.condition-header controls|SvgIcon.chevron">
+        <Setter Property="VerticalAlignment" Value="Top"/>
+        <Setter Property="Margin" Value="0,2,4,0"/>
+    </Style>
+    <Style Selector="ToggleButton.expander:checked controls|SvgIcon.chevron, ToggleButton.condition-header:checked controls|SvgIcon.chevron">
         <Setter Property="RenderTransform" Value="rotate(90deg)"/>
     </Style>
     <Style Selector="Border.chest-list">

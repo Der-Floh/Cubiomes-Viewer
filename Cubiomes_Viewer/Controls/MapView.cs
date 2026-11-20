@@ -97,6 +97,7 @@ public sealed class MapView : Control
     private readonly Dictionary<int, Point> _pointers = [];
     private Point? _hoverPosition;
     private Point? _tapStart;
+    private int _tapClickCount;
 
     /// <summary>The mouse button that drags the map, while one does.</summary>
     private MouseButton? _mouseDragButton;
@@ -242,6 +243,7 @@ public sealed class MapView : Control
         if (_pointers.Count == 1)
         {
             _tapStart = point.Position;
+            _tapClickCount = e.ClickCount;
             _gestures.BeginDrag(point.Position.X, point.Position.Y, GetTime(e));
         }
         else
@@ -296,7 +298,7 @@ public sealed class MapView : Control
         {
             var isTap = _tapStart is not null;
             if (isTap && e.InitialPressMouseButton != MouseButton.Right)
-                RaiseClick(e);
+                CompleteTap(e);
             _tapStart = null;
             _gestures.EndDrag(GetTime(e));
             if (SmoothMotion && _gestures.HasInertia && !isTap)
@@ -434,6 +436,34 @@ public sealed class MapView : Control
         return true;
     }
 
+    /// <summary>The second tap of a double tap zooms in on its spot, or out while Shift is held, instead of clicking again.</summary>
+    private void CompleteTap(PointerReleasedEventArgs e)
+    {
+        if (_tapClickCount % 2 != 0)
+        {
+            RaiseClick(e);
+            return;
+        }
+
+        var factor = e.KeyModifiers.HasFlag(KeyModifiers.Shift) ? 1 / MapGestureController.DoubleTapZoomStep : MapGestureController.DoubleTapZoomStep;
+        ZoomStepAt(e.GetPosition(this), factor);
+    }
+
+    private void ZoomStepAt(Point position, double factor)
+    {
+        var target = MapGestureController.ZoomAt(Viewport, position.X, position.Y, factor, ZoomLimits);
+        _gestures.CancelDrag();
+        if (!SmoothMotion || !_isAttached)
+        {
+            _navigation = null;
+            SetCurrentValue(CameraProperty, target);
+            return;
+        }
+
+        _navigation = new Navigation(Camera, target, new Vector(position.X - Bounds.Width / 2, position.Y - Bounds.Height / 2));
+        RequestFrame();
+    }
+
     /// <summary>Raises a click where the pointer went up, after it stayed near where it went down.</summary>
     private void RaiseClick(PointerReleasedEventArgs e)
     {
@@ -524,17 +554,29 @@ public sealed class MapView : Control
 
     private static TimeSpan GetTime(PointerEventArgs e) => TimeSpan.FromMilliseconds(e.Timestamp);
 
-    private sealed class Navigation(MapCamera from, MapCamera to)
+    /// <summary>
+    /// Glides the camera from one view to another. With an anchor, given in pixels from the middle of the view, the block
+    /// under it stays in place the whole way, as when zooming in on a spot.
+    /// </summary>
+    private sealed class Navigation(MapCamera from, MapCamera to, Vector? anchor = null)
     {
         public TimeSpan Elapsed { get; set; }
 
         public MapCamera GetCamera(double progress)
         {
             var eased = progress * progress * (3 - 2 * progress);
-            return new MapCamera(
-                from.CenterX + (to.CenterX - from.CenterX) * eased,
-                from.CenterZ + (to.CenterZ - from.CenterZ) * eased,
-                from.BlocksPerPixel * Math.Pow(to.BlocksPerPixel / from.BlocksPerPixel, eased));
+            var blocksPerPixel = from.BlocksPerPixel * Math.Pow(to.BlocksPerPixel / from.BlocksPerPixel, eased);
+            if (anchor is not { } offset)
+            {
+                return new MapCamera(
+                    from.CenterX + (to.CenterX - from.CenterX) * eased,
+                    from.CenterZ + (to.CenterZ - from.CenterZ) * eased,
+                    blocksPerPixel);
+            }
+
+            var anchorX = from.CenterX + offset.X * from.BlocksPerPixel;
+            var anchorZ = from.CenterZ + offset.Y * from.BlocksPerPixel;
+            return new MapCamera(anchorX - offset.X * blocksPerPixel, anchorZ - offset.Y * blocksPerPixel, blocksPerPixel);
         }
     }
 }

@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:controls="using:Cubiomes_Viewer.Controls"
              xmlns:vm="using:Cubiomes_Viewer.ViewModels"
              xmlns:views="using:Cubiomes_Viewer.Views"
              mc:Ignorable="d" d:DesignWidth="320" d:DesignHeight="600"
@@ -21,10 +22,12 @@
             <Separator Classes="section"/>
             <TextBlock Classes="section" Text="{Binding MapLabel}"/>
             <CheckBox Content="{Binding SmoothMotionLabel}" IsChecked="{Binding SmoothMotion}"/>
-            <CheckBox Content="{Binding BiomeReliefLabel}" IsChecked="{Binding BiomeRelief}"/>
-            <TextBlock Classes="damp" Text="{Binding BiomeReliefHint}" TextWrapping="Wrap"/>
-            <CheckBox Content="{Binding ChestLootLabel}" IsChecked="{Binding ShowChestLoot}"/>
-            <TextBlock Classes="damp" Text="{Binding ChestLootHint}" TextWrapping="Wrap"/>
+            <controls:InfoHint Text="{Binding BiomeReliefHint}">
+                <CheckBox Content="{Binding BiomeReliefLabel}" IsChecked="{Binding BiomeRelief}"/>
+            </controls:InfoHint>
+            <controls:InfoHint Text="{Binding ChestLootHint}">
+                <CheckBox Content="{Binding ChestLootLabel}" IsChecked="{Binding ShowChestLoot}"/>
+            </controls:InfoHint>
             <TextBlock Classes="field-label" Text="{Binding CacheLabel}"/>
             <NumericUpDown Value="{Binding CacheMegabytes}" Minimum="{Binding MinCacheMegabytes}" Maximum="{Binding MaxCacheMegabytes}" Increment="64" FormatString="0"/>
             <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
@@ -54,10 +57,12 @@
             <Separator Classes="section"/>
             <TextBlock Classes="section" Text="{Binding World.Title}"/>
             <StackPanel Classes="form" DataContext="{Binding World}" x:DataType="vm:WorldSettingsViewModel">
-                <CheckBox Content="{Binding ExperimentalVersionsLabel}" IsChecked="{Binding ShowExperimentalVersions}"/>
-                <TextBlock Classes="damp" Text="{Binding ExperimentalVersionsHint}" TextWrapping="Wrap"/>
-                <CheckBox Content="{Binding EstimateTerrainLabel}" IsChecked="{Binding EstimateTerrain}"/>
-                <TextBlock Classes="damp" Text="{Binding EstimateTerrainHint}" TextWrapping="Wrap"/>
+                <controls:InfoHint Text="{Binding ExperimentalVersionsHint}">
+                    <CheckBox Content="{Binding ExperimentalVersionsLabel}" IsChecked="{Binding ShowExperimentalVersions}"/>
+                </controls:InfoHint>
+                <controls:InfoHint Text="{Binding EstimateTerrainHint}">
+                    <CheckBox Content="{Binding EstimateTerrainLabel}" IsChecked="{Binding EstimateTerrain}"/>
+                </controls:InfoHint>
                 <Expander Header="{Binding SaltsLabel}" HorizontalAlignment="Stretch">
                     <StackPanel Classes="form">
                         <TextBlock Classes="damp" Text="{Binding SaltsHint}" TextWrapping="Wrap"/>
@@ -78,8 +83,9 @@
 
             <Separator Classes="section"/>
             <TextBlock Classes="section" Text="{Binding StartLabel}"/>
-            <CheckBox Content="{Binding RestoreLabel}" IsChecked="{Binding RestoreLastSession}"/>
-            <TextBlock Classes="damp" Text="{Binding RestoreHint}" TextWrapping="Wrap"/>
+            <controls:InfoHint Text="{Binding RestoreHint}">
+                <CheckBox Content="{Binding RestoreLabel}" IsChecked="{Binding RestoreLastSession}"/>
+            </controls:InfoHint>
             <CheckBox Content="{Binding RememberWindowLabel}" IsChecked="{Binding RememberWindow}" IsVisible="{Binding CanRememberWindow}"/>
 
             <Separator Classes="section"/>
@@ -92,8 +98,9 @@
             <StackPanel Classes="form" DataContext="{Binding Updates}" x:DataType="vm:UpdateViewModel">
                 <TextBlock Text="{Binding VersionText}"/>
                 <StackPanel Classes="form" IsVisible="{Binding CanCheck}">
-                    <CheckBox Content="{Binding CheckAtStartLabel}" IsChecked="{Binding CheckAtStart}"/>
-                    <TextBlock Classes="damp" Text="{Binding CheckAtStartHint}" TextWrapping="Wrap"/>
+                    <controls:InfoHint Text="{Binding CheckAtStartHint}">
+                        <CheckBox Content="{Binding CheckAtStartLabel}" IsChecked="{Binding CheckAtStart}"/>
+                    </controls:InfoHint>
                     <WrapPanel Classes="card-actions">
                         <Button Classes="accent" Content="{Binding OpenReleaseLabel}" Command="{Binding OpenReleaseCommand}" IsVisible="{Binding HasNewerRelease}"/>
                         <Button Content="{Binding CheckLabel}" Command="{Binding CheckCommand}"/>

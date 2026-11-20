@@ -10,6 +10,7 @@ public sealed class MapGestureController
 {
     public const double WheelZoomStep = 1.25;
     public const double KeyboardZoomStep = 1.5;
+    public const double DoubleTapZoomStep = 2;
     public const double KeyboardPanPixels = 96;
 
     private const double InertiaDecayPerSecond = 4.5;

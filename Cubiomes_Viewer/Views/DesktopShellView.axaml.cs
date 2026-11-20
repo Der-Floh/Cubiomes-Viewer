@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Input;
 
 using Cubiomes_Viewer.Controls;
 using Cubiomes_Viewer.ViewModels;
@@ -13,9 +14,13 @@ public sealed partial class DesktopShellView : UserControl
     /// <summary>The host of this shell's panel views.</summary>
     public PanelHost PanelHost => PanelSlot;
 
+    private readonly MainViewModel _viewModel;
+
     public DesktopShellView(MainViewModel viewModel)
     {
         InitializeComponent();
-        DataContext = viewModel;
+        DataContext = _viewModel = viewModel;
     }
+
+    private void OnPanelResizerDragged(object? sender, VectorEventArgs e) => _viewModel.ResizePanel(e.Vector.X);
 }

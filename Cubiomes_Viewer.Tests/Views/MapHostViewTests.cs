@@ -233,6 +233,39 @@ public sealed class MapHostViewTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void DoubleClick_OnTheMap_ZoomsInOnTheBlockUnderThePointer()
+    {
+        var spot = new Point(_center.X + PinOffset, _center.Y - PinOffset);
+        _map.Camera = new MapCamera(3.3, -5.7, 8);
+        Dispatcher.UIThread.RunJobs();
+        var block = GetMapView().GetBlockAt(spot);
+
+        Click(spot);
+        Click(spot);
+
+        Assert.Equal(4, _map.Camera.BlocksPerPixel);
+        Assert.Equal(block, GetMapView().GetBlockAt(spot));
+    }
+
+    [AvaloniaFact]
+    public void DoubleClick_WithShift_ZoomsOut()
+    {
+        var spot = new Point(_center.X - PinOffset, _center.Y + PinOffset);
+        _map.Camera = new MapCamera(3.3, -5.7, 8);
+        Dispatcher.UIThread.RunJobs();
+        var block = GetMapView().GetBlockAt(spot);
+
+        for (var click = 0; click < 2; click++)
+        {
+            _window.MouseDown(spot, MouseButton.Left, RawInputModifiers.Shift);
+            _window.MouseUp(spot, MouseButton.Left, RawInputModifiers.Shift);
+        }
+
+        Assert.Equal(16, _map.Camera.BlocksPerPixel);
+        Assert.Equal(block, GetMapView().GetBlockAt(spot));
+    }
+
+    [AvaloniaFact]
     public void PinToggle_On_ShowsACrosshairOverTheMap()
     {
         var map = _host.GetVisualDescendants().OfType<MapView>().Single();

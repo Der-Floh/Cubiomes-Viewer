@@ -15,7 +15,11 @@ public sealed partial class AnalysisPanelViewModel : ViewModelBase
     public IReadOnlyList<AnalysisTabViewModel> Tabs { get; }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SelectedTab))]
     public partial int SelectedTabIndex { get; set; }
+
+    /// <summary>The open tab, whose run button and status the foot of the panel shows.</summary>
+    public AnalysisTabViewModel SelectedTab => Tabs[Math.Clamp(SelectedTabIndex, 0, Tabs.Count - 1)];
 
     public AnalysisPanelViewModel(AnalysisScopeViewModel scope, BiomeAnalysisViewModel biomes, StructureAnalysisViewModel structures, LocationAnalysisViewModel locations, INotificationService notifications) : base(notifications)
     {

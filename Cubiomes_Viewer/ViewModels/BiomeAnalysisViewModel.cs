@@ -28,7 +28,8 @@ public sealed partial class BiomeAnalysisViewModel : AnalysisTabViewModel
     public override string RunLabel { get; } = "Count biomes";
     public string ScaleLabel { get; } = "Sample every";
     public string HeightLabel { get; } = "Sample at Y";
-    public string Hint { get; } = "Counts the samples of each biome in what the map shows. With one seed each line also tells where the biome's sample nearest to the middle of the map is.";
+    public string Hint { get; } = "Counts the samples of each biome in what the map shows.";
+    public string HintDetails { get; } = "With one seed each line also tells where the biome's sample nearest to the middle of the map is.";
     public decimal MinHeight { get; } = Constants.MinSampleHeight;
     public decimal MaxHeight { get; } = Constants.MaxSampleHeight;
 

@@ -29,7 +29,8 @@ public sealed partial class LocationAnalysisViewModel : AnalysisTabViewModel
     public override string RunLabel { get; } = "Find locations";
     public string LandmarksLabel { get; } = "Spawn point and strongholds";
     public string ConditionsLabel { get; } = "Where the search conditions hold";
-    public string Hint { get; } = "While the map shows the Overworld, the spawn point is listed wherever it is and the strongholds the map shows, nearest to its middle first. The conditions of the Search panel are tested in full: those around the world origin look in what the map shows, those relative to another keep their own area around it, and those limited by findings look as far as they need to.";
+    public string Hint { get; } = "Lists the spawn point, the strongholds the map shows and where the search conditions hold.";
+    public string HintDetails { get; } = "While the map shows the Overworld, the spawn point is listed wherever it is and the strongholds the map shows, nearest to its middle first. The conditions of the Search panel are tested in full: those around the world origin look in what the map shows, those relative to another keep their own area around it, and those limited by findings look as far as they need to.";
 
     [ObservableProperty]
     public partial bool ShowLandmarks { get; set; } = true;

@@ -346,7 +346,7 @@ public sealed class AnalysisPanelViewModelTests : IDisposable
 
         var view = _panel.Scope.TakeView();
 
-        Assert.Equal("The visible map", _panel.Scope.SeedChoices[0].Display);
+        Assert.Equal("The seed on the map", _panel.Scope.SeedChoices[0].Display);
         Assert.Equal(new BlockPos(100, -50), view.Reference);
         Assert.Equal(SearchArea.Rectangle(-1500, -1250, 1699, 1149), view.AroundOrigin);
         Assert.Equal(Dimension.Overworld, view.Dimension);

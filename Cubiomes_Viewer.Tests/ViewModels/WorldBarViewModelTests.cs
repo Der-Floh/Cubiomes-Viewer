@@ -61,6 +61,35 @@ public sealed class WorldBarViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void SeedText_Typed_WaitsUntilOpenedOrPutBack()
+    {
+        _session.Seed = 5;
+
+        _viewModel.SeedText = "262";
+        var typed = (_viewModel.IsSeedPending, _viewModel.SeedStatus);
+        _viewModel.RevertSeedCommand.Execute(null);
+        var putBack = (_viewModel.IsSeedPending, _viewModel.SeedText);
+        _viewModel.SeedText = " 262 ";
+        _viewModel.ApplySeedCommand.Execute(null);
+
+        Assert.Equal((true, "Enter opens it"), typed);
+        Assert.Equal((false, "5"), putBack);
+        Assert.Equal(262, _session.Seed);
+        Assert.False(_viewModel.IsSeedPending);
+    }
+
+    [AvaloniaFact]
+    public void SeedText_TypedWhileTheSeedChangesElsewhere_ShowsTheOpenSeed()
+    {
+        _viewModel.SeedText = "262";
+
+        _session.Seed = 7;
+
+        Assert.Equal("7", _viewModel.SeedText);
+        Assert.False(_viewModel.IsSeedPending);
+    }
+
+    [AvaloniaFact]
     public void SelectedVersion_OldVersion_UpdatesSessionAndDisablesLargeBiomes()
     {
         _viewModel.SelectedVersion = _viewModel.Versions.Single(choice => choice.Value == McVersion.V1_2_5);
