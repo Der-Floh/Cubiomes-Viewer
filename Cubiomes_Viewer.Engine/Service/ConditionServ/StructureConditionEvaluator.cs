@@ -25,6 +25,7 @@ public sealed class StructureConditionEvaluator : ConditionEvaluator<StructureCo
         Create = id => new StructureCondition { Id = id, Type = StructureType.Village },
         Cost = SearchCost,
         MaxCount = MaxMatches,
+        CanLimitFindings = true,
     };
 
     private readonly IStructureFinder _structureFinder;
@@ -57,7 +58,7 @@ public sealed class StructureConditionEvaluator : ConditionEvaluator<StructureCo
 
         if (!_structureFinder.TryGetPlacement(condition.Type, definition.Version, out var placement))
             yield return $"{name} does not generate in this version.";
-        else if (CountRegionsAtMost(condition.Area, placement) > MaxRegions)
+        else if (condition.Limit == SearchLimit.Area && CountRegionsAtMost(condition.Area, placement) > MaxRegions)
             yield return $"The area is too large for {name}: it may span at most {MaxRegions} regions of {placement.RegionBlocks} blocks.";
 
         if (condition.Loot is { } loot)
@@ -71,6 +72,8 @@ public sealed class StructureConditionEvaluator : ConditionEvaluator<StructureCo
     {
         if (!_structureFinder.TryGetPlacement(condition.Type, context.Version, out var placement))
             return Decide(condition, reference, matches);
+        if (condition.Limit == SearchLimit.Findings)
+            return pass == SearchPass.Quick ? MatchStatus.Unknown : FindNearest(condition, reference, context, placement, matches);
 
         var area = condition.Area.ToBlocks(reference);
         var found = context.GetPositions(checked((int)placement.CountRegions(area)));
@@ -89,6 +92,44 @@ public sealed class StructureConditionEvaluator : ConditionEvaluator<StructureCo
 
         return pass == SearchPass.Quick ? DecideCandidates(condition, reference, matches) : Decide(condition, reference, matches);
     }
+
+    /// <summary>
+    /// Looks ring by ring outward until the nearest matches asked for are found and no ring further out can hold a nearer
+    /// one, or the rings pass the world border.
+    /// </summary>
+    private static MatchStatus FindNearest(StructureCondition condition, BlockPos reference, SearchSeedContext context, StructurePlacement placement, List<BlockPos> matches)
+    {
+        var generator = context.GetGenerator(placement.Dimension);
+        var rings = new RegionRings(reference, placement.RegionBlocks);
+        List<BlockPos> found = [];
+        for (var ring = 0; ; ring++)
+        {
+            context.CancellationToken.ThrowIfCancellationRequested();
+            foreach (var strip in rings.GetRing(ring))
+                AddMatches(condition, generator, placement, context, strip, found);
+
+            if (IsSettled(found, condition.Count, reference, rings.GetSquaredReach(ring)) || rings.CoversWorld(ring))
+                break;
+        }
+
+        matches.AddRange(found.OrderBy(position => position.SquaredDistanceTo(reference)).ThenBy(position => position.Z).ThenBy(position => position.X).Take(condition.Count));
+        return Decide(condition, reference, matches);
+    }
+
+    private static void AddMatches(StructureCondition condition, IWorldGenerator generator, StructurePlacement placement, SearchSeedContext context, BlockArea strip, List<BlockPos> found)
+    {
+        var positions = context.GetPositions(checked((int)placement.CountRegions(strip)));
+        var count = generator.FindStructures(condition.Type, strip, positions);
+        foreach (var position in positions[..count])
+        {
+            if (RegionRings.IsInsideWorld(position) && IsMatch(condition, generator, position))
+                found.Add(position);
+        }
+    }
+
+    /// <summary>Whether enough matches are found and the furthest of the nearest of them is no further than anything the rings left out.</summary>
+    private static bool IsSettled(List<BlockPos> found, int count, BlockPos reference, long squaredReach)
+        => found.Count >= count && found.Select(position => position.SquaredDistanceTo(reference)).Order().ElementAt(count - 1) <= squaredReach;
 
     private static bool IsMatch(StructureCondition condition, IWorldGenerator generator, BlockPos position)
         => (condition.Trait == StructureTrait.None || condition.Trait.IsIn(generator.DescribeStructure(condition.Type, position)))

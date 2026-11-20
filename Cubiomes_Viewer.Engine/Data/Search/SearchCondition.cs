@@ -34,7 +34,14 @@ public abstract record SearchCondition
 
     public SearchArea Area { get; init; } = SearchArea.Square(DefaultSide);
 
-    /// <summary>How many matches the area must hold at least. Zero turns the condition around: the area must hold none.</summary>
+    /// <summary>Whether the condition looks inside its <see cref="Area"/>, or outward until it has found <see cref="Count"/> matches.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public SearchLimit Limit { get; init; }
+
+    /// <summary>
+    /// How many matches the area must hold at least, or, limited by findings, how many it looks for. Zero turns a
+    /// condition limited by its area around: the area must hold none.
+    /// </summary>
     public int Count { get; init; } = 1;
 
     /// <summary>Where the conditions relative to this one start from when it has several matches.</summary>

@@ -46,6 +46,10 @@ public sealed partial class AnalysisScopeViewModel : ObservableObject
     [ObservableProperty]
     public partial decimal? Size { get; set; } = DefaultSize;
 
+    /// <summary>Whether the tab shown looks inside the area, so that its shape and size are offered.</summary>
+    [ObservableProperty]
+    public partial bool IsAreaShown { get; set; } = true;
+
     public ObservableCollection<ComboChoice<SeedScope>> SeedChoices { get; } = [];
 
     public ObservableCollection<ComboChoice<AreaShape>> Shapes { get; } =

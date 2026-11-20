@@ -22,4 +22,6 @@ public sealed partial class AnalysisPanelViewModel : ViewModelBase
         Scope = scope;
         Tabs = [biomes, structures, locations];
     }
+
+    partial void OnSelectedTabIndexChanged(int value) => Scope.IsAreaShown = value < 0 || value >= Tabs.Count || Tabs[value].UsesArea;
 }

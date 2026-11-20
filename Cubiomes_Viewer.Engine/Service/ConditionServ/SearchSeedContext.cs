@@ -17,6 +17,9 @@ public sealed class SearchSeedContext
     public GeneratorFlags Flags { get; }
     public StructureRules Rules { get; }
 
+    /// <summary>Stops the job the seeds belong to, which conditions that may look far check while they do.</summary>
+    public CancellationToken CancellationToken { get; }
+
     private readonly IWorkerContext _workerContext;
     private readonly SearchDefinition _definition;
     private BlockPos[] _positions = [];
@@ -26,7 +29,7 @@ public sealed class SearchSeedContext
     private int[] _indices = [];
     private bool[] _marks = [];
 
-    public SearchSeedContext(IWorkerContext workerContext, SearchDefinition definition)
+    public SearchSeedContext(IWorkerContext workerContext, SearchDefinition definition, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(workerContext);
         ArgumentNullException.ThrowIfNull(definition);
@@ -36,6 +39,7 @@ public sealed class SearchSeedContext
         Version = definition.Version;
         Flags = definition.Flags;
         Rules = definition.Rules;
+        CancellationToken = cancellationToken;
     }
 
     /// <summary>Moves on to another seed.</summary>

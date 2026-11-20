@@ -49,6 +49,7 @@ Opens with a right-click on the map, or on a touch screen by touching and holdin
   - climate parameters of the 1.18+ Overworld, and the temperature categories of 1.7 to 1.17
   - the world spawn, strongholds (optionally with eyes already in their end portal, from 1.13, or with an item in their chests), slime chunks, and "any of" several conditions
 - **Chest loot** (while Settings → Map shows what chests hold): an item the chests of the structures or strongholds hold, at least a number of it in one chest or in all chests together, optionally with an enchantment of a lowest level, such as an enchanted book with Mending.
+- **An area or a number of findings**: a structure or stronghold condition looks inside its area, or outward from its point, nearest first, until it has found as many as it asks for, as far as the world border, such as the nearest stronghold with an enchanted book in its chests.
 - **Seeds** from a range, a list, structure seeds (each with its 65,536 sister seeds) or the quad-hut bases.
 - **Fast**: a quick pass rules seeds out without generating biomes, about 68 million structure seeds a second on 15 desktop threads.
 - **Kept**: a stopped or interrupted search continues after a restart, and can be saved to and opened from a file.
@@ -64,16 +65,16 @@ cubiomes-viewer-cli --session search.json --out seeds.txt
 
 - Seeds are printed as they are found, or written to the file given with `--out`; progress shows in the terminal.
 - Progress is saved back into the session file, so Ctrl+C stops the search, the same command continues it, and the app opens it where the CLI left off. `--reset` starts over.
-- Use a CLI at least as new as the app that saved the search. An older one leaves out what it does not know, such as a chest requirement, or cannot open the file.
+- Use a CLI at least as new as the app that saved the search. An older one leaves out what it does not know, such as a chest requirement or a limit by findings, or cannot open the file.
 - `--selftest` runs the app's self-test.
 - Exit codes: 0 finished, 1 failed, 2 invalid arguments, 130 stopped.
 
 ### Analysis
 
-- For the seed on the map, or up to 1,000 found seeds, in a square or circle around a point:
-  - **Biomes**: how many samples each biome has, and its sample nearest to the centre
-  - **Structures**: nearest first with their details, and quads of swamp huts, desert pyramids, jungle temples or igloos
-  - **Locations**: the spawn point, strongholds, and where the search conditions hold
+- For the seed on the map, or up to 1,000 found seeds, around a point:
+  - **Biomes**: how many samples each biome has in a square or circle around it, and its sample nearest to the centre
+  - **Structures**: those in a square or circle around it, nearest first with their details, and quads of swamp huts, desert pyramids, jungle temples or igloos
+  - **Locations**: the spawn point, as many strongholds as you ask for, nearest first, and where the search conditions hold, each in its own area or by its own number of findings
 - Every list can be saved as a CSV file, and choosing a line opens its seed at that place on the map.
 
 ### Export

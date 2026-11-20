@@ -34,8 +34,8 @@ public sealed partial class ClimateFieldsViewModel : ObservableObject, IConditio
     public string MatchLabel { get; } = "In range";
     public string ScaleLabel { get; } = "Sample every";
     public string HeightLabel { get; } = "Sample at Y";
-    public decimal MinValue { get; } = -(decimal)ClimateCondition.Limit;
-    public decimal MaxValue { get; } = (decimal)ClimateCondition.Limit;
+    public decimal MinValue { get; } = -(decimal)ClimateCondition.ValueLimit;
+    public decimal MaxValue { get; } = (decimal)ClimateCondition.ValueLimit;
     public decimal MinHeight { get; } = Constants.MinSampleHeight;
     public decimal MaxHeight { get; } = Constants.MaxSampleHeight;
 

@@ -22,9 +22,12 @@ internal sealed class ConditionTestBench : IDisposable
         return (status, matches);
     }
 
-    public SearchSeedContext Open(SearchDefinition definition, long seed)
+    public SearchSeedContext Open(SearchDefinition definition, long seed) => OpenStoppedBy(definition, seed, CancellationToken.None);
+
+    /// <summary>Opens a seed as part of a job that <paramref name="stopping"/> stops.</summary>
+    public SearchSeedContext OpenStoppedBy(SearchDefinition definition, long seed, CancellationToken stopping)
     {
-        var context = new SearchSeedContext(_workerContext, definition);
+        var context = new SearchSeedContext(_workerContext, definition, stopping);
         context.Open(seed);
         return context;
     }

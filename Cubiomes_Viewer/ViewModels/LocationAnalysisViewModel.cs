@@ -21,17 +21,28 @@ namespace Cubiomes_Viewer.ViewModels;
 /// <summary>The spawn point, the strongholds in the area, and where the conditions of the search hold for each seed.</summary>
 public sealed partial class LocationAnalysisViewModel : AnalysisTabViewModel
 {
+    private const int DefaultStrongholds = 3;
+    private const int MaxStrongholdCount = 128;
+
     public override string Title { get; } = "Locations";
     public override string RunLabel { get; } = "Find locations";
     public string LandmarksLabel { get; } = "Spawn point and strongholds";
     public string ConditionsLabel { get; } = "Where the search conditions hold";
-    public string Hint { get; } = "The spawn point is listed wherever it is, the strongholds only inside the area. The conditions of the Search panel are tested in full; one relative to another shows what it found around the place that made the seed match.";
+    public string StrongholdLimitLabel { get; } = "Strongholds, nearest first";
+    public string Hint { get; } = "The spawn point is listed wherever it is, and as many strongholds as you ask for, nearest to the point first. The conditions of the Search panel are tested in full, in their own areas; one relative to another shows what it found around the place that made the seed match.";
+    public decimal MinStrongholds { get; } = 1;
+    public decimal MaxStrongholds { get; } = MaxStrongholdCount;
+
+    public override bool UsesArea => false;
 
     [ObservableProperty]
     public partial bool ShowLandmarks { get; set; } = true;
 
     [ObservableProperty]
     public partial bool ShowConditions { get; set; } = true;
+
+    [ObservableProperty]
+    public partial decimal? StrongholdLimit { get; set; } = DefaultStrongholds;
 
     protected override string FileName { get; } = "locations.csv";
 
@@ -87,11 +98,13 @@ public sealed partial class LocationAnalysisViewModel : AnalysisTabViewModel
         if (landmarks.Spawn is { } spawn)
             Add(world, "World spawn", spawn, null, rows, table);
 
-        for (var index = 0; index < landmarks.Strongholds.Length; index++)
-        {
-            if (Scope.Area.Contains(Scope.Reference, landmarks.Strongholds[index]))
-                Add(world, Format($"Stronghold {index + 1}"), landmarks.Strongholds[index], null, rows, table);
-        }
+        var limit = (int)Math.Clamp(Math.Round(StrongholdLimit ?? DefaultStrongholds), 1, MaxStrongholdCount);
+        var nearest = landmarks.Strongholds
+            .Select((position, index) => (Position: position, Number: index + 1))
+            .OrderBy(stronghold => stronghold.Position.SquaredDistanceTo(Scope.Reference))
+            .Take(limit);
+        foreach (var (position, number) in nearest)
+            Add(world, Format($"Stronghold {number}"), position, null, rows, table);
     }
 
     private void AddConditions(WorldKey world, SearchDefinition definition, ConditionLocations locations, List<AnalysisRow> rows, CsvTable table)

@@ -191,6 +191,34 @@ public sealed class AnalysisPanelViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
+    public async Task Locations_Strongholds_AreTheNearestToThePointAsManyAsAskedFor()
+    {
+        Locations.ShowConditions = false;
+        Locations.StrongholdLimit = 2;
+        (_panel.Scope.CenterX, _panel.Scope.CenterZ) = (4000, -2500);
+
+        await Locations.RunCommand.ExecuteAsync(null);
+
+        var reference = new BlockPos(4000, -2500);
+        var landmarks = await _services.GetRequiredService<IAnalysisService>().FindLandmarksAsync([_session.Key], cancellationToken: TestContext.Current.CancellationToken);
+        var nearest = landmarks[0].Strongholds.OrderBy(position => position.SquaredDistanceTo(reference)).Take(2).Select(position => (BlockPos?)position);
+        Assert.Empty(Notifications.Errors);
+        Assert.Equal(nearest, Locations.Rows.Where(row => row.Title.StartsWith("Stronghold ", StringComparison.Ordinal)).Select(row => row.Position));
+    }
+
+    [AvaloniaFact]
+    public void Scope_Area_IsOfferedOnlyOnTheTabsThatLookInsideIt()
+    {
+        var shown = _panel.Tabs.Select((_, index) =>
+        {
+            _panel.SelectedTabIndex = index;
+            return _panel.Scope.IsAreaShown;
+        }).ToList();
+
+        Assert.Equal([true, true, false], shown);
+    }
+
+    [AvaloniaFact]
     public async Task Scope_FoundSeeds_AreOfferedOnceTheSearchFoundSomeAndAnalysedInItsVersion()
     {
         var search = _services.GetRequiredService<ISeedSearchService>();

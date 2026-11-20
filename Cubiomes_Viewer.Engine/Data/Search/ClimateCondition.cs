@@ -13,7 +13,7 @@ public sealed record ClimateCondition : SearchCondition
     public const int DefaultScale = 64;
 
     /// <summary>The largest value a parameter can take either way.</summary>
-    public const double Limit = 3;
+    public const double ValueLimit = 3;
 
     public ClimateParameter Parameter { get; init; } = ClimateParameter.Continentalness;
 

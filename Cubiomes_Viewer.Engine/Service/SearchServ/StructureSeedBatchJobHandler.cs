@@ -34,7 +34,7 @@ public sealed class StructureSeedBatchJobHandler : IJobHandler<StructureSeedBatc
         ArgumentOutOfRangeException.ThrowIfNegative(job.FirstUpperBits);
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(job.FirstUpperBits, StructureSeed.SisterSeeds);
 
-        var scan = new Scan(job, _planCompiler.Compile(job.Definition), new SearchSeedContext(context, job.Definition), _seedMatcher, cancellationToken);
+        var scan = new Scan(job, _planCompiler.Compile(job.Definition), new SearchSeedContext(context, job.Definition, cancellationToken), _seedMatcher, cancellationToken);
         scan.Run();
         return scan.ToResult();
     }

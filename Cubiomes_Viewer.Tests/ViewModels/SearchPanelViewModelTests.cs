@@ -433,6 +433,59 @@ public sealed class SearchPanelViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void ConditionLimit_Findings_HidesTheAreaAndLooksForTheNearest()
+    {
+        var village = Add<StructureCondition>();
+
+        village.SelectedLimit = village.Limits.Single(choice => choice.Value == SearchLimit.Findings);
+        village.Count = 3;
+
+        Assert.False(village.IsAreaShown);
+        Assert.False(village.IsExcludeShown);
+        Assert.True(village.IsCountShown);
+        Assert.Equal("Findings, nearest first", village.CountLabel);
+        Assert.Equal("the nearest 3 around the world origin", village.Summary);
+        var condition = Assert.IsType<StructureCondition>(Assert.Single(Setup.Setup.Definition.Conditions));
+        Assert.Equal((SearchLimit.Findings, 3), (condition.Limit, condition.Count));
+        Assert.True(Setup.IsValid);
+    }
+
+    [AvaloniaFact]
+    public void ConditionLimit_FindingsOfAnExcludedCondition_LooksForThemInstead()
+    {
+        var village = Add<StructureCondition>();
+        village.IsExcluded = true;
+
+        village.SelectedLimit = village.Limits.Single(choice => choice.Value == SearchLimit.Findings);
+
+        Assert.True(village.IsCountShown);
+        Assert.Equal(1, Assert.Single(Setup.Setup.Definition.Conditions).Count);
+        Assert.True(Setup.IsValid);
+    }
+
+    [AvaloniaFact]
+    public void ConditionLimit_OfAKindThatOnlyLooksInAnArea_IsNotOffered()
+    {
+        var slime = Add<SlimeChunkCondition>();
+
+        Assert.False(slime.CanLimitFindings);
+        Assert.True(slime.IsAreaShown);
+    }
+
+    [AvaloniaFact]
+    public void Show_SetupWithAConditionLimitedByFindings_ShowsItsLimit()
+    {
+        var setup = new SearchSetup { Definition = new SearchDefinition { Conditions = [new StrongholdCondition { Id = 1, Limit = SearchLimit.Findings, Count = 2 }] } };
+
+        Setup.Show(setup);
+
+        var stronghold = Assert.Single(Setup.Conditions);
+        Assert.Equal(SearchLimit.Findings, stronghold.SelectedLimit?.Value);
+        Assert.Equal("the nearest 2 around the world origin", stronghold.Summary);
+        Assert.Equal(setup.Definition.Conditions, Setup.Setup.Definition.Conditions);
+    }
+
+    [AvaloniaFact]
     public void Show_SetupWithAQuadSource_ShowsItsFields()
     {
         var setup = new SearchSetup

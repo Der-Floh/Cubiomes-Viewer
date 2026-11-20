@@ -17,7 +17,7 @@ public sealed class ConditionLocationsJobHandler(ISearchPlanCompiler planCompile
         cancellationToken.ThrowIfCancellationRequested();
 
         var plan = planCompiler.Compile(job.Definition);
-        var seedContext = new SearchSeedContext(context, job.Definition);
+        var seedContext = new SearchSeedContext(context, job.Definition, cancellationToken);
         seedContext.Open(job.Seed);
         var isMatch = seedMatcher.Evaluate(plan, seedContext, SearchPass.Full) == SearchOutcome.Passed;
 

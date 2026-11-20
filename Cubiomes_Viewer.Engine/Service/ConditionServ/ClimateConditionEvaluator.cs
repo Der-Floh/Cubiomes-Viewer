@@ -40,7 +40,7 @@ public sealed class ClimateConditionEvaluator : ConditionEvaluator<ClimateCondit
             yield return "Choose where in the area the values have to lie.";
 
         if (!IsWithinLimit(condition.Min) || !IsWithinLimit(condition.Max))
-            yield return $"The values lie from -{ClimateCondition.Limit} to {ClimateCondition.Limit}.";
+            yield return $"The values lie from -{ClimateCondition.ValueLimit} to {ClimateCondition.ValueLimit}.";
         else if (condition.Max < condition.Min)
             yield return "The highest value comes before the lowest one.";
 
@@ -107,7 +107,7 @@ public sealed class ClimateConditionEvaluator : ConditionEvaluator<ClimateCondit
 
     private static int ToSteps(double value) => (int)Math.Round(value * Constants.ClimateUnit);
 
-    private static bool IsWithinLimit(double value) => Math.Abs(value) <= ClimateCondition.Limit;
+    private static bool IsWithinLimit(double value) => Math.Abs(value) <= ClimateCondition.ValueLimit;
 
     private readonly record struct SampleTally(long Samples, long InRange, long Sum, long SumX, long SumZ);
 }

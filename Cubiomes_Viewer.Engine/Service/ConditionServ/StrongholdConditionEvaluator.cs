@@ -38,6 +38,7 @@ public sealed class StrongholdConditionEvaluator : ConditionEvaluator<Stronghold
         Create = id => new StrongholdCondition { Id = id, Area = SearchArea.Circle(DefaultRadius) },
         Cost = SearchCost,
         MaxCount = MaxMatches,
+        CanLimitFindings = true,
     };
 
     private readonly ILootCatalog _lootCatalog;
@@ -83,6 +84,8 @@ public sealed class StrongholdConditionEvaluator : ConditionEvaluator<Stronghold
     {
         if (pass == SearchPass.Quick)
             return MatchStatus.Unknown;
+        if (condition.Limit == SearchLimit.Findings)
+            return FindNearest(condition, reference, context, matches);
 
         var strongholds = context.GetPositions(CountStrongholdsWithin(context.Version, GetReach(condition.Area, reference)));
         var generator = context.GetGenerator(Dimension.Overworld);
@@ -95,6 +98,29 @@ public sealed class StrongholdConditionEvaluator : ConditionEvaluator<Stronghold
 
         return Decide(condition, reference, matches);
     }
+
+    /// <summary>Tests the strongholds of the whole world, nearest first, until it has found the matches asked for.</summary>
+    private static MatchStatus FindNearest(StrongholdCondition condition, BlockPos reference, SearchSeedContext context, List<BlockPos> matches)
+    {
+        var strongholds = context.GetPositions(CountAllStrongholds(context.Version));
+        var generator = context.GetGenerator(Dimension.Overworld);
+        var count = generator.FindStrongholds(strongholds);
+        var nearestFirst = strongholds[..count].ToArray().OrderBy(position => position.SquaredDistanceTo(reference)).ThenBy(position => position.Z).ThenBy(position => position.X);
+        foreach (var stronghold in nearestFirst)
+        {
+            context.CancellationToken.ThrowIfCancellationRequested();
+            if (!IsMatch(condition, generator, stronghold))
+                continue;
+
+            matches.Add(stronghold);
+            if (matches.Count == condition.Count)
+                break;
+        }
+
+        return Decide(condition, reference, matches);
+    }
+
+    private static int CountAllStrongholds(McVersion version) => version < FirstRingVersion ? StrongholdsBeforeRings : _strongholdsUpToRing[^1];
 
     private static bool IsMatch(StrongholdCondition condition, IWorldGenerator generator, BlockPos stronghold)
         => HasPortalEyes(generator, stronghold, condition.PortalEyes)

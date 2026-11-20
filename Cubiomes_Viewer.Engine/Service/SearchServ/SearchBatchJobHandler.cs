@@ -29,7 +29,7 @@ public sealed class SearchBatchJobHandler : IJobHandler<SearchBatchJob, SearchBa
 
         var stopwatch = Stopwatch.StartNew();
         var plan = _planCompiler.Compile(job.Definition);
-        var seedContext = new SearchSeedContext(context, job.Definition);
+        var seedContext = new SearchSeedContext(context, job.Definition, cancellationToken);
         List<int> matches = [];
         var tested = 0;
 

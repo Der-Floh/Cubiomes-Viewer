@@ -23,11 +23,11 @@ public sealed partial class SearchConditionViewModel : ObservableObject
     private const string OriginName = "The world origin";
 
     public string ReferenceLabel { get; } = "Looks around";
+    public string LimitLabel { get; } = "Limited by";
     public string ShapeLabel { get; } = "Area";
     public string DistanceLabel { get; } = "Blocks from the point";
     public string FromLabel { get; } = "From X and Z";
     public string ToLabel { get; } = "To X and Z";
-    public string CountLabel { get; } = "At least";
     public string ExcludeLabel { get; } = "None may be there";
     public string AnchorLabel { get; } = "Conditions relative to it start from";
     public string RemoveLabel { get; } = "Remove condition";
@@ -41,6 +41,7 @@ public sealed partial class SearchConditionViewModel : ObservableObject
     public bool HasArea => Descriptor.HasArea;
     public bool HasCount => Descriptor.MaxCount > 1;
     public bool CanExclude => Descriptor.CanExclude;
+    public bool CanLimitFindings => Descriptor.CanLimitFindings;
     public string Header => string.Create(CultureInfo.InvariantCulture, $"{Id} · {Fields?.Title ?? Descriptor.Name}");
 
     /// <summary>The condition whose match this one looks around, or <see langword="null"/> for the world origin.</summary>
@@ -54,6 +55,10 @@ public sealed partial class SearchConditionViewModel : ObservableObject
 
     [ObservableProperty]
     public partial ComboChoice<int>? SelectedReference { get; set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsAreaShown), nameof(IsDistanceShown), nameof(IsRectangleShown), nameof(IsExcludeShown), nameof(IsCountShown), nameof(IsAnchorShown), nameof(CountLabel))]
+    public partial ComboChoice<SearchLimit>? SelectedLimit { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsDistanceShown), nameof(IsRectangleShown))]
@@ -92,13 +97,22 @@ public sealed partial class SearchConditionViewModel : ObservableObject
     [ObservableProperty]
     public partial bool HasProblems { get; set; }
 
-    public bool IsDistanceShown => HasArea && SelectedShape?.Value != AreaShape.Rectangle;
-    public bool IsRectangleShown => HasArea && SelectedShape?.Value == AreaShape.Rectangle;
-    public bool IsCountShown => HasCount && !IsExcluded;
-    public bool IsAnchorShown => HasRelativeConditions && HasCount && !IsExcluded;
+    public bool IsAreaShown => HasArea && !IsLimitedByFindings;
+    public bool IsDistanceShown => IsAreaShown && SelectedShape?.Value != AreaShape.Rectangle;
+    public bool IsRectangleShown => IsAreaShown && SelectedShape?.Value == AreaShape.Rectangle;
+    public bool IsExcludeShown => CanExclude && !IsLimitedByFindings;
+    public bool IsCountShown => HasCount && !IsExcludedInArea;
+    public bool IsAnchorShown => HasRelativeConditions && HasCount && !IsExcludedInArea;
+    public string CountLabel => IsLimitedByFindings ? "Findings, nearest first" : "At least";
 
     /// <summary>The world origin and the conditions this one can look around without looking around itself.</summary>
     public ObservableCollection<ComboChoice<int>> ReferenceChoices { get; } = [];
+
+    public ObservableCollection<ComboChoice<SearchLimit>> Limits { get; } =
+    [
+        new() { Display = "An area", Value = SearchLimit.Area },
+        new() { Display = "The number of findings", Value = SearchLimit.Findings },
+    ];
 
     public ObservableCollection<ComboChoice<AreaShape>> Shapes { get; } =
     [
@@ -115,6 +129,11 @@ public sealed partial class SearchConditionViewModel : ObservableObject
     ];
 
     public ObservableCollection<string> Problems { get; } = [];
+
+    private bool IsLimitedByFindings => SelectedLimit?.Value == SearchLimit.Findings;
+
+    /// <summary>Whether the condition asks for no match in its area; looking until something is found cannot.</summary>
+    private bool IsExcludedInArea => IsExcluded && !IsLimitedByFindings;
 
     private readonly Action<SearchConditionViewModel> _edited;
     private readonly Action<SearchConditionViewModel> _removed;
@@ -133,6 +152,7 @@ public sealed partial class SearchConditionViewModel : ObservableObject
         Fields = createFields(OnFieldsChanged);
         Show(() =>
         {
+            SelectedLimit = Limits.FirstOrDefault(choice => choice.Value == condition.Limit) ?? Limits[0];
             ShowArea(condition.Area);
             IsExcluded = condition.IsExclusion;
             Count = Math.Max(condition.Count, 1);
@@ -148,7 +168,8 @@ public sealed partial class SearchConditionViewModel : ObservableObject
         var condition = Descriptor.Create(Id) with
         {
             RelativeTo = RelativeTo,
-            Count = IsExcluded ? 0 : HasCount ? Math.Max(1, ToInt(Count)) : 1,
+            Limit = CanLimitFindings && IsLimitedByFindings ? SearchLimit.Findings : SearchLimit.Area,
+            Count = IsExcludedInArea ? 0 : HasCount ? Math.Max(1, ToInt(Count)) : 1,
             Anchor = SelectedAnchor?.Value ?? MatchAnchor.AnyMatch,
         };
 
@@ -211,6 +232,8 @@ public sealed partial class SearchConditionViewModel : ObservableObject
         RelativeTo = value.Value == OriginReference ? null : value.Value;
         ReportEdit();
     }
+
+    partial void OnSelectedLimitChanged(ComboChoice<SearchLimit>? value) => ReportEdit();
 
     /// <summary>A rectangle starts out as the square or circle it replaces.</summary>
     partial void OnSelectedShapeChanged(ComboChoice<AreaShape>? value)
@@ -290,7 +313,7 @@ public sealed partial class SearchConditionViewModel : ObservableObject
         if (!HasArea)
             return Descriptor.Description;
 
-        string?[] parts = [Fields?.Detail, DescribeCount(), DescribeArea()];
+        string?[] parts = IsLimitedByFindings ? [Fields?.Detail, DescribeFindings()] : [Fields?.Detail, DescribeCount(), DescribeArea()];
         return string.Join(" · ", parts.Where(part => !string.IsNullOrEmpty(part)));
     }
 
@@ -301,9 +324,17 @@ public sealed partial class SearchConditionViewModel : ObservableObject
         return HasCount && ToInt(Count) > 1 ? string.Create(CultureInfo.InvariantCulture, $"at least {ToInt(Count)}") : null;
     }
 
+    private string DescribeFindings()
+    {
+        var count = HasCount ? ToInt(Count) : 1;
+        return count > 1
+            ? string.Create(CultureInfo.InvariantCulture, $"the nearest {count} around {DescribeReference()}")
+            : $"the nearest one around {DescribeReference()}";
+    }
+
     private string DescribeArea()
     {
-        var reference = RelativeTo is { } parent ? string.Create(CultureInfo.InvariantCulture, $"condition {parent}") : "the world origin";
+        var reference = DescribeReference();
         return SelectedShape?.Value switch
         {
             AreaShape.Circle => $"within a radius of {Format(Distance)} blocks around {reference}",
@@ -311,6 +342,8 @@ public sealed partial class SearchConditionViewModel : ObservableObject
             _ => $"within {Format(Distance)} blocks of {reference}",
         };
     }
+
+    private string DescribeReference() => RelativeTo is { } parent ? string.Create(CultureInfo.InvariantCulture, $"condition {parent}") : "the world origin";
 
     private void Show(Action changes)
     {

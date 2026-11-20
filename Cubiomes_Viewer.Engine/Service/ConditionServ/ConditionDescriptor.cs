@@ -18,6 +18,9 @@ public sealed record ConditionDescriptor
     /// <summary>Whether the kind looks in an area of its own.</summary>
     public bool HasArea { get; init; } = true;
 
+    /// <summary>Whether the kind can look outward until it has found its matches, nearest first, instead of inside an area.</summary>
+    public bool CanLimitFindings { get; init; }
+
     /// <summary>The most matches the kind can be asked for; 1 when it is either there or not.</summary>
     public int MaxCount { get; init; } = 1;
 

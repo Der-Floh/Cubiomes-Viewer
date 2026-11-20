@@ -35,6 +35,7 @@ public sealed class ConditionValidator : IConditionValidator
         var descriptor = _registry.GetDescriptor(condition);
         var structural = GetNumberProblems(condition, definition)
             .Concat(GetReferenceProblems(condition, definition))
+            .Concat(GetLimitProblems(condition, descriptor))
             .Concat(GetAreaProblems(condition, descriptor))
             .Concat(GetCountProblems(condition, descriptor))
             .ToList();
@@ -80,9 +81,19 @@ public sealed class ConditionValidator : IConditionValidator
         return false;
     }
 
+    private static IEnumerable<string> GetLimitProblems(SearchCondition condition, ConditionDescriptor descriptor)
+    {
+        if (!Enum.IsDefined(condition.Limit))
+            yield return "Choose what limits where the condition looks.";
+        else if (condition.Limit == SearchLimit.Findings && !descriptor.CanLimitFindings)
+            yield return "This kind of condition looks only inside an area.";
+        else if (condition.Limit == SearchLimit.Findings && condition.IsExclusion)
+            yield return "A condition that looks until it finds something cannot ask for none.";
+    }
+
     private static IEnumerable<string> GetAreaProblems(SearchCondition condition, ConditionDescriptor descriptor)
     {
-        if (!descriptor.HasArea)
+        if (!descriptor.HasArea || condition.Limit == SearchLimit.Findings)
             yield break;
 
         var area = condition.Area;

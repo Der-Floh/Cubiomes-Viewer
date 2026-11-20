@@ -33,6 +33,9 @@ public abstract partial class AnalysisTabViewModel : ViewModelBase
     public abstract string Title { get; }
     public abstract string RunLabel { get; }
 
+    /// <summary>Whether the tab looks inside the area of the scope.</summary>
+    public virtual bool UsesArea => true;
+
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(RunCommand), nameof(StopCommand), nameof(SaveCommand))]
     public partial bool IsRunning { get; set; }

@@ -175,7 +175,12 @@
                         <TextBlock Classes="field-label" Text="{Binding ReferenceLabel}"/>
                         <ComboBox Classes="fill" ItemsSource="{Binding ReferenceChoices}" SelectedItem="{Binding SelectedReference}"/>
 
-                        <StackPanel Classes="form" IsVisible="{Binding HasArea}">
+                        <StackPanel Classes="form" IsVisible="{Binding CanLimitFindings}">
+                            <TextBlock Classes="field-label" Text="{Binding LimitLabel}"/>
+                            <ComboBox Classes="fill" ItemsSource="{Binding Limits}" SelectedItem="{Binding SelectedLimit}"/>
+                        </StackPanel>
+
+                        <StackPanel Classes="form" IsVisible="{Binding IsAreaShown}">
                             <TextBlock Classes="field-label" Text="{Binding ShapeLabel}"/>
                             <ComboBox Classes="fill" ItemsSource="{Binding Shapes}" SelectedItem="{Binding SelectedShape}"/>
                             <StackPanel Classes="form" IsVisible="{Binding IsDistanceShown}">
@@ -192,7 +197,7 @@
                             </Grid>
                         </StackPanel>
 
-                        <CheckBox Content="{Binding ExcludeLabel}" IsChecked="{Binding IsExcluded}" IsVisible="{Binding CanExclude}"/>
+                        <CheckBox Content="{Binding ExcludeLabel}" IsChecked="{Binding IsExcluded}" IsVisible="{Binding IsExcludeShown}"/>
                         <StackPanel Classes="form" IsVisible="{Binding IsCountShown}">
                             <TextBlock Classes="field-label" Text="{Binding CountLabel}"/>
                             <NumericUpDown Value="{Binding Count}" Minimum="1" Maximum="{Binding MaxCount}" Increment="1" FormatString="0"/>

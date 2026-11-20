@@ -77,6 +77,10 @@
             <StackPanel Classes="form">
                 <TextBlock Classes="damp" Text="{Binding Hint}" TextWrapping="Wrap"/>
                 <CheckBox Content="{Binding LandmarksLabel}" IsChecked="{Binding ShowLandmarks}"/>
+                <StackPanel Classes="form" IsVisible="{Binding ShowLandmarks}">
+                    <TextBlock Classes="field-label" Text="{Binding StrongholdLimitLabel}"/>
+                    <NumericUpDown Value="{Binding StrongholdLimit}" Minimum="{Binding MinStrongholds}" Maximum="{Binding MaxStrongholds}" Increment="1" FormatString="0"/>
+                </StackPanel>
                 <CheckBox Content="{Binding ConditionsLabel}" IsChecked="{Binding ShowConditions}"/>
                 <ContentControl Content="{Binding}" ContentTemplate="{StaticResource AnalysisResultsTemplate}"/>
             </StackPanel>
@@ -97,7 +101,7 @@
                     <NumericUpDown Grid.Column="1" Value="{Binding CenterZ}" Minimum="{Binding MinCoordinate}" Maximum="{Binding MaxCoordinateValue}" Increment="16" FormatString="0"/>
                     <Button Grid.Column="2" Classes="compact" Content="{Binding UseMapCenterLabel}" Command="{Binding UseMapCenterCommand}"/>
                 </Grid>
-                <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
+                <Grid Classes="pair" ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" IsVisible="{Binding IsAreaShown}">
                     <TextBlock Classes="field-label" Text="{Binding ShapeLabel}"/>
                     <ComboBox Grid.Row="1" Classes="fill" ItemsSource="{Binding Shapes}" SelectedItem="{Binding SelectedShape}"/>
                     <TextBlock Grid.Column="1" Classes="field-label" Text="{Binding SizeLabel}"/>
