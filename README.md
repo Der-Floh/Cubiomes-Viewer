@@ -79,9 +79,9 @@ cubiomes-viewer-cli --session search.json --out seeds.txt
 ### Export
 
 - Saves the layer the map shows as one PNG per seed, at any scale and size; several seeds, or an image cut into tiles, become a ZIP archive.
-- Biome PNGs keep the biome id as palette index, so tools can read the biomes back. Other layers, and a biome map shaded by terrain height, are written in colour.
+- Biome PNGs keep the biome id as palette index, so tools can read the biomes back. Heights in grey are written as greyscale images; other layers, and a biome map shaded by terrain height, are written in colour.
 - Images are written row by row, so even huge ones need little memory; the panel warns about images many programs cannot open.
-- Strong compression: 3 to 24 % smaller than zlib's default level with a fixed PNG filter.
+- Strong compression, set for each kind of layer: biome ids unfiltered, colours and greys with the PNG filter that suits the layer and scale, tried anew on every band of rows, and greys deflated as runs. That is 3 to 24 % smaller than zlib's default level with a fixed PNG filter, and heights in grey come out about 30 % smaller than they would in colour.
 
 ### Settings
 

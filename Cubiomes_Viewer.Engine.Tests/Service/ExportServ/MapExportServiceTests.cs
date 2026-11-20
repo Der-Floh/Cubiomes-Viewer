@@ -1,11 +1,13 @@
 using System.IO.Compression;
 
 using Cubiomes_Viewer.Engine.Data;
+using Cubiomes_Viewer.Engine.Data.Compute;
 using Cubiomes_Viewer.Engine.Data.Export;
 using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Extensions;
 using Cubiomes_Viewer.Engine.Repository.AppDataRepo;
+using Cubiomes_Viewer.Engine.Service.ComputeServ;
 using Cubiomes_Viewer.Engine.Service.ExportServ;
 using Cubiomes_Viewer.Engine.Service.TileServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
@@ -158,6 +160,26 @@ public sealed class MapExportServiceTests : IDisposable
         Assert.Equal(PngColorType.Indexed, image.ColorType);
         Assert.Equal(GenerateBiomes(request.Worlds[0], request.GetLayout(), scale), image.Pixels);
         Assert.Empty(_export.FindWarnings(request));
+    }
+
+    [Fact]
+    public async Task Height_InGrey_IsAGreyscaleImageOfTheShadesOfTheMap()
+    {
+        const int scale = 16;
+        var samples = TileMetrics.NoiseCells.TileSamples;
+        var style = new TileStyle(HeightStyle.Grayscale);
+        var request = Request(World(262, McVersion.V1_21_3, Dimension.Overworld), LayerMode.Height, scale) with
+        {
+            Style = style,
+            Area = new BlockArea(0, 0, samples * scale, samples * scale),
+        };
+
+        var image = PngReader.Read(await ExportAsync(request));
+
+        Assert.Equal((samples, samples, PngColorType.Grayscale), (image.Width, image.Height, image.ColorType));
+        var shades = Paint(new TileJob(MapContent.For(request.Worlds[0], LayerMode.Height, SampleHeight, 0).GetRequest(new TileKey(scale, 0, 0)), samples), style);
+        Assert.Equal(shades, image.Pixels);
+        Assert.True(image.Pixels.Distinct().Count() > 1, "The export shows no terrain.");
     }
 
     [Fact]
@@ -331,6 +353,19 @@ public sealed class MapExportServiceTests : IDisposable
                 stream.CopyTo(content);
             return PngReader.Read(content.ToArray());
         });
+    }
+
+    /// <summary>The grey the map paints each sample of a generated tile in, as the red, green and blue it gives alike.</summary>
+    private byte[] Paint(TileJob job, TileStyle style)
+    {
+        using var context = new WorkerContext(new CubiomesWorldGeneratorFactory());
+        var tile = new TileJobHandler().Handle(job, context, CancellationToken.None);
+        var bgra = new byte[job.Samples * job.Samples * TileColorizer.BytesPerPixel];
+        _services.GetRequiredService<ITileColorizer>().Colorize(tile, style, bgra);
+
+        var pixels = bgra.Chunk(TileColorizer.BytesPerPixel).ToArray();
+        Assert.All(pixels, pixel => Assert.True(pixel[0] == pixel[1] && pixel[1] == pixel[2], "The map paints a colour that is not grey."));
+        return [.. pixels.Select(pixel => pixel[0])];
     }
 
     private static byte[] GenerateBiomes(WorldKey world, MapImageLayout layout, int scale)

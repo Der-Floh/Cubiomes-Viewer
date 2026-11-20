@@ -10,6 +10,9 @@ public readonly record struct RgbColor(byte Red, byte Green, byte Blue)
     private const double DimmedBrightness = 0.3;
     private const int HexDigits = 6;
 
+    /// <summary>Whether the colour is a shade of grey, with red, green and blue alike.</summary>
+    public bool IsGray => Red == Green && Green == Blue;
+
     /// <summary>A dark gray of the same brightness, for colours that should step back.</summary>
     public RgbColor ToDimmed()
     {

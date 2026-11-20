@@ -19,6 +19,9 @@ public interface ITileColorizer
     /// </summary>
     TileRequest? GetReliefTile(TileRequest tile, TileStyle style);
 
+    /// <summary>Whether <see cref="Colorize"/> paints every sample of tiles like this one in a style in a shade of grey.</summary>
+    bool PaintsGray(TileRequest tile, TileStyle style);
+
     /// <summary>The colour <see cref="Colorize"/> gives each biome id in a style; the id that marks no biome has none that counts.</summary>
     IReadOnlyList<RgbColor> GetBiomeColors(TileStyle style, McVersion version);
 }

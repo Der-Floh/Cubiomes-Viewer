@@ -118,6 +118,21 @@ public sealed class TileColorizerHeightStyleTests
         Assert.Equal(Paint(tile, HeightStyle.Tinted), Paint(tile, style));
     }
 
+    [Theory]
+    [InlineData(LayerMode.Height, Dimension.Overworld, HeightStyle.Grayscale, true)]
+    [InlineData(LayerMode.Height, Dimension.End, HeightStyle.Grayscale, true)]
+    [InlineData(LayerMode.Height, Dimension.Overworld, HeightStyle.Tinted, false)]
+    [InlineData(LayerMode.Height, Dimension.Overworld, HeightStyle.Shaded, false)]
+    [InlineData(LayerMode.Height, Dimension.Overworld, HeightStyle.Contours, false)]
+    [InlineData(LayerMode.Temperature, Dimension.Overworld, HeightStyle.Grayscale, false)]
+    [InlineData(LayerMode.Biomes, Dimension.Overworld, HeightStyle.Grayscale, false)]
+    public void PaintsGray_OnlyTheGreyStyleOfHeights(LayerMode layer, Dimension dimension, HeightStyle style, bool expected)
+    {
+        var tile = new TileRequest(_world with { Dimension = dimension }, layer, 0, new TileKey(Scale, 0, 0));
+
+        Assert.Equal(expected, _colorizer.PaintsGray(tile, new TileStyle(style)));
+    }
+
     private byte[] Paint(TileData tile, HeightStyle style)
     {
         var pixels = new byte[tile.Samples * tile.Samples * TileColorizer.BytesPerPixel];

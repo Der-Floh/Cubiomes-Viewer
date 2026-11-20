@@ -45,6 +45,17 @@ public sealed class PngWriterTests
     }
 
     [Fact]
+    public async Task GrayscaleImage_ReadsBackRowByRow()
+    {
+        byte[][] rows = [[0, 40, 41, 255], [40, 40, 42, 254], [41, 0, 0, 1]];
+
+        var image = PngReader.Read(await WriteAsync(PngFormat.Grayscale, 4, rows));
+
+        Assert.Equal((4, 3, PngColorType.Grayscale), (image.Width, image.Height, image.ColorType));
+        Assert.Equal(rows.SelectMany(row => row), image.Pixels);
+    }
+
+    [Fact]
     public async Task IndexedImage_KeepsItsPaletteAndTheTransparentEntry()
     {
         var format = PngFormat.Indexed([new RgbColor(10, 20, 30), new RgbColor(40, 50, 60), new RgbColor(70, 80, 90)], transparentIndex: 2);
@@ -88,11 +99,12 @@ public sealed class PngWriterTests
     }
 
     [Theory]
-    [InlineData(2000, 1200, false)]
-    [InlineData(4500, 1100, true)]
-    public async Task Image_LargerThanOneBand_IsJoinedIntoOneStreamThatReadsBack(int width, int height, bool isIndexed)
+    [InlineData(2000, 1200, PngColorType.Rgb)]
+    [InlineData(4500, 1100, PngColorType.Indexed)]
+    [InlineData(4500, 1100, PngColorType.Grayscale)]
+    public async Task Image_LargerThanOneBand_IsJoinedIntoOneStreamThatReadsBack(int width, int height, PngColorType colorType)
     {
-        var format = isIndexed ? PngFormat.Indexed([.. Enumerable.Range(0, 256).Select(value => new RgbColor((byte)value, 0, 0))], transparentIndex: -1) : PngFormat.Rgb;
+        var format = CreateFormat(colorType);
         var rows = Enumerable.Range(0, height).Select(row => CreateTerrainRow(width * format.BytesPerPixel, row)).ToArray();
 
         var png = await WriteAsync(format, width, rows);
@@ -102,13 +114,14 @@ public sealed class PngWriterTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task Image_CompressedByWorkersOfAnotherRuntime_IsTheSameAsOnTheThreadPool(bool isIndexed)
+    [InlineData(PngColorType.Rgb)]
+    [InlineData(PngColorType.Indexed)]
+    [InlineData(PngColorType.Grayscale)]
+    public async Task Image_CompressedByWorkersOfAnotherRuntime_IsTheSameAsOnTheThreadPool(PngColorType colorType)
     {
         using var services = new ServiceCollection().AddLogging().AddCubiomesEngine().BuildServiceProvider();
         var workers = new ComputePngBandCompressor(new EnvelopeComputeService(services.GetRequiredService<ComputeWorkerHost>()), new JobPriority(JobPriorityClass.Background));
-        var format = isIndexed ? PngFormat.Indexed([.. Enumerable.Range(0, 256).Select(value => new RgbColor((byte)value, 0, 0))], transparentIndex: -1) : PngFormat.Rgb;
+        var format = CreateFormat(colorType);
         var rows = Enumerable.Range(0, 1200).Select(row => CreateTerrainRow(2000 * format.BytesPerPixel, row)).ToArray();
 
         var onThePool = await WriteAsync(format, 2000, rows);
@@ -133,6 +146,13 @@ public sealed class PngWriterTests
 
         await Assert.ThrowsAsync<InvalidOperationException>(writer.FinishAsync);
     }
+
+    private static PngFormat CreateFormat(PngColorType colorType) => colorType switch
+    {
+        PngColorType.Indexed => PngFormat.Indexed([.. Enumerable.Range(0, 256).Select(value => new RgbColor((byte)value, 0, 0))], transparentIndex: -1),
+        PngColorType.Grayscale => PngFormat.Grayscale,
+        _ => PngFormat.Rgb,
+    };
 
     /// <summary>A row of smooth areas with sharp edges, as map layers have, that changes slowly from row to row.</summary>
     private static byte[] CreateTerrainRow(int length, int row)

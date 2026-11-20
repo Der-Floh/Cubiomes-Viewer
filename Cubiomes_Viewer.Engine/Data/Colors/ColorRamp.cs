@@ -11,6 +11,9 @@ public sealed class ColorRamp
     public double Minimum => _stops[0].Position;
     public double Maximum => _stops[^1].Position;
 
+    /// <summary>Whether every colour of the ramp is a shade of grey; blends of greys stay grey.</summary>
+    public bool IsGray => _stops.All(stop => stop.Color.IsGray);
+
     private readonly ColorStop[] _stops;
 
     public ColorRamp(params ColorStop[] stops)

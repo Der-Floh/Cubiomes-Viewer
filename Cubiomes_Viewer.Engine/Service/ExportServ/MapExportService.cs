@@ -31,6 +31,7 @@ public sealed class MapExportService : IMapExportService
     private const int BgraBytes = 4;
     private const int ViewerBytesPerPixel = 4;
     private const int BiomeBytesPerSample = 1;
+    private const int GrayBytesPerSample = sizeof(short) + 1 + BgraBytes;
     private const int ColourBytesPerSample = sizeof(short) + RgbBytes + BgraBytes;
     private const int ShadedBiomeBytesPerSample = BiomeBytesPerSample + ColourBytesPerSample;
     private const double BytesPerGigabyte = 1L << 30;
@@ -104,7 +105,12 @@ public sealed class MapExportService : IMapExportService
             warnings.Add("Shaded by terrain height, the image is written in colour, so the biome ids cannot be read back from it.");
 
         var samples = TileMetrics.For(world, request.Layer).TileSamples;
-        var bytesPerSample = IsIndexed(request, world) ? BiomeBytesPerSample : isShaded ? ShadedBiomeBytesPerSample : ColourBytesPerSample;
+        var bytesPerSample = GetColorType(request, world) switch
+        {
+            PngColorType.Indexed => BiomeBytesPerSample,
+            PngColorType.Grayscale => GrayBytesPerSample,
+            _ => isShaded ? ShadedBiomeBytesPerSample : ColourBytesPerSample,
+        };
         var memory = (long)layout.Width * samples * TileRowsInMemory * bytesPerSample;
         if (memory > LargeMemoryBytes)
             warnings.Add(Format($"While it runs, the export holds about {memory / BytesPerGigabyte:N1} GB of memory for the rows of tiles it generates and writes."));
@@ -181,18 +187,28 @@ public sealed class MapExportService : IMapExportService
 
     /// <summary>
     /// Layers of biomes keep one palette index per biome id, with the id of no biome transparent, unless they are shaded by
-    /// the terrain; those and the other layers are painted.
+    /// the terrain; those and the other layers are painted, in one byte of grey where the layer is painted in greys only.
     /// </summary>
-    private PngFormat GetFormat(MapExportRequest request, WorldKey world)
-        => IsIndexed(request, world)
-            ? PngFormat.Indexed(_colorizer.GetBiomeColors(request.Style, world.Version), Constants.NoBiomeTileValue)
-            : PngFormat.Rgb;
+    private PngFormat GetFormat(MapExportRequest request, WorldKey world) => GetColorType(request, world) switch
+    {
+        PngColorType.Indexed => PngFormat.Indexed(_colorizer.GetBiomeColors(request.Style, world.Version), Constants.NoBiomeTileValue),
+        PngColorType.Grayscale => PngFormat.Grayscale,
+        _ => PngFormat.Rgb,
+    };
 
-    private bool IsIndexed(MapExportRequest request, WorldKey world) => request.Layer.HasBiomeSamples && !HasRelief(request, world);
+    private PngColorType GetColorType(MapExportRequest request, WorldKey world)
+    {
+        if (request.Layer.HasBiomeSamples)
+            return HasRelief(request, world) ? PngColorType.Rgb : PngColorType.Indexed;
+        return _colorizer.PaintsGray(GetAnyTile(request, world), request.Style) ? PngColorType.Grayscale : PngColorType.Rgb;
+    }
 
     /// <summary>Whether the style shades the layer of the world at the scale of the export; that depends on neither tile nor position.</summary>
-    private bool HasRelief(MapExportRequest request, WorldKey world)
-        => _colorizer.GetReliefTile(MapContent.For(world, request.Layer, request.SampleHeight, request.Octaves).GetRequest(new TileKey(request.Scale, 0, 0)), request.Style) is not null;
+    private bool HasRelief(MapExportRequest request, WorldKey world) => _colorizer.GetReliefTile(GetAnyTile(request, world), request.Style) is not null;
+
+    /// <summary>A tile of the export's layer and scale, for what depends on neither tile nor position.</summary>
+    private static TileRequest GetAnyTile(MapExportRequest request, WorldKey world)
+        => MapContent.For(world, request.Layer, request.SampleHeight, request.Octaves).GetRequest(new TileKey(request.Scale, 0, 0));
 
     /// <summary>
     /// Generates the image one row of tiles at a time and passes its rows on as they are complete; the next row of tiles is
@@ -202,8 +218,8 @@ public sealed class MapExportService : IMapExportService
         RowProgress rows, CancellationToken cancellationToken)
     {
         var tiles = new TileRowSource(MapContent.For(world, request.Layer, request.SampleHeight, request.Octaves), request.Scale, TileMetrics.For(world, request.Layer).TileSamples, layout);
-        var isIndexed = IsIndexed(request, world);
-        var bytesPerPixel = isIndexed ? 1 : RgbBytes;
+        var colorType = GetColorType(request, world);
+        var bytesPerPixel = colorType == PngColorType.Rgb ? RgbBytes : 1;
         var row = new byte[layout.Width * bytesPerPixel];
         var heights = new HeightRows((requests, token) => GenerateHeightsAsync(world, requests, token));
 
@@ -218,7 +234,7 @@ public sealed class MapExportService : IMapExportService
                 if (tileZ < tiles.LastRow)
                     next = GenerateAsync(tiles, tileZ + 1, request.Style, heights, stopping.Token);
 
-                var pixels = GetPixels(generated, request.Style, isIndexed);
+                var pixels = GetPixels(generated, request.Style, colorType);
                 var top = Math.Max(tileZ * tiles.Samples, layout.SampleZ);
                 var bottom = Math.Min((tileZ + 1) * tiles.Samples, layout.SampleZ + layout.Height);
                 for (var sampleZ = top; sampleZ < bottom; sampleZ++)
@@ -261,32 +277,36 @@ public sealed class MapExportService : IMapExportService
     }
 
     /// <summary>The pixels of a row of tiles, coloured side by side where the runtime has threads to share the work.</summary>
-    private byte[][] GetPixels(TileRow row, TileStyle style, bool isIndexed)
+    private byte[][] GetPixels(TileRow row, TileStyle style, PngColorType colorType)
     {
         var pixels = new byte[row.Tiles.Length][];
         if (OperatingSystem.IsBrowser())
         {
             for (var index = 0; index < row.Tiles.Length; index++)
-                pixels[index] = GetPixels(row, row.Tiles[index], style, isIndexed);
+                pixels[index] = GetPixels(row, row.Tiles[index], style, colorType);
         }
         else
         {
-            Parallel.For(0, row.Tiles.Length, index => pixels[index] = GetPixels(row, row.Tiles[index], style, isIndexed));
+            Parallel.For(0, row.Tiles.Length, index => pixels[index] = GetPixels(row, row.Tiles[index], style, colorType));
         }
 
         return pixels;
     }
 
-    /// <summary>The bytes of a tile's pixels, row by row: biome ids, or red, green and blue.</summary>
-    private byte[] GetPixels(TileRow row, TileData tile, TileStyle style, bool isIndexed)
+    /// <summary>The bytes of a tile's pixels, row by row: biome ids, greys, or red, green and blue.</summary>
+    private byte[] GetPixels(TileRow row, TileData tile, TileStyle style, PngColorType colorType)
     {
-        if (isIndexed)
+        if (colorType == PngColorType.Indexed)
             return tile.Biomes;
 
         var count = tile.Samples * tile.Samples;
         var bgra = new byte[count * BgraBytes];
         _colorizer.Colorize(tile, style, bgra, _colorizer.GetReliefTile(tile.Request, style) is { } relief ? row.Heights[relief] : null);
+        return colorType == PngColorType.Grayscale ? ToGray(bgra, count) : ToRgb(bgra, count);
+    }
 
+    private static byte[] ToRgb(byte[] bgra, int count)
+    {
         var rgb = new byte[count * RgbBytes];
         for (var index = 0; index < count; index++)
         {
@@ -296,6 +316,14 @@ public sealed class MapExportService : IMapExportService
         }
 
         return rgb;
+    }
+
+    private static byte[] ToGray(byte[] bgra, int count)
+    {
+        var gray = new byte[count];
+        for (var index = 0; index < count; index++)
+            gray[index] = bgra[index * BgraBytes];
+        return gray;
     }
 
     private static void FillRow(byte[] row, byte[][] tiles, int firstColumn, int samples, int tileRow, MapImageLayout layout, int bytesPerPixel)

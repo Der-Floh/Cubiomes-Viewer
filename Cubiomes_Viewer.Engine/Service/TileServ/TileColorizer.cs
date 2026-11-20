@@ -73,6 +73,10 @@ public sealed class TileColorizer : ITileColorizer
             : null;
     }
 
+    /// <summary>Layers of numbers painted with a grey ramp stay grey, as the light and shade of their relief scales red, green and blue alike.</summary>
+    public bool PaintsGray(TileRequest tile, TileStyle style)
+        => !tile.Layer.HasBiomeSamples && GetValues(tile).GetRamp(style).IsGray;
+
     /// <summary>The palette of the style, or that palette with every biome dimmed in which the structure type cannot generate.</summary>
     public IReadOnlyList<RgbColor> GetBiomeColors(TileStyle style, McVersion version)
     {

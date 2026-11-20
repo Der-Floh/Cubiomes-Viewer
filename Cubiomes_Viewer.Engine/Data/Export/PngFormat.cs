@@ -4,13 +4,14 @@ namespace Cubiomes_Viewer.Engine.Data.Export;
 
 /// <summary>
 /// How the pixels of a PNG are stored: one byte per pixel that picks a colour of <see cref="Palette"/>, the entry at
-/// <see cref="TransparentIndex"/> being transparent, or three bytes of red, green and blue.
+/// <see cref="TransparentIndex"/> being transparent, one byte of grey, or three bytes of red, green and blue.
 /// </summary>
 public sealed record PngFormat
 {
     public const int MaxPaletteColors = 256;
 
     public static PngFormat Rgb { get; } = new() { ColorType = PngColorType.Rgb };
+    public static PngFormat Grayscale { get; } = new() { ColorType = PngColorType.Grayscale };
 
     public PngColorType ColorType { get; private init; }
     public IReadOnlyList<RgbColor> Palette { get; private init; } = [];
