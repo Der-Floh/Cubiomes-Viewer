@@ -3,6 +3,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <EnableAotAnalyzer>true</EnableAotAnalyzer>
     <!-- AVLN3001: views take their view model through constructor injection and are created by the DI container. -->
     <NoWarn>$(NoWarn);AVLN3001</NoWarn>
   </PropertyGroup>

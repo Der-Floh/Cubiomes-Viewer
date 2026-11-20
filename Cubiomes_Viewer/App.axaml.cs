@@ -5,6 +5,7 @@ using Avalonia.Threading;
 
 using Cubiomes_Viewer.Controls.Map;
 using Cubiomes_Viewer.Data;
+using Cubiomes_Viewer.Extensions;
 using Cubiomes_Viewer.Engine.Extensions;
 using Cubiomes_Viewer.Engine.Service.SearchServ;
 using Cubiomes_Viewer.Engine.Service.SettingsServ;
@@ -200,12 +201,12 @@ public sealed partial class App : Application
         services.AddTransient<DesktopShellView>();
         services.AddTransient<MobileShellView>();
         services.AddTransient<MapHostView>();
-        services.AddTransient<LayersPanelView>();
-        services.AddTransient<SearchPanelView>();
-        services.AddTransient<AnalysisPanelView>();
-        services.AddTransient<ExportView>();
-        services.AddTransient<SettingsView>();
-        services.AddTransient<UpdateNoticeView>();
+        services.AddView<LayersPanelViewModel, LayersPanelView>();
+        services.AddView<SearchPanelViewModel, SearchPanelView>();
+        services.AddView<AnalysisPanelViewModel, AnalysisPanelView>();
+        services.AddView<ExportViewModel, ExportView>();
+        services.AddView<SettingsViewModel, SettingsView>();
+        services.AddView<UpdateNoticeViewModel, UpdateNoticeView>();
 
         // view models
         services.AddSingleton<MainViewModel>();
