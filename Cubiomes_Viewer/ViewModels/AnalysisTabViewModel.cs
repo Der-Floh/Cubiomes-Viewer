@@ -19,8 +19,8 @@ using Cubiomes_Viewer.Service.StorageServ;
 namespace Cubiomes_Viewer.ViewModels;
 
 /// <summary>
-/// One kind of analysis in the Analysis panel: it runs on the scope's seeds and area, lists what it found, opens a
-/// chosen line on the map and saves the whole result as a CSV file.
+/// One kind of analysis in the Analysis panel: it runs on the scope's seeds in the part of the world the map shows, lists
+/// what it found, opens a chosen line on the map and saves the whole result as a CSV file.
 /// </summary>
 public abstract partial class AnalysisTabViewModel : ViewModelBase
 {
@@ -32,9 +32,6 @@ public abstract partial class AnalysisTabViewModel : ViewModelBase
 
     public abstract string Title { get; }
     public abstract string RunLabel { get; }
-
-    /// <summary>Whether the tab looks inside the area of the scope.</summary>
-    public virtual bool UsesArea => true;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(RunCommand), nameof(StopCommand), nameof(SaveCommand))]
@@ -80,8 +77,8 @@ public abstract partial class AnalysisTabViewModel : ViewModelBase
         _notifications = notifications;
     }
 
-    /// <summary>Runs the analysis on the scope as it is now.</summary>
-    protected abstract Task<AnalysisResult> AnalyseAsync(IProgress<double> progress, CancellationToken cancellationToken);
+    /// <summary>Runs the analysis on the scope's seeds in the view the map showed when the run started.</summary>
+    protected abstract Task<AnalysisResult> AnalyseAsync(AnalysisView view, IProgress<double> progress, CancellationToken cancellationToken);
 
     protected static string Format(FormattableString text) => text.ToString(CultureInfo.InvariantCulture);
 
@@ -91,6 +88,7 @@ public abstract partial class AnalysisTabViewModel : ViewModelBase
     [RelayCommand(CanExecute = nameof(CanRun))]
     private Task RunAsync() => RunGuardedAsync(async () =>
     {
+        var view = Scope.TakeView();
         using var stopping = new CancellationTokenSource();
         using var shown = _progress.Begin();
         _stopping = stopping;
@@ -98,7 +96,7 @@ public abstract partial class AnalysisTabViewModel : ViewModelBase
         StatusText = "Working…";
         try
         {
-            Show(await AnalyseAsync(new Progress<double>(share =>
+            Show(await AnalyseAsync(view, new Progress<double>(share =>
             {
                 ShowProgress(share);
                 shown.Report(share);

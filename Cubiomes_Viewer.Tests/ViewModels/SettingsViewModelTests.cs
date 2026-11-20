@@ -155,7 +155,8 @@ public sealed class SettingsViewModelTests : IDisposable
         _settings.SelectedCsvSeparator = _settings.CsvSeparators.Single(choice => choice.Value == CsvSeparator.Semicolon);
         _services.GetRequiredService<WorldSession>().Version = McVersion.V1_16_5;
         var biomes = Assert.IsType<BiomeAnalysisViewModel>(_services.GetRequiredService<AnalysisPanelViewModel>().Tabs[0]);
-        _services.GetRequiredService<AnalysisScopeViewModel>().Size = 256;
+        _map.ViewSize = (256, 256);
+        _map.Camera = new MapCamera(0, 0, 1);
         await biomes.RunCommand.ExecuteAsync(null);
 
         await biomes.SaveCommand.ExecuteAsync(null);

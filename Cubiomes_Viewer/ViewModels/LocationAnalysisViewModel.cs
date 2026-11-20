@@ -18,31 +18,23 @@ using Cubiomes_Viewer.Service.StorageServ;
 
 namespace Cubiomes_Viewer.ViewModels;
 
-/// <summary>The spawn point, the strongholds in the area, and where the conditions of the search hold for each seed.</summary>
+/// <summary>
+/// The spawn point and the strongholds the map shows, and where the conditions of the search hold for each seed. Conditions
+/// that look around the world origin in an area look in what the map shows instead.
+/// </summary>
 public sealed partial class LocationAnalysisViewModel : AnalysisTabViewModel
 {
-    private const int DefaultStrongholds = 3;
-    private const int MaxStrongholdCount = 128;
-
     public override string Title { get; } = "Locations";
     public override string RunLabel { get; } = "Find locations";
     public string LandmarksLabel { get; } = "Spawn point and strongholds";
     public string ConditionsLabel { get; } = "Where the search conditions hold";
-    public string StrongholdLimitLabel { get; } = "Strongholds, nearest first";
-    public string Hint { get; } = "The spawn point is listed wherever it is, and as many strongholds as you ask for, nearest to the point first. The conditions of the Search panel are tested in full, in their own areas; one relative to another shows what it found around the place that made the seed match.";
-    public decimal MinStrongholds { get; } = 1;
-    public decimal MaxStrongholds { get; } = MaxStrongholdCount;
-
-    public override bool UsesArea => false;
+    public string Hint { get; } = "While the map shows the Overworld, the spawn point is listed wherever it is and the strongholds the map shows, nearest to its middle first. The conditions of the Search panel are tested in full: those around the world origin look in what the map shows, those relative to another keep their own area around it, and those limited by findings look as far as they need to.";
 
     [ObservableProperty]
     public partial bool ShowLandmarks { get; set; } = true;
 
     [ObservableProperty]
     public partial bool ShowConditions { get; set; } = true;
-
-    [ObservableProperty]
-    public partial decimal? StrongholdLimit { get; set; } = DefaultStrongholds;
 
     protected override string FileName { get; } = "locations.csv";
 
@@ -62,14 +54,14 @@ public sealed partial class LocationAnalysisViewModel : AnalysisTabViewModel
         _structureCatalog = structureCatalog;
     }
 
-    protected override async Task<AnalysisResult> AnalyseAsync(IProgress<double> progress, CancellationToken cancellationToken)
+    protected override async Task<AnalysisResult> AnalyseAsync(AnalysisView view, IProgress<double> progress, CancellationToken cancellationToken)
     {
         if (!ShowLandmarks && !ShowConditions)
             throw new InvalidOperationException("Choose what to look for.");
 
         var worlds = Scope.GetWorlds(Dimension.Overworld);
-        var definition = GetDefinition();
-        var landmarks = ShowLandmarks ? await _analysis.FindLandmarksAsync(worlds, progress, cancellationToken) : [];
+        var definition = InView(GetDefinition(), view);
+        var landmarks = ShowLandmarks && view.Dimension == Dimension.Overworld ? await _analysis.FindLandmarksAsync(worlds, progress, cancellationToken) : [];
         var locations = ShowConditions && definition.Conditions.Count > 0
             ? await _analysis.FindConditionLocationsAsync(definition, [.. worlds.Select(world => world.Seed)], cancellationToken: cancellationToken)
             : [];
@@ -80,9 +72,9 @@ public sealed partial class LocationAnalysisViewModel : AnalysisTabViewModel
         {
             var world = worlds[index];
             if (landmarks.Count > 0)
-                AddLandmarks(world, landmarks[index], rows, table);
+                AddLandmarks(world, landmarks[index], view, rows, table);
             if (locations.Count > 0)
-                AddConditions(world, definition, locations[index], rows, table);
+                AddConditions(world, definition, locations[index], view.Reference, rows, table);
         }
 
         var multipleSeeds = worlds.Count > 1;
@@ -93,32 +85,65 @@ public sealed partial class LocationAnalysisViewModel : AnalysisTabViewModel
     private SearchDefinition GetDefinition()
         => Scope.SelectedSeeds?.Value == SeedScope.FoundSeeds && _search.Setup is { } setup ? setup.Definition : _searchSession.Setup.Definition;
 
-    private void AddLandmarks(WorldKey world, WorldLandmarks landmarks, List<AnalysisRow> rows, CsvTable table)
-    {
-        if (landmarks.Spawn is { } spawn)
-            Add(world, "World spawn", spawn, null, rows, table);
-
-        var limit = (int)Math.Clamp(Math.Round(StrongholdLimit ?? DefaultStrongholds), 1, MaxStrongholdCount);
-        var nearest = landmarks.Strongholds
-            .Select((position, index) => (Position: position, Number: index + 1))
-            .OrderBy(stronghold => stronghold.Position.SquaredDistanceTo(Scope.Reference))
-            .Take(limit);
-        foreach (var (position, number) in nearest)
-            Add(world, Format($"Stronghold {number}"), position, null, rows, table);
-    }
-
-    private void AddConditions(WorldKey world, SearchDefinition definition, ConditionLocations locations, List<AnalysisRow> rows, CsvTable table)
+    /// <summary>
+    /// The definition with the conditions that look around the world origin in an area, in the dimension the map shows,
+    /// looking in what the map shows instead.
+    /// </summary>
+    private SearchDefinition InView(SearchDefinition definition, AnalysisView view)
     {
         var conditions = definition.Conditions.ToDictionary(condition => condition.Id);
-        foreach (var place in locations.Places.OrderBy(place => place.ConditionId).ThenBy(place => place.Position.SquaredDistanceTo(Scope.Reference)))
-            Add(world with { Dimension = place.Dimension }, Format($"{place.ConditionId} · {Describe(conditions[place.ConditionId])}"), place.Position, locations.IsMatch, rows, table);
+        return definition with
+        {
+            Conditions = [.. definition.Conditions.Select(condition => IsAroundTheOrigin(condition, conditions) && LooksInAnArea(condition) && LooksIn(condition, definition.Version) == view.Dimension
+                ? condition with { Area = view.AroundOrigin }
+                : condition)],
+        };
     }
 
-    private void Add(WorldKey world, string name, BlockPos position, bool? meetsConditions, List<AnalysisRow> rows, CsvTable table)
+    /// <summary>Whether a condition looks around the world origin: it is relative to no other, or only to "any of" groups that look around it themselves.</summary>
+    private bool IsAroundTheOrigin(SearchCondition condition, IReadOnlyDictionary<int, SearchCondition> conditions)
     {
-        var detail = DescribePosition(position, Scope.Reference) + (meetsConditions == false ? " · the seed does not meet every condition" : string.Empty);
+        for (var step = 0; step <= conditions.Count; step++)
+        {
+            if (condition.RelativeTo is not { } parent)
+                return true;
+            if (!conditions.TryGetValue(parent, out var group) || !_conditionRegistry.GetDescriptor(group).AcceptsAnyChild)
+                return false;
+            condition = group;
+        }
+
+        return false;
+    }
+
+    private bool LooksInAnArea(SearchCondition condition) => condition.Limit == SearchLimit.Area && _conditionRegistry.GetDescriptor(condition).HasArea;
+
+    private Dimension LooksIn(SearchCondition condition, McVersion version) => _conditionRegistry.GetEvaluator(condition).GetDimension(condition, version);
+
+    private static void AddLandmarks(WorldKey world, WorldLandmarks landmarks, AnalysisView view, List<AnalysisRow> rows, CsvTable table)
+    {
+        if (landmarks.Spawn is { } spawn)
+            Add(world, "World spawn", spawn, null, view.Reference, rows, table);
+
+        var shown = landmarks.Strongholds
+            .Select((position, index) => (Position: position, Number: index + 1))
+            .Where(stronghold => view.Contains(stronghold.Position))
+            .OrderBy(stronghold => stronghold.Position.SquaredDistanceTo(view.Reference));
+        foreach (var (position, number) in shown)
+            Add(world, Format($"Stronghold {number}"), position, null, view.Reference, rows, table);
+    }
+
+    private void AddConditions(WorldKey world, SearchDefinition definition, ConditionLocations locations, BlockPos reference, List<AnalysisRow> rows, CsvTable table)
+    {
+        var conditions = definition.Conditions.ToDictionary(condition => condition.Id);
+        foreach (var place in locations.Places.OrderBy(place => place.ConditionId).ThenBy(place => place.Position.SquaredDistanceTo(reference)))
+            Add(world with { Dimension = place.Dimension }, Format($"{place.ConditionId} · {Describe(conditions[place.ConditionId])}"), place.Position, locations.IsMatch, reference, rows, table);
+    }
+
+    private static void Add(WorldKey world, string name, BlockPos position, bool? meetsConditions, BlockPos reference, List<AnalysisRow> rows, CsvTable table)
+    {
+        var detail = DescribePosition(position, reference) + (meetsConditions == false ? " · the seed does not meet every condition" : string.Empty);
         rows.Add(new AnalysisRow(name, detail, world, position));
-        table.Add(Format($"{world.Seed}"), name, Format($"{position.X}"), Format($"{position.Z}"), Format($"{position.DistanceTo(Scope.Reference):0.#}"), meetsConditions switch { true => "yes", false => "no", null => string.Empty });
+        table.Add(Format($"{world.Seed}"), name, Format($"{position.X}"), Format($"{position.Z}"), Format($"{position.DistanceTo(reference):0.#}"), meetsConditions switch { true => "yes", false => "no", null => string.Empty });
     }
 
     private string Describe(SearchCondition condition) => condition switch

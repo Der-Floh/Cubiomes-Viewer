@@ -12,7 +12,7 @@ A cross-platform Minecraft Java Edition seed finder and biome map viewer, built 
 - **Structure details** on a click: the variant, the Y level, the rooms of larger structures and, if you turn it on, what the chests hold.
 - **More layers**: climate parameters, surface heights, rivers, ocean temperatures and where a structure type can generate, plus optional relief shading of the biome map.
 - **Seed search** for seeds that meet a list of conditions, in the app or from the command line.
-- **Analysis** of the biomes, structures and locations around a point, for one seed or up to 1,000 found seeds.
+- **Analysis** of the biomes, structures and locations the map shows, for one seed or up to 1,000 found seeds.
 - **Export** of any layer as PNG images of any size, whole or cut into tiles.
 - **Map tools**: pins, distance measurements, links to a spot, find nearest structure or biome, and the matching portal spot in the other dimension.
 - **Desktop, Android and web**: Windows, Linux, macOS, Android phones and the browser; the desktop and Android apps tell you when a newer version is out.
@@ -71,10 +71,10 @@ cubiomes-viewer-cli --session search.json --out seeds.txt
 
 ### Analysis
 
-- For the seed on the map, or up to 1,000 found seeds, around a point:
-  - **Biomes**: how many samples each biome has in a square or circle around it, and its sample nearest to the centre
-  - **Structures**: those in a square or circle around it, nearest first with their details, and quads of swamp huts, desert pyramids, jungle temples or igloos
-  - **Locations**: the spawn point, as many strongholds as you ask for, nearest first, and where the search conditions hold, each in its own area or by its own number of findings
+- In what the map shows and in its dimension, for the seed on the map or up to 1,000 found seeds; zoom out to look further:
+  - **Biomes**: how many samples each biome has, and its sample nearest to the middle of the map
+  - **Structures**: nearest first with their details, and quads of swamp huts, desert pyramids, jungle temples or igloos
+  - **Locations**: the spawn point, the strongholds in view, and where the search conditions hold. Conditions around the world origin look in what the map shows; those relative to another, and those limited by findings, look as the search does.
 - Every list can be saved as a CSV file, and choosing a line opens its seed at that place on the map.
 
 ### Export

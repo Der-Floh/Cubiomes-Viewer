@@ -2,7 +2,9 @@ using Avalonia.Headless.XUnit;
 
 using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Analysis;
+using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Search;
+using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.AnalysisServ;
 using Cubiomes_Viewer.Engine.Service.SearchServ;
@@ -18,6 +20,7 @@ namespace Cubiomes_Viewer.Tests.ViewModels;
 public sealed class AnalysisPanelViewModelTests : IDisposable
 {
     private const long Seed = 42;
+    private const int ViewPixels = 1024;
 
     private readonly ServiceProvider _services = TestServices.Create();
     private readonly AnalysisPanelViewModel _panel;
@@ -31,7 +34,7 @@ public sealed class AnalysisPanelViewModelTests : IDisposable
         _map = _services.GetRequiredService<MapViewModel>();
         _session.Version = McVersion.V1_16_5;
         _session.Seed = Seed;
-        _panel.Scope.Size = 1024;
+        ShowMap(blocksPerPixel: 1);
     }
 
     private BiomeAnalysisViewModel Biomes => Assert.IsType<BiomeAnalysisViewModel>(_panel.Tabs[0]);
@@ -43,11 +46,19 @@ public sealed class AnalysisPanelViewModelTests : IDisposable
 
     public void Dispose() => _services.Dispose();
 
+    /// <summary>Shows a square of the map around a point, so that the analyses look at as many blocks on each side as the pixels times their blocks.</summary>
+    private void ShowMap(double blocksPerPixel, BlockPos centre = default)
+    {
+        _map.ViewSize = (ViewPixels, ViewPixels);
+        _map.Camera = new MapCamera(centre.X, centre.Z, blocksPerPixel);
+    }
+
     [AvaloniaFact]
-    public async Task Biomes_TheSeedOnTheMap_ListsEachBiomeMostCommonFirst()
+    public async Task Biomes_TheVisibleMap_ListsEachBiomeMostCommonFirst()
     {
         Biomes.SelectedScale = Biomes.Scales.Single(choice => choice.Value == 64);
-        var census = Assert.Single(await _services.GetRequiredService<IAnalysisService>().CountBiomesAsync([new BiomeCensusRequest(_session.Key, SearchArea.Square(1024), new BlockPos(0, 0), 64, 64)]));
+        var view = _panel.Scope.TakeView();
+        var census = Assert.Single(await _services.GetRequiredService<IAnalysisService>().CountBiomesAsync([new BiomeCensusRequest(_session.Key, view.Area, view.Reference, 64, 64)]));
 
         await Biomes.RunCommand.ExecuteAsync(null);
 
@@ -74,7 +85,7 @@ public sealed class AnalysisPanelViewModelTests : IDisposable
     [AvaloniaFact]
     public async Task Biomes_AreaTooLargeToCount_SayWhyAndEmptyTheStatusStrip()
     {
-        _panel.Scope.Size = 1_000_000;
+        ShowMap(blocksPerPixel: 1024);
         Biomes.SelectedScale = Biomes.Scales.Single(choice => choice.Value == 64);
 
         await Biomes.RunCommand.ExecuteAsync(null);
@@ -118,7 +129,7 @@ public sealed class AnalysisPanelViewModelTests : IDisposable
     {
         foreach (var toggle in Structures.Types)
             toggle.IsChecked = toggle.Name is "Village" or "Ruined portal";
-        _panel.Scope.Size = 4096;
+        ShowMap(blocksPerPixel: 4);
 
         await Structures.RunCommand.ExecuteAsync(null);
 
@@ -133,28 +144,30 @@ public sealed class AnalysisPanelViewModelTests : IDisposable
     [AvaloniaFact]
     public void Structures_UntilChosenInTheTab_AreTheOnesOnTheMap()
     {
-        _map.VisibleStructures = new HashSet<StructureType> { StructureType.Fortress, StructureType.Bastion };
+        _map.VisibleStructures = new HashSet<StructureType> { StructureType.Village, StructureType.Monument };
 
-        Assert.Equal(["Bastion remnant", "Nether fortress"], Structures.Types.Where(toggle => toggle.IsChecked).Select(toggle => toggle.Name).Order());
+        Assert.Equal(["Ocean monument", "Village"], Structures.Types.Where(toggle => toggle.IsChecked).Select(toggle => toggle.Name).Order());
 
-        Structures.Types.Single(toggle => toggle.Name == "Village").IsChecked = true;
-        _map.VisibleStructures = new HashSet<StructureType> { StructureType.Monument };
+        Structures.Types.Single(toggle => toggle.Name == "Igloo").IsChecked = true;
+        _map.VisibleStructures = new HashSet<StructureType> { StructureType.DesertPyramid };
 
-        Assert.Equal(["Bastion remnant", "Nether fortress", "Village"], Structures.Types.Where(toggle => toggle.IsChecked).Select(toggle => toggle.Name).Order());
+        Assert.Equal(["Igloo", "Ocean monument", "Village"], Structures.Types.Where(toggle => toggle.IsChecked).Select(toggle => toggle.Name).Order());
     }
 
     [AvaloniaFact]
-    public async Task Structures_OfTheNetherAndTheEnd_OpenTheDimensionTheyAreIn()
+    public async Task Structures_OfTheDimensionTheMapShows_AreTheOnlyOnesOfferedAndListed()
     {
+        _session.Dimension = Dimension.Nether;
+        ShowMap(blocksPerPixel: 4);
         foreach (var toggle in Structures.Types)
-            toggle.IsChecked = toggle.Name is "Village" or "Nether fortress" or "End city";
-        _panel.Scope.Size = 4096;
+            toggle.IsChecked = toggle.Name is "Nether fortress" or "Bastion remnant";
 
         await Structures.RunCommand.ExecuteAsync(null);
 
+        Assert.DoesNotContain(Structures.Types, toggle => toggle.Name is "Village" or "End city");
         Assert.Empty(Notifications.Errors);
-        Assert.Equal(["End city", "Nether fortress", "Village"], Structures.Rows.Select(row => row.Title).Distinct().Order());
-        Assert.All(Structures.Rows, row => Assert.Equal(row.Title switch { "End city" => Dimension.End, "Nether fortress" => Dimension.Nether, _ => Dimension.Overworld }, row.World.Dimension));
+        Assert.Equal(["Bastion remnant", "Nether fortress"], Structures.Rows.Select(row => row.Title).Distinct().Order());
+        Assert.All(Structures.Rows, row => Assert.Equal(Dimension.Nether, row.World.Dimension));
     }
 
     [AvaloniaFact]
@@ -177,6 +190,7 @@ public sealed class AnalysisPanelViewModelTests : IDisposable
     [AvaloniaFact]
     public async Task Locations_SpawnAndTheSearchConditions_AreListed()
     {
+        ShowMap(blocksPerPixel: 4);
         _services.GetRequiredService<ISearchSessionService>().Setup = new SearchSetup
         {
             Definition = new SearchDefinition { Version = McVersion.V1_16_5, Conditions = [new StructureCondition { Id = 1, Type = StructureType.Village, Area = SearchArea.Square(4096) }] },
@@ -191,31 +205,89 @@ public sealed class AnalysisPanelViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
-    public async Task Locations_Strongholds_AreTheNearestToThePointAsManyAsAskedFor()
+    public async Task Locations_Strongholds_AreTheOnesTheMapShowsNearestToItsMiddleFirst()
     {
         Locations.ShowConditions = false;
-        Locations.StrongholdLimit = 2;
-        (_panel.Scope.CenterX, _panel.Scope.CenterZ) = (4000, -2500);
+        ShowMap(blocksPerPixel: 6, new BlockPos(1000, -500));
 
         await Locations.RunCommand.ExecuteAsync(null);
 
-        var reference = new BlockPos(4000, -2500);
-        var landmarks = await _services.GetRequiredService<IAnalysisService>().FindLandmarksAsync([_session.Key], cancellationToken: TestContext.Current.CancellationToken);
-        var nearest = landmarks[0].Strongholds.OrderBy(position => position.SquaredDistanceTo(reference)).Take(2).Select(position => (BlockPos?)position);
+        var view = _panel.Scope.TakeView();
+        var strongholds = (await FindLandmarksAsync()).Strongholds;
+        var expected = strongholds.Where(view.Contains).OrderBy(position => position.SquaredDistanceTo(view.Reference)).Select(position => (BlockPos?)position).ToList();
         Assert.Empty(Notifications.Errors);
-        Assert.Equal(nearest, Locations.Rows.Where(row => row.Title.StartsWith("Stronghold ", StringComparison.Ordinal)).Select(row => row.Position));
+        Assert.InRange(expected.Count, 1, strongholds.Length - 1);
+        Assert.Equal(expected, Locations.Rows.Where(row => row.Title.StartsWith("Stronghold ", StringComparison.Ordinal)).Select(row => row.Position));
     }
 
     [AvaloniaFact]
-    public void Scope_Area_IsOfferedOnlyOnTheTabsThatLookInsideIt()
+    public async Task Locations_WhileTheMapShowsTheNether_LeaveOutTheSpawnAndTheStrongholds()
     {
-        var shown = _panel.Tabs.Select((_, index) =>
-        {
-            _panel.SelectedTabIndex = index;
-            return _panel.Scope.IsAreaShown;
-        }).ToList();
+        Locations.ShowConditions = false;
+        _session.Dimension = Dimension.Nether;
 
-        Assert.Equal([true, true, false], shown);
+        await Locations.RunCommand.ExecuteAsync(null);
+
+        Assert.Empty(Notifications.Errors);
+        Assert.Empty(Locations.Rows);
+    }
+
+    [AvaloniaFact]
+    public async Task Locations_ConditionsAroundTheOrigin_LookInWhatTheMapShowsAndThoseLimitedByFindingsAsFarAsTheyNeed()
+    {
+        ShowMap(blocksPerPixel: 4);
+        UseConditions(
+            new StructureCondition { Id = 1, Type = StructureType.Village, Area = SearchArea.Square(16) },
+            new StrongholdCondition { Id = 2, Limit = SearchLimit.Findings });
+
+        await Locations.RunCommand.ExecuteAsync(null);
+
+        var view = _panel.Scope.TakeView();
+        var villages = Locations.Rows.Where(row => row.Title == "1 · Village").Select(row => Assert.NotNull(row.Position)).ToList();
+        var nearestStronghold = (await FindLandmarksAsync()).Strongholds.MinBy(position => position.SquaredDistanceTo(new BlockPos(0, 0)));
+        Assert.Empty(Notifications.Errors);
+        Assert.True(villages.Count > 1, "The villages were looked for only around the world origin.");
+        Assert.All(villages, village => Assert.True(view.Contains(village)));
+        Assert.Equal(nearestStronghold, Assert.NotNull(Assert.Single(Locations.Rows, row => row.Title == "2 · Stronghold").Position));
+    }
+
+    [AvaloniaFact]
+    public async Task Locations_ConditionRelativeToAnother_KeepsItsOwnAreaAroundIt()
+    {
+        ShowMap(blocksPerPixel: 4);
+        UseConditions(
+            new StructureCondition { Id = 1, Type = StructureType.Village, Area = SearchArea.Square(16) },
+            new StrongholdCondition { Id = 2, RelativeTo = 1, Area = SearchArea.Square(16) });
+
+        await Locations.RunCommand.ExecuteAsync(null);
+
+        Assert.Empty(Notifications.Errors);
+        Assert.Contains(Locations.Rows, row => row.Title.StartsWith("Stronghold ", StringComparison.Ordinal));
+        Assert.DoesNotContain(Locations.Rows, row => row.Title == "2 · Stronghold");
+    }
+
+    [AvaloniaFact]
+    public void Scope_View_IsWhatTheMapShowsAroundItsMiddle()
+    {
+        _map.ViewSize = (800, 600);
+        _map.Camera = new MapCamera(100, -50, 4);
+
+        var view = _panel.Scope.TakeView();
+
+        Assert.Equal("The visible map", _panel.Scope.SeedChoices[0].Display);
+        Assert.Equal(new BlockPos(100, -50), view.Reference);
+        Assert.Equal(SearchArea.Rectangle(-1500, -1250, 1699, 1149), view.AroundOrigin);
+        Assert.Equal(Dimension.Overworld, view.Dimension);
+    }
+
+    [AvaloniaFact]
+    public async Task Scope_MapWithoutASizeYet_IsNothingToLookAt()
+    {
+        _map.ViewSize = (0, 0);
+
+        await Biomes.RunCommand.ExecuteAsync(null);
+
+        Assert.Equal(["The map shows nothing yet to look at."], Notifications.Errors);
     }
 
     [AvaloniaFact]
@@ -234,13 +306,9 @@ public sealed class AnalysisPanelViewModelTests : IDisposable
         Assert.All(_panel.Scope.GetWorlds(Dimension.Overworld), world => Assert.Equal(McVersion.V1_12_2, world.Version));
     }
 
-    [AvaloniaFact]
-    public void Scope_MapCentre_BecomesThePointTheAreaLiesAround()
-    {
-        _map.GoTo(1234.6, -987.2);
+    private void UseConditions(params SearchCondition[] conditions)
+        => _services.GetRequiredService<ISearchSessionService>().Setup = new SearchSetup { Definition = new SearchDefinition { Version = McVersion.V1_16_5, Conditions = conditions } };
 
-        _panel.Scope.UseMapCenterCommand.Execute(null);
-
-        Assert.Equal(new BlockPos(1235, -987), _panel.Scope.Reference);
-    }
+    private async Task<WorldLandmarks> FindLandmarksAsync()
+        => (await _services.GetRequiredService<IAnalysisService>().FindLandmarksAsync([_session.Key with { Dimension = Dimension.Overworld }], cancellationToken: TestContext.Current.CancellationToken))[0];
 }

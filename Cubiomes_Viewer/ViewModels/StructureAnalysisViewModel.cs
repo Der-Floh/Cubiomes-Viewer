@@ -20,11 +20,12 @@ using Cubiomes_Viewer.Service.StructureDescriptionServ;
 
 namespace Cubiomes_Viewer.ViewModels;
 
-/// <summary>The structures of the chosen types in the area, nearest first, and the quads of hut-like structures.</summary>
+/// <summary>
+/// The structures of the chosen types in what the map shows, nearest first, and the quads of hut-like structures. Only the
+/// types of the dimension the map shows are offered.
+/// </summary>
 public sealed partial class StructureAnalysisViewModel : AnalysisTabViewModel
 {
-    private static readonly Dimension[] _dimensions = [Dimension.Overworld, Dimension.Nether, Dimension.End];
-
     public override string Title { get; } = "Structures";
     public override string RunLabel { get; } = "List structures";
     public string TypesLabel { get; } = "Structures";
@@ -44,7 +45,7 @@ public sealed partial class StructureAnalysisViewModel : AnalysisTabViewModel
     [ObservableProperty]
     public partial ComboChoice<QuadQuality>? SelectedQuadQuality { get; set; }
 
-    /// <summary>The structure types of the version the map shows, the ones on the map chosen to begin with.</summary>
+    /// <summary>The structure types of the version and dimension the map shows, the ones on the map chosen to begin with.</summary>
     public ObservableCollection<MarkerToggleViewModel> Types { get; } = [];
 
     public IReadOnlyList<ComboChoice<StructureType>> QuadTypes { get; }
@@ -76,7 +77,7 @@ public sealed partial class StructureAnalysisViewModel : AnalysisTabViewModel
         ChooseTheMapsStructures();
         session.PropertyChanged += (_, args) =>
         {
-            if (args.PropertyName == nameof(WorldSession.Version))
+            if (args.PropertyName is nameof(WorldSession.Version) or nameof(WorldSession.Dimension))
                 ShowTypes();
         };
         map.PropertyChanged += (_, args) =>
@@ -86,16 +87,16 @@ public sealed partial class StructureAnalysisViewModel : AnalysisTabViewModel
         };
     }
 
-    protected override async Task<AnalysisResult> AnalyseAsync(IProgress<double> progress, CancellationToken cancellationToken)
+    protected override async Task<AnalysisResult> AnalyseAsync(AnalysisView view, IProgress<double> progress, CancellationToken cancellationToken)
     {
         var worlds = Scope.GetWorlds(Dimension.Overworld);
-        var (area, reference) = (Scope.Area, Scope.Reference);
-        StructureListRequest[] structures = [.. worlds.SelectMany(world => ChosenTypesOf(world.Version, area).Select(type => new StructureListRequest(world, type, area, reference, Describe)))];
-        QuadListRequest[] quads = ListQuads && SelectedQuadType is { } quadType
+        var (area, reference) = (view.Area, view.Reference);
+        StructureListRequest[] structures = [.. worlds.SelectMany(world => ChosenTypesOf(world.Version, view).Select(type => new StructureListRequest(world, type, area, reference, Describe)))];
+        QuadListRequest[] quads = ListQuads && SelectedQuadType is { } quadType && view.Dimension == Dimension.Overworld
             ? [.. worlds.Where(world => _analysis.FindQuadProblems(quadType.Value, world.Version, area).Count == 0).Select(world => new QuadListRequest(world, quadType.Value, area, reference, SelectedQuadQuality?.Value ?? QuadQuality.Barely))]
             : [];
         if (structures.Length == 0 && quads.Length == 0)
-            throw new InvalidOperationException("Choose at least one structure that generates in this version, in an area that is not too large.");
+            throw new InvalidOperationException("Choose at least one structure of this version and dimension; zoom in if the map shows too much for it.");
 
         var listings = await _analysis.ListStructuresAsync(structures, progress, cancellationToken);
         var quadListings = await _analysis.ListQuadsAsync(quads, cancellationToken: cancellationToken);
@@ -108,8 +109,11 @@ public sealed partial class StructureAnalysisViewModel : AnalysisTabViewModel
         return new AnalysisResult([.. entries.Select(entry => multipleSeeds ? entry.Row with { Title = Format($"{entry.Row.Title} · seed {entry.World.Seed}") } : entry.Row)], table, Format($"Found {SearchProgressText.Count(entries.Count, "structure")} in {SearchProgressText.Count(worlds.Count, "seed")}."));
     }
 
-    private IEnumerable<StructureType> ChosenTypesOf(McVersion version, SearchArea area)
-        => _chosen.Where(type => _analysis.FindStructureProblems(type, version, area).Count == 0).Order();
+    private IEnumerable<StructureType> ChosenTypesOf(McVersion version, AnalysisView view)
+    {
+        var available = _structureCatalog.GetAvailable(version, view.Dimension).Select(info => info.Type).ToHashSet();
+        return _chosen.Where(type => available.Contains(type) && _analysis.FindStructureProblems(type, version, view.Area).Count == 0).Order();
+    }
 
     /// <summary>The structures of each world, nearest first over all types.</summary>
     private IEnumerable<(WorldKey, AnalysisRow, string[])> CreateEntries(IReadOnlyList<StructureListRequest> requests, IReadOnlyList<StructureListing> listings)
@@ -144,7 +148,7 @@ public sealed partial class StructureAnalysisViewModel : AnalysisTabViewModel
     private void ShowTypes()
     {
         Types.Clear();
-        foreach (var info in _dimensions.SelectMany(dimension => _structureCatalog.GetAvailable(_session.Version, dimension)).DistinctBy(info => info.Type))
+        foreach (var info in _structureCatalog.GetAvailable(_session.Version, _session.Dimension))
             Types.Add(new MarkerToggleViewModel(info.Name, _styleService.GetStructureMarker(info.Type), _chosen.Contains(info.Type), isChosen => Choose(info.Type, isChosen)));
     }
 

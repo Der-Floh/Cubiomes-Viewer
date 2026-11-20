@@ -2,67 +2,28 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 
 using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Search;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.SearchServ;
+using Cubiomes_Viewer.Engine.Service.TileServ;
 
 namespace Cubiomes_Viewer.ViewModels;
 
-/// <summary>Which seeds the analyses look at, and the area around which point.</summary>
+/// <summary>Which seeds the analyses look at; they all look at the part of the world the map shows, in its dimension.</summary>
 public sealed partial class AnalysisScopeViewModel : ObservableObject
 {
     /// <summary>The most found seeds one analysis looks at.</summary>
     public const int MaxSeeds = 1000;
 
-    private const int DefaultSize = 2048;
-    private const int MaxSize = 1_000_000;
-    private const int MaxCoordinate = 30_000_000;
-
     public string SeedsLabel { get; } = "Seeds";
-    public string CenterLabel { get; } = "Around X and Z";
-    public string UseMapCenterLabel { get; } = "Map centre";
-    public string ShapeLabel { get; } = "Area";
-    public string SizeLabel { get; } = "Side or radius, in blocks";
-    public decimal MinCoordinate { get; } = -MaxCoordinate;
-    public decimal MaxCoordinateValue { get; } = MaxCoordinate;
-    public decimal MinSize { get; } = 1;
-    public decimal MaxSizeValue { get; } = MaxSize;
+    public string Hint { get; } = "The analyses look at what the map shows, in the dimension it shows; zoom out to look further. Found seeds are each looked at in the same place.";
 
     [ObservableProperty]
     public partial ComboChoice<SeedScope>? SelectedSeeds { get; set; }
 
-    [ObservableProperty]
-    public partial decimal? CenterX { get; set; } = 0;
-
-    [ObservableProperty]
-    public partial decimal? CenterZ { get; set; } = 0;
-
-    [ObservableProperty]
-    public partial ComboChoice<AreaShape>? SelectedShape { get; set; }
-
-    [ObservableProperty]
-    public partial decimal? Size { get; set; } = DefaultSize;
-
-    /// <summary>Whether the tab shown looks inside the area, so that its shape and size are offered.</summary>
-    [ObservableProperty]
-    public partial bool IsAreaShown { get; set; } = true;
-
     public ObservableCollection<ComboChoice<SeedScope>> SeedChoices { get; } = [];
-
-    public ObservableCollection<ComboChoice<AreaShape>> Shapes { get; } =
-    [
-        new() { Display = "Square", Value = AreaShape.Square },
-        new() { Display = "Circle", Value = AreaShape.Circle },
-    ];
-
-    public SearchArea Area => SelectedShape?.Value == AreaShape.Circle ? SearchArea.Circle(SizeInBlocks) : SearchArea.Square(SizeInBlocks);
-
-    public BlockPos Reference => new(ToBlock(CenterX), ToBlock(CenterZ));
-
-    private int SizeInBlocks => (int)Math.Clamp(Math.Round(Size ?? DefaultSize), 1, MaxSize);
 
     private readonly WorldSession _session;
     private readonly MapViewModel _map;
@@ -74,7 +35,6 @@ public sealed partial class AnalysisScopeViewModel : ObservableObject
         _session = session;
         _map = map;
         _search = search;
-        SelectedShape = Shapes[0];
         ShowSeedChoices();
         search.Changed += (_, _) => ShowSeedChoices();
     }
@@ -88,11 +48,21 @@ public sealed partial class AnalysisScopeViewModel : ObservableObject
         return [.. _search.Results.Take(MaxSeeds).Select(seed => setup.Definition.GetWorld(seed, dimension))];
     }
 
-    [RelayCommand]
-    private void UseMapCenter()
+    /// <summary>The blocks the map shows now, inside the world border, around the middle of the view.</summary>
+    /// <exception cref="InvalidOperationException">The map has no size yet.</exception>
+    public AnalysisView TakeView()
     {
-        CenterX = ToBlock((decimal)_map.Camera.CenterX);
-        CenterZ = ToBlock((decimal)_map.Camera.CenterZ);
+        var viewport = _map.Viewport;
+        if (viewport.IsEmpty)
+            throw new InvalidOperationException("The map shows nothing yet to look at.");
+
+        var reference = new BlockPos(ToBlock(viewport.Camera.CenterX), ToBlock(viewport.Camera.CenterZ));
+        var area = SearchArea.Rectangle(
+            ToBlock(Math.Floor(viewport.Left)) - reference.X,
+            ToBlock(Math.Floor(viewport.Top)) - reference.Z,
+            ToBlock(Math.Ceiling(viewport.Right) - 1) - reference.X,
+            ToBlock(Math.Ceiling(viewport.Bottom) - 1) - reference.Z);
+        return new AnalysisView(area, reference, _session.Dimension);
     }
 
     /// <summary>Offers the found seeds while there are some, keeping the choice where it can; nothing changes while their number stays.</summary>
@@ -105,7 +75,7 @@ public sealed partial class AnalysisScopeViewModel : ObservableObject
         _shownFound = found;
         var wanted = SelectedSeeds?.Value ?? SeedScope.ThisSeed;
         SeedChoices.Clear();
-        SeedChoices.Add(new ComboChoice<SeedScope> { Display = "The seed on the map", Value = SeedScope.ThisSeed });
+        SeedChoices.Add(new ComboChoice<SeedScope> { Display = "The visible map", Value = SeedScope.ThisSeed });
 
         if (found > 0)
         {
@@ -116,5 +86,5 @@ public sealed partial class AnalysisScopeViewModel : ObservableObject
         SelectedSeeds = SeedChoices.FirstOrDefault(choice => choice.Value == wanted) ?? SeedChoices[0];
     }
 
-    private static int ToBlock(decimal? value) => (int)Math.Clamp(Math.Round(value ?? 0), -MaxCoordinate, MaxCoordinate);
+    private static int ToBlock(double value) => (int)Math.Clamp(Math.Round(value), -TilePyramid.WorldLimitBlocks, TilePyramid.WorldLimitBlocks);
 }

@@ -3,6 +3,7 @@ using Avalonia.Headless.XUnit;
 using Avalonia.VisualTree;
 
 using Cubiomes_Viewer.Data;
+using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.ViewModels;
 using Cubiomes_Viewer.Views;
@@ -61,7 +62,9 @@ public sealed class AnalysisPanelViewTests : IDisposable
     [AvaloniaFact]
     public async Task Results_AfterARun_AreListedAsLines()
     {
-        _panel.Scope.Size = 512;
+        var map = _services.GetRequiredService<MapViewModel>();
+        map.ViewSize = (512, 512);
+        map.Camera = new MapCamera(0, 0, 1);
 
         await _panel.Tabs[0].RunCommand.ExecuteAsync(null);
         HeadlessInput.Render();

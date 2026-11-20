@@ -27,7 +27,7 @@ public sealed partial class BiomeAnalysisViewModel : AnalysisTabViewModel
     public override string RunLabel { get; } = "Count biomes";
     public string ScaleLabel { get; } = "Sample every";
     public string HeightLabel { get; } = "Sample at Y";
-    public string Hint { get; } = "Counts the samples of each biome in the area, in the dimension the map shows. With one seed each line also tells where the biome's sample nearest to the centre of the area is.";
+    public string Hint { get; } = "Counts the samples of each biome in what the map shows. With one seed each line also tells where the biome's sample nearest to the middle of the map is.";
     public decimal MinHeight { get; } = Constants.MinSampleHeight;
     public decimal MaxHeight { get; } = Constants.MaxSampleHeight;
 
@@ -50,48 +50,46 @@ public sealed partial class BiomeAnalysisViewModel : AnalysisTabViewModel
 
     private readonly IAnalysisService _analysis;
     private readonly IBiomeCatalog _biomeCatalog;
-    private readonly WorldSession _session;
 
     public BiomeAnalysisViewModel(AnalysisScopeViewModel scope, IAnalysisService analysis, IBiomeCatalog biomeCatalog, WorldSession session, MapViewModel map, ISeedHistoryService seedHistory, IStorageService storage, ICsvService csv, ISettingsService settingsService, IProgressService progress, INotificationService notifications)
         : base(scope, session, map, seedHistory, storage, csv, settingsService, progress, notifications)
     {
         _analysis = analysis;
         _biomeCatalog = biomeCatalog;
-        _session = session;
         SelectedScale = Scales.First(choice => choice.Value == DefaultScale);
     }
 
-    protected override async Task<AnalysisResult> AnalyseAsync(IProgress<double> progress, CancellationToken cancellationToken)
+    protected override async Task<AnalysisResult> AnalyseAsync(AnalysisView view, IProgress<double> progress, CancellationToken cancellationToken)
     {
-        var worlds = Scope.GetWorlds(_session.Dimension);
-        BiomeCensusRequest[] requests = [.. worlds.Select(world => new BiomeCensusRequest(world, Scope.Area, Scope.Reference, SelectedScale?.Value ?? DefaultScale, (int)Math.Round(Height ?? ViewSettings.DefaultSampleHeight)))];
+        var worlds = Scope.GetWorlds(view.Dimension);
+        BiomeCensusRequest[] requests = [.. worlds.Select(world => new BiomeCensusRequest(world, view.Area, view.Reference, SelectedScale?.Value ?? DefaultScale, (int)Math.Round(Height ?? ViewSettings.DefaultSampleHeight)))];
         if (_analysis.FindBiomeProblems(requests[0]) is [var problem, ..])
             throw new InvalidOperationException(problem);
 
         var census = await _analysis.CountBiomesAsync(requests, progress, cancellationToken);
-        return new AnalysisResult(CreateRows(worlds, census), CreateTable(worlds, census), DescribeTotal(worlds, census));
+        return new AnalysisResult(CreateRows(worlds, census, view.Reference), CreateTable(worlds, census), DescribeTotal(worlds, census));
     }
 
     /// <summary>One line per biome over all worlds, the biome that covers most first.</summary>
-    private List<AnalysisRow> CreateRows(IReadOnlyList<WorldKey> worlds, IReadOnlyList<BiomeCensus> census)
+    private List<AnalysisRow> CreateRows(IReadOnlyList<WorldKey> worlds, IReadOnlyList<BiomeCensus> census, BlockPos reference)
     {
         var total = census.Sum(result => (long)result.Samples);
         return [.. census
             .SelectMany((result, index) => result.Tallies.Select(tally => (World: worlds[index], Tally: tally)))
             .GroupBy(entry => entry.Tally.Biome)
-            .Select(group => CreateRow(group.Key, [.. group], total, worlds.Count))
+            .Select(group => CreateRow(group.Key, [.. group], total, worlds.Count, reference))
             .OrderByDescending(row => row.Samples)
             .ThenBy(row => row.Row.Title, StringComparer.Ordinal)
             .Select(row => row.Row)];
     }
 
-    private (AnalysisRow Row, long Samples) CreateRow(int biome, IReadOnlyList<(WorldKey World, BiomeTally Tally)> entries, long total, int worldCount)
+    private (AnalysisRow Row, long Samples) CreateRow(int biome, IReadOnlyList<(WorldKey World, BiomeTally Tally)> entries, long total, int worldCount, BlockPos reference)
     {
         var samples = entries.Sum(entry => (long)entry.Tally.Samples);
         var share = total > 0 ? (double)samples / total : 0;
         var (world, nearest) = entries.MinBy(entry => entry.Tally.NearestSquaredDistance);
         var detail = worldCount == 1
-            ? Format($"{share:P1} · {samples:N0} samples · nearest {DescribePosition(nearest.Nearest, Scope.Reference)}")
+            ? Format($"{share:P1} · {samples:N0} samples · nearest {DescribePosition(nearest.Nearest, reference)}")
             : Format($"{share:P1} of all samples · in {entries.Count:N0} of {worldCount:N0} seeds");
         return (new AnalysisRow(GetName(world.Version, biome), detail, world, nearest.Nearest), samples);
     }
