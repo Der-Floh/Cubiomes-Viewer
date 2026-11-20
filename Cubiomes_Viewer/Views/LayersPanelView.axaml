@@ -148,7 +148,9 @@
                 <Button Grid.Column="1" Classes="compact" Content="{Binding ShowAllLabel}" Command="{Binding ShowAllStructuresCommand}" IsVisible="{Binding HasStructures}"/>
                 <Button Grid.Column="2" Classes="compact" Content="{Binding HideAllLabel}" Command="{Binding HideAllStructuresCommand}" IsVisible="{Binding HasStructures}"/>
             </Grid>
-            <TextBlock Classes="damp" Text="{Binding ZoomHint}" TextWrapping="Wrap" IsVisible="{Binding HasStructures}"/>
+            <controls:InfoHint Text="{Binding ZoomHintDetails}" IsVisible="{Binding HasStructures}">
+                <TextBlock Classes="damp" Text="{Binding ZoomHint}" TextWrapping="Wrap"/>
+            </controls:InfoHint>
             <TextBlock Classes="damp" Text="{Binding NoStructuresLabel}" TextWrapping="Wrap" IsVisible="{Binding !HasStructures}"/>
             <ItemsControl ItemsSource="{Binding Structures}"/>
         </StackPanel>

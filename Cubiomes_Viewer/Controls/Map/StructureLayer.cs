@@ -11,9 +11,13 @@ using Cubiomes_Viewer.Service.MapStyleServ;
 
 namespace Cubiomes_Viewer.Controls.Map;
 
-/// <summary>Marks the structures of the chosen types, each type only while it is not too dense for the zoom.</summary>
+/// <summary>
+/// Marks the structures of the chosen types, each type up to the zoom it is marked to. Structures whose markers would overlap
+/// are drawn as one marker with their number, which a click zooms in on.
+/// </summary>
 public sealed class StructureLayer : IMarkerLayer
 {
+    private const int ReachStepsPerDoubling = 4;
     private static readonly RenderOptions _markerRenderOptions = new() { EdgeMode = EdgeMode.Antialias };
 
     public event EventHandler? Invalidated;
@@ -27,20 +31,30 @@ public sealed class StructureLayer : IMarkerLayer
     public IReadOnlyDictionary<StructureType, double> ZoomLimits { get; set; } = FrozenDictionary<StructureType, double>.Empty;
 
     /// <summary>Per structure type, the bits of the feature options whose structures are left out.</summary>
-    public IReadOnlyDictionary<StructureType, ulong> HiddenOptions { get; set; } = FrozenDictionary<StructureType, ulong>.Empty;
+    public IReadOnlyDictionary<StructureType, ulong> HiddenOptions
+    {
+        get;
+        set
+        {
+            field = value;
+            _groups = null;
+        }
+    } = FrozenDictionary<StructureType, ulong>.Empty;
 
     private readonly IStructureAreaService _areaService;
     private readonly IStructureCatalog _catalog;
     private readonly IMapStyleService _styleService;
     private readonly UiThreadCoalescer _invalidation;
     private IReadOnlyList<StructureAreaRequest> _requests = [];
+    private TypeGroups[]? _groups;
+    private double _groupedReach;
 
     public StructureLayer(IStructureAreaService areaService, IStructureCatalog catalog, IMapStyleService styleService)
     {
         _areaService = areaService;
         _catalog = catalog;
         _styleService = styleService;
-        _invalidation = new UiThreadCoalescer(() => Invalidated?.Invoke(this, EventArgs.Empty));
+        _invalidation = new UiThreadCoalescer(OnAreasChanged);
     }
 
     public void Attach() => _areaService.StateChanged += _invalidation.Request;
@@ -49,12 +63,17 @@ public sealed class StructureLayer : IMarkerLayer
     {
         _areaService.StateChanged -= _invalidation.Request;
         _requests = [];
+        _groups = null;
         _areaService.SetVisibleAreas(_requests);
     }
 
     public void UpdateScene(MapScene scene)
     {
-        _requests = IsVisible && !scene.Viewport.IsEmpty ? GetRequests(scene) : [];
+        var requests = IsVisible && !scene.Viewport.IsEmpty ? GetRequests(scene) : [];
+        if (!requests.SequenceEqual(_requests))
+            _groups = null;
+
+        _requests = requests;
         _areaService.SetVisibleAreas(_requests);
     }
 
@@ -63,28 +82,22 @@ public sealed class StructureLayer : IMarkerLayer
         if (!IsVisible || _requests.Count == 0)
             return;
 
-        var margin = _styleService.GetMarkerSize(scene.Pixels) / 2;
-        var bounds = new Rect(-margin, -margin, scene.Viewport.Width + 2 * margin, scene.Viewport.Height + 2 * margin);
-
+        var half = _styleService.GetMarkerSize(scene.Pixels) / 2;
+        var bounds = new Rect(-half, -half, scene.Viewport.Width + 2 * half, scene.Viewport.Height + 2 * half);
         using (context.PushRenderOptions(_markerRenderOptions))
         {
-            foreach (var request in _requests)
+            foreach (var type in GetGroups(scene))
             {
-                if (!_areaService.TryGetStructures(request, out var structures))
-                    continue;
-
-                var marker = _styleService.GetStructureMarker(request.Type);
-                var hidden = HiddenOptions.GetValueOrDefault(request.Type);
-                for (var index = 0; index < structures.Positions.Length; index++)
+                var marker = _styleService.GetStructureMarker(type.Type);
+                foreach (var group in type.Groups)
                 {
-                    if (IsHidden(structures, index, hidden))
+                    var center = ToScreen(scene, group);
+                    if (!bounds.Contains(center))
                         continue;
 
-                    var position = structures.Positions[index];
-                    var (x, y) = scene.Viewport.ToScreen(position.X, position.Z);
-                    var center = new Point(x, y);
-                    if (bounds.Contains(center))
-                        _styleService.DrawMarker(context, marker, center, scene.Pixels);
+                    _styleService.DrawMarker(context, marker, center, scene.Pixels);
+                    if (!group.IsSingle)
+                        _styleService.DrawCount(context, group.Count, new Point(center.X + half, center.Y - half));
                 }
             }
         }
@@ -92,30 +105,83 @@ public sealed class StructureLayer : IMarkerLayer
 
     public MapSelection? HitTest(MapScene scene, Point position)
     {
-        if (!IsVisible)
+        if (FindAt(scene, position) is not { Group.IsSingle: true } hit)
+            return null;
+
+        var (type, structure) = (hit.Type.Type, hit.Type.Positions[hit.Group.First]);
+        return MapSelection.ForStructure(_catalog.GetInfo(type).Name, _styleService.GetStructureMarker(type), structure, type);
+    }
+
+    public MarkerGroup? HitTestGroup(MapScene scene, Point position)
+        => FindAt(scene, position) is { Group.IsSingle: false } hit ? hit.Group : null;
+
+    /// <summary>The topmost marker at a position: the last one drawn there.</summary>
+    private Hit? FindAt(MapScene scene, Point position)
+    {
+        if (!IsVisible || _requests.Count == 0)
             return null;
 
         var reach = _styleService.GetMarkerSize(scene.Pixels) / 2;
-        for (var index = _requests.Count - 1; index >= 0; index--)
+        var types = GetGroups(scene);
+        for (var typeIndex = types.Length - 1; typeIndex >= 0; typeIndex--)
         {
-            var request = _requests[index];
-            if (!_areaService.TryGetStructures(request, out var structures))
-                continue;
-
-            var hidden = HiddenOptions.GetValueOrDefault(request.Type);
-            for (var last = structures.Positions.Length - 1; last >= 0; last--)
+            var groups = types[typeIndex].Groups;
+            for (var index = groups.Length - 1; index >= 0; index--)
             {
-                if (IsHidden(structures, last, hidden))
-                    continue;
-
-                var structure = structures.Positions[last];
-                var (x, y) = scene.Viewport.ToScreen(structure.X, structure.Z);
-                if (Math.Abs(x - position.X) <= reach && Math.Abs(y - position.Y) <= reach)
-                    return MapSelection.ForStructure(_catalog.GetInfo(request.Type).Name, _styleService.GetStructureMarker(request.Type), structure, request.Type);
+                var center = ToScreen(scene, groups[index]);
+                if (Math.Abs(center.X - position.X) <= reach && Math.Abs(center.Y - position.Y) <= reach)
+                    return new Hit(types[typeIndex], groups[index]);
             }
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// The markers of the loaded structures, grouped where they would overlap at the zoom of the scene. The reach is rounded to a
+    /// quarter of a zoom step, so that a gliding zoom groups them anew a few times instead of in every frame; the groups are kept
+    /// until the reach or the structures change.
+    /// </summary>
+    private TypeGroups[] GetGroups(MapScene scene)
+    {
+        var exact = _styleService.GetMarkerSize(scene.Pixels) * scene.Viewport.BlocksPerPixel;
+        var reach = Math.Pow(2, Math.Round(Math.Log2(exact) * ReachStepsPerDoubling) / ReachStepsPerDoubling);
+        if (_groups is { } groups && _groupedReach.Equals(reach))
+            return groups;
+
+        _groupedReach = reach;
+        return _groups = [.. _requests.GroupBy(request => request.Type).Select(requests => GroupType(requests.Key, requests, reach))];
+    }
+
+    private TypeGroups GroupType(StructureType type, IEnumerable<StructureAreaRequest> requests, double reach)
+    {
+        var hidden = HiddenOptions.GetValueOrDefault(type);
+        List<BlockPos> positions = [];
+        foreach (var request in requests)
+        {
+            if (!_areaService.TryGetStructures(request, out var structures))
+                continue;
+
+            for (var index = 0; index < structures.Positions.Length; index++)
+            {
+                if (!IsHidden(structures, index, hidden))
+                    positions.Add(structures.Positions[index]);
+            }
+        }
+
+        return new TypeGroups(type, positions, MarkerGrouping.Group(positions, reach));
+    }
+
+    private void OnAreasChanged()
+    {
+        _groups = null;
+        Invalidated?.Invoke(this, EventArgs.Empty);
+    }
+
+    private static Point ToScreen(MapScene scene, MarkerGroup group)
+    {
+        var (x, y) = scene.Viewport.ToScreen(group.X, group.Z);
+        return new Point(x, y);
     }
 
     /// <summary>A structure has one option of each feature, so it is left out when any of its options is hidden.</summary>
@@ -133,4 +199,8 @@ public sealed class StructureLayer : IMarkerLayer
 
         return requests;
     }
+
+    private sealed record TypeGroups(StructureType Type, IReadOnlyList<BlockPos> Positions, MarkerGroup[] Groups);
+
+    private readonly record struct Hit(TypeGroups Type, MarkerGroup Group);
 }

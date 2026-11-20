@@ -56,4 +56,7 @@ public interface IMapStyleService
 
     /// <summary>The area a pin with its tip on a point covers.</summary>
     Rect GetPinBounds(Point tip, double magnification = 1);
+
+    /// <summary>Draws how many markers or pins a group stands for, in a small badge centred on a point such as the group's top right corner.</summary>
+    void DrawCount(DrawingContext context, int count, Point center);
 }

@@ -155,8 +155,12 @@ public sealed partial class MapHostView : UserControl, IMapImageSource
             _map.FinishMeasuring(e.Block);
         else if (_map.IsPlacingPin)
             _map.PlacePin(e.Block);
+        else if (Map.HitTestMarker(e.Position) is { } marker)
+            _map.Selection = marker;
+        else if (Map.HitTestGroup(e.Position) is { } group)
+            _map.ZoomOnto(group.Min, group.Max);
         else
-            _map.Selection = Map.HitTestMarker(e.Position);
+            _map.Selection = null;
 
         if (e.PointerType != PointerType.Mouse)
             _map.SetHover(e.Block);

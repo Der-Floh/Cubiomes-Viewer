@@ -10,7 +10,7 @@ namespace Cubiomes_Viewer.ViewModels;
 /// <summary>How far out one structure type stays marked on the map.</summary>
 public sealed partial class StructureZoomLimitViewModel : ObservableObject
 {
-    private static readonly double[] _limits = [0.5, 1, 2, 4, 8, 16, 32, 64, 128, 256];
+    private static readonly double[] _limits = [0.5, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512];
 
     public StructureType Type { get; }
     public string Name { get; }

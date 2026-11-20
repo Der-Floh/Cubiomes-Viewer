@@ -176,6 +176,19 @@ public sealed class MapView : Control
         return null;
     }
 
+    /// <summary>Returns the topmost group of markers drawn at a position inside the control, or <see langword="null"/>.</summary>
+    public MarkerGroup? HitTestGroup(Point position)
+    {
+        var scene = CreateScene();
+        for (var index = _layers.Count - 1; index >= 0; index--)
+        {
+            if (_layers[index] is IMarkerLayer markers && markers.HitTestGroup(scene, position) is { } group)
+                return group;
+        }
+
+        return null;
+    }
+
     public override void Render(DrawingContext context)
     {
         if (Background is { } background)

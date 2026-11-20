@@ -28,6 +28,9 @@ public sealed partial class MapViewModel : ViewModelBase
 {
     private const double ButtonZoomStep = 2;
     private const double BlockMiddle = 0.5;
+    private const double GroupFitShare = 2;
+    private const double MinGroupZoom = 2;
+    private const double MaxGroupZoom = 16;
 
     public string GeneratingLabel { get; } = "Generating...";
 
@@ -221,6 +224,18 @@ public sealed partial class MapViewModel : ViewModelBase
     {
         RecordJump();
         Navigate(Camera with { CenterX = blockX, CenterZ = blockZ }, animate: true);
+    }
+
+    /// <summary>
+    /// Glides in on a group of markers between two corners until they come apart: the group fills about half of the map, and the
+    /// zoom at least doubles but grows sixteen times at most, as a group of markers on one spot would otherwise zoom in all the way.
+    /// </summary>
+    public void ZoomOnto(BlockPos min, BlockPos max)
+    {
+        var span = Math.Max(max.X - min.X, max.Z - min.Z) + 1;
+        var side = Math.Max(1, Math.Min(ViewSize.Width, ViewSize.Height));
+        var blocksPerPixel = Math.Clamp(span * GroupFitShare / side, Camera.BlocksPerPixel / MaxGroupZoom, Camera.BlocksPerPixel / MinGroupZoom);
+        Navigate(new MapCamera((min.X + max.X) / 2.0 + BlockMiddle, (min.Z + max.Z) / 2.0 + BlockMiddle, blocksPerPixel), animate: true);
     }
 
     /// <summary>Shows a camera straight away, without gliding there.</summary>

@@ -120,11 +120,11 @@ public sealed class SettingsViewModelTests : IDisposable
     {
         var village = _settings.ZoomLimits.Single(limit => limit.Type == StructureType.Village);
 
-        village.SelectedLimit = village.Choices.Single(choice => choice.Value == 64);
+        village.SelectedLimit = village.Choices.Single(choice => choice.Value == 128);
 
-        Assert.Equal(64, _map.MarkerZoomLimits[StructureType.Village]);
+        Assert.Equal(128, _map.MarkerZoomLimits[StructureType.Village]);
         var stored = Assert.Single(Stored.Map.ZoomLimits);
-        Assert.Equal((StructureType.Village, 64.0), (stored.Type, stored.MaxBlocksPerPixel));
+        Assert.Equal((StructureType.Village, 128.0), (stored.Type, stored.MaxBlocksPerPixel));
         Assert.Contains(_settings.ZoomLimits, limit => limit.Name == "Ruined portal (Nether)");
     }
 

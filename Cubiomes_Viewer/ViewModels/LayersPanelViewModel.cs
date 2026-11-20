@@ -37,7 +37,8 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
     public string StructuresLabel { get; } = "Structures";
     public string ShowAllLabel { get; } = "All";
     public string HideAllLabel { get; } = "None";
-    public string ZoomHint { get; } = "A structure type appears once the map is zoomed in far enough to tell its positions apart.";
+    public string ZoomHint { get; } = "Markers too close to tell apart show as one with their number; click it to zoom in.";
+    public string ZoomHintDetails { get; } = "Each type is marked up to the zoom Settings sets for it under When structures are marked, as working out its positions over a wider view takes longer.";
     public string NoStructuresLabel { get; } = "This version has no structures in this dimension.";
 
     [ObservableProperty]

@@ -44,9 +44,35 @@ public sealed class StructureLayerTests
 
         Assert.Equal(_fortressWithoutRoom, layer.HitTest(_scene, ToScreen(_fortressWithoutRoom))?.Position);
         Assert.Equal(_fortressWithRoom, layer.HitTest(_scene, ToScreen(_fortressWithRoom))?.Position);
+        Assert.Null(layer.HitTestGroup(_scene, ToScreen(_fortressWithRoom)));
     }
 
-    private static StructureLayer CreateLayer(ulong hiddenOptions)
+    [AvaloniaFact]
+    public void HitTest_ZoomedOutUntilTheMarkersOverlap_FindsTheirGroupInsteadOfEitherOne()
+    {
+        var far = _scene with { Viewport = new MapViewport(new MapCamera(0, 0, 8), ViewSize, ViewSize) };
+        var layer = CreateLayer(hiddenOptions: 0, far);
+        var middle = ToScreen(new BlockPos(32, 16), far);
+
+        var group = layer.HitTestGroup(far, middle);
+
+        Assert.Null(layer.HitTest(far, middle));
+        Assert.Equal((2, _fortressWithRoom, _fortressWithoutRoom), (group?.Count, group?.Min, group?.Max));
+    }
+
+    [AvaloniaFact]
+    public void HitTest_GroupWithAHiddenOption_LeavesTheHiddenStructureOut()
+    {
+        var far = _scene with { Viewport = new MapViewport(new MapCamera(0, 0, 8), ViewSize, ViewSize) };
+        var layer = CreateLayer(hiddenOptions: WithoutRoom, far);
+
+        Assert.Null(layer.HitTestGroup(far, ToScreen(_fortressWithRoom, far)));
+        Assert.Equal(_fortressWithRoom, layer.HitTest(far, ToScreen(_fortressWithRoom, far))?.Position);
+    }
+
+    private static StructureLayer CreateLayer(ulong hiddenOptions) => CreateLayer(hiddenOptions, _scene);
+
+    private static StructureLayer CreateLayer(ulong hiddenOptions, MapScene scene)
     {
         var request = new StructureAreaRequest(_world, StructureType.Fortress, new BlockArea(-ViewSize, -ViewSize, 2 * ViewSize, 2 * ViewSize));
         var structures = new StructureAreaData { Request = request, Positions = [_fortressWithRoom, _fortressWithoutRoom], Options = [WithRoom, WithoutRoom] };
@@ -55,13 +81,15 @@ public sealed class StructureLayerTests
             VisibleTypes = FrozenSet.Create(StructureType.Fortress),
             HiddenOptions = new Dictionary<StructureType, ulong> { [StructureType.Fortress] = hiddenOptions }.ToFrozenDictionary(),
         };
-        layer.UpdateScene(_scene);
+        layer.UpdateScene(scene);
         return layer;
     }
 
-    private static Point ToScreen(BlockPos position)
+    private static Point ToScreen(BlockPos position) => ToScreen(position, _scene);
+
+    private static Point ToScreen(BlockPos position, MapScene scene)
     {
-        var (x, y) = _scene.Viewport.ToScreen(position.X, position.Z);
+        var (x, y) = scene.Viewport.ToScreen(position.X, position.Z);
         return new Point(x, y);
     }
 

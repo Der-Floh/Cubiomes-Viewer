@@ -27,6 +27,10 @@ public sealed class MapStyleService : IMapStyleService
     private const string SelectionColorKey = "SelectionColor";
     private const double MarkerSideLength = 22;
     private const double PinSideLength = 52;
+    private const double CountFontSize = 10;
+    private const double CountPaddingX = 4;
+    private const double CountPaddingY = 1;
+    private const int MaxShownCount = 999;
     private const double RedWeight = 0.2126;
     private const double GreenWeight = 0.7152;
     private const double BlueWeight = 0.0722;
@@ -57,6 +61,8 @@ public sealed class MapStyleService : IMapStyleService
     private readonly Dictionary<string, PinLook> _pinLooks = new(StringComparer.Ordinal);
     private readonly Dictionary<int, MapMarker> _biomeMarkers = [];
     private readonly Dictionary<int, PinLook> _biomePinLooks = [];
+    private readonly Dictionary<(int Count, double Size), FormattedText> _countTexts = [];
+    private readonly Typeface _countTypeface = new(FontFamily.Default, FontStyle.Normal, FontWeight.Bold);
     private Color? _slimeChunkColor;
     private Color? _measureColor;
     private Color? _outlineColor;
@@ -65,6 +71,7 @@ public sealed class MapStyleService : IMapStyleService
     private Color GlyphColor => _glyphColor ??= GetResource<Color>(GlyphColorKey);
     private IBrush OutlineBrush => field ??= new ImmutableSolidColorBrush(OutlineColor);
     private IBrush PinFaceBrush => field ??= new ImmutableSolidColorBrush(GlyphColor);
+    private IPen CountBorderPen => field ??= new ImmutablePen(new ImmutableSolidColorBrush(GlyphColor), 1);
     private Color? _glyphColor;
 
     public MapStyleService(IBiomeCatalog biomeCatalog, IVersionCatalog versionCatalog)
@@ -133,6 +140,32 @@ public sealed class MapStyleService : IMapStyleService
     }
 
     public Rect GetPinBounds(Point tip, double magnification = 1) => PinPainter.GetBounds(tip, PinSize * magnification);
+
+    public void DrawCount(DrawingContext context, int count, Point center)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        var text = GetCountText(count);
+        var height = text.Height + CountPaddingY * 2 * MarkerScale;
+        var width = Math.Max(height, text.Width + CountPaddingX * 2 * MarkerScale);
+        var badge = new Rect(center.X - width / 2, center.Y - height / 2, width, height);
+        context.DrawRectangle(OutlineBrush, CountBorderPen, badge, height / 2, height / 2);
+        context.DrawText(text, new Point(badge.X + (width - text.Width) / 2, badge.Y + (height - text.Height) / 2));
+    }
+
+    /// <summary>The number of a group as text, made once per number and size and kept, as groups are drawn every frame.</summary>
+    private FormattedText GetCountText(int count)
+    {
+        var shown = Math.Min(count, MaxShownCount);
+        var size = CountFontSize * MarkerScale;
+        if (_countTexts.TryGetValue((shown, size), out var text))
+            return text;
+
+        var label = count > MaxShownCount ? $"{MaxShownCount.ToString(CultureInfo.InvariantCulture)}+" : shown.ToString(CultureInfo.InvariantCulture);
+        text = new FormattedText(label, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, _countTypeface, size, PinFaceBrush);
+        _countTexts.Add((shown, size), text);
+        return text;
+    }
 
     private double GetWantedMarkerSize(double magnification) => MarkerSideLength * MarkerScale * magnification;
 

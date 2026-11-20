@@ -40,7 +40,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     public string GridMultiplierLabel { get; } = "Zoomed out, spaced wider by";
     public string MarkerSizeLabel { get; } = "Marker size";
     public string ZoomLimitsLabel { get; } = "When structures are marked";
-    public string ZoomLimitsHint { get; } = "A structure type is marked while the map shows at most this many blocks per pixel. Higher limits show more at once but can crowd the map and take longer.";
+    public string ZoomLimitsHint { get; } = "A structure type is marked while the map shows at most this many blocks per pixel, with markers too close together grouped. Higher limits show more at once but take longer to work out.";
     public string StartLabel { get; } = "Start";
     public string RestoreLabel { get; } = "Open the last world and search";
     public string RestoreHint { get; } = "When off, the app starts with a random seed and an empty search.";

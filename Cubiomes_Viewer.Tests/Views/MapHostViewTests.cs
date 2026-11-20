@@ -233,6 +233,38 @@ public sealed class MapHostViewTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void Click_OnAGroupOfPins_ZoomsInUntilTheyComeApart()
+    {
+        var pins = _services.GetRequiredService<IPinService>();
+        pins.Add(_session.Seed, _session.Dimension, new BlockPos(0, 0));
+        pins.Add(_session.Seed, _session.Dimension, new BlockPos(40, 0));
+        _map.Camera = new MapCamera(20.5, 0.5, 4);
+        Dispatcher.UIThread.RunJobs();
+        var head = _services.GetRequiredService<IMapStyleService>().GetPinBounds(_center);
+
+        Click(new Point(head.Center.X, head.Top + head.Width / 2));
+
+        Assert.Null(_map.Selection);
+        Assert.Equal((20.5, 0.5), (_map.Camera.CenterX, _map.Camera.CenterZ));
+        Assert.InRange(_map.Camera.BlocksPerPixel, 0.25, 2);
+    }
+
+    [AvaloniaFact]
+    public void Click_OnAPinOfAGroupZoomedInOn_PicksThePin()
+    {
+        var pins = _services.GetRequiredService<IPinService>();
+        pins.Add(_session.Seed, _session.Dimension, new BlockPos(0, 0));
+        var far = pins.Add(_session.Seed, _session.Dimension, new BlockPos(40, 0));
+        _map.Camera = new MapCamera(40.5, 0.5, 0.25);
+        Dispatcher.UIThread.RunJobs();
+        var head = _services.GetRequiredService<IMapStyleService>().GetPinBounds(_center);
+
+        Click(new Point(head.Center.X, head.Top + head.Width / 2));
+
+        Assert.Same(far, _map.Selection?.Pin);
+    }
+
+    [AvaloniaFact]
     public void DoubleClick_OnTheMap_ZoomsInOnTheBlockUnderThePointer()
     {
         var spot = new Point(_center.X + PinOffset, _center.Y - PinOffset);

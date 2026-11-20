@@ -15,7 +15,7 @@ public sealed class StructureAreaService : IStructureAreaService
 {
     private const int RegionsPerAreaSide = 16;
     private const int MinAreaBlocks = 1024;
-    private const int MaxVisibleAreas = 256;
+    private const int MaxVisibleAreas = 4096;
     private const int CachedPositionBudget = 500_000;
     private const int AreaOverhead = 16;
 
