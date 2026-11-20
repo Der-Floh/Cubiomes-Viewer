@@ -129,14 +129,14 @@ jobs:
       - name: Build the native library for glibc 2.28
         run: bash native/build-manylinux.sh
 
-      - name: Publish
+      - name: Publish for glibc 2.28
         id: publish
-        uses: Der-Floh/Der-Floh/.github/actions/dotnet-publish@v1
-        with:
-          project-path: ${{ env.DESKTOP_PROJECT }}
-          runtime: linux-x64
-          version: ${{ needs.version.outputs.value }}
-          publish-profile: release
+        env:
+          VERSION: ${{ needs.version.outputs.value }}
+        run: |
+          dir="$RUNNER_TEMP/publish/linux-x64"
+          bash native/publish-manylinux.sh "$DESKTOP_PROJECT" "$VERSION" "$dir"
+          echo "dir=$dir" >> "$GITHUB_OUTPUT"
 
       - name: Pack
         uses: Der-Floh/Der-Floh/.github/actions/velopack-pack@v1
@@ -274,12 +274,23 @@ jobs:
 
       - name: Publish
         id: publish
+        if: matrix.runtime != 'linux-x64'
         uses: Der-Floh/Der-Floh/.github/actions/dotnet-publish@v1
         with:
           project-path: ${{ env.CLI_PROJECT }}
           runtime: ${{ matrix.runtime }}
           version: ${{ needs.version.outputs.value }}
           publish-profile: release
+
+      - name: Publish for glibc 2.28
+        id: publish-linux
+        if: matrix.runtime == 'linux-x64'
+        env:
+          VERSION: ${{ needs.version.outputs.value }}
+        run: |
+          dir="$RUNNER_TEMP/publish/linux-x64"
+          bash native/publish-manylinux.sh "$CLI_PROJECT" "$VERSION" "$dir"
+          echo "dir=$dir" >> "$GITHUB_OUTPUT"
 
       - name: Zip
         if: runner.os == 'Windows'
@@ -293,7 +304,7 @@ jobs:
         if: runner.os != 'Windows'
         uses: Der-Floh/Der-Floh/.github/actions/tar@v1
         with:
-          path: ${{ steps.publish.outputs.dir }}
+          path: ${{ steps.publish.outputs.dir || steps.publish-linux.outputs.dir }}
           archive: artifacts/${{ env.CLI_NAME }}-${{ matrix.runtime }}.tar.gz
           folder-name: ${{ env.CLI_NAME }}
 

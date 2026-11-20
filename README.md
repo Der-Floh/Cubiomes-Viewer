@@ -138,6 +138,12 @@ dotnet test Cubiomes_Viewer.Engine.Tests
 
 The native library is built automatically when a head or test project is built and its output is missing or older than the sources. It can also be built directly with `native/build.ps1 -Rid win-x64`, or `-Rid android-arm64` and `-Rid android-x64` for Android.
 
+The desktop app and the command line are released as native executables compiled ahead of time (Native AOT), with their `release` publish profile, which needs the platform's own linker: the Visual Studio C++ build tools on Windows, Xcode on macOS and clang on Linux. Linux releases are published inside the `manylinux_2_28` container by `native/publish-manylinux.sh`, so that they run on glibc 2.28 and newer:
+
+```bash
+dotnet publish Cubiomes_Viewer.Desktop -p:PublishProfile=release -r win-x64
+```
+
 Run the Desktop or Browser head, or the command line from source:
 
 ```bash

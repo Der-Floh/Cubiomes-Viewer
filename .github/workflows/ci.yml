@@ -119,6 +119,66 @@ jobs:
           package-name: ${{ env.PACKAGE_NAME }}
           version: ${{ env.PREVIEW_VERSION }}
 
+  aot:
+    name: AOT ${{ matrix.runtime }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runtime: linux-x64
+            os: ubuntu-latest
+            self-test: true
+          - runtime: win-arm64
+            os: windows-latest
+            self-test: false
+          - runtime: osx-arm64
+            os: macos-latest
+            self-test: true
+          - runtime: osx-x64
+            os: macos-latest
+            self-test: false
+
+    env:
+      CLI_PROJECT: Cubiomes_Viewer.Cli/Cubiomes_Viewer.Cli.csproj
+      PREVIEW_VERSION: 0.0.1
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          submodules: true
+
+      - name: Setup .NET
+        uses: Der-Floh/Der-Floh/.github/actions/setup-dotnet@v1
+
+      - name: Build the native library for glibc 2.28
+        if: matrix.runtime == 'linux-x64'
+        run: bash native/build-manylinux.sh
+
+      - name: Publish for glibc 2.28
+        if: matrix.runtime == 'linux-x64'
+        run: |
+          bash native/publish-manylinux.sh "$DESKTOP_PROJECT" "$PREVIEW_VERSION" "$RUNNER_TEMP/aot/app"
+          bash native/publish-manylinux.sh "$CLI_PROJECT" "$PREVIEW_VERSION" "$RUNNER_TEMP/aot/cli"
+
+      - name: Publish
+        if: matrix.runtime != 'linux-x64'
+        shell: pwsh
+        env:
+          RUNTIME: ${{ matrix.runtime }}
+        run: |
+          foreach ($project in @{ app = $env:DESKTOP_PROJECT; cli = $env:CLI_PROJECT }.GetEnumerator())
+          {
+              dotnet publish $project.Value -r $env:RUNTIME -p:PublishProfile=release "-p:Version=$env:PREVIEW_VERSION" "-p:PublishDir=$env:RUNNER_TEMP/aot/$($project.Key)/" -clp:ForceConsoleColor
+              if ($LASTEXITCODE -ne 0) { throw "Publishing $($project.Value) for $env:RUNTIME failed with exit code $LASTEXITCODE." }
+          }
+
+      - name: Self-test the CLI
+        if: matrix.self-test
+        run: '"$RUNNER_TEMP/aot/cli/cubiomes-viewer-cli" --selftest'
+
   android:
     name: Package Android
     runs-on: ubuntu-latest
@@ -150,7 +210,7 @@ jobs:
         run: test "$(unzip -l "$APK_PATH" | grep -cE 'lib/(arm64-v8a|x86_64)/libcvnative\.so$')" -eq 2
 
   automerge:
-    needs: [test, browser, package, android]
+    needs: [test, browser, package, aot, android]
     permissions:
       contents: write
       pull-requests: write
