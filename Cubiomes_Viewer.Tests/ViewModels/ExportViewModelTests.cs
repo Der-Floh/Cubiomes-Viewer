@@ -21,7 +21,11 @@ namespace Cubiomes_Viewer.Tests.ViewModels;
 
 public sealed class ExportViewModelTests : IDisposable
 {
-    private readonly ServiceProvider _services = TestServices.Create();
+    private static readonly TimeProvider _clock = new StoppedClock(
+        new DateTimeOffset(2026, 11, 20, 15, 45, 12, TimeSpan.Zero),
+        TimeZoneInfo.CreateCustomTimeZone("Two hours ahead", TimeSpan.FromHours(2), "Two hours ahead", "Two hours ahead"));
+
+    private readonly ServiceProvider _services = TestServices.Create(services => services.AddSingleton(_clock));
     private readonly ExportViewModel _export;
     private readonly WorldSession _session;
     private readonly MapViewModel _map;
@@ -63,7 +67,7 @@ public sealed class ExportViewModelTests : IDisposable
         await _export.ExportCommand.ExecuteAsync(null);
 
         Assert.Empty(Notifications.Errors);
-        Assert.Equal("cubiomes-262-1.21.3-overworld-biomes.png", Storage.LastSaveOptions?.SuggestedFileName);
+        Assert.Equal("cubiomes-262-1.21.3-overworld-biomes-20261120-174512.png", Storage.LastSaveOptions?.SuggestedFileName);
         using var bitmap = new Bitmap(new MemoryStream(Assert.IsType<byte[]>(Storage.SavedContent)));
         Assert.Equal(new PixelSize(128, 64), bitmap.PixelSize);
         Assert.StartsWith("Saved ", _export.StatusText, StringComparison.Ordinal);
@@ -118,6 +122,7 @@ public sealed class ExportViewModelTests : IDisposable
 
         Assert.Empty(Notifications.Errors);
         Assert.Equal("Save ZIP archive…", _export.ExportLabel);
+        Assert.Equal("cubiomes-found-seeds-1.21.3-overworld-biomes-20261120-174512.zip", Storage.LastSaveOptions?.SuggestedFileName);
         using var archive = new ZipArchive(new MemoryStream(Assert.IsType<byte[]>(Storage.SavedContent)));
         Assert.Equal(search.Results.Select(seed => $"{seed}.png").Order(StringComparer.Ordinal), archive.Entries.Select(entry => entry.FullName).Order(StringComparer.Ordinal));
     }
@@ -170,5 +175,13 @@ public sealed class ExportViewModelTests : IDisposable
     {
         (_export.FromX, _export.FromZ, _export.ToX, _export.ToZ) = (fromX, fromZ, toX, toZ);
         _export.SelectedScale = _export.Scales.Single(choice => choice.Value == scale);
+    }
+
+    /// <summary>A clock that stands at one moment in its own time zone; its timestamps still run, for the search's speed.</summary>
+    private sealed class StoppedClock(DateTimeOffset now, TimeZoneInfo localTimeZone) : TimeProvider
+    {
+        public override TimeZoneInfo LocalTimeZone => localTimeZone;
+
+        public override DateTimeOffset GetUtcNow() => now;
     }
 }

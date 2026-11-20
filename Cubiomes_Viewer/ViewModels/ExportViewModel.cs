@@ -36,6 +36,7 @@ public sealed partial class ExportViewModel : ViewModelBase, IOpenablePanel
     private const int DefaultHalfSide = 1024;
     private const string SaveImageLabel = "Save PNG image…";
     private const string SaveArchiveLabel = "Save ZIP archive…";
+    private const string FileNameTimestampFormat = "yyyyMMdd-HHmmss";
 
     private static readonly FilePickerFileType _pngFiles = new("PNG images") { Patterns = ["*.png"], MimeTypes = ["image/png"] };
     private static readonly FilePickerFileType _zipFiles = new("ZIP archives") { Patterns = ["*.zip"], MimeTypes = ["application/zip"] };
@@ -118,13 +119,14 @@ public sealed partial class ExportViewModel : ViewModelBase, IOpenablePanel
     private readonly IVersionCatalog _versionCatalog;
     private readonly IStorageService _storage;
     private readonly IProgressService _progress;
+    private readonly TimeProvider _timeProvider;
     private readonly INotificationService _notifications;
     private CancellationTokenSource? _stopping;
     private int _shownFound = -1;
     private bool _isShowing;
     private bool _hasArea;
 
-    public ExportViewModel(MapViewModel map, ISeedSearchService search, IMapExportService export, ILayerCatalog layerCatalog, IVersionCatalog versionCatalog, IStorageService storage, IProgressService progress, INotificationService notifications) : base(notifications)
+    public ExportViewModel(MapViewModel map, ISeedSearchService search, IMapExportService export, ILayerCatalog layerCatalog, IVersionCatalog versionCatalog, IStorageService storage, IProgressService progress, TimeProvider timeProvider, INotificationService notifications) : base(notifications)
     {
         _map = map;
         _search = search;
@@ -133,6 +135,7 @@ public sealed partial class ExportViewModel : ViewModelBase, IOpenablePanel
         _versionCatalog = versionCatalog;
         _storage = storage;
         _progress = progress;
+        _timeProvider = timeProvider;
         _notifications = notifications;
 
         Show(() =>
@@ -362,12 +365,14 @@ public sealed partial class ExportViewModel : ViewModelBase, IOpenablePanel
         return (long)columns * rows;
     }
 
+    /// <summary>Names the world and the layer, then the local date and time to the second, so that a new export does not suggest an earlier one's name.</summary>
     private string GetFileName(MapExportRequest request)
     {
         var world = request.Worlds[0];
         var seeds = request.Worlds.Count > 1 ? "found-seeds" : world.Seed.ToString(CultureInfo.InvariantCulture);
         var layer = request.Layer.ToString();
-        var name = $"cubiomes-{seeds}-{_versionCatalog.GetName(world.Version)}-{world.Dimension}-{layer}.{(request.IsArchive ? "zip" : "png")}";
+        var timestamp = _timeProvider.GetLocalNow().ToString(FileNameTimestampFormat, CultureInfo.InvariantCulture);
+        var name = $"cubiomes-{seeds}-{_versionCatalog.GetName(world.Version)}-{world.Dimension}-{layer}-{timestamp}.{(request.IsArchive ? "zip" : "png")}";
         return name.ToLowerInvariant();
     }
 
