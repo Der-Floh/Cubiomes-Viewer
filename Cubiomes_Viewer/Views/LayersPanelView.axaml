@@ -126,6 +126,23 @@
             </StackPanel>
 
             <Separator Classes="section"/>
+            <TextBlock Classes="section" Text="{Binding PinsLabel}"/>
+            <TextBlock Classes="damp" Text="{Binding NoPinsHint}" TextWrapping="Wrap" IsVisible="{Binding !HasPins}"/>
+            <ItemsControl ItemsSource="{Binding Pins}" IsVisible="{Binding HasPins}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:PinEntryViewModel">
+                        <Button Classes="pin-entry" Command="{Binding OpenCommand}">
+                            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto">
+                                <controls:PinIcon Grid.RowSpan="2" Classes="entry" Fill="{Binding Look.Fill}" Glyph="{Binding Look.Glyph}"/>
+                                <TextBlock Grid.Column="1" Classes="condition-title" Text="{Binding Name}" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Classes="damp" Text="{Binding Place}"/>
+                            </Grid>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <Separator Classes="section"/>
             <Grid ColumnDefinitions="*,Auto,Auto">
                 <TextBlock Classes="section" Text="{Binding StructuresLabel}"/>
                 <Button Grid.Column="1" Classes="compact" Content="{Binding ShowAllLabel}" Command="{Binding ShowAllStructuresCommand}" IsVisible="{Binding HasStructures}"/>

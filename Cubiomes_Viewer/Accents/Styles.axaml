@@ -193,6 +193,18 @@
         <Setter Property="Face" Value="{DynamicResource PinFaceColor}"/>
         <Setter Property="Outline" Value="{DynamicResource MarkerOutlineColor}"/>
     </Style>
+    <Style Selector="controls|PinIcon.entry">
+        <Setter Property="Width" Value="30"/>
+        <Setter Property="Height" Value="30"/>
+        <Setter Property="Margin" Value="0,0,8,0"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="Button.pin-entry">
+        <Setter Property="Padding" Value="4"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+    </Style>
     <Style Selector="ComboBox.pin-look">
         <Setter Property="MinWidth" Value="0"/>
         <Setter Property="Padding" Value="4,2,0,2"/>

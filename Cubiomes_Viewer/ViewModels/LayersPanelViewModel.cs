@@ -13,6 +13,7 @@ using Cubiomes_Viewer.Engine.Data.Structures;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Extensions;
 using Cubiomes_Viewer.Engine.Service.LayerServ;
+using Cubiomes_Viewer.Engine.Service.PinServ;
 using Cubiomes_Viewer.Engine.Service.SettingsServ;
 using Cubiomes_Viewer.Engine.Service.StructureServ;
 using Cubiomes_Viewer.Service.MapStyleServ;
@@ -30,6 +31,8 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
     public string ShowGridLabel { get; } = "Coordinate grid";
     public string ShowSlimeChunksLabel { get; } = "Slime chunks";
     public string LandmarksLabel { get; } = "Landmarks";
+    public string PinsLabel { get; } = "Pins";
+    public string NoPinsHint { get; } = "Pins placed on the map of this seed and dimension are listed here.";
     public string ShowGatewayLinksLabel { get; } = "Gateway links";
     public string StructuresLabel { get; } = "Structures";
     public string ShowAllLabel { get; } = "All";
@@ -81,6 +84,9 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
     [ObservableProperty]
     public partial bool HasStructures { get; set; }
 
+    [ObservableProperty]
+    public partial bool HasPins { get; set; }
+
     public BiomeColorsViewModel BiomeColors { get; }
     public MarkerToggleViewModel Spawn { get; }
     public MarkerToggleViewModel Strongholds { get; }
@@ -104,6 +110,9 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
     /// <summary>The structure types of the current version and dimension.</summary>
     public ObservableCollection<StructureToggleViewModel> Structures { get; } = [];
 
+    /// <summary>The pins on the map of the open seed and dimension, oldest first.</summary>
+    public ObservableCollection<PinEntryViewModel> Pins { get; } = [];
+
     private readonly MapViewModel _map;
     private readonly WorldSession _session;
     private readonly IStructureCatalog _structureCatalog;
@@ -111,6 +120,7 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
     private readonly ILayerCatalog _layerCatalog;
     private readonly IMapStyleService _styleService;
     private readonly ISettingsService _settingsService;
+    private readonly IPinService _pinService;
     private readonly HashSet<StructureType> _visibleStructures = [];
 
     /// <summary>The unticked feature options by key, so that they last through versions whose bits differ or that lack the feature.</summary>
@@ -118,7 +128,7 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
     private bool _isUpdating;
 
     public LayersPanelViewModel(MapViewModel map, BiomeColorsViewModel biomeColors, WorldSession session, IStructureCatalog structureCatalog, IStructureFeatureCatalog featureCatalog,
-        ILayerCatalog layerCatalog, IMapStyleService styleService, ISettingsService settingsService)
+        ILayerCatalog layerCatalog, IMapStyleService styleService, ISettingsService settingsService, IPinService pinService)
     {
         BiomeColors = biomeColors;
         _map = map;
@@ -128,12 +138,15 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
         _layerCatalog = layerCatalog;
         _styleService = styleService;
         _settingsService = settingsService;
+        _pinService = pinService;
 
         Spawn = new MarkerToggleViewModel("World spawn", styleService.Spawn, isChecked: true, _ => ApplyOverlays());
         Strongholds = new MarkerToggleViewModel("Strongholds", styleService.Stronghold, isChecked: true, _ => ApplyOverlays());
         Update(() => SelectedHeightStyle = HeightStyles.First(choice => choice.Value == map.HeightStyle));
         ShowLayers();
+        ShowPins();
         session.PropertyChanged += OnSessionChanged;
+        pinService.Changed += ShowPins;
     }
 
     /// <summary>Shows the stored settings; called once they are loaded.</summary>
@@ -189,6 +202,8 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
 
     private void OnSessionChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (e.PropertyName is nameof(WorldSession.Seed) or nameof(WorldSession.Dimension))
+            ShowPins();
         if (e.PropertyName is nameof(WorldSession.Version) or nameof(WorldSession.Dimension))
             ShowAvailableStructures();
         if (e.PropertyName is nameof(WorldSession.Version))
@@ -223,6 +238,21 @@ public sealed partial class LayersPanelViewModel : ViewModelBase
         _session.Octaves = octaves;
         if (SelectedPotentialStructure is { } potential)
             _map.PotentialStructure = potential.Value;
+    }
+
+    private void ShowPins()
+    {
+        Pins.Clear();
+        foreach (var pin in _pinService.GetPins(_session.Seed, _session.Dimension))
+            Pins.Add(new PinEntryViewModel(pin, _styleService.GetPinLook(pin.Icon), OpenPin));
+        HasPins = Pins.Count > 0;
+    }
+
+    /// <summary>Moves the map to a pin of the list and picks it, which opens its callout.</summary>
+    private void OpenPin(MapPin pin)
+    {
+        _map.GoTo(pin.X, pin.Z);
+        _map.Selection = MapSelection.ForPin(pin);
     }
 
     private void ShowPotentialStructures(LayerMode layer)

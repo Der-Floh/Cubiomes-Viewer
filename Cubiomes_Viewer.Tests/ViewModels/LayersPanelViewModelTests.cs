@@ -5,6 +5,7 @@ using Cubiomes_Viewer.Engine.Data.Maps;
 using Cubiomes_Viewer.Engine.Data.Settings;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Repository.SettingsRepo;
+using Cubiomes_Viewer.Engine.Service.PinServ;
 using Cubiomes_Viewer.Engine.Service.SettingsServ;
 using Cubiomes_Viewer.Engine.Service.StructureServ;
 using Cubiomes_Viewer.ViewModels;
@@ -158,6 +159,40 @@ public sealed class LayersPanelViewModelTests : IDisposable
         Assert.Equal(LayerMode.StructurePotential, _main.Map.Layer);
         Assert.Equal(StructureType.Mansion, _main.Map.PotentialStructure);
         Assert.Equal(StructureType.Mansion, stored.Map.PotentialStructure);
+    }
+
+    [AvaloniaFact]
+    public async Task Pins_OfTheOpenSeedAndDimension_AreListedAndOpenWhereTheyAre()
+    {
+        await _main.Initialization;
+        var session = _services.GetRequiredService<WorldSession>();
+        var pins = _services.GetRequiredService<IPinService>();
+        var home = pins.Add(session.Seed, session.Dimension, new BlockPos(120, -40));
+        pins.Rename(home, "Home");
+        pins.Add(session.Seed, Dimension.Nether, new BlockPos(5, 5));
+        pins.Add(session.Seed + 1, session.Dimension, new BlockPos(7, 7));
+
+        var listed = _layers.Pins.Select(pin => (pin.Name, pin.Place)).ToList();
+        _layers.Pins[0].OpenCommand.Execute(null);
+
+        Assert.Equal([("Home", "X 120, Z -40")], listed);
+        Assert.Equal((120, -40), ((int)_main.Map.Camera.CenterX, (int)_main.Map.Camera.CenterZ));
+        Assert.Same(home, _main.Map.Selection?.Pin);
+    }
+
+    [AvaloniaFact]
+    public async Task Pins_OtherDimensionOpened_ListItsPinsOrSayThereAreNone()
+    {
+        await _main.Initialization;
+        var session = _services.GetRequiredService<WorldSession>();
+        _services.GetRequiredService<IPinService>().Add(session.Seed, Dimension.Nether, new BlockPos(5, 5));
+        var inTheOverworld = _layers.HasPins;
+
+        session.Dimension = Dimension.Nether;
+
+        Assert.False(inTheOverworld);
+        Assert.True(_layers.HasPins);
+        Assert.Equal("Pin", Assert.Single(_layers.Pins).Name);
     }
 
     [AvaloniaFact]
