@@ -9,6 +9,7 @@ using Cubiomes_Viewer.Engine.Extensions;
 using Cubiomes_Viewer.Engine.Service.SearchServ;
 using Cubiomes_Viewer.Engine.Service.SettingsServ;
 using Cubiomes_Viewer.Service.AppAddressServ;
+using Cubiomes_Viewer.Service.BrowserServ;
 using Cubiomes_Viewer.Service.ClipboardServ;
 using Cubiomes_Viewer.Service.CsvServ;
 using Cubiomes_Viewer.Service.LootDescriptionServ;
@@ -58,17 +59,7 @@ public sealed partial class App : Application
         {
             LoadSettingsBeforeTheWindowOpens();
             desktop.MainWindow = Services.GetRequiredService<MainWindow>();
-            desktop.Exit += (_, _) =>
-            {
-                try
-                {
-                    FlushStoredStateAsync().GetAwaiter().GetResult();
-                }
-                finally
-                {
-                    Services.GetRequiredService<IUpdateService>().InstallOnExit();
-                }
-            };
+            desktop.Exit += (_, _) => FlushStoredStateAsync().GetAwaiter().GetResult();
         }
         else if (ApplicationLifetime is IActivityApplicationLifetime activity)
         {
@@ -178,6 +169,7 @@ public sealed partial class App : Application
         services.AddSingleton<ITileBitmapService, TileBitmapService>();
         services.AddSingleton<IMapStyleService, MapStyleService>();
         services.AddSingleton<IClipboardService, ClipboardService>();
+        services.AddSingleton<IBrowserService, BrowserService>();
         services.AddSingleton<IStructureDescriptionService, StructureDescriptionService>();
         services.AddSingleton<ILootDescriptionService, LootDescriptionService>();
         services.AddSingleton<IWindowService, WindowService>();
@@ -211,6 +203,7 @@ public sealed partial class App : Application
         services.AddTransient<AnalysisPanelView>();
         services.AddTransient<ExportView>();
         services.AddTransient<SettingsView>();
+        services.AddTransient<UpdateNoticeView>();
 
         // view models
         services.AddSingleton<MainViewModel>();

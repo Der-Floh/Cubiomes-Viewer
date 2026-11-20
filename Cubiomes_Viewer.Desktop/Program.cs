@@ -1,6 +1,5 @@
 using Avalonia;
 
-using Cubiomes_Viewer.Desktop.Service.UpdateServ;
 using Cubiomes_Viewer.Service.UpdateServ;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -18,7 +17,7 @@ internal sealed class Program
     public static void Main(string[] args)
     {
         VelopackApp.Build().Run();
-        App.ConfigurePlatformServices = services => services.AddSingleton<IUpdateService, VelopackUpdateService>();
+        App.ConfigurePlatformServices = services => services.AddSingleton<IUpdateService, GitHubUpdateService>();
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
 

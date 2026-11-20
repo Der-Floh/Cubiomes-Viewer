@@ -323,7 +323,7 @@ jobs:
           path: artifacts
           merge-multiple: true
 
-      # Installed apps only read releases.<runtime>.json, so vpk's legacy RELEASES-<runtime> and its upload list assets.<runtime>.json stay out.
+      # The app only compares its version with the newest release, so vpk's update feed (the full packages and the releases, RELEASES and assets files) stays out.
       - name: Upload to release
         uses: Der-Floh/Der-Floh/.github/actions/github-release-upload@v1
         with:
@@ -333,8 +333,6 @@ jobs:
             ./artifacts/${{ env.PACKAGE_NAME }}-*-Portable.zip
             ./artifacts/${{ env.PACKAGE_NAME }}-*.AppImage
             ./artifacts/${{ env.PACKAGE_NAME }}-android.apk
-            ./artifacts/${{ env.PACKAGE_NAME }}-*-full.nupkg
-            ./artifacts/releases.*.json
             ./artifacts/${{ env.CLI_NAME }}-*
 
   winget:

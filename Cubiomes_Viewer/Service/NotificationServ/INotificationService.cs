@@ -15,4 +15,7 @@ public interface INotificationService
     void ShowError(string title, string message);
     void ShowNotification(string title, string message, NotificationType type);
     void ShowNotification(Notification notification);
+
+    /// <summary>Shows content with buttons of its own, drawn by its view, until one of them or a click on it closes it.</summary>
+    void ShowUntilClosed(object content, NotificationType type);
 }

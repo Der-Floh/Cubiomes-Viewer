@@ -62,4 +62,18 @@ public sealed class NotificationService : INotificationService
             _logger.LogWarning(ex, "Failed to show notification: {Title}", notification.Title);
         }
     }
+
+    public void ShowUntilClosed(object content, NotificationType type)
+    {
+        ArgumentNullException.ThrowIfNull(content);
+
+        if (!Dispatcher.UIThread.CheckAccess())
+        {
+            Dispatcher.UIThread.Post(() => ShowUntilClosed(content, type));
+            return;
+        }
+
+        _logger.LogDebug("Showing notification until it is closed: type={Type}, content={Content}", type, content.GetType().Name);
+        _manager?.Show(content, type, TimeSpan.Zero);
+    }
 }

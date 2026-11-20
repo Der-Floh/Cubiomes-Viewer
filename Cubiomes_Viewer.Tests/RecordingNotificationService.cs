@@ -8,6 +8,9 @@ internal sealed class RecordingNotificationService : INotificationService
 {
     public List<Notification> Notifications { get; } = [];
 
+    /// <summary>What was shown until closed, such as the notice of a newer release.</summary>
+    public List<(object Content, NotificationType Type)> Notices { get; } = [];
+
     public IEnumerable<string?> Errors => Notifications.Where(notification => notification.Type == NotificationType.Error).Select(notification => notification.Message);
 
     public void Setup(WindowNotificationManager notificationManager) { }
@@ -25,4 +28,6 @@ internal sealed class RecordingNotificationService : INotificationService
         => ShowNotification(new Notification { Type = type, Title = title, Message = message });
 
     public void ShowNotification(Notification notification) => Notifications.Add(notification);
+
+    public void ShowUntilClosed(object content, NotificationType type) => Notices.Add((content, type));
 }

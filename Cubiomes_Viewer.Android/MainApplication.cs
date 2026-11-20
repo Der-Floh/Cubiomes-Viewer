@@ -4,7 +4,6 @@ using Android.Runtime;
 using Avalonia;
 using Avalonia.Android;
 
-using Cubiomes_Viewer.Android.Service.UpdateServ;
 using Cubiomes_Viewer.Service.UpdateServ;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -16,7 +15,7 @@ public sealed class MainApplication(nint javaReference, JniHandleOwnership trans
 {
     public override void OnCreate()
     {
-        App.ConfigurePlatformServices = services => services.AddSingleton<IUpdateService, AndroidUpdateService>();
+        App.ConfigurePlatformServices = services => services.AddSingleton<IUpdateService, GitHubUpdateService>();
         base.OnCreate();
     }
 

@@ -166,7 +166,7 @@ The Android app is built on Google's AndroidX libraries (`androidx.activity`, `a
 
 ## Velopack
 
-Installs and updates the desktop builds. https://github.com/velopack/velopack
+Installs the desktop builds. https://github.com/velopack/velopack
 
 - Licence: MIT. Copyright © Velopack Ltd.
 

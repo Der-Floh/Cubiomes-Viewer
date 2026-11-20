@@ -15,13 +15,13 @@ A cross-platform Minecraft Java Edition seed finder and biome map viewer, built 
 - **Analysis** of the biomes, structures and locations around a point, for one seed or up to 1,000 found seeds.
 - **Export** of any layer as PNG images of any size, whole or cut into tiles.
 - **Map tools**: pins, distance measurements, links to a spot, find nearest structure or biome, and the matching portal spot in the other dimension.
-- **Desktop, Android and web**: Windows, Linux, macOS, Android phones and the browser, with in-app updates on the desktop and Android.
+- **Desktop, Android and web**: Windows, Linux, macOS, Android phones and the browser; the desktop and Android apps tell you when a newer version is out.
 
 ### Map
 
 - Zoom from single blocks out to whole regions, and drag with the left or right mouse button; on a touch screen, drag with one finger and pinch to zoom.
 - The world bar sets the seed (or a random one), version, large biomes, dimension and the Y level biomes are read at; Shift + mouse wheel steps the Y level.
-- The status bar shows the biome or value, block and chunk under the pointer, the map scale and the app version. While an image export, an analysis, an update download or a seed search through a limited range of seeds runs, it fills from the left to show how far it has come.
+- The status bar shows the biome or value, block and chunk under the pointer, the map scale and the app version. While an image export, an analysis or a seed search through a limited range of seeds runs, it fills from the left to show how far it has come.
 - Layers: biomes, structure potential, climate parameters (temperature, humidity, continentalness, erosion, depth, weirdness), rivers, ocean temperatures and surface height, as far as the version has them.
 - Surface heights can be tinted, shaded, drawn as contour lines or in grey. Settings → Map can also shade the biome map by terrain height.
 - Markers for the structure types you choose, down to their variants (such as nether fossils with a dried ghast, from 1.21.6), plus the world spawn, strongholds, slime chunks and End gateways.
@@ -91,7 +91,7 @@ cubiomes-viewer-cli --session search.json --out seeds.txt
 - **World generation**: the experimental versions (Beta 1.7, Beta 1.8 and 1.0), the terrain estimate that leaves out some structures on low land from 1.18 on, and replaced structure salts, as servers and data packs use them.
 - **Start**: open the last world and search, and keep the desktop window's size and position.
 - **Export**: the separator of CSV files.
-- **Updates** (desktop and Android): the installed version, a check on request, and the check at start.
+- **Updates** (desktop and Android): the installed version, a check on request, and whether the app tells you about new versions at start.
 - **Diagnostics**: Run self-test checks the generator against reference values and measures tile throughput, about 180–200 tiles/s on 16 desktop threads and 75–105 on 6 Web Workers.
 
 ## Download
@@ -109,10 +109,10 @@ cubiomes-viewer-cli --session search.json --out seeds.txt
 
 Nothing to install: [open the web version](https://der-floh.github.io/Cubiomes-Viewer).
 
-- On the desktop the app updates itself: at start it looks for a newer release, downloads it in the background and installs it when the app closes. Settings → Updates restarts into a downloaded update right away or turns the check off.
+- Updates: at start the desktop and Android apps look for a newer release on GitHub. When there is one, a notice opens its page, goes away, or stops showing up until Settings → Updates turns it on again. To update, download and install the new version from the table above; your settings and searches stay.
 - macOS: the app is not signed, so macOS blocks the first start until it is allowed in System Settings → Privacy & Security → Open Anyway.
 - Linux: make the AppImage executable before the first start (`chmod +x CubiomesViewer-linux-x64.AppImage`).
-- Android: open the downloaded APK and, when Android asks, allow the browser or file manager to install apps. At start the app tells you about a newer release, which Settings → Updates downloads and hands to Android's installer, after you allow the app to install apps too.
+- Android: open the downloaded APK and, when Android asks, allow the browser or file manager to install apps. A newer APK installs over the old one.
 
 **Command line** (seed searches without the app): [Windows x64](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/cubiomes-viewer-cli-win-x64.zip) · [Windows ARM64](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/cubiomes-viewer-cli-win-arm64.zip) · [Linux x64](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/cubiomes-viewer-cli-linux-x64.tar.gz) · [macOS Apple Silicon](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/cubiomes-viewer-cli-osx-arm64.tar.gz) · [macOS Intel](https://github.com/Der-Floh/Cubiomes-Viewer/releases/latest/download/cubiomes-viewer-cli-osx-x64.tar.gz)
 

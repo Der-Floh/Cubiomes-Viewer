@@ -1,0 +1,20 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Cubiomes_Viewer.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="320" d:DesignHeight="120"
+             x:Class="Cubiomes_Viewer.Views.UpdateNoticeView"
+             x:DataType="vm:UpdateNoticeViewModel">
+
+    <StackPanel Classes="notice">
+        <TextBlock Classes="notice-title" Text="{Binding Title}"/>
+        <TextBlock Text="{Binding Message}" TextWrapping="Wrap"/>
+        <WrapPanel Classes="card-actions">
+            <Button Classes="accent" Content="{Binding OpenLabel}" Command="{Binding OpenCommand}" NotificationCard.CloseOnClick="True"/>
+            <Button Content="{Binding DismissLabel}" NotificationCard.CloseOnClick="True"/>
+            <Button Content="{Binding DontShowAgainLabel}" Command="{Binding DontShowAgainCommand}" NotificationCard.CloseOnClick="True"/>
+        </WrapPanel>
+    </StackPanel>
+
+</UserControl>

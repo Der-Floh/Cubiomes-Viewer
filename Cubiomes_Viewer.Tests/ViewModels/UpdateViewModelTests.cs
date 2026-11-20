@@ -2,8 +2,8 @@ using Avalonia.Controls.Notifications;
 
 using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Service.SettingsServ;
+using Cubiomes_Viewer.Service.BrowserServ;
 using Cubiomes_Viewer.Service.NotificationServ;
-using Cubiomes_Viewer.Service.ProgressServ;
 using Cubiomes_Viewer.Service.UpdateServ;
 using Cubiomes_Viewer.ViewModels;
 
@@ -13,29 +13,54 @@ namespace Cubiomes_Viewer.Tests.ViewModels;
 
 public sealed class UpdateViewModelTests : IDisposable
 {
-    private static readonly AppRelease _newer = new() { Version = "1.1.0" };
+    private static readonly AppRelease _newer = new() { Version = "1.1.0", PageUrl = new Uri("https://github.com/Der-Floh/Cubiomes-Viewer/releases/tag/v1.1.0") };
 
     private ServiceProvider? _services;
 
     public void Dispose() => _services?.Dispose();
 
     [Fact]
-    public async Task CheckAtStart_NewerRelease_DownloadsItAndOffersARestart()
+    public async Task CheckAtStart_NewerRelease_ShowsANoticeUntilItIsClosed()
     {
-        var updates = new FakeUpdateService { Newer = _newer };
-        var viewModel = Create(updates);
+        var viewModel = Create(new FakeUpdateService { Newer = _newer });
 
         await viewModel.CheckAtStartAsync();
 
-        Assert.Equal(_newer, updates.Downloaded);
-        Assert.True(viewModel.IsReady);
-        Assert.False(viewModel.CheckCommand.CanExecute(null));
-        Assert.Equal("Version 1.1.0 is downloaded and installs when the app closes.", viewModel.StatusText);
-        var announcement = Assert.Single(Notifications.Notifications);
-        Assert.Equal(NotificationType.Information, announcement.Type);
-        Assert.NotNull(announcement.OnClick);
-        announcement.OnClick();
-        Assert.Equal(1, updates.Restarts);
+        var (content, type) = Assert.Single(Notifications.Notices);
+        var notice = Assert.IsType<UpdateNoticeViewModel>(content);
+        Assert.Equal(NotificationType.Information, type);
+        Assert.Equal("Update available", notice.Title);
+        Assert.Equal("Cubiomes Viewer 1.1.0 is out; you have 1.0.0.", notice.Message);
+        Assert.Empty(Notifications.Notifications);
+        Assert.Equal("Version 1.1.0 is out.", viewModel.StatusText);
+        Assert.True(viewModel.HasNewerRelease);
+    }
+
+    [Fact]
+    public async Task Notice_Open_OpensThePageOfTheRelease()
+    {
+        var notice = await ShowNoticeAsync(Create(new FakeUpdateService { Newer = _newer }));
+
+        await notice.OpenCommand.ExecuteAsync(null);
+
+        Assert.Equal([_newer.PageUrl], Browser.Pages);
+    }
+
+    [Fact]
+    public async Task Notice_DontShowAgain_TurnsTheNoticesOffAndKeepsThemOff()
+    {
+        var updates = new FakeUpdateService { Newer = _newer };
+        var viewModel = Create(updates);
+        var notice = await ShowNoticeAsync(viewModel);
+
+        notice.DontShowAgainCommand.Execute(null);
+        await viewModel.CheckAtStartAsync();
+
+        Assert.False(viewModel.CheckAtStart);
+        Assert.False(Settings.Current.Update.CheckAtStart);
+        Assert.Equal(1, updates.Checks);
+        Assert.Single(Notifications.Notices);
+        Assert.Empty(Browser.Pages);
     }
 
     [Fact]
@@ -52,21 +77,21 @@ public sealed class UpdateViewModelTests : IDisposable
     }
 
     [Fact]
-    public async Task CheckAtStart_FeedUnreachable_SaysSoWithoutAnError()
+    public async Task CheckAtStart_ReleasesUnreachable_SaysSoWithoutAnError()
     {
-        var updates = new FakeUpdateService { Failure = "No such host is known." };
-        var viewModel = Create(updates);
+        var viewModel = Create(new FakeUpdateService { Failure = "No such host is known." });
 
         await viewModel.CheckAtStartAsync();
 
         Assert.Empty(Notifications.Notifications);
+        Assert.Empty(Notifications.Notices);
         Assert.Equal("The check for updates failed: No such host is known.", viewModel.StatusText);
         Assert.False(viewModel.IsChecking);
         Assert.True(viewModel.CheckCommand.CanExecute(null));
     }
 
     [Fact]
-    public async Task Check_FeedUnreachable_ReportsAnError()
+    public async Task Check_ReleasesUnreachable_ReportsAnError()
     {
         var viewModel = Create(new FakeUpdateService { Failure = "No such host is known." });
 
@@ -77,124 +102,40 @@ public sealed class UpdateViewModelTests : IDisposable
     }
 
     [Fact]
-    public async Task Check_RunningTheNewestVersion_SaysSoAndDownloadsNothing()
+    public async Task Check_RunningTheNewestVersion_SaysSo()
     {
-        var updates = new FakeUpdateService();
-        var viewModel = Create(updates);
+        var viewModel = Create(new FakeUpdateService());
 
         await viewModel.CheckCommand.ExecuteAsync(null);
 
-        Assert.Null(updates.Downloaded);
-        Assert.False(viewModel.IsReady);
         Assert.Equal("Cubiomes Viewer 1.0.0 is the newest version.", viewModel.StatusText);
+        Assert.False(viewModel.HasNewerRelease);
+        Assert.False(viewModel.OpenReleaseCommand.CanExecute(null));
         Assert.Empty(Notifications.Notifications);
     }
 
     [Fact]
-    public async Task Check_NewerRelease_IsReadyWithoutAnnouncingIt()
+    public async Task Check_NewerRelease_OffersItsPageWithoutANotice()
     {
-        var updates = new FakeUpdateService { Newer = _newer };
-        var viewModel = Create(updates);
+        var viewModel = Create(new FakeUpdateService { Newer = _newer });
 
         await viewModel.CheckCommand.ExecuteAsync(null);
-        viewModel.RestartCommand.Execute(null);
+        await viewModel.OpenReleaseCommand.ExecuteAsync(null);
 
-        Assert.True(viewModel.IsReady);
-        Assert.Empty(Notifications.Notifications);
-        Assert.Equal(1, updates.Restarts);
+        Assert.Empty(Notifications.Notices);
+        Assert.Equal("Version 1.1.0 is out.", viewModel.StatusText);
+        Assert.Equal([_newer.PageUrl], Browser.Pages);
     }
 
     [Fact]
-    public async Task CheckAtStart_OnRequest_OffersTheReleaseAndDownloadsItOnceAsked()
+    public async Task CopyThatCannotCheck_ShowsItsVersionAndChecksNothing()
     {
-        var updates = new FakeUpdateService { Style = UpdateStyle.OnRequest, Newer = _newer with { DownloadSize = 52_400_000 } };
+        var updates = new FakeUpdateService { CanCheck = false, CurrentVersion = "2.0.0", Newer = _newer };
         var viewModel = Create(updates);
 
         await viewModel.CheckAtStartAsync();
 
-        Assert.Null(updates.Downloaded);
-        Assert.True(viewModel.IsAvailable);
-        Assert.False(viewModel.IsCheckShown);
-        Assert.False(viewModel.CheckCommand.CanExecute(null));
-        Assert.Equal("Version 1.1.0 is available (52 MB).", viewModel.StatusText);
-        var announcement = Assert.Single(Notifications.Notifications);
-        Assert.Equal("Cubiomes Viewer 1.1.0 is available (52 MB). Tap here to download and install it.", announcement.Message);
-        Assert.NotNull(announcement.OnClick);
-
-        announcement.OnClick();
-        await TestWait.UntilAsync(() => updates.Restarts == 1, "The offered release was not handed to the installer.");
-
-        Assert.Equal(updates.Newer, updates.Downloaded);
-        Assert.True(viewModel.IsReady);
-        Assert.False(viewModel.IsAvailable);
-    }
-
-    [Fact]
-    public async Task DownloadAndInstall_OfferedRelease_HandsTheDownloadToTheInstaller()
-    {
-        var updates = new FakeUpdateService { Style = UpdateStyle.OnRequest, Newer = _newer };
-        var viewModel = Create(updates);
-
-        await viewModel.CheckCommand.ExecuteAsync(null);
-        Assert.Null(updates.Downloaded);
-        Assert.Equal("Version 1.1.0 is available.", viewModel.StatusText);
-        await viewModel.DownloadAndInstallCommand.ExecuteAsync(null);
-
-        Assert.Equal(_newer, updates.Downloaded);
-        Assert.Equal(1, updates.Restarts);
-        Assert.True(viewModel.IsReady);
-        Assert.False(viewModel.IsAvailable);
-        Assert.False(viewModel.DownloadAndInstallCommand.CanExecute(null));
-        Assert.Equal("Install update", viewModel.RestartLabel);
-        Assert.Equal("Version 1.1.0 is downloaded. Confirm the installation when the system asks.", viewModel.StatusText);
-        Assert.Empty(Notifications.Notifications);
-    }
-
-    [Fact]
-    public async Task DownloadAndInstall_WhileDownloading_FillsTheStatusStripAndEmptiesItAfter()
-    {
-        var gate = new TaskCompletionSource();
-        var updates = new FakeUpdateService { Style = UpdateStyle.OnRequest, Newer = _newer, DownloadGate = gate };
-        var viewModel = Create(updates);
-        await viewModel.CheckCommand.ExecuteAsync(null);
-
-        var downloading = viewModel.DownloadAndInstallCommand.ExecuteAsync(null);
-        await TestWait.UntilAsync(() => Progress.Share is not null, "The download never showed how far it had come.");
-        var halfway = Progress.Share;
-        gate.SetResult();
-        await downloading;
-
-        Assert.Equal(0.5, halfway);
-        Assert.Null(Progress.Share);
-        Assert.Equal((1, 1), (Progress.Begun, Progress.Ended));
-    }
-
-    [Fact]
-    public async Task DownloadAndInstall_DownloadFails_ReportsItAndKeepsTheOffer()
-    {
-        var updates = new FakeUpdateService { Style = UpdateStyle.OnRequest, Newer = _newer, DownloadFailure = "Connection reset." };
-        var viewModel = Create(updates);
-
-        await viewModel.CheckCommand.ExecuteAsync(null);
-        await viewModel.DownloadAndInstallCommand.ExecuteAsync(null);
-
-        Assert.Equal(["Connection reset."], Notifications.Errors);
-        Assert.Equal("The download failed: Connection reset.", viewModel.StatusText);
-        Assert.Equal(0, updates.Restarts);
-        Assert.True(viewModel.IsAvailable);
-        Assert.True(viewModel.DownloadAndInstallCommand.CanExecute(null));
-        Assert.Equal((1, 1), (Progress.Begun, Progress.Ended));
-    }
-
-    [Fact]
-    public async Task CopyThatCannotUpdate_ShowsItsVersionAndChecksNothing()
-    {
-        var updates = new FakeUpdateService { CanUpdate = false, CurrentVersion = "2.0.0", Newer = _newer };
-        var viewModel = Create(updates);
-
-        await viewModel.CheckAtStartAsync();
-
-        Assert.False(viewModel.CanUpdate);
+        Assert.False(viewModel.CanCheck);
         Assert.False(viewModel.CheckCommand.CanExecute(null));
         Assert.Equal("Cubiomes Viewer 2.0.0", viewModel.VersionText);
         Assert.Equal(0, updates.Checks);
@@ -216,7 +157,7 @@ public sealed class UpdateViewModelTests : IDisposable
 
     private RecordingNotificationService Notifications => (RecordingNotificationService)Services.GetRequiredService<INotificationService>();
 
-    private RecordingProgressService Progress => (RecordingProgressService)Services.GetRequiredService<IProgressService>();
+    private RecordingBrowserService Browser => (RecordingBrowserService)Services.GetRequiredService<IBrowserService>();
 
     private ISettingsService Settings => Services.GetRequiredService<ISettingsService>();
 
@@ -224,11 +165,13 @@ public sealed class UpdateViewModelTests : IDisposable
 
     private UpdateViewModel Create(FakeUpdateService updates)
     {
-        var services = new ServiceCollection();
-        App.ConfigureServices(services);
-        TestServices.UseIsolatedPlatform(services);
-        services.AddSingleton<IUpdateService>(updates);
-        _services = services.BuildServiceProvider();
+        _services = TestServices.Create(services => services.AddSingleton<IUpdateService>(updates));
         return _services.GetRequiredService<UpdateViewModel>();
+    }
+
+    private async Task<UpdateNoticeViewModel> ShowNoticeAsync(UpdateViewModel viewModel)
+    {
+        await viewModel.CheckAtStartAsync();
+        return Assert.IsType<UpdateNoticeViewModel>(Assert.Single(Notifications.Notices).Content);
     }
 }

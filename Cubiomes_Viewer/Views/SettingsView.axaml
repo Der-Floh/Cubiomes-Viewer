@@ -91,13 +91,12 @@
             <TextBlock Classes="section" Text="{Binding Updates.Title}"/>
             <StackPanel Classes="form" DataContext="{Binding Updates}" x:DataType="vm:UpdateViewModel">
                 <TextBlock Text="{Binding VersionText}"/>
-                <StackPanel Classes="form" IsVisible="{Binding CanUpdate}">
+                <StackPanel Classes="form" IsVisible="{Binding CanCheck}">
                     <CheckBox Content="{Binding CheckAtStartLabel}" IsChecked="{Binding CheckAtStart}"/>
                     <TextBlock Classes="damp" Text="{Binding CheckAtStartHint}" TextWrapping="Wrap"/>
                     <WrapPanel Classes="card-actions">
-                        <Button Classes="accent" Content="{Binding RestartLabel}" Command="{Binding RestartCommand}" IsVisible="{Binding IsReady}"/>
-                        <Button Classes="accent" Content="{Binding DownloadLabel}" Command="{Binding DownloadAndInstallCommand}" IsVisible="{Binding IsAvailable}"/>
-                        <Button Content="{Binding CheckLabel}" Command="{Binding CheckCommand}" IsVisible="{Binding IsCheckShown}"/>
+                        <Button Classes="accent" Content="{Binding OpenReleaseLabel}" Command="{Binding OpenReleaseCommand}" IsVisible="{Binding HasNewerRelease}"/>
+                        <Button Content="{Binding CheckLabel}" Command="{Binding CheckCommand}"/>
                     </WrapPanel>
                     <TextBlock Classes="damp" Text="{Binding StatusText}" TextWrapping="Wrap" IsVisible="{Binding StatusText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
                 </StackPanel>
