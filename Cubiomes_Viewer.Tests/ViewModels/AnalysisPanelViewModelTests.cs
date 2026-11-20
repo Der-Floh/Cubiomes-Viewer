@@ -7,6 +7,7 @@ using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.AnalysisServ;
 using Cubiomes_Viewer.Engine.Service.SearchServ;
 using Cubiomes_Viewer.Service.NotificationServ;
+using Cubiomes_Viewer.Service.ProgressServ;
 using Cubiomes_Viewer.Service.StorageServ;
 using Cubiomes_Viewer.ViewModels;
 
@@ -38,6 +39,7 @@ public sealed class AnalysisPanelViewModelTests : IDisposable
     private LocationAnalysisViewModel Locations => Assert.IsType<LocationAnalysisViewModel>(_panel.Tabs[2]);
     private RecordingNotificationService Notifications => (RecordingNotificationService)_services.GetRequiredService<INotificationService>();
     private MemoryStorageService Storage => (MemoryStorageService)_services.GetRequiredService<IStorageService>();
+    private RecordingProgressService Progress => (RecordingProgressService)_services.GetRequiredService<IProgressService>();
 
     public void Dispose() => _services.Dispose();
 
@@ -55,6 +57,31 @@ public sealed class AnalysisPanelViewModelTests : IDisposable
         Assert.StartsWith($"Counted {census.Samples} samples in 1 seed", Biomes.StatusText, StringComparison.Ordinal);
         Assert.Contains("nearest at ", Biomes.Rows[0].Detail, StringComparison.Ordinal);
         Assert.True(Biomes.HasRows);
+    }
+
+    [AvaloniaFact]
+    public async Task Biomes_WhileCounted_FillTheStatusStripAndEmptyItAfter()
+    {
+        Biomes.SelectedScale = Biomes.Scales.Single(choice => choice.Value == 64);
+
+        await Biomes.RunCommand.ExecuteAsync(null);
+
+        Assert.Contains(Progress.Shares, share => share > 0);
+        Assert.Null(Progress.Share);
+        Assert.Equal((1, 1), (Progress.Begun, Progress.Ended));
+    }
+
+    [AvaloniaFact]
+    public async Task Biomes_AreaTooLargeToCount_SayWhyAndEmptyTheStatusStrip()
+    {
+        _panel.Scope.Size = 1_000_000;
+        Biomes.SelectedScale = Biomes.Scales.Single(choice => choice.Value == 64);
+
+        await Biomes.RunCommand.ExecuteAsync(null);
+
+        Assert.Contains("samples", Assert.Single(Notifications.Errors), StringComparison.Ordinal);
+        Assert.Null(Progress.Share);
+        Assert.Equal((1, 1), (Progress.Begun, Progress.Ended));
     }
 
     [AvaloniaFact]

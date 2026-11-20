@@ -13,6 +13,7 @@ using Cubiomes_Viewer.Engine.Service.SettingsServ;
 using Cubiomes_Viewer.Engine.Service.StructureServ;
 using Cubiomes_Viewer.Service.CsvServ;
 using Cubiomes_Viewer.Service.NotificationServ;
+using Cubiomes_Viewer.Service.ProgressServ;
 using Cubiomes_Viewer.Service.StorageServ;
 
 namespace Cubiomes_Viewer.ViewModels;
@@ -40,8 +41,8 @@ public sealed partial class LocationAnalysisViewModel : AnalysisTabViewModel
     private readonly IConditionRegistry _conditionRegistry;
     private readonly IStructureCatalog _structureCatalog;
 
-    public LocationAnalysisViewModel(AnalysisScopeViewModel scope, IAnalysisService analysis, ISearchSessionService searchSession, ISeedSearchService search, IConditionRegistry conditionRegistry, IStructureCatalog structureCatalog, WorldSession session, MapViewModel map, ISeedHistoryService seedHistory, IStorageService storage, ICsvService csv, ISettingsService settingsService, INotificationService notifications)
-        : base(scope, session, map, seedHistory, storage, csv, settingsService, notifications)
+    public LocationAnalysisViewModel(AnalysisScopeViewModel scope, IAnalysisService analysis, ISearchSessionService searchSession, ISeedSearchService search, IConditionRegistry conditionRegistry, IStructureCatalog structureCatalog, WorldSession session, MapViewModel map, ISeedHistoryService seedHistory, IStorageService storage, ICsvService csv, ISettingsService settingsService, IProgressService progress, INotificationService notifications)
+        : base(scope, session, map, seedHistory, storage, csv, settingsService, progress, notifications)
     {
         _analysis = analysis;
         _searchSession = searchSession;

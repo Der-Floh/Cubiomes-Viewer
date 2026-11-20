@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using Cubiomes_Viewer.Engine.Data.Search;
 using Cubiomes_Viewer.Engine.Service.SearchServ;
 using Cubiomes_Viewer.Service.NotificationServ;
+using Cubiomes_Viewer.Service.ProgressServ;
 
 namespace Cubiomes_Viewer.ViewModels;
 
@@ -40,13 +41,16 @@ public sealed partial class SearchRunViewModel : ViewModelBase
 
     private readonly ISeedSearchService _search;
     private readonly SearchSetupViewModel _setup;
+    private readonly IProgressService _progress;
     private readonly INotificationService _notifications;
     private CancellationTokenSource? _stopping;
+    private IProgressScope? _shown;
 
-    public SearchRunViewModel(ISeedSearchService search, SearchSetupViewModel setup, INotificationService notifications) : base(notifications)
+    public SearchRunViewModel(ISeedSearchService search, SearchSetupViewModel setup, IProgressService progress, INotificationService notifications) : base(notifications)
     {
         _search = search;
         _setup = setup;
+        _progress = progress;
         _notifications = notifications;
 
         ShowSearch();
@@ -70,10 +74,13 @@ public sealed partial class SearchRunViewModel : ViewModelBase
 
     private bool CanClear() => !IsRunning && HasSearch;
 
+    /// <summary>Holds the search's part in the progress from before it starts, since starting it already reports.</summary>
     private async Task RunAsync(Func<CancellationToken, Task> search)
     {
         using var stopping = new CancellationTokenSource();
+        using var shown = _progress.Begin();
         _stopping = stopping;
+        _shown = shown;
         try
         {
             await search(stopping.Token);
@@ -81,6 +88,7 @@ public sealed partial class SearchRunViewModel : ViewModelBase
         finally
         {
             _stopping = null;
+            _shown = null;
         }
 
         if (_search.State == SearchState.Finished)
@@ -104,5 +112,7 @@ public sealed partial class SearchRunViewModel : ViewModelBase
         HasSearch = state != SearchState.Idle;
         StatusText = SearchProgressText.DescribeState(state, _search.Progress, _search.Results.Count, _search.Setup?.MaxResults ?? 0, CanContinue);
         ProgressText = SearchProgressText.DescribeProgress(state, _search.Progress);
+        if (IsRunning && _search.Progress.Share is { } share)
+            _shown?.Report(share);
     }
 }

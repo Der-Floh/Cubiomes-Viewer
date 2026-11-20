@@ -3,13 +3,14 @@ using Cubiomes_Viewer.Engine.Service.ComputeServ;
 using Cubiomes_Viewer.Service.AppAddressServ;
 using Cubiomes_Viewer.Service.ClipboardServ;
 using Cubiomes_Viewer.Service.NotificationServ;
+using Cubiomes_Viewer.Service.ProgressServ;
 using Cubiomes_Viewer.Service.StorageServ;
 
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Cubiomes_Viewer.Tests;
 
-/// <summary>Builds the application's services with storage, compute, notifications, the clipboard, the file pickers and the address bar replaced by test-safe ones.</summary>
+/// <summary>Builds the application's services with storage, compute, notifications, progress, the clipboard, the file pickers and the address bar replaced by test-safe ones.</summary>
 internal static class TestServices
 {
     /// <param name="configure">Replaces further services, such as one a test fakes.</param>
@@ -28,6 +29,7 @@ internal static class TestServices
         services.AddSingleton<IAppDataStore>(new FileSystemAppDataStore(directory));
         services.AddSingleton<IComputeService, InlineComputeService>();
         services.AddSingleton<INotificationService, RecordingNotificationService>();
+        services.AddSingleton<IProgressService, RecordingProgressService>();
         services.AddSingleton<IClipboardService, RecordingClipboardService>();
         services.AddSingleton<IStorageService, MemoryStorageService>();
         services.AddSingleton<IAppAddressService, RecordingAppAddressService>();

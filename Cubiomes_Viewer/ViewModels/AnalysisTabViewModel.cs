@@ -13,6 +13,7 @@ using Cubiomes_Viewer.Engine.Service.SeedServ;
 using Cubiomes_Viewer.Engine.Service.SettingsServ;
 using Cubiomes_Viewer.Service.CsvServ;
 using Cubiomes_Viewer.Service.NotificationServ;
+using Cubiomes_Viewer.Service.ProgressServ;
 using Cubiomes_Viewer.Service.StorageServ;
 
 namespace Cubiomes_Viewer.ViewModels;
@@ -58,11 +59,12 @@ public abstract partial class AnalysisTabViewModel : ViewModelBase
     private readonly IStorageService _storage;
     private readonly ICsvService _csv;
     private readonly ISettingsService _settingsService;
+    private readonly IProgressService _progress;
     private readonly INotificationService _notifications;
     private CancellationTokenSource? _stopping;
     private CsvTable? _table;
 
-    protected AnalysisTabViewModel(AnalysisScopeViewModel scope, WorldSession session, MapViewModel map, ISeedHistoryService seedHistory, IStorageService storage, ICsvService csv, ISettingsService settingsService, INotificationService notifications) : base(notifications)
+    protected AnalysisTabViewModel(AnalysisScopeViewModel scope, WorldSession session, MapViewModel map, ISeedHistoryService seedHistory, IStorageService storage, ICsvService csv, ISettingsService settingsService, IProgressService progress, INotificationService notifications) : base(notifications)
     {
         _settingsService = settingsService;
         Scope = scope;
@@ -71,6 +73,7 @@ public abstract partial class AnalysisTabViewModel : ViewModelBase
         _seedHistory = seedHistory;
         _storage = storage;
         _csv = csv;
+        _progress = progress;
         _notifications = notifications;
     }
 
@@ -86,12 +89,17 @@ public abstract partial class AnalysisTabViewModel : ViewModelBase
     private Task RunAsync() => RunGuardedAsync(async () =>
     {
         using var stopping = new CancellationTokenSource();
+        using var shown = _progress.Begin();
         _stopping = stopping;
         IsRunning = true;
         StatusText = "Working…";
         try
         {
-            Show(await AnalyseAsync(new Progress<double>(ShowProgress), stopping.Token));
+            Show(await AnalyseAsync(new Progress<double>(share =>
+            {
+                ShowProgress(share);
+                shown.Report(share);
+            }), stopping.Token));
         }
         catch (OperationCanceledException) when (stopping.IsCancellationRequested)
         {

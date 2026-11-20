@@ -8,6 +8,7 @@ using CommunityToolkit.Mvvm.Input;
 using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Service.SettingsServ;
 using Cubiomes_Viewer.Service.NotificationServ;
+using Cubiomes_Viewer.Service.ProgressServ;
 using Cubiomes_Viewer.Service.UpdateServ;
 
 using Microsoft.Extensions.Logging;
@@ -62,16 +63,18 @@ public sealed partial class UpdateViewModel : ViewModelBase
 
     private readonly IUpdateService _updates;
     private readonly ISettingsService _settingsService;
+    private readonly IProgressService _progress;
     private readonly INotificationService _notifications;
     private readonly ILogger<UpdateViewModel> _logger;
     private readonly bool _isOnRequest;
     private AppRelease? _available;
     private bool _isShowingSettings;
 
-    public UpdateViewModel(IUpdateService updates, ISettingsService settingsService, INotificationService notifications, ILogger<UpdateViewModel> logger) : base(notifications)
+    public UpdateViewModel(IUpdateService updates, ISettingsService settingsService, IProgressService progress, INotificationService notifications, ILogger<UpdateViewModel> logger) : base(notifications)
     {
         _updates = updates;
         _settingsService = settingsService;
+        _progress = progress;
         _notifications = notifications;
         _logger = logger;
         _isOnRequest = updates.Style == UpdateStyle.OnRequest;
@@ -201,10 +204,14 @@ public sealed partial class UpdateViewModel : ViewModelBase
     private async Task DownloadAsync(AppRelease release)
     {
         var isDownloading = true;
+        using var shown = _progress.Begin();
         var progress = new Progress<int>(percent =>
         {
-            if (isDownloading)
-                StatusText = string.Create(CultureInfo.InvariantCulture, $"Downloading version {release.Version}… {percent} %");
+            if (!isDownloading)
+                return;
+
+            StatusText = string.Create(CultureInfo.InvariantCulture, $"Downloading version {release.Version}… {percent} %");
+            shown.Report(percent / 100.0);
         });
 
         StatusText = $"Downloading version {release.Version}…";

@@ -21,7 +21,7 @@ A cross-platform Minecraft Java Edition seed finder and biome map viewer, built 
 
 - Zoom from single blocks out to whole regions, and drag with the left or right mouse button; on a touch screen, drag with one finger and pinch to zoom.
 - The world bar sets the seed (or a random one), version, large biomes, dimension and the Y level biomes are read at; Shift + mouse wheel steps the Y level.
-- The status bar shows the biome or value, block and chunk under the pointer.
+- The status bar shows the biome or value, block and chunk under the pointer, the map scale and the app version. While an image export, an analysis, an update download or a seed search through a limited range of seeds runs, it fills from the left to show how far it has come.
 - Layers: biomes, structure potential, climate parameters (temperature, humidity, continentalness, erosion, depth, weirdness), rivers, ocean temperatures and surface height, as far as the version has them.
 - Surface heights can be tinted, shaded, drawn as contour lines or in grey. Settings → Map can also shade the biome map by terrain height.
 - Markers for the structure types you choose, down to their variants (such as nether fossils with a dried ghast, from 1.21.6), plus the world spawn, strongholds, slime chunks and End gateways.

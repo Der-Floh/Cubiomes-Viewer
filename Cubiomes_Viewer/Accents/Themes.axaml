@@ -4,10 +4,12 @@
     <Color x:Key="Palette.RegionColor.Light">#f3f3f3</Color>
     <Color x:Key="Palette.RegionColorDamp.Light">#e2e2e2</Color>
     <Color x:Key="Palette.AccentColor.Light">#2f8f5b</Color>
+    <Color x:Key="Palette.ProgressColor.Light">#c2dacd</Color>
     <Color x:Key="Palette.MapBackgroundColor.Light">#c9d2d6</Color>
     <Color x:Key="Palette.RegionColor.Dark">#1f2123</Color>
     <Color x:Key="Palette.RegionColorDamp.Dark">#2d3033</Color>
     <Color x:Key="Palette.AccentColor.Dark">#3aa56b</Color>
+    <Color x:Key="Palette.ProgressColor.Dark">#264235</Color>
     <Color x:Key="Palette.MapBackgroundColor.Dark">#121416</Color>
 
     <Color x:Key="Marker.Village">#b5651d</Color>
@@ -55,6 +57,7 @@
             <SolidColorBrush x:Key="FontColor">#000000</SolidColorBrush>
             <SolidColorBrush x:Key="FontColorDamp">#5a5a5a</SolidColorBrush>
             <SolidColorBrush x:Key="AccentColor" Color="{StaticResource Palette.AccentColor.Light}"/>
+            <SolidColorBrush x:Key="ProgressColor" Color="{StaticResource Palette.ProgressColor.Light}"/>
             <SolidColorBrush x:Key="RegionColor" Color="{StaticResource Palette.RegionColor.Light}"/>
             <SolidColorBrush x:Key="RegionColorDamp" Color="{StaticResource Palette.RegionColorDamp.Light}"/>
             <SolidColorBrush x:Key="MapBackgroundColor" Color="{StaticResource Palette.MapBackgroundColor.Light}"/>
@@ -67,6 +70,7 @@
             <SolidColorBrush x:Key="FontColor">#ffffff</SolidColorBrush>
             <SolidColorBrush x:Key="FontColorDamp">#a8a8a8</SolidColorBrush>
             <SolidColorBrush x:Key="AccentColor" Color="{StaticResource Palette.AccentColor.Dark}"/>
+            <SolidColorBrush x:Key="ProgressColor" Color="{StaticResource Palette.ProgressColor.Dark}"/>
             <SolidColorBrush x:Key="RegionColor" Color="{StaticResource Palette.RegionColor.Dark}"/>
             <SolidColorBrush x:Key="RegionColorDamp" Color="{StaticResource Palette.RegionColorDamp.Dark}"/>
             <SolidColorBrush x:Key="MapBackgroundColor" Color="{StaticResource Palette.MapBackgroundColor.Dark}"/>

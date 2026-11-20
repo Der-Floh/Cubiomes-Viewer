@@ -169,7 +169,7 @@ public sealed partial class MainContainer : UserControl
 
     private void OpenMapWindow()
     {
-        var window = new MapWindow { DataContext = _main.Map };
+        var window = new MapWindow { DataContext = _main.StatusBar };
         window.ShowZoom(_uiZoom.Scale);
         MoveMapTo(window.MapHost);
         window.Closed += OnMapWindowClosed;

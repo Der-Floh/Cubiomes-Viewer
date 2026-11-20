@@ -99,6 +99,19 @@ public sealed class MainContainerTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void Undocked_TheMapWindowShowsTheStatusStripOfTheMainWindow()
+    {
+        _main.ToggleMapWindowCommand.Execute(null);
+        HeadlessInput.Render();
+        var mapWindow = Assert.IsType<MapWindow>(TopLevel.GetTopLevel(_map));
+
+        var strip = mapWindow.GetVisualDescendants().OfType<StatusBarView>().Single();
+
+        Assert.Same(_main.StatusBar, strip.DataContext);
+        Assert.Same(_main.StatusBar, _window.GetVisualDescendants().OfType<StatusBarView>().Single().DataContext);
+    }
+
+    [AvaloniaFact]
     public void MapWindow_ClosedByTheUser_BringsTheMapBack()
     {
         _main.ToggleMapWindowCommand.Execute(null);

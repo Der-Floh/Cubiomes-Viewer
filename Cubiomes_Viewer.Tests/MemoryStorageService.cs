@@ -15,6 +15,9 @@ internal sealed class MemoryStorageService : IStorageService
     /// <summary>Makes the save picker behave as if the user closed it without choosing a file.</summary>
     public bool IsSaveCancelled { get; set; }
 
+    /// <summary>Makes the chosen file take no bytes at all, as a full disk would.</summary>
+    public bool IsDiskFull { get; set; }
+
     public FilePickerSaveOptions? LastSaveOptions { get; private set; }
     public byte[]? SavedContent { get; private set; }
 
@@ -46,7 +49,7 @@ internal sealed class MemoryStorageService : IStorageService
         if (IsSaveCancelled)
             return null;
 
-        using var stream = new MemoryStream();
+        using var stream = IsDiskFull ? new MemoryStream([]) : new MemoryStream();
         SavedContent = null;
         await writeAsync(stream);
         SavedContent = stream.ToArray();

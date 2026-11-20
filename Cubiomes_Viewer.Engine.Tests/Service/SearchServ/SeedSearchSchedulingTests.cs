@@ -125,6 +125,34 @@ public sealed class SeedSearchSchedulingTests
 
         Assert.Contains(reports, progress => progress.SeedsPerSecond > 0);
         Assert.All(reports, progress => Assert.Null(progress.Remaining));
+        Assert.All(reports, progress => Assert.Null(progress.Share));
+    });
+
+    [Fact]
+    public void StartAsync_SearchWithAnEnd_ReportsAShareThatRisesToTheWhole() => SingleThread.Run(async () =>
+    {
+        var setup = new SearchSetup { Definition = _definition, Source = new SeedRangeSource { LastSeed = 999_999 }, MaxResults = 10_000, Workers = 1 };
+        List<SearchProgress> reports = [];
+        _search.Changed += (_, _) => reports.Add(_search.Progress);
+
+        await _search.StartAsync(setup, TestContext.Current.CancellationToken);
+
+        var halfway = reports.First(progress => progress.Scanned >= 500_000);
+        Assert.Equal((UInt128)1_000_000, halfway.Total);
+        Assert.Equal((double)halfway.Scanned / 1_000_000, Assert.NotNull(halfway.Share), tolerance: 1e-12);
+        Assert.Equal(1, reports[^1].Share);
+        var shares = reports.Select(progress => progress.Share).OfType<double>().ToArray();
+        Assert.All(shares.Zip(shares.Skip(1)), pair => Assert.True(pair.First <= pair.Second));
+    });
+
+    [Fact]
+    public void StartAsync_RangeUpToTheLastSeedThereIs_HasNoShare() => SingleThread.Run(async () =>
+    {
+        var setup = new SearchSetup { Definition = _definition, Source = new SeedRangeSource { FirstSeed = long.MaxValue - 2500 }, MaxResults = 10_000, Workers = Workers };
+
+        await _search.StartAsync(setup, TestContext.Current.CancellationToken);
+
+        Assert.Equal(((UInt128?)null, (double?)null), (_search.Progress.Total, _search.Progress.Share));
     });
 
     [Fact]

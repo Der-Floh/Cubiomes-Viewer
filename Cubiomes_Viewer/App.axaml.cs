@@ -15,6 +15,7 @@ using Cubiomes_Viewer.Service.LootDescriptionServ;
 using Cubiomes_Viewer.Service.MapLinkServ;
 using Cubiomes_Viewer.Service.MapStyleServ;
 using Cubiomes_Viewer.Service.NotificationServ;
+using Cubiomes_Viewer.Service.ProgressServ;
 using Cubiomes_Viewer.Service.StorageServ;
 using Cubiomes_Viewer.Service.StructureDescriptionServ;
 using Cubiomes_Viewer.Service.ThemeServ;
@@ -171,6 +172,7 @@ public sealed partial class App : Application
         services.AddSingleton<IStorageService, StorageService>();
         services.AddSingleton<ICsvService, CsvService>();
         services.AddSingleton<INotificationService, NotificationService>();
+        services.AddSingleton<IProgressService, ProgressService>();
         services.AddSingleton<IThemeService, ThemeService>();
         services.AddSingleton<IUiZoomService, UiZoomService>();
         services.AddSingleton<ITileBitmapService, TileBitmapService>();
@@ -214,6 +216,7 @@ public sealed partial class App : Application
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<WorldBarViewModel>();
         services.AddSingleton<MapViewModel>();
+        services.AddSingleton<StatusBarViewModel>();
         services.AddSingleton<NearestSearchViewModel>();
         services.AddSingleton<MapMenuViewModel>();
         services.AddSingleton<ChestLootViewModel>();

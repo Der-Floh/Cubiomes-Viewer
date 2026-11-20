@@ -11,6 +11,7 @@ using Cubiomes_Viewer.Engine.Repository.SessionRepo;
 using Cubiomes_Viewer.Engine.Service.SearchServ;
 using Cubiomes_Viewer.Service.ClipboardServ;
 using Cubiomes_Viewer.Service.NotificationServ;
+using Cubiomes_Viewer.Service.ProgressServ;
 using Cubiomes_Viewer.Service.StorageServ;
 using Cubiomes_Viewer.ViewModels;
 
@@ -39,6 +40,7 @@ public sealed class SearchPanelViewModelTests : IDisposable
 
     private SearchSetupViewModel Setup => _panel.Setup;
     private RecordingNotificationService Notifications => (RecordingNotificationService)_services.GetRequiredService<INotificationService>();
+    private RecordingProgressService Progress => (RecordingProgressService)_services.GetRequiredService<IProgressService>();
 
     [AvaloniaFact]
     public void AddCondition_Structure_AddsAnOpenVillageConditionThatCanBeSearched()
@@ -526,6 +528,34 @@ public sealed class SearchPanelViewModelTests : IDisposable
     }
 
     [AvaloniaFact]
+    public async Task Start_SeedsWithAnEnd_FillTheStatusStripAndEmptyItOnceFinished()
+    {
+        SetUpSlimeChunks(ManySlimeChunks, maxResults: 4);
+
+        await _panel.Run.StartCommand.ExecuteAsync(null);
+
+        Assert.Contains(Progress.Shares, share => share > 0);
+        Assert.Null(Progress.Share);
+        Assert.Equal((1, 1), (Progress.Begun, Progress.Ended));
+    }
+
+    [AvaloniaFact]
+    public async Task Start_SeedsWithoutAnEnd_LeaveTheStatusStripEmpty()
+    {
+        SetUpSlimeChunks(EveryChunk, maxResults: 1, lastSeed: string.Empty);
+
+        var running = _panel.Run.StartCommand.ExecuteAsync(null);
+        await TestWait.UntilAsync(() => _search.Progress.Scanned > 0, "The search never scanned a seed.");
+        var whileRunning = (Progress.Begun, Progress.Ended);
+        _panel.Run.StopCommand.Execute(null);
+        await running;
+
+        Assert.Equal((1, 0), whileRunning);
+        Assert.Empty(Progress.Shares);
+        Assert.Equal((1, 1), (Progress.Begun, Progress.Ended));
+    }
+
+    [AvaloniaFact]
     public async Task Stop_RunningSearch_StopsItAndContinueGoesOnFromThere()
     {
         SetUpSlimeChunks(EveryChunk, maxResults: 1, lastSeed: string.Empty);
@@ -550,6 +580,7 @@ public sealed class SearchPanelViewModelTests : IDisposable
 
         Assert.Equal(SearchState.Paused, _search.State);
         Assert.Empty(Notifications.Errors);
+        Assert.Equal((2, 2), (Progress.Begun, Progress.Ended));
     }
 
     [AvaloniaFact]

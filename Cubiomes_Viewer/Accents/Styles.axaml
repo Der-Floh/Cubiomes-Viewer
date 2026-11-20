@@ -72,6 +72,9 @@
         <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="Margin" Value="0,0,16,0"/>
     </Style>
+    <Style Selector="TextBlock.status.version">
+        <Setter Property="Margin" Value="0"/>
+    </Style>
 
     <Style Selector=":is(Control).section-content">
         <Setter Property="Margin" Value="0,8,0,0"/>
@@ -497,8 +500,22 @@
         <Setter Property="Background" Value="{DynamicResource RegionColor}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
         <Setter Property="BorderThickness" Value="0,1,0,0"/>
-        <Setter Property="Padding" Value="12,4"/>
         <Setter Property="MinHeight" Value="26"/>
+    </Style>
+    <Style Selector="Grid.status-texts">
+        <Setter Property="Margin" Value="12,4"/>
+    </Style>
+    <Style Selector="ProgressBar.status-progress">
+        <Setter Property="MinWidth" Value="0"/>
+        <Setter Property="MinHeight" Value="0"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="VerticalAlignment" Value="Stretch"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CornerRadius" Value="0"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource ProgressColor}"/>
+        <Setter Property="IsHitTestVisible" Value="False"/>
     </Style>
     <Style Selector="Border.hover-chip">
         <Setter Property="Background" Value="{DynamicResource RegionColor}"/>

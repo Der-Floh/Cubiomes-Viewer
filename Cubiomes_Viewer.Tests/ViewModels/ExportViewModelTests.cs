@@ -11,6 +11,7 @@ using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.SearchServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
 using Cubiomes_Viewer.Service.NotificationServ;
+using Cubiomes_Viewer.Service.ProgressServ;
 using Cubiomes_Viewer.Service.StorageServ;
 using Cubiomes_Viewer.ViewModels;
 
@@ -36,6 +37,7 @@ public sealed class ExportViewModelTests : IDisposable
 
     private MemoryStorageService Storage => (MemoryStorageService)_services.GetRequiredService<IStorageService>();
     private RecordingNotificationService Notifications => (RecordingNotificationService)_services.GetRequiredService<INotificationService>();
+    private RecordingProgressService Progress => (RecordingProgressService)_services.GetRequiredService<IProgressService>();
 
     public void Dispose() => _services.Dispose();
 
@@ -65,6 +67,42 @@ public sealed class ExportViewModelTests : IDisposable
         using var bitmap = new Bitmap(new MemoryStream(Assert.IsType<byte[]>(Storage.SavedContent)));
         Assert.Equal(new PixelSize(128, 64), bitmap.PixelSize);
         Assert.StartsWith("Saved ", _export.StatusText, StringComparison.Ordinal);
+    }
+
+    [AvaloniaFact]
+    public async Task Export_WhileItWrites_FillsTheStatusStripAndEmptiesItAfter()
+    {
+        SetArea(-256, -128, 255, 127, scale: 4);
+
+        await _export.ExportCommand.ExecuteAsync(null);
+
+        Assert.Contains(Progress.Shares, share => share > 0);
+        Assert.Null(Progress.Share);
+        Assert.Equal((1, 1), (Progress.Begun, Progress.Ended));
+    }
+
+    [AvaloniaFact]
+    public async Task Export_PickerClosed_LeavesTheStatusStripAlone()
+    {
+        Storage.IsSaveCancelled = true;
+        SetArea(-256, -128, 255, 127, scale: 4);
+
+        await _export.ExportCommand.ExecuteAsync(null);
+
+        Assert.Equal(0, Progress.Begun);
+    }
+
+    [AvaloniaFact]
+    public async Task Export_FileThatTakesNothing_SaysSoAndEmptiesTheStatusStrip()
+    {
+        Storage.IsDiskFull = true;
+        SetArea(-256, -128, 255, 127, scale: 4);
+
+        await _export.ExportCommand.ExecuteAsync(null);
+
+        Assert.NotEmpty(Notifications.Errors);
+        Assert.Null(Progress.Share);
+        Assert.Equal((1, 1), (Progress.Begun, Progress.Ended));
     }
 
     [AvaloniaFact]

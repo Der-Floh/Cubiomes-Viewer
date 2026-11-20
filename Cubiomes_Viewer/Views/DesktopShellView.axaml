@@ -49,7 +49,7 @@
             </StackPanel>
         </Grid>
 
-        <views:StatusBarView Grid.Row="2" DataContext="{Binding Map}"/>
+        <views:StatusBarView Grid.Row="2" DataContext="{Binding StatusBar}"/>
     </Grid>
 
 </UserControl>

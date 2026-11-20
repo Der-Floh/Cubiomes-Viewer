@@ -6,7 +6,7 @@
         xmlns:views="using:Cubiomes_Viewer.Views"
         mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
         x:Class="Cubiomes_Viewer.Views.MapWindow"
-        x:DataType="vm:MapViewModel"
+        x:DataType="vm:StatusBarViewModel"
         Icon="/Assets/icon-x256.png"
         Title="Cubiomes Viewer · Map"
         Width="1000" Height="700"

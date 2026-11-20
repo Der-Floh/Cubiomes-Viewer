@@ -31,6 +31,7 @@ public sealed partial class MainViewModel : ViewModelBase
 
     public WorldBarViewModel WorldBar { get; }
     public MapViewModel Map { get; }
+    public StatusBarViewModel StatusBar { get; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CurrentPanel), nameof(IsPanelOpen))]
@@ -71,11 +72,12 @@ public sealed partial class MainViewModel : ViewModelBase
     private bool _isInitialized;
     private string? _startLinkProblem;
 
-    public MainViewModel(WorldBarViewModel worldBar, MapViewModel map, LayersPanelViewModel layersPanel, SearchPanelViewModel searchPanel, AnalysisPanelViewModel analysisPanel, ExportViewModel exportPanel, SettingsViewModel settingsPanel, WorldSession session, ISettingsService settingsService, ISeedHistoryService seedHistory, ISeedParser seedParser, IUnreadableDataService unreadable, IMapLinkService mapLinks, IAppAddressService address, IPinService pinService, IWindowService windowService, INotificationService notificationService) : base(notificationService)
+    public MainViewModel(WorldBarViewModel worldBar, MapViewModel map, StatusBarViewModel statusBar, LayersPanelViewModel layersPanel, SearchPanelViewModel searchPanel, AnalysisPanelViewModel analysisPanel, ExportViewModel exportPanel, SettingsViewModel settingsPanel, WorldSession session, ISettingsService settingsService, ISeedHistoryService seedHistory, ISeedParser seedParser, IUnreadableDataService unreadable, IMapLinkService mapLinks, IAppAddressService address, IPinService pinService, IWindowService windowService, INotificationService notificationService) : base(notificationService)
     {
         CanUndockMap = windowService.HasWindows;
         WorldBar = worldBar;
         Map = map;
+        StatusBar = statusBar;
         _layersPanel = layersPanel;
         _searchPanel = searchPanel;
         _settingsPanel = settingsPanel;

@@ -19,6 +19,9 @@ internal sealed class FakeUpdateService : IUpdateService
     /// <summary>Why downloads fail, or <see langword="null"/> when they succeed.</summary>
     public string? DownloadFailure { get; init; }
 
+    /// <summary>Holds a download halfway until it is set, or <see langword="null"/> to let downloads run through.</summary>
+    public TaskCompletionSource? DownloadGate { get; init; }
+
     public int Checks { get; private set; }
     public AppRelease? Downloaded { get; private set; }
     public int InstallsOnExit { get; private set; }
@@ -30,15 +33,16 @@ internal sealed class FakeUpdateService : IUpdateService
         return Failure is null ? Task.FromResult(Newer) : Task.FromException<AppRelease?>(new UpdateException(Failure, new HttpRequestException(Failure)));
     }
 
-    public Task DownloadAsync(AppRelease release, IProgress<int>? progress = null, CancellationToken cancellationToken = default)
+    public async Task DownloadAsync(AppRelease release, IProgress<int>? progress = null, CancellationToken cancellationToken = default)
     {
         if (DownloadFailure is not null)
-            return Task.FromException(new UpdateException(DownloadFailure, new HttpRequestException(DownloadFailure)));
+            throw new UpdateException(DownloadFailure, new HttpRequestException(DownloadFailure));
 
         progress?.Report(50);
+        if (DownloadGate is { } gate)
+            await gate.Task;
         progress?.Report(100);
         Downloaded = release;
-        return Task.CompletedTask;
     }
 
     public void InstallOnExit() => InstallsOnExit++;

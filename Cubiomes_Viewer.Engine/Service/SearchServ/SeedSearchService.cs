@@ -296,7 +296,7 @@ public sealed class SeedSearchService : ISeedSearchService
     {
         var speed = GetSpeed();
         var nextSeed = _sequence is { } sequence ? GetNextSeed(setup, sequence) : Progress.NextSeed;
-        Progress = new SearchProgress(_scanned, nextSeed, speed, GetRemaining(speed), Progress.Preparing);
+        Progress = new SearchProgress(_scanned, nextSeed, speed, GetRemaining(speed), Progress.Preparing, GetTotal());
         _lastProgressTimestamp = _timeProvider.GetTimestamp();
     }
 
@@ -315,12 +315,15 @@ public sealed class SeedSearchService : ISeedSearchService
 
     private TimeSpan? GetRemaining(double seedsPerSecond)
     {
-        if (_sequence is not { IsEndless: false } sequence || seedsPerSecond <= 0 || _scanned >= sequence.Count)
+        if (GetTotal() is not { } total || seedsPerSecond <= 0 || _scanned >= total)
             return null;
 
-        var seconds = (double)(sequence.Count - _scanned) / seedsPerSecond;
+        var seconds = (double)(total - _scanned) / seedsPerSecond;
         return seconds < TimeSpan.MaxValue.TotalSeconds ? TimeSpan.FromSeconds(seconds) : null;
     }
+
+    /// <summary>The seeds of the prepared source, when it has an end.</summary>
+    private UInt128? GetTotal() => _sequence is { IsEndless: false } sequence ? sequence.Count : null;
 
     private void Adopt(SearchSetup setup, UInt128 scanned, long? nextSeed, IReadOnlyList<long> results)
     {

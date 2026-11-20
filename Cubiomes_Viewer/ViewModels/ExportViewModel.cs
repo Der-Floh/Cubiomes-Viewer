@@ -18,6 +18,7 @@ using Cubiomes_Viewer.Engine.Service.SearchServ;
 using Cubiomes_Viewer.Engine.Service.TileServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
 using Cubiomes_Viewer.Service.NotificationServ;
+using Cubiomes_Viewer.Service.ProgressServ;
 using Cubiomes_Viewer.Service.StorageServ;
 
 namespace Cubiomes_Viewer.ViewModels;
@@ -116,13 +117,14 @@ public sealed partial class ExportViewModel : ViewModelBase, IOpenablePanel
     private readonly ILayerCatalog _layerCatalog;
     private readonly IVersionCatalog _versionCatalog;
     private readonly IStorageService _storage;
+    private readonly IProgressService _progress;
     private readonly INotificationService _notifications;
     private CancellationTokenSource? _stopping;
     private int _shownFound = -1;
     private bool _isShowing;
     private bool _hasArea;
 
-    public ExportViewModel(MapViewModel map, ISeedSearchService search, IMapExportService export, ILayerCatalog layerCatalog, IVersionCatalog versionCatalog, IStorageService storage, INotificationService notifications) : base(notifications)
+    public ExportViewModel(MapViewModel map, ISeedSearchService search, IMapExportService export, ILayerCatalog layerCatalog, IVersionCatalog versionCatalog, IStorageService storage, IProgressService progress, INotificationService notifications) : base(notifications)
     {
         _map = map;
         _search = search;
@@ -130,6 +132,7 @@ public sealed partial class ExportViewModel : ViewModelBase, IOpenablePanel
         _layerCatalog = layerCatalog;
         _versionCatalog = versionCatalog;
         _storage = storage;
+        _progress = progress;
         _notifications = notifications;
 
         Show(() =>
@@ -205,11 +208,16 @@ public sealed partial class ExportViewModel : ViewModelBase, IOpenablePanel
         _stopping = stopping;
         try
         {
-            var name = await _storage.SaveFileAsync(options, stream =>
+            var name = await _storage.SaveFileAsync(options, async stream =>
             {
                 IsRunning = true;
                 StatusText = "Exporting…";
-                return _export.ExportAsync(request, stream, new Progress<double>(ShowProgress), stopping.Token);
+                using var shown = _progress.Begin();
+                await _export.ExportAsync(request, stream, new Progress<double>(share =>
+                {
+                    ShowProgress(share);
+                    shown.Report(share);
+                }), stopping.Token);
             });
             if (name is not null)
             {

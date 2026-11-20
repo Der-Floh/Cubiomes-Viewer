@@ -5,14 +5,18 @@
              xmlns:vm="using:Cubiomes_Viewer.ViewModels"
              mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="28"
              x:Class="Cubiomes_Viewer.Views.StatusBarView"
-             x:DataType="vm:MapViewModel">
+             x:DataType="vm:StatusBarViewModel">
 
     <Border Classes="status-bar">
-        <Grid ColumnDefinitions="*,Auto,Auto">
-            <TextBlock Classes="status" Text="{Binding HoverText}" TextTrimming="CharacterEllipsis"/>
-            <TextBlock Grid.Column="1" Classes="status damp" Text="{Binding GeneratingLabel}" IsVisible="{Binding IsGenerating}"/>
-            <TextBlock Grid.Column="2" Classes="status damp" Text="{Binding ScaleText}"/>
-        </Grid>
+        <Panel>
+            <ProgressBar Classes="status-progress" Maximum="1" Value="{Binding ProgressShare, Mode=OneWay}" IsVisible="{Binding IsProgressShown}"/>
+            <Grid Classes="status-texts" ColumnDefinitions="*,Auto,Auto,Auto">
+                <TextBlock Classes="status" Text="{Binding Map.HoverText}" TextTrimming="CharacterEllipsis"/>
+                <TextBlock Grid.Column="1" Classes="status damp" Text="{Binding Map.GeneratingLabel}" IsVisible="{Binding Map.IsGenerating}"/>
+                <TextBlock Grid.Column="2" Classes="status damp" Text="{Binding Map.ScaleText}"/>
+                <TextBlock Grid.Column="3" Classes="status damp version" Text="{Binding VersionText}"/>
+            </Grid>
+        </Panel>
     </Border>
 
 </UserControl>

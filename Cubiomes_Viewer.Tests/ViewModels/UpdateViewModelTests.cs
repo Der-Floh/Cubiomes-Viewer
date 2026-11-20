@@ -3,6 +3,7 @@ using Avalonia.Controls.Notifications;
 using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Service.SettingsServ;
 using Cubiomes_Viewer.Service.NotificationServ;
+using Cubiomes_Viewer.Service.ProgressServ;
 using Cubiomes_Viewer.Service.UpdateServ;
 using Cubiomes_Viewer.ViewModels;
 
@@ -150,6 +151,25 @@ public sealed class UpdateViewModelTests : IDisposable
     }
 
     [Fact]
+    public async Task DownloadAndInstall_WhileDownloading_FillsTheStatusStripAndEmptiesItAfter()
+    {
+        var gate = new TaskCompletionSource();
+        var updates = new FakeUpdateService { Style = UpdateStyle.OnRequest, Newer = _newer, DownloadGate = gate };
+        var viewModel = Create(updates);
+        await viewModel.CheckCommand.ExecuteAsync(null);
+
+        var downloading = viewModel.DownloadAndInstallCommand.ExecuteAsync(null);
+        await TestWait.UntilAsync(() => Progress.Share is not null, "The download never showed how far it had come.");
+        var halfway = Progress.Share;
+        gate.SetResult();
+        await downloading;
+
+        Assert.Equal(0.5, halfway);
+        Assert.Null(Progress.Share);
+        Assert.Equal((1, 1), (Progress.Begun, Progress.Ended));
+    }
+
+    [Fact]
     public async Task DownloadAndInstall_DownloadFails_ReportsItAndKeepsTheOffer()
     {
         var updates = new FakeUpdateService { Style = UpdateStyle.OnRequest, Newer = _newer, DownloadFailure = "Connection reset." };
@@ -163,6 +183,7 @@ public sealed class UpdateViewModelTests : IDisposable
         Assert.Equal(0, updates.Restarts);
         Assert.True(viewModel.IsAvailable);
         Assert.True(viewModel.DownloadAndInstallCommand.CanExecute(null));
+        Assert.Equal((1, 1), (Progress.Begun, Progress.Ended));
     }
 
     [Fact]
@@ -194,6 +215,8 @@ public sealed class UpdateViewModelTests : IDisposable
     }
 
     private RecordingNotificationService Notifications => (RecordingNotificationService)Services.GetRequiredService<INotificationService>();
+
+    private RecordingProgressService Progress => (RecordingProgressService)Services.GetRequiredService<IProgressService>();
 
     private ISettingsService Settings => Services.GetRequiredService<ISettingsService>();
 

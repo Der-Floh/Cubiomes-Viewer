@@ -14,6 +14,7 @@ using Cubiomes_Viewer.Engine.Service.StructureServ;
 using Cubiomes_Viewer.Service.CsvServ;
 using Cubiomes_Viewer.Service.MapStyleServ;
 using Cubiomes_Viewer.Service.NotificationServ;
+using Cubiomes_Viewer.Service.ProgressServ;
 using Cubiomes_Viewer.Service.StorageServ;
 using Cubiomes_Viewer.Service.StructureDescriptionServ;
 
@@ -60,8 +61,8 @@ public sealed partial class StructureAnalysisViewModel : AnalysisTabViewModel
     private readonly HashSet<StructureType> _chosen = [];
     private bool _isChosenHere;
 
-    public StructureAnalysisViewModel(AnalysisScopeViewModel scope, IAnalysisService analysis, IStructureCatalog structureCatalog, IMapStyleService styleService, IStructureDescriptionService descriptions, WorldSession session, MapViewModel map, ISeedHistoryService seedHistory, IStorageService storage, ICsvService csv, ISettingsService settingsService, INotificationService notifications)
-        : base(scope, session, map, seedHistory, storage, csv, settingsService, notifications)
+    public StructureAnalysisViewModel(AnalysisScopeViewModel scope, IAnalysisService analysis, IStructureCatalog structureCatalog, IMapStyleService styleService, IStructureDescriptionService descriptions, WorldSession session, MapViewModel map, ISeedHistoryService seedHistory, IStorageService storage, ICsvService csv, ISettingsService settingsService, IProgressService progress, INotificationService notifications)
+        : base(scope, session, map, seedHistory, storage, csv, settingsService, progress, notifications)
     {
         _analysis = analysis;
         _structureCatalog = structureCatalog;
