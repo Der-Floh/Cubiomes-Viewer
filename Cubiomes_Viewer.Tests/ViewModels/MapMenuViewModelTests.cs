@@ -22,7 +22,7 @@ public sealed class MapMenuViewModelTests : IDisposable
     private static readonly BlockPos _position = new(-300, 1000);
     private static readonly byte[] _image = [137, 80, 78, 71];
 
-    private readonly ServiceProvider _services = TestServices.Create();
+    private readonly ServiceProvider _services = TestServices.Create(services => services.AddSingleton<TimeProvider>(StoppedClock.TwoHoursAhead));
     private readonly MapMenuViewModel _menu;
     private readonly MapViewModel _map;
     private readonly WorldSession _session;
@@ -158,7 +158,7 @@ public sealed class MapMenuViewModelTests : IDisposable
         var storage = (MemoryStorageService)_services.GetRequiredService<IStorageService>();
         var notifications = (RecordingNotificationService)_services.GetRequiredService<INotificationService>();
         var version = _services.GetRequiredService<IVersionCatalog>().GetName(_session.Version);
-        var fileName = $"cubiomes-262-{version}-overworld.png".ToLowerInvariant();
+        var fileName = $"cubiomes-262-{version}-overworld-20261120-174512.png".ToLowerInvariant();
         Assert.Equal(_image, storage.SavedContent);
         Assert.Equal(fileName, storage.LastSaveOptions?.SuggestedFileName);
         Assert.Equal([fileName], notifications.Notifications.Select(notification => notification.Message));

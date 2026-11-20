@@ -17,6 +17,7 @@ using Cubiomes_Viewer.Engine.Service.LayerServ;
 using Cubiomes_Viewer.Engine.Service.SearchServ;
 using Cubiomes_Viewer.Engine.Service.TileServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
+using Cubiomes_Viewer.Extensions;
 using Cubiomes_Viewer.Service.NotificationServ;
 using Cubiomes_Viewer.Service.ProgressServ;
 using Cubiomes_Viewer.Service.StorageServ;
@@ -36,7 +37,6 @@ public sealed partial class ExportViewModel : ViewModelBase, IOpenablePanel
     private const int DefaultHalfSide = 1024;
     private const string SaveImageLabel = "Save PNG image…";
     private const string SaveArchiveLabel = "Save ZIP archive…";
-    private const string FileNameTimestampFormat = "yyyyMMdd-HHmmss";
 
     private static readonly FilePickerFileType _pngFiles = new("PNG images") { Patterns = ["*.png"], MimeTypes = ["image/png"] };
     private static readonly FilePickerFileType _zipFiles = new("ZIP archives") { Patterns = ["*.zip"], MimeTypes = ["application/zip"] };
@@ -371,8 +371,7 @@ public sealed partial class ExportViewModel : ViewModelBase, IOpenablePanel
         var world = request.Worlds[0];
         var seeds = request.Worlds.Count > 1 ? "found-seeds" : world.Seed.ToString(CultureInfo.InvariantCulture);
         var layer = request.Layer.ToString();
-        var timestamp = _timeProvider.GetLocalNow().ToString(FileNameTimestampFormat, CultureInfo.InvariantCulture);
-        var name = $"cubiomes-{seeds}-{_versionCatalog.GetName(world.Version)}-{world.Dimension}-{layer}-{timestamp}.{(request.IsArchive ? "zip" : "png")}";
+        var name = $"cubiomes-{seeds}-{_versionCatalog.GetName(world.Version)}-{world.Dimension}-{layer}-{_timeProvider.GetFileNameTimestamp()}.{(request.IsArchive ? "zip" : "png")}";
         return name.ToLowerInvariant();
     }
 

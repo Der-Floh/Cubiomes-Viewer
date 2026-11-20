@@ -21,11 +21,7 @@ namespace Cubiomes_Viewer.Tests.ViewModels;
 
 public sealed class ExportViewModelTests : IDisposable
 {
-    private static readonly TimeProvider _clock = new StoppedClock(
-        new DateTimeOffset(2026, 11, 20, 15, 45, 12, TimeSpan.Zero),
-        TimeZoneInfo.CreateCustomTimeZone("Two hours ahead", TimeSpan.FromHours(2), "Two hours ahead", "Two hours ahead"));
-
-    private readonly ServiceProvider _services = TestServices.Create(services => services.AddSingleton(_clock));
+    private readonly ServiceProvider _services = TestServices.Create(services => services.AddSingleton<TimeProvider>(StoppedClock.TwoHoursAhead));
     private readonly ExportViewModel _export;
     private readonly WorldSession _session;
     private readonly MapViewModel _map;
@@ -175,13 +171,5 @@ public sealed class ExportViewModelTests : IDisposable
     {
         (_export.FromX, _export.FromZ, _export.ToX, _export.ToZ) = (fromX, fromZ, toX, toZ);
         _export.SelectedScale = _export.Scales.Single(choice => choice.Value == scale);
-    }
-
-    /// <summary>A clock that stands at one moment in its own time zone; its timestamps still run, for the search's speed.</summary>
-    private sealed class StoppedClock(DateTimeOffset now, TimeZoneInfo localTimeZone) : TimeProvider
-    {
-        public override TimeZoneInfo LocalTimeZone => localTimeZone;
-
-        public override DateTimeOffset GetUtcNow() => now;
     }
 }

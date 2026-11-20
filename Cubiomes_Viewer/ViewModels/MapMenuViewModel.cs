@@ -11,6 +11,7 @@ using Cubiomes_Viewer.Data;
 using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Service.SeedServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
+using Cubiomes_Viewer.Extensions;
 using Cubiomes_Viewer.Service.AppAddressServ;
 using Cubiomes_Viewer.Service.ClipboardServ;
 using Cubiomes_Viewer.Service.MapLinkServ;
@@ -87,11 +88,12 @@ public sealed partial class MapMenuViewModel : ViewModelBase
     private readonly IAppAddressService _address;
     private readonly IClipboardService _clipboardService;
     private readonly IStorageService _storageService;
+    private readonly TimeProvider _timeProvider;
     private readonly INotificationService _notificationService;
     private readonly IMapStyleService _styleService;
 
     public MapMenuViewModel(MapViewModel map, NearestSearchViewModel nearest, WorldSession session, ISeedHistoryService seedHistory, IVersionCatalog versionCatalog, IMapLinkService mapLinks,
-        IAppAddressService address, IClipboardService clipboardService, IStorageService storageService, INotificationService notificationService,
+        IAppAddressService address, IClipboardService clipboardService, IStorageService storageService, TimeProvider timeProvider, INotificationService notificationService,
         IMapStyleService styleService) : base(notificationService)
     {
         _styleService = styleService;
@@ -104,6 +106,7 @@ public sealed partial class MapMenuViewModel : ViewModelBase
         _address = address;
         _clipboardService = clipboardService;
         _storageService = storageService;
+        _timeProvider = timeProvider;
         _notificationService = notificationService;
 
         ShowTargets();
@@ -208,7 +211,7 @@ public sealed partial class MapMenuViewModel : ViewModelBase
     }
 
     private string GetImageFileName()
-        => string.Create(CultureInfo.InvariantCulture, $"cubiomes-{_session.Seed}-{_versionCatalog.GetName(_session.Version)}-{_session.Dimension}.{ImageExtension}")
+        => string.Create(CultureInfo.InvariantCulture, $"cubiomes-{_session.Seed}-{_versionCatalog.GetName(_session.Version)}-{_session.Dimension}-{_timeProvider.GetFileNameTimestamp()}.{ImageExtension}")
             .ToLowerInvariant();
 
     private void OnMapChanged(object? sender, PropertyChangedEventArgs e)
