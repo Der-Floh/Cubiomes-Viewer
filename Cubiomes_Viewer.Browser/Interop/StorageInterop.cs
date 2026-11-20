@@ -5,7 +5,7 @@ namespace Cubiomes_Viewer.Browser.Interop;
 internal static partial class StorageInterop
 {
     public const string ModuleName = "cv-storage";
-    public const string ModuleUrl = "../cv-storage.js";
+    public static readonly string ModuleUrl = ModuleUrls.For("cv-storage.js");
     public const string ContentProperty = "content";
 
     /// <summary>

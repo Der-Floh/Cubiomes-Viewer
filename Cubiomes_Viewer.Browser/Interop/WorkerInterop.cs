@@ -5,7 +5,7 @@ namespace Cubiomes_Viewer.Browser.Interop;
 internal static partial class WorkerInterop
 {
     public const string ModuleName = "cv-workers";
-    public const string ModuleUrl = "../cv-workers.js";
+    public static readonly string ModuleUrl = ModuleUrls.For("cv-workers.js");
     public const string WorkerScriptUrl = "worker/worker.js";
     public const string ResponseProperty = "response";
 
