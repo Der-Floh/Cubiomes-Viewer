@@ -52,6 +52,12 @@
             </WrapPanel>
 
             <WrapPanel Classes="toolbar-group">
+                <Button Classes="icon" Command="{Binding Map.GoBackCommand}" ToolTip.Tip="{Binding BackLabel}" ToolTip.ShowOnDisabled="True">
+                    <controls:SvgIcon Source="{StaticResource BackIcon}"/>
+                </Button>
+                <Button Classes="icon" Command="{Binding Map.GoForwardCommand}" ToolTip.Tip="{Binding ForwardLabel}" ToolTip.ShowOnDisabled="True">
+                    <controls:SvgIcon Source="{StaticResource ForwardIcon}"/>
+                </Button>
                 <Button Classes="icon" ToolTip.Tip="{Binding GoToLabel}">
                     <controls:SvgIcon Source="{StaticResource GoToIcon}"/>
                     <Button.Flyout>

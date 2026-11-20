@@ -24,6 +24,7 @@ using Cubiomes_Viewer.Service.TileBitmapServ;
 using Cubiomes_Viewer.Service.TopLevelServ;
 using Cubiomes_Viewer.Service.UiZoomServ;
 using Cubiomes_Viewer.Service.UpdateServ;
+using Cubiomes_Viewer.Service.ViewHistoryServ;
 using Cubiomes_Viewer.Service.WindowServ;
 using Cubiomes_Viewer.ViewModels;
 using Cubiomes_Viewer.Views;
@@ -175,6 +176,7 @@ public sealed partial class App : Application
         services.AddSingleton<IWindowService, WindowService>();
         services.AddSingleton<IUpdateService, NoUpdateService>();
         services.AddSingleton<IAppAddressService, NoAddressBarService>();
+        services.AddSingleton<IViewHistoryService, ViewHistoryService>();
         services.AddSingleton<IMapLinkService, MapLinkService>();
         services.AddSingleton<WorldSession>();
 

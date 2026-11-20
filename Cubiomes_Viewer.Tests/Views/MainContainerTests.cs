@@ -1,7 +1,10 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input;
 using Avalonia.Media;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 
 using Cubiomes_Viewer.Service.UiZoomServ;
@@ -40,6 +43,44 @@ public sealed class MainContainerTests : IDisposable
     {
         _window.Close();
         _services.Dispose();
+    }
+
+    [AvaloniaFact]
+    public async Task MouseSideButtons_StepBackAndForwardThroughTheJumpsWhileTheSidePanelStaysOpen()
+    {
+        await _main.Initialization;
+        _main.Map.SmoothMotion = false;
+        _main.SelectedPanelIndex = 0;
+        var start = _main.Map.Camera.CenterX;
+        _main.Map.GoTo(3000, 0);
+        Dispatcher.UIThread.RunJobs();
+        var spot = new Point(_window.Width - 100, _window.Height / 2);
+
+        _window.MouseDown(spot, MouseButton.XButton1);
+        _window.MouseUp(spot, MouseButton.XButton1);
+        var back = _main.Map.Camera.CenterX;
+        _window.MouseDown(spot, MouseButton.XButton2);
+        _window.MouseUp(spot, MouseButton.XButton2);
+
+        Assert.Equal(Math.Floor(start), Math.Floor(back));
+        Assert.Equal(3000, Math.Floor(_main.Map.Camera.CenterX));
+        Assert.True(_main.IsPanelOpen);
+    }
+
+    [AvaloniaFact]
+    public async Task AltArrows_StepBackAndForwardThroughTheJumps()
+    {
+        await _main.Initialization;
+        _main.Map.SmoothMotion = false;
+        _main.Map.GoTo(0, 3000);
+        Dispatcher.UIThread.RunJobs();
+
+        _window.KeyPress(Key.Left, RawInputModifiers.Alt, PhysicalKey.ArrowLeft, null);
+        var back = _main.Map.Camera.CenterZ;
+        _window.KeyPress(Key.Right, RawInputModifiers.Alt, PhysicalKey.ArrowRight, null);
+
+        Assert.NotEqual(3000, Math.Floor(back));
+        Assert.Equal(3000, Math.Floor(_main.Map.Camera.CenterZ));
     }
 
     [AvaloniaFact]

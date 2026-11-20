@@ -9,6 +9,8 @@ using Cubiomes_Viewer.Browser.Service;
 using Cubiomes_Viewer.Engine.Repository.AppDataRepo;
 using Cubiomes_Viewer.Engine.Service.ComputeServ;
 using Cubiomes_Viewer.Service.AppAddressServ;
+using Cubiomes_Viewer.Service.MapLinkServ;
+using Cubiomes_Viewer.Service.ViewHistoryServ;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -42,6 +44,8 @@ internal sealed partial class Program
         services.AddSingleton<IAppDataStore, BrowserAppDataStore>();
         services.AddSingleton<IComputeWorkerFactory, WebWorkerFactory>();
         services.AddSingleton<IComputeService, WorkerPoolComputeService>();
-        services.AddSingleton<IAppAddressService>(provider => new BrowserAppAddressService(startAddress, provider.GetRequiredService<ILogger<BrowserAppAddressService>>()));
+        services.AddSingleton(provider => new BrowserAppAddressService(startAddress, provider.GetRequiredService<IMapLinkService>(), provider.GetRequiredService<ILogger<BrowserAppAddressService>>()));
+        services.AddSingleton<IAppAddressService>(provider => provider.GetRequiredService<BrowserAppAddressService>());
+        services.AddSingleton<IViewHistoryService>(provider => provider.GetRequiredService<BrowserAppAddressService>());
     }
 }

@@ -153,6 +153,7 @@ public sealed partial class MainViewModel : ViewModelBase
             StoreView();
         else
             ShowAddress();
+        Map.StartHistory();
 
         await _searchPanel.LoadAsync(restore);
         ShowUnreadableCopies();

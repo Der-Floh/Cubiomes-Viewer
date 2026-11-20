@@ -36,6 +36,8 @@ public sealed partial class WorldBarViewModel : ViewModelBase
     public string PlacePinLabel { get; } = "Place a pin: click the map where it goes";
     public string ZoomInLabel { get; } = "Zoom in";
     public string ZoomOutLabel { get; } = "Zoom out";
+    public string BackLabel { get; } = "Back to where the map was before the last jump (Alt+Left)";
+    public string ForwardLabel { get; } = "Forward again (Alt+Right)";
     public decimal MinSampleHeight { get; } = Constants.MinSampleHeight;
     public decimal MaxSampleHeight { get; } = Constants.MaxSampleHeight;
 

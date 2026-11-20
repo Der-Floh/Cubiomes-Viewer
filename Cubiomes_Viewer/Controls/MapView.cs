@@ -373,6 +373,8 @@ public sealed class MapView : Control
     protected override void OnKeyDown(KeyEventArgs e)
     {
         base.OnKeyDown(e);
+        if (e.KeyModifiers != KeyModifiers.None)
+            return;
 
         const double pan = MapGestureController.KeyboardPanPixels;
         const double zoom = MapGestureController.KeyboardZoomStep;

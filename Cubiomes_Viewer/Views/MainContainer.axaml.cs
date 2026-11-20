@@ -2,6 +2,7 @@ using System.ComponentModel;
 
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
@@ -72,6 +73,8 @@ public sealed partial class MainContainer : UserControl
         if (_topLevel is not null)
         {
             _topLevel.BackRequested -= OnBackRequested;
+            _topLevel.RemoveHandler(PointerPressedEvent, OnTopLevelPointerPressed);
+            _topLevel.RemoveHandler(KeyDownEvent, OnTopLevelKeyDown);
             _topLevel = null;
         }
         _openPopups?.Dispose();
@@ -89,6 +92,8 @@ public sealed partial class MainContainer : UserControl
         {
             _topLevelProvider.SetTopLevel(_topLevel);
             _topLevel.BackRequested += OnBackRequested;
+            _topLevel.AddHandler(PointerPressedEvent, OnTopLevelPointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
+            _topLevel.AddHandler(KeyDownEvent, OnTopLevelKeyDown, RoutingStrategies.Tunnel);
         }
         _openPopups = new OpenPopupStack();
         _notificationService.Setup(MainWindowNotificationManager);
@@ -108,11 +113,37 @@ public sealed partial class MainContainer : UserControl
         ShellPanels.PrepareWhenIdle(_main.Panels);
     }
 
-    /// <summary>Back closes the newest menu first, then stops what is under way on the map, then closes the open panel, and only then leaves the app.</summary>
+    /// <summary>
+    /// Back closes the newest menu first, then stops what is under way on the map, then closes the panel sheet of the compact
+    /// layout, then returns the map to where it was before its last jump, and only then closes a side panel or leaves the app.
+    /// In the browser the page's own Back steps through the jumps, so the app leaves them to it.
+    /// </summary>
     private void OnBackRequested(object? sender, RoutedEventArgs e)
     {
-        if (!e.Handled)
-            e.Handled = _openPopups?.TryCloseNewest() == true || _mapActions.TryDismiss() || _main.TryClosePanel();
+        if (e.Handled)
+            return;
+
+        e.Handled = _openPopups?.TryCloseNewest() == true || _mapActions.TryDismiss() || (_isCompact == true && _main.TryClosePanel())
+            || (!OperatingSystem.IsBrowser() && _main.Map.TryGoBack()) || _main.TryClosePanel();
+    }
+
+    /// <summary>The mouse's forward button steps forward through the jumps of the map, as its back button steps back.</summary>
+    private void OnTopLevelPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (OperatingSystem.IsBrowser() || e.GetCurrentPoint(null).Properties.PointerUpdateKind != PointerUpdateKind.XButton2Pressed)
+            return;
+
+        _main.Map.GoForwardCommand.Execute(null);
+        e.Handled = true;
+    }
+
+    private void OnTopLevelKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (OperatingSystem.IsBrowser() || e.Key != Key.Right || e.KeyModifiers != KeyModifiers.Alt)
+            return;
+
+        _main.Map.GoForwardCommand.Execute(null);
+        e.Handled = true;
     }
 
     private void OnUiZoomChanged(object? sender, EventArgs e)

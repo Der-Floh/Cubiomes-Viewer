@@ -18,6 +18,7 @@ using Cubiomes_Viewer.Engine.Service.PinServ;
 using Cubiomes_Viewer.Engine.Service.TileServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
 using Cubiomes_Viewer.Service.NotificationServ;
+using Cubiomes_Viewer.Service.ViewHistoryServ;
 
 using EngineConstants = Cubiomes_Viewer.Engine.Data.Constants;
 
@@ -143,6 +144,12 @@ public sealed partial class MapViewModel : ViewModelBase
         ? string.Create(CultureInfo.InvariantCulture, $"1 px = {Camera.BlocksPerPixel:0.##} blocks")
         : string.Create(CultureInfo.InvariantCulture, $"1 block = {1 / Camera.BlocksPerPixel:0.##} px");
 
+    /// <summary>Whether Back has a view the map jumped away from to return to.</summary>
+    public bool CanGoBack => _history.CanGoBack;
+
+    /// <summary>Whether Forward has a view that Back left to return to.</summary>
+    public bool CanGoForward => _history.CanGoForward;
+
     /// <summary>Raised when the map should travel to a camera; the view glides there or jumps, as the navigation asks.</summary>
     public event Action<MapNavigation>? NavigationRequested;
 
@@ -152,12 +159,16 @@ public sealed partial class MapViewModel : ViewModelBase
     private readonly ILayerCatalog _layerCatalog;
     private readonly IPinService _pinService;
     private readonly IMeasurementService _measurementService;
+    private readonly IViewHistoryService _history;
     private int _stateUpdateQueued;
+    private bool _isHistoryStarted;
+    private bool _isJumpUnderWay;
+    private bool _isMovingInHistory;
 
     private MapContent Content => MapContent.For(World, Layer, SampleHeight, Octaves);
 
     public MapViewModel(WorldSession session, IMapTileService tileService, IBiomeCatalog biomeCatalog, ILayerCatalog layerCatalog, IPinService pinService,
-        IMeasurementService measurementService, INotificationService notificationService) : base(notificationService)
+        IMeasurementService measurementService, IViewHistoryService history, INotificationService notificationService) : base(notificationService)
     {
         _session = session;
         _tileService = tileService;
@@ -165,10 +176,36 @@ public sealed partial class MapViewModel : ViewModelBase
         _layerCatalog = layerCatalog;
         _pinService = pinService;
         _measurementService = measurementService;
+        _history = history;
 
         ShowSession();
         session.PropertyChanged += OnSessionChanged;
         tileService.StateChanged += OnTileStateChanged;
+        history.Changed += OnHistoryChanged;
+        history.Moved += OpenStep;
+    }
+
+    /// <summary>Starts keeping the views the map jumps between, with the view shown now as the first step.</summary>
+    public void StartHistory()
+    {
+        _isHistoryStarted = true;
+        _history.Show(GetShownView());
+    }
+
+    [RelayCommand(CanExecute = nameof(CanGoBack))]
+    public void GoBack() => _history.GoBack();
+
+    [RelayCommand(CanExecute = nameof(CanGoForward))]
+    public void GoForward() => _history.GoForward();
+
+    /// <summary>Steps back for the system's Back; false when there is no view to return to.</summary>
+    public bool TryGoBack()
+    {
+        if (!CanGoBack)
+            return false;
+
+        GoBack();
+        return true;
     }
 
     [RelayCommand]
@@ -180,17 +217,28 @@ public sealed partial class MapViewModel : ViewModelBase
     [RelayCommand]
     public void ZoomOut() => Navigate(Camera with { BlocksPerPixel = Camera.BlocksPerPixel * ButtonZoomStep }, animate: true);
 
-    public void GoTo(double blockX, double blockZ) => Navigate(Camera with { CenterX = blockX, CenterZ = blockZ }, animate: true);
+    public void GoTo(double blockX, double blockZ)
+    {
+        RecordJump();
+        Navigate(Camera with { CenterX = blockX, CenterZ = blockZ }, animate: true);
+    }
 
     /// <summary>Shows a camera straight away, without gliding there.</summary>
-    public void JumpTo(MapCamera camera) => Navigate(camera, animate: false);
+    public void JumpTo(MapCamera camera)
+    {
+        RecordJump();
+        Navigate(camera, animate: false);
+    }
 
     /// <summary>Centres the map on the middle of a block straight away, keeping the zoom.</summary>
     public void JumpTo(BlockPos block) => JumpTo(CenterOn(block));
 
     /// <summary>Glides to the middle of a block, zooming in to <paramref name="maxBlocksPerPixel"/> if the map is zoomed out further.</summary>
     public void FlyTo(BlockPos block, double maxBlocksPerPixel = double.PositiveInfinity)
-        => Navigate(CenterOn(block) with { BlocksPerPixel = Math.Min(Camera.BlocksPerPixel, maxBlocksPerPixel) }, animate: true);
+    {
+        RecordJump();
+        Navigate(CenterOn(block) with { BlocksPerPixel = Math.Min(Camera.BlocksPerPixel, maxBlocksPerPixel) }, animate: true);
+    }
 
     /// <summary>
     /// Opens the view a link carries: its world and layer, then its place straight away, and adds its pins to those of the map, except
@@ -201,6 +249,7 @@ public sealed partial class MapViewModel : ViewModelBase
     {
         ArgumentNullException.ThrowIfNull(link);
 
+        RecordJump();
         _session.Version = link.Version;
         _session.LargeBiomes = link.LargeBiomes;
         _session.Dimension = link.Dimension;
@@ -225,6 +274,8 @@ public sealed partial class MapViewModel : ViewModelBase
     }
 
     partial void OnMeasureStartChanged(BlockPos? value) => SetHover(HoverPosition);
+
+    partial void OnCameraChanged(MapCamera value) => ShowInHistory();
 
     /// <summary>Keeps the line being measured, from its start to a block, and picks it so it can be named; ending on the start only stops measuring.</summary>
     public void FinishMeasuring(BlockPos end)
@@ -292,7 +343,10 @@ public sealed partial class MapViewModel : ViewModelBase
     private void OnSessionChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (World != _session.Key)
+        {
+            RecordJump();
             Selection = null;
+        }
 
         ShowSession();
     }
@@ -303,6 +357,63 @@ public sealed partial class MapViewModel : ViewModelBase
         SampleHeight = _session.SampleHeight;
         Layer = _layerCatalog.IsAvailable(_session.Layer, _session.Version, _session.Dimension) ? _session.Layer : LayerMode.Biomes;
         Octaves = _session.Octaves;
+        ShowInHistory();
+    }
+
+    /// <summary>
+    /// Makes the view shown now a step that Back returns to, before the map jumps elsewhere. All that changes before the app next
+    /// waits for input counts as one jump, such as a found seed opened in its version together with its place.
+    /// </summary>
+    private void RecordJump()
+    {
+        if (!_isHistoryStarted || _isMovingInHistory || _isJumpUnderWay)
+            return;
+
+        _isJumpUnderWay = true;
+        _history.Leave(GetShownView());
+        Dispatcher.UIThread.Post(() => _isJumpUnderWay = false);
+    }
+
+    private void ShowInHistory()
+    {
+        if (_isHistoryStarted)
+            _history.Show(GetShownView());
+    }
+
+    /// <summary>The view the map shows, which stays the old one while the session changes over to another world.</summary>
+    private MapLink GetShownView()
+    {
+        var center = new BlockPos((int)Math.Floor(Camera.CenterX), (int)Math.Floor(Camera.CenterZ));
+        return new MapLink(World.Seed, World.Version, World.Dimension, World.Flags.HasFlag(GeneratorFlags.LargeBiomes), center, Camera.BlocksPerPixel, Layer, SampleHeight, Octaves);
+    }
+
+    /// <summary>Opens a step of the history: its world and place, keeping the layer and the pins as they are now, without counting as a jump.</summary>
+    private void OpenStep(MapLink view)
+    {
+        var flags = view.LargeBiomes ? GeneratorFlags.LargeBiomes : GeneratorFlags.None;
+        var isSameWorld = World == new WorldKey(view.Seed, view.Version, view.Dimension, flags);
+        _isMovingInHistory = true;
+        try
+        {
+            Selection = null;
+            _session.Version = view.Version;
+            _session.LargeBiomes = view.LargeBiomes;
+            _session.Dimension = view.Dimension;
+            _session.Seed = view.Seed;
+            Navigate(view.Camera, animate: isSameWorld);
+        }
+        finally
+        {
+            _isMovingInHistory = false;
+        }
+    }
+
+    private void OnHistoryChanged()
+    {
+        OnPropertyChanged(nameof(CanGoBack));
+        OnPropertyChanged(nameof(CanGoForward));
+        GoBackCommand.NotifyCanExecuteChanged();
+        GoForwardCommand.NotifyCanExecuteChanged();
     }
 
     private void OnTileStateChanged()
