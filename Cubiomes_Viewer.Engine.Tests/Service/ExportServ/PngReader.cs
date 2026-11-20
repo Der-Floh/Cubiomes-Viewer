@@ -9,10 +9,21 @@ using Cubiomes_Viewer.Engine.Service.ExportServ;
 
 namespace Cubiomes_Viewer.Engine.Tests.Service.ExportServ;
 
-/// <summary>A decoded PNG: its pixels row by row without filter bytes, and the palette and transparency it carries.</summary>
-internal sealed record PngImage(int Width, int Height, PngColorType ColorType, byte[] Palette, byte[] Transparency, byte[] Pixels)
+/// <summary>
+/// A decoded PNG: its pixels row by row without filter bytes, unpacked to one byte per palette index, and the palette and
+/// transparency it carries.
+/// </summary>
+internal sealed record PngImage(int Width, int Height, PngColorType ColorType, byte[] Palette, byte[] Transparency, byte[] Pixels, int BitDepth = 8)
 {
     public int BytesPerPixel => ColorType == PngColorType.Rgb ? 3 : 1;
+
+    /// <summary>The red, green and blue of each pixel, looked up in the palette for an indexed image.</summary>
+    public byte[] GetColors() => ColorType switch
+    {
+        PngColorType.Rgb => Pixels,
+        PngColorType.Indexed => [.. Pixels.SelectMany(index => Palette.AsSpan(index * 3, 3).ToArray())],
+        _ => [.. Pixels.SelectMany(gray => new[] { gray, gray, gray })],
+    };
 
     /// <summary>What the image shows, independent of how it was compressed.</summary>
     public string ContentHash
@@ -44,7 +55,7 @@ internal static class PngReader
     {
         Assert.True(png[..8].SequenceEqual(Signature), "The file does not start like a PNG.");
 
-        var (width, height, colorType) = (0, 0, PngColorType.Rgb);
+        var (width, height, bitDepth, colorType) = (0, 0, 8, PngColorType.Rgb);
         byte[] palette = [], transparency = [];
         using var imageData = new MemoryStream();
         var offset = 8;
@@ -59,7 +70,7 @@ internal static class PngReader
             switch (type)
             {
                 case "IHDR":
-                    (width, height, colorType) = (BinaryPrimitives.ReadInt32BigEndian(data), BinaryPrimitives.ReadInt32BigEndian(data[4..]), (PngColorType)data[9]);
+                    (width, height, bitDepth, colorType) = (BinaryPrimitives.ReadInt32BigEndian(data), BinaryPrimitives.ReadInt32BigEndian(data[4..]), data[8], (PngColorType)data[9]);
                     break;
                 case "PLTE":
                     palette = data.ToArray();
@@ -72,18 +83,34 @@ internal static class PngReader
                     break;
                 case "IEND":
                     Assert.Equal(png.Length, offset);
-                    return new PngImage(width, height, colorType, palette, transparency, Unfilter(imageData.ToArray(), width, height, colorType == PngColorType.Rgb ? 3 : 1));
+                    var bytesPerPixel = colorType == PngColorType.Rgb ? 3 : 1;
+                    var rowBytes = colorType == PngColorType.Rgb ? width * 3 : (width * bitDepth + 7) / 8;
+                    var stored = Unfilter(imageData.ToArray(), rowBytes, height, bytesPerPixel);
+                    return new PngImage(width, height, colorType, palette, transparency, bitDepth == 8 ? stored : Unpack(stored, width, height, rowBytes, bitDepth), bitDepth);
             }
         }
     }
 
-    private static byte[] Unfilter(byte[] compressed, int width, int height, int bytesPerPixel)
+    /// <summary>One byte per pixel from rows that pack several pixels to a byte, the first in the highest bits.</summary>
+    private static byte[] Unpack(byte[] stored, int width, int height, int rowBytes, int bitDepth)
+    {
+        var pixels = new byte[width * height];
+        var (pixelsPerByte, mask) = (8 / bitDepth, (1 << bitDepth) - 1);
+        for (var row = 0; row < height; row++)
+        {
+            for (var x = 0; x < width; x++)
+                pixels[row * width + x] = (byte)(stored[row * rowBytes + x / pixelsPerByte] >> (8 - bitDepth * (x % pixelsPerByte + 1)) & mask);
+        }
+
+        return pixels;
+    }
+
+    private static byte[] Unfilter(byte[] compressed, int rowBytes, int height, int bytesPerPixel)
     {
         using var input = new ZLibStream(new MemoryStream(compressed), CompressionMode.Decompress);
         using var raw = new MemoryStream();
         input.CopyTo(raw);
 
-        var rowBytes = width * bytesPerPixel;
         var filtered = raw.ToArray();
         Assert.Equal(height * (rowBytes + 1), filtered.Length);
 

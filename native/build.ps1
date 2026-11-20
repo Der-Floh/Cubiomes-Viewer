@@ -15,6 +15,7 @@ $VisualStudioClangComponent = 'Microsoft.VisualStudio.Component.VC.Llvm.Clang'
 $IsAndroidTarget = $AndroidTargets.ContainsKey($Rid)
 $NativeRoot = $PSScriptRoot
 $CubiomesRoot = Join-Path $NativeRoot 'cubiomes'
+$LibdeflateRoot = Join-Path $NativeRoot 'libdeflate'
 $OutputDirectory = Join-Path $NativeRoot "bin\$Rid"
 $ObjectDirectory = Join-Path $NativeRoot "obj\$Rid"
 $Output = if ($IsAndroidTarget) { Join-Path $OutputDirectory "lib$LibraryName.so" } else { Join-Path $OutputDirectory "$LibraryName.dll" }
@@ -27,8 +28,8 @@ function Assert-SupportedRid {
 }
 
 function Assert-Sources {
-    if (-not (Test-Path (Join-Path $CubiomesRoot 'generator.c'))) {
-        throw "cubiomes sources are missing. Run 'git submodule update --init' in the repository root."
+    if (-not (Test-Path (Join-Path $CubiomesRoot 'generator.c')) -or -not (Test-Path (Join-Path $LibdeflateRoot 'lib\deflate_compress.c'))) {
+        throw "cubiomes or libdeflate sources are missing. Run 'git submodule update --init' in the repository root."
     }
 }
 
@@ -42,6 +43,11 @@ function Get-CubiomesSources {
     return @(Join-Path $NativeRoot 'shim\cv_noise.c') + @($cubiomes.FullName)
 }
 
+# Only libdeflate's compressor is used, and its match finder picks its SIMD code when it is compiled.
+function Get-LibdeflateSources {
+    return @('deflate_compress.c', 'utils.c') | ForEach-Object { Join-Path $LibdeflateRoot "lib\$_" }
+}
+
 function Test-UpToDate {
     if (-not (Test-Path $Output)) {
         return $false
@@ -50,6 +56,7 @@ function Test-UpToDate {
     $built = (Get-Item $Output).LastWriteTimeUtc
     $sources = @(Get-ChildItem (Join-Path $NativeRoot 'shim') -File -Recurse) +
         @(Get-ChildItem $CubiomesRoot -File -Recurse -Include '*.c', '*.h') +
+        @(Get-ChildItem $LibdeflateRoot -File -Recurse -Include '*.c', '*.h') +
         @(Get-Item $PSCommandPath)
     return -not ($sources | Where-Object { $_.LastWriteTimeUtc -gt $built })
 }
@@ -142,7 +149,7 @@ function Assert-ClangSucceeded {
     }
 }
 
-# The shim is compiled with warnings on its own; cubiomes is third-party code, compiled and linked without them.
+# The shim is compiled with warnings on its own; cubiomes and libdeflate are third-party code, compiled and linked without them.
 function Invoke-WindowsBuild {
     $clang = Find-Clang
     Write-Host "Building $LibraryName for $Rid with $clang"
@@ -153,7 +160,7 @@ function Invoke-WindowsBuild {
     Assert-ClangSucceeded
 
     $importLibrary = Join-Path $ObjectDirectory "$LibraryName.lib"
-    & $clang $target @CompileFlags -w -shared '-Wl,/OPT:REF' "-Wl,/IMPLIB:$importLibrary" -o $Output $shimObject @(Get-CubiomesSources)
+    & $clang $target @CompileFlags -w -shared '-Wl,/OPT:REF' "-Wl,/IMPLIB:$importLibrary" -o $Output $shimObject @(Get-CubiomesSources) @(Get-LibdeflateSources)
     Assert-ClangSucceeded
 }
 
@@ -171,7 +178,7 @@ function Invoke-AndroidBuild {
     Assert-ClangSucceeded
 
     # Devices with 16 KB memory pages only load libraries whose segments are aligned to them.
-    & $clang $target @CompileFlags -w -fPIC -shared '-Wl,--gc-sections' '-Wl,-z,max-page-size=16384' -s -o $Output $shimObject @(Get-CubiomesSources) -lm
+    & $clang $target @CompileFlags -w -fPIC -shared '-Wl,--gc-sections' '-Wl,-z,max-page-size=16384' -s -o $Output $shimObject @(Get-CubiomesSources) @(Get-LibdeflateSources) -lm
     Assert-ClangSucceeded
 }
 

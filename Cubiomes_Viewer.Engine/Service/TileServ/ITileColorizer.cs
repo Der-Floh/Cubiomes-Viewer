@@ -22,6 +22,12 @@ public interface ITileColorizer
     /// <summary>Whether <see cref="Colorize"/> paints every sample of tiles like this one in a style in a shade of grey.</summary>
     bool PaintsGray(TileRequest tile, TileStyle style);
 
+    /// <summary>
+    /// The at most 256 colours <see cref="Colorize"/> paints every sample of tiles like this one in a style from, in ramp
+    /// order, or <see langword="null"/> when it has more colours than that or the tiles show biomes.
+    /// </summary>
+    IReadOnlyList<RgbColor>? GetPalette(TileRequest tile, TileStyle style);
+
     /// <summary>The colour <see cref="Colorize"/> gives each biome id in a style; the id that marks no biome has none that counts.</summary>
     IReadOnlyList<RgbColor> GetBiomeColors(TileStyle style, McVersion version);
 }

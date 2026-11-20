@@ -11,7 +11,7 @@
 #define CV_API
 #endif
 
-#define CV_ABI_VERSION 15
+#define CV_ABI_VERSION 16
 
 #define CV_BIOME_NONE 255
 #define CV_BIOME_COLOR_BYTES 768
@@ -32,6 +32,7 @@
 #define CV_QUAD_OTHER 5
 #define CV_STRUCTURE_TYPES 28
 #define CV_RULES_NO_TERRAIN_ESTIMATE 1
+#define CV_DEFLATE_MAX_LEVEL 12
 
 enum cv_status
 {
@@ -234,6 +235,13 @@ CV_API int32_t cv_quad_hut_scan(uint64_t low20, uint32_t first_high, uint32_t co
 CV_API int32_t cv_quad_hut_base_info(uint64_t base, float *radius);
 CV_API int32_t cv_quad_seed_of_base(const cv_rules *rules, int32_t stype, int32_t mc, uint64_t base, int32_t reg_x, int32_t reg_z, uint64_t *seed);
 CV_API int32_t cv_quads_in_area(const cv_rules *rules, int32_t stype, int32_t mc, uint64_t seed, int32_t reg_x0, int32_t reg_z0, int32_t reg_x1, int32_t reg_z1, int32_t *quads, int32_t capacity);
+
+/* Deflating PNG image data with libdeflate. cv_deflate_bound is the most bytes cv_deflate_band writes for 'length' bytes.
+   cv_deflate_band deflates 'length' bytes at 'level' (0 to CV_DEFLATE_MAX_LEVEL) into a raw deflate stream; unless
+   'is_last', the stream ends with an empty stored block instead of a final block, so that the next band can follow it in
+   the same zlib stream. It returns the bytes written, CV_ERR_CAPACITY when 'capacity' is too small, or another status. */
+CV_API int64_t cv_deflate_bound(int64_t length);
+CV_API int64_t cv_deflate_band(const uint8_t *data, int64_t length, int32_t level, int32_t is_last, uint8_t *out, int64_t capacity);
 
 #ifdef __cplusplus
 }

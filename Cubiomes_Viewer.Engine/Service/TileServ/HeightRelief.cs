@@ -1,5 +1,6 @@
 using System.Buffers;
 
+using Cubiomes_Viewer.Engine.Data.Colors;
 using Cubiomes_Viewer.Engine.Data.Maps;
 
 namespace Cubiomes_Viewer.Engine.Service.TileServ;
@@ -72,6 +73,10 @@ internal static class HeightRelief
             ArrayPool<double>.Shared.Return(brightness);
         }
     }
+
+    /// <summary>The colour a contour line paints a sample of this colour in.</summary>
+    public static RgbColor DarkenForContour(RgbColor color)
+        => new(Scale(color.Red, ContourBrightness), Scale(color.Green, ContourBrightness), Scale(color.Blue, ContourBrightness));
 
     /// <summary>Darkens every sample whose neighbour to the east or south lies in another band of heights.</summary>
     public static void DrawContours(TileData heights, int unit, Span<byte> bgra)
@@ -163,8 +168,10 @@ internal static class HeightRelief
     private static void Scale(Span<byte> channels, double brightness)
     {
         for (var index = 0; index < channels.Length; index++)
-            channels[index] = (byte)Math.Min(byte.MaxValue, Math.Round(channels[index] * brightness));
+            channels[index] = Scale(channels[index], brightness);
     }
+
+    private static byte Scale(byte channel, double brightness) => (byte)Math.Min(byte.MaxValue, Math.Round(channel * brightness));
 
     /// <summary>The heights of a tile by the column and row of its own samples, from <see cref="First"/> to <see cref="Last"/> into its border.</summary>
     private readonly ref struct HeightGrid(TileData tile)

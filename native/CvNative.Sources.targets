@@ -1,5 +1,5 @@
 <Project>
-  <Target Name="RestoreCubiomesSources" BeforeTargets="BeforeBuild" Condition="'$(DesignTimeBuild)' != 'true' And !Exists('$(MSBuildThisFileDirectory)cubiomes\generator.c')">
+  <Target Name="RestoreCubiomesSources" BeforeTargets="BeforeBuild" Condition="'$(DesignTimeBuild)' != 'true' And (!Exists('$(MSBuildThisFileDirectory)cubiomes\generator.c') Or !Exists('$(MSBuildThisFileDirectory)libdeflate\lib\deflate_compress.c'))">
     <Exec Command="git submodule update --init" WorkingDirectory="$(MSBuildThisFileDirectory).." />
   </Target>
 </Project>

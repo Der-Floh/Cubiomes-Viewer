@@ -68,8 +68,9 @@ public sealed class TileColorizerTests
     [InlineData(LayerMode.Temperature)]
     [InlineData(LayerMode.Continentalness)]
     [InlineData(LayerMode.Height)]
-    public void Colorize_NumberAtAStopOfTheRamp_TakesTheColourOfThatStop(LayerMode layer)
+    public void Colorize_NumberAtAStopOfTheRamp_TakesTheStepOfAColourCloseToThatStop(LayerMode layer)
     {
+        const int MaxChannelDifference = 4;
         var ramp = GetRamp(layer);
         var unit = GetValues(layer).Unit;
         var pixels = new byte[TileColorizer.BytesPerPixel];
@@ -78,9 +79,50 @@ public sealed class TileColorizerTests
         {
             _colorizer.Colorize(CreateValueTile(layer, (short)Math.Round(stop.Position * unit)), default, pixels);
 
-            Assert.Equal(stop.Color, ReadColor(pixels, 0));
+            var color = ReadColor(pixels, 0);
+            Assert.True(Math.Abs(color.Red - stop.Color.Red) <= MaxChannelDifference && Math.Abs(color.Green - stop.Color.Green) <= MaxChannelDifference
+                && Math.Abs(color.Blue - stop.Color.Blue) <= MaxChannelDifference, $"{layer} at {stop.Position}: {color} instead of about {stop.Color}.");
         }
     }
+
+    [Theory]
+    [InlineData(LayerMode.Temperature, HeightStyle.Tinted, 256)]
+    [InlineData(LayerMode.Height, HeightStyle.Tinted, 256)]
+    [InlineData(LayerMode.Height, HeightStyle.Contours, 256)]
+    public void GetPalette_LayerOfNumbers_HoldsEveryColourItPaints(LayerMode layer, HeightStyle height, int expectedColors)
+    {
+        var style = new TileStyle(height);
+        var values = Enumerable.Range(0, 400).Select(index => (short)(index * 41 - 8000)).ToArray();
+        var tile = CreateValueTile(layer, values);
+        var pixels = new byte[values.Length * TileColorizer.BytesPerPixel];
+
+        _colorizer.Colorize(tile, style, pixels);
+
+        var palette = Assert.IsAssignableFrom<IReadOnlyList<RgbColor>>(_colorizer.GetPalette(tile.Request, style));
+        Assert.Equal(expectedColors, palette.Count);
+        Assert.All(Enumerable.Range(0, values.Length), sample => Assert.Contains(ReadColor(pixels, sample), palette));
+    }
+
+    [Fact]
+    public void GetPalette_Contours_FollowsTheStepsWithTheirDarkerCopies()
+    {
+        var tile = CreateValueTile(LayerMode.Height, 0);
+
+        var palette = _colorizer.GetPalette(tile.Request, new TileStyle(HeightStyle.Contours))!;
+
+        var half = palette.Count / 2;
+        Assert.All(Enumerable.Range(0, half), step => Assert.Equal(HeightRelief.DarkenForContour(palette[step]), palette[half + step]));
+    }
+
+    [Theory]
+    [InlineData(LayerMode.Height, HeightStyle.Shaded)]
+    [InlineData(LayerMode.Height, HeightStyle.Grayscale)]
+    public void GetPalette_StyleWithMoreShadesThanAPalette_IsNone(LayerMode layer, HeightStyle height)
+        => Assert.Null(_colorizer.GetPalette(CreateValueTile(layer, 0).Request, new TileStyle(height)));
+
+    [Fact]
+    public void GetPalette_Biomes_IsNone()
+        => Assert.Null(_colorizer.GetPalette(CreateBiomeTile(PlainsBiomeId).Request, default));
 
     [Fact]
     public void Colorize_StructurePotential_DimsTheBiomesTheStructureCannotGenerateIn()

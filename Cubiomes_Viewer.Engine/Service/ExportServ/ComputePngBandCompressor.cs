@@ -20,6 +20,6 @@ internal sealed class ComputePngBandCompressor(IComputeService compute, JobPrior
 
         var rows = band.Span.ToArray();
         ArrayPool<byte>.Shared.Return(band.Rows);
-        return compute.RunAsync(new PngBandJob(rows, band.RowBytes, band.BytesPerPixel, band.PreviousRow, band.ColorType, band.IsLast), priority, cancellationToken);
+        return compute.RunAsync(new PngBandJob(rows, band.RowBytes, band.BytesPerPixel, band.PreviousRow, band.TriesFilters, band.IsLast), priority, cancellationToken);
     }
 }

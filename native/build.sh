@@ -33,6 +33,11 @@ collect_cubiomes_sources() {
         ! -path "$native_root/cubiomes/tests.c" ! -path "$native_root/cubiomes/noise.c" | LC_ALL=C sort)
 }
 
+# Only libdeflate's compressor is used, and its match finder picks its SIMD code when it is compiled.
+collect_libdeflate_sources() {
+    sources+=("$native_root/libdeflate/lib/deflate_compress.c" "$native_root/libdeflate/lib/utils.c")
+}
+
 build_macos() {
     local arch="$1"
     local target=(-arch "$arch" -mmacosx-version-min="$macos_minimum")
@@ -124,12 +129,12 @@ acquire_lock() {
 }
 
 is_up_to_date() {
-    [[ -f "$output" ]] && [[ -z "$(find "$native_root/shim" "$native_root/cubiomes" "${BASH_SOURCE[0]}" -newer "$output" \
+    [[ -f "$output" ]] && [[ -z "$(find "$native_root/shim" "$native_root/cubiomes" "$native_root/libdeflate" "${BASH_SOURCE[0]}" -newer "$output" \
         \( -name '*.c' -o -name '*.h' -o -name '*.inc' -o -name 'build.sh' \) -print -quit)" ]]
 }
 
-if [[ ! -f "$native_root/cubiomes/generator.c" ]]; then
-    echo "cubiomes sources are missing. Run 'git submodule update --init' in the repository root." >&2
+if [[ ! -f "$native_root/cubiomes/generator.c" || ! -f "$native_root/libdeflate/lib/deflate_compress.c" ]]; then
+    echo "cubiomes or libdeflate sources are missing. Run 'git submodule update --init' in the repository root." >&2
     exit 1
 fi
 
@@ -140,8 +145,9 @@ if is_up_to_date; then
     exit 0
 fi
 
-# The shim is compiled with warnings on its own; cubiomes is third-party code, compiled and linked without them.
+# The shim is compiled with warnings on its own; cubiomes and libdeflate are third-party code, compiled and linked without them.
 collect_cubiomes_sources
+collect_libdeflate_sources
 case "$rid" in
     linux-x64 | linux-arm64)
         "${CC:-cc}" "${flags[@]}" -fPIC -c -o "$shim_object" "$shim_source"

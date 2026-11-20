@@ -14,7 +14,7 @@ internal static class TestEngine
 {
     public static StructureCatalog CreateStructureCatalog() => new(new CubiomesStructureFinder());
 
-    public static LayerCatalog CreateLayerCatalog() => new(CreateStructureCatalog());
+    public static LayerCatalog CreateLayerCatalog() => new(CreateStructureCatalog(), new BiomeCatalog());
 
     public static TileColorizer CreateTileColorizer() => new(new BiomeCatalog(), CreateLayerCatalog(), new CubiomesStructureFinder());
 

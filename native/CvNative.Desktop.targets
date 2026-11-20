@@ -15,6 +15,7 @@
   <ItemGroup>
     <CvNativeSource Include="$(CvNativeRoot)shim\**\*" />
     <CvNativeSource Include="$(CvNativeRoot)cubiomes\**\*.c;$(CvNativeRoot)cubiomes\**\*.h" />
+    <CvNativeSource Include="$(CvNativeRoot)libdeflate\lib\**\*.c;$(CvNativeRoot)libdeflate\lib\**\*.h;$(CvNativeRoot)libdeflate\*.h" />
     <CvNativeSource Include="$(CvNativeRoot)build.ps1;$(CvNativeRoot)build.sh" />
   </ItemGroup>
 

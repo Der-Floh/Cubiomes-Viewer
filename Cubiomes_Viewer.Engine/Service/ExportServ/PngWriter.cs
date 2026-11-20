@@ -9,13 +9,13 @@ namespace Cubiomes_Viewer.Engine.Service.ExportServ;
 
 /// <summary>
 /// Writes a PNG image row by row, top to bottom, so that an image never has to fit into memory at once. The rows are
-/// gathered in bands, which a <see cref="IPngBandCompressor"/> filters and compresses several at a time, and which are
-/// joined into one zlib stream in order. The writer waits for compressed bands without blocking its thread, so a
-/// single-threaded runtime can hand the bands to workers.
+/// gathered in bands, packed where the format packs pixels, which a <see cref="IPngBandCompressor"/> filters and compresses
+/// several at a time, and which are joined into one zlib stream in order. The writer waits for compressed bands without
+/// blocking its thread, so a single-threaded runtime can hand the bands to workers.
 /// </summary>
 public sealed class PngWriter : IDisposable
 {
-    private const byte BitDepth = 8;
+    private const int BitsPerByte = 8;
     private const byte OpaqueAlpha = byte.MaxValue;
     private const int HeaderBytes = 13;
 
@@ -38,9 +38,10 @@ public sealed class PngWriter : IDisposable
     public int Height { get; }
     public PngFormat Format { get; }
 
-    /// <summary>The bytes one row holds.</summary>
+    /// <summary>The bytes a row handed to <see cref="WriteRowAsync"/> holds.</summary>
     public int RowBytes { get; }
 
+    private readonly int _storedRowBytes;
     private readonly Stream _destination;
     private readonly IPngBandCompressor _compressor;
     private readonly ImageDataStream _imageData;
@@ -73,11 +74,12 @@ public sealed class PngWriter : IDisposable
         Height = height;
         Format = format;
         RowBytes = checked(width * format.BytesPerPixel);
+        _storedRowBytes = format.GetRowBytes(width);
         _destination = destination;
         _compressor = compressor;
-        _rowsPerBand = Math.Clamp(BandBytes / RowBytes, 1, height);
-        _maxBandsInFlight = (int)Math.Clamp(BytesInFlight / ((long)_rowsPerBand * RowBytes), 1, Math.Max(1, compressor.Concurrency));
-        _previousRow = new byte[RowBytes];
+        _rowsPerBand = Math.Clamp(BandBytes / _storedRowBytes, 1, height);
+        _maxBandsInFlight = (int)Math.Clamp(BytesInFlight / ((long)_rowsPerBand * _storedRowBytes), 1, Math.Max(1, compressor.Concurrency));
+        _previousRow = new byte[_storedRowBytes];
 
         destination.Write(Signature);
         WriteHeader();
@@ -99,9 +101,9 @@ public sealed class PngWriter : IDisposable
             throw new InvalidOperationException($"The image has only {Height} rows.");
 
         if (_rowsInBand == 0)
-            _band = ArrayPool<byte>.Shared.Rent(Math.Min(_rowsPerBand, Height - _rowsWritten) * RowBytes);
+            _band = ArrayPool<byte>.Shared.Rent(Math.Min(_rowsPerBand, Height - _rowsWritten) * _storedRowBytes);
 
-        row.Span.CopyTo(_band.AsSpan(_rowsInBand * RowBytes));
+        Store(row.Span, _band.AsSpan(_rowsInBand * _storedRowBytes, _storedRowBytes));
         _rowsInBand++;
         _rowsWritten++;
         if (_rowsInBand < _rowsPerBand && _rowsWritten < Height)
@@ -137,11 +139,26 @@ public sealed class PngWriter : IDisposable
         _bands.Clear();
     }
 
+    /// <summary>Copies a row into the band, packing several pixels to a byte, the first in the highest bits, where the format packs them.</summary>
+    private void Store(ReadOnlySpan<byte> row, Span<byte> stored)
+    {
+        if (Format.BitDepth == PngFormat.FullBitDepth)
+        {
+            row.CopyTo(stored);
+            return;
+        }
+
+        stored.Clear();
+        var pixelsPerByte = BitsPerByte / Format.BitDepth;
+        for (var pixel = 0; pixel < row.Length; pixel++)
+            stored[pixel / pixelsPerByte] |= (byte)(row[pixel] << (BitsPerByte - Format.BitDepth * (pixel % pixelsPerByte + 1)));
+    }
+
     /// <summary>Hands the gathered rows over to be compressed.</summary>
     private void StartBand()
     {
-        var band = new PngBandRows(_band, _rowsInBand, RowBytes, Format.BytesPerPixel, _previousRow, Format.ColorType, IsLast: _rowsWritten == Height);
-        _previousRow = _band.AsSpan((_rowsInBand - 1) * RowBytes, RowBytes).ToArray();
+        var band = new PngBandRows(_band, _rowsInBand, _storedRowBytes, Format.BytesPerPixel, _previousRow, Format.TriesFilters, IsLast: _rowsWritten == Height);
+        _previousRow = _band.AsSpan((_rowsInBand - 1) * _storedRowBytes, _storedRowBytes).ToArray();
         _band = [];
         _rowsInBand = 0;
         _bands.Enqueue(_compressor.CompressAsync(band, _stopping.Token));
@@ -175,7 +192,7 @@ public sealed class PngWriter : IDisposable
         header.Clear();
         BinaryPrimitives.WriteInt32BigEndian(header, Width);
         BinaryPrimitives.WriteInt32BigEndian(header[4..], Height);
-        header[8] = BitDepth;
+        header[8] = (byte)Format.BitDepth;
         header[9] = (byte)Format.ColorType;
         WriteChunk(_destination, HeaderType, header);
     }

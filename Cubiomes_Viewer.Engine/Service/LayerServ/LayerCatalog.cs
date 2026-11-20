@@ -5,6 +5,7 @@ using Cubiomes_Viewer.Engine.Data.Worlds;
 using Cubiomes_Viewer.Engine.Extensions;
 using Cubiomes_Viewer.Engine.Interop;
 using Cubiomes_Viewer.Engine.Service.StructureServ;
+using Cubiomes_Viewer.Engine.Service.WorldGenServ;
 
 namespace Cubiomes_Viewer.Engine.Service.LayerServ;
 
@@ -24,14 +25,18 @@ public sealed class LayerCatalog : ILayerCatalog
     private const int DepthOctaves = ContinentalnessOctaves;
 
     private static readonly LayerMode[] _modes = Enum.GetValues<LayerMode>();
+    private static readonly string[] _riverBiomes = ["river"];
+    private static readonly string[] _oceanTemperatureBiomes = ["warm_ocean", "lukewarm_ocean", "ocean", "cold_ocean", "frozen_ocean"];
 
     private readonly IStructureCatalog _structureCatalog;
+    private readonly IBiomeCatalog _biomeCatalog;
     private readonly Lock _gate = new();
     private readonly Dictionary<(McVersion, Dimension), IReadOnlyList<LayerInfo>> _available = [];
 
-    public LayerCatalog(IStructureCatalog structureCatalog)
+    public LayerCatalog(IStructureCatalog structureCatalog, IBiomeCatalog biomeCatalog)
     {
         _structureCatalog = structureCatalog;
+        _biomeCatalog = biomeCatalog;
     }
 
     public IReadOnlyList<LayerInfo> GetAvailable(McVersion version, Dimension dimension)
@@ -83,6 +88,18 @@ public sealed class LayerCatalog : ILayerCatalog
             _ => throw new NotSupportedException($"Unsupported layer: {mode}"),
         };
     }
+
+    /// <summary>Rivers hold the river biome where a river runs; ocean temperatures the ocean of each temperature.</summary>
+    public IReadOnlyList<int> GetBiomes(LayerMode mode, McVersion version, Dimension dimension) => mode switch
+    {
+        LayerMode.Rivers => FindBiomes(version, _riverBiomes),
+        LayerMode.OceanTemperature => FindBiomes(version, _oceanTemperatureBiomes),
+        _ when mode.ShowsBiomeMap => _biomeCatalog.GetBiomes(version, dimension),
+        _ => [],
+    };
+
+    private IReadOnlyList<int> FindBiomes(McVersion version, string[] names)
+        => [.. Enumerable.Range(0, Constants.NoBiomeTileValue).Where(biome => _biomeCatalog.GetName(version, biome) is { } name && names.Contains(name, StringComparer.Ordinal))];
 
     private static LayerValues GetHeightValues(Dimension dimension) => dimension == Dimension.End
         ? new LayerValues(Constants.HeightUnit, LayerRamps.EndHeight, BlockFormat) { GrayRamp = LayerRamps.EndHeightGray }

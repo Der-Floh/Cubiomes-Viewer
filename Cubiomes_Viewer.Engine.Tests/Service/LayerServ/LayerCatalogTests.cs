@@ -14,6 +14,28 @@ public sealed class LayerCatalogTests
 
     private readonly LayerCatalog _catalog = TestEngine.CreateLayerCatalog();
 
+    [Theory]
+    [InlineData(LayerMode.Rivers, McVersion.V1_16_5, Dimension.Overworld, new[] { "river" })]
+    [InlineData(LayerMode.OceanTemperature, McVersion.V1_16_5, Dimension.Overworld, new[] { "cold_ocean", "frozen_ocean", "lukewarm_ocean", "ocean", "warm_ocean" })]
+    [InlineData(LayerMode.Biomes, McVersion.V1_16_5, Dimension.Nether, new[] { "basalt_deltas", "crimson_forest", "nether_wastes", "soul_sand_valley", "warped_forest" })]
+    public void GetBiomes_LayerOfFewBiomes_NamesJustThose(LayerMode layer, McVersion version, Dimension dimension, string[] expected)
+    {
+        var biomes = new BiomeCatalog();
+
+        var found = _catalog.GetBiomes(layer, version, dimension);
+
+        Assert.Equal(found.Order(), found);
+        Assert.Equal(expected, found.Select(biome => biomes.GetName(version, biome)).Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public void GetBiomes_Overworld_HasTooManyBiomesToPack()
+        => Assert.True(_catalog.GetBiomes(LayerMode.Biomes, McVersion.V1_21_3, Dimension.Overworld).Count > 15);
+
+    [Fact]
+    public void GetBiomes_LayerOfNumbers_IsEmpty()
+        => Assert.Empty(_catalog.GetBiomes(LayerMode.Temperature, McVersion.V1_21_3, Dimension.Overworld));
+
     public static TheoryData<McVersion, Dimension, LayerMode[]> AvailableLayers() => new()
     {
         {

@@ -69,6 +69,22 @@ public sealed class PngWriterTests
         Assert.Equal(rows.SelectMany(row => row), image.Pixels);
     }
 
+    [Theory]
+    [InlineData(2, 1)]
+    [InlineData(3, 2)]
+    [InlineData(16, 4)]
+    [InlineData(17, 8)]
+    public async Task PackedPalette_StoresEachPixelInTheFewestBitsAndReadsBack(int colors, int expectedBits)
+    {
+        var format = PngFormat.Indexed([.. Enumerable.Range(0, colors).Select(value => new RgbColor((byte)(value * 15), 0, 0))], isPacked: true);
+        byte[][] rows = [.. Enumerable.Range(0, 5).Select(row => Enumerable.Range(0, 13).Select(x => (byte)((x * 7 + row) % colors)).ToArray())];
+
+        var image = PngReader.Read(await WriteAsync(format, 13, rows));
+
+        Assert.Equal((PngColorType.Indexed, expectedBits), (image.ColorType, image.BitDepth));
+        Assert.Equal(rows.SelectMany(row => row), image.Pixels);
+    }
+
     [Fact]
     public async Task LargeImage_IsCutIntoSeveralDataChunksAndStillReadsBack()
     {

@@ -232,4 +232,12 @@ internal static unsafe partial class CubiomesNative
     [LibraryImport(LibraryName, EntryPoint = "cv_loot_table_name")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial nint LootTableName(int table);
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_deflate_bound")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial long DeflateBound(long length);
+
+    [LibraryImport(LibraryName, EntryPoint = "cv_deflate_band")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    internal static partial long DeflateBand(byte* data, long length, int level, int isLast, byte* output, long capacity);
 }

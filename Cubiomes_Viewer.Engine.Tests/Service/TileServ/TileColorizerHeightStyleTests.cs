@@ -53,12 +53,13 @@ public sealed class TileColorizerHeightStyleTests
         int[] row = [70, 78, 82, 90, 94, 95];
         var tile = CreateHeightTile((x, _) => row[x]);
 
-        var (tinted, contours) = (Paint(tile, HeightStyle.Tinted), Paint(tile, HeightStyle.Contours));
+        var contours = Paint(tile, HeightStyle.Contours);
 
         for (var sample = 0; sample < Samples * Samples; sample++)
         {
             var isBeforeTheLine = sample % Samples == 1;
-            var expected = GetChannels(tinted, sample).Select(channel => isBeforeTheLine ? (byte)Math.Round(channel * ContourBrightness) : channel);
+            var withoutLine = Paint(CreateHeightTile((_, _) => row[sample % Samples]), HeightStyle.Contours);
+            var expected = GetChannels(withoutLine, 0).Select(channel => isBeforeTheLine ? (byte)Math.Round(channel * ContourBrightness) : channel);
             Assert.Equal(expected, GetChannels(contours, sample));
         }
     }

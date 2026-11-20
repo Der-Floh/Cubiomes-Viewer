@@ -35,6 +35,12 @@ The fork includes two further libraries, which are compiled with it:
 - cJSON (`loot/cjson`), a JSON parser: MIT. Copyright (c) 2009-2017 Dave Gamble and cJSON contributors. https://github.com/DaveGamble/cJSON
 - loot_library.h (`loot`), on which its loot generation is based: MIT. Copyright (c) 2024 ScriptLine. https://github.com/Kludwisz/loot_library.h
 
+## libdeflate
+
+Compresses the image data of exported PNGs; its compressor is compiled into the native `cvnative` library from the git submodule `native/libdeflate`. https://github.com/ebiggers/libdeflate
+
+- Licence: MIT. Copyright 2016 Eric Biggers, copyright 2024 Google LLC.
+
 ## Material Symbols
 
 Source: https://fonts.google.com/icons. The icons of the buttons in `Cubiomes_Viewer/Assets/Icons` are Material Symbols in their outlined and filled forms; their fill is changed to `currentColor` so that the app can colour them. The map glyphs in `Assets/Icons/MapIcons` are drawn for this project.

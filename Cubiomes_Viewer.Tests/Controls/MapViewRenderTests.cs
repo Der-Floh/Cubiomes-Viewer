@@ -58,7 +58,7 @@ public sealed class MapViewRenderTests
     }
 
     [AvaloniaFact]
-    public async Task Render_TemperatureLayer_DrawsTheColourOfTheTemperatureAtTheCentre()
+    public async Task Render_TemperatureLayer_DrawsTheRampStepOfTheTemperatureAtTheCentre()
     {
         var world = new WorldKey(262, McVersion.V1_21_3, Dimension.Overworld, GeneratorFlags.None);
         var content = MapContent.For(world, LayerMode.Temperature, SampleHeight, octaves: 0);
@@ -77,7 +77,7 @@ public sealed class MapViewRenderTests
         Assert.NotNull(frame);
         var values = Assert.IsType<LayerValues>(App.Services.GetRequiredService<ILayerCatalog>().GetInfo(LayerMode.Temperature, world.Version, world.Dimension).Values);
         Assert.True(App.Services.GetRequiredService<IMapTileService>().TryGetCachedValue(content, 8, 8, out var stored));
-        Assert.Equal(values.Ramp.GetColor(values.ToValue(stored)), FramePixels.Read(frame, ViewSize / 2 + 8, ViewSize / 2 + 8));
+        Assert.Equal(RampPalette.Create(values.Ramp, values.Unit, RampPalette.MaxSteps).GetColor(stored), FramePixels.Read(frame, ViewSize / 2 + 8, ViewSize / 2 + 8));
     }
 
     [AvaloniaFact]

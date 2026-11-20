@@ -1,20 +1,20 @@
 using System.Buffers;
-using System.IO.Compression;
 using System.IO.Hashing;
 
 using Cubiomes_Viewer.Engine.Data.Export;
+using Cubiomes_Viewer.Engine.Interop;
 
 namespace Cubiomes_Viewer.Engine.Service.ExportServ;
 
 /// <summary>
-/// Filters and deflates the rows of one band of a PNG image at the strongest level. Each band is deflated on its own and,
-/// unless it is the last, ends with a sync flush, so that the bands can follow each other in one zlib stream. Indexed rows
-/// compress best unfiltered; the best filter of grey and RGB rows depends on the layer and its scale, so each band of those
-/// tries every filter on its first rows and is compressed with the one that did best.
+/// Filters and deflates the rows of one band of a PNG image with libdeflate at its strongest level. Each band is deflated on
+/// its own and, unless it is the last, ends with an empty stored block instead of a final one, so that the bands can follow
+/// each other in one zlib stream. A band that tries filters tries every filter on its first rows, as the best filter depends
+/// on the layer and its scale, and is compressed with the one that did best; the others stay unfiltered.
 /// </summary>
 internal static class PngBandCompressor
 {
-    private const int StrongestLevel = 9;
+    private const int StrongestLevel = 12;
 
     /// <summary>The raw bytes at the start of a band that its filters are tried on; smaller samples misjudge layers whose rows compress best unfiltered.</summary>
     private const int FilterSampleBytes = 512 << 10;
@@ -22,20 +22,19 @@ internal static class PngBandCompressor
     private static readonly PngFilter[] _unfiltered = [PngFilter.None];
     private static readonly PngFilter[] _allFilters = [PngFilter.None, PngFilter.Sub, PngFilter.Up, PngFilter.Average, PngFilter.Paeth];
 
-    public static PngBand Compress(ReadOnlySpan<byte> rows, int rowBytes, int bytesPerPixel, ReadOnlySpan<byte> previousRow, PngColorType colorType, bool isLast,
+    public static PngBand Compress(ReadOnlySpan<byte> rows, int rowBytes, int bytesPerPixel, ReadOnlySpan<byte> previousRow, bool triesFilters, bool isLast,
         CancellationToken cancellationToken)
     {
-        var (filters, strategy) = GetCompression(colorType);
         var band = new BandRows(rows, rowBytes, bytesPerPixel, previousRow);
         var length = band.Count * (rowBytes + 1);
         var filtered = ArrayPool<byte>.Shared.Rent(length);
         try
         {
-            var filter = ChooseFilter(band, filters, strategy, filtered, cancellationToken);
+            var filter = ChooseFilter(band, triesFilters ? _allFilters : _unfiltered, filtered, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
             band.Apply(filter, filtered, band.Count);
-            var deflated = Deflate(filtered.AsSpan(0, length), strategy, endsTheStream: isLast);
-            return new PngBand(deflated.ToArray(), Adler32.HashToUInt32(filtered.AsSpan(0, length)), length);
+            var deflated = Deflate(filtered.AsSpan(0, length), endsTheStream: isLast);
+            return new PngBand(deflated, Adler32.HashToUInt32(filtered.AsSpan(0, length)), length);
         }
         finally
         {
@@ -43,20 +42,8 @@ internal static class PngBandCompressor
         }
     }
 
-    /// <summary>
-    /// The filters a band tries and how it is deflated, as measured on exports of every layer: rows of grey, filtered into
-    /// runs of small differences, deflate smallest as runs; the other rows with the full search for repeated strings.
-    /// </summary>
-    private static (PngFilter[] Filters, ZLibCompressionStrategy Strategy) GetCompression(PngColorType colorType) => colorType switch
-    {
-        PngColorType.Indexed => (_unfiltered, ZLibCompressionStrategy.Default),
-        PngColorType.Grayscale => (_allFilters, ZLibCompressionStrategy.RunLengthEncoding),
-        PngColorType.Rgb => (_allFilters, ZLibCompressionStrategy.Default),
-        _ => throw new NotSupportedException($"Unsupported PNG colour type: {colorType}"),
-    };
-
     /// <summary>The filter whose rows compress smallest at the start of the band, which stands for the whole band.</summary>
-    private static PngFilter ChooseFilter(BandRows band, PngFilter[] filters, ZLibCompressionStrategy strategy, byte[] buffer, CancellationToken cancellationToken)
+    private static PngFilter ChooseFilter(BandRows band, PngFilter[] filters, byte[] buffer, CancellationToken cancellationToken)
     {
         if (filters is [var only])
             return only;
@@ -67,7 +54,7 @@ internal static class PngBandCompressor
         {
             cancellationToken.ThrowIfCancellationRequested();
             band.Apply(filter, buffer, sampleRows);
-            var length = Deflate(buffer.AsSpan(0, sampleRows * (band.RowBytes + 1)), strategy, endsTheStream: false).Length;
+            var length = Deflate(buffer.AsSpan(0, sampleRows * (band.RowBytes + 1)), endsTheStream: true).Length;
             if (length < bestLength)
                 (best, bestLength) = (filter, length);
         }
@@ -75,17 +62,23 @@ internal static class PngBandCompressor
         return best;
     }
 
-    private static MemoryStream Deflate(ReadOnlySpan<byte> filtered, ZLibCompressionStrategy strategy, bool endsTheStream)
+    private static unsafe byte[] Deflate(ReadOnlySpan<byte> filtered, bool endsTheStream)
     {
-        var output = new MemoryStream();
-        var deflate = new DeflateStream(output, new ZLibCompressionOptions { CompressionLevel = StrongestLevel, CompressionStrategy = strategy }, leaveOpen: true);
-        deflate.Write(filtered);
-        deflate.Flush();
-        var flushedLength = output.Length;
-        deflate.Dispose();
-        if (!endsTheStream)
-            output.SetLength(flushedLength);
-        return output;
+        var capacity = CubiomesNative.DeflateBound(filtered.Length);
+        var output = ArrayPool<byte>.Shared.Rent(checked((int)capacity));
+        try
+        {
+            long written;
+            fixed (byte* input = filtered, deflated = output)
+                written = CubiomesNative.DeflateBand(input, filtered.Length, StrongestLevel, endsTheStream ? 1 : 0, deflated, capacity);
+            if (written <= 0)
+                throw new InvalidOperationException($"libdeflate could not deflate a band of {filtered.Length} bytes (status {written}).");
+            return output.AsSpan(0, (int)written).ToArray();
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(output);
+        }
     }
 
     /// <summary>The rows of a band and the row above it, which feeds the filters of its first row.</summary>

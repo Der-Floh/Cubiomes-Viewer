@@ -9,6 +9,7 @@ using Cubiomes_Viewer.Engine.Extensions;
 using Cubiomes_Viewer.Engine.Repository.AppDataRepo;
 using Cubiomes_Viewer.Engine.Service.ComputeServ;
 using Cubiomes_Viewer.Engine.Service.ExportServ;
+using Cubiomes_Viewer.Engine.Service.LayerServ;
 using Cubiomes_Viewer.Engine.Service.TileServ;
 using Cubiomes_Viewer.Engine.Service.WorldGenServ;
 
@@ -50,11 +51,65 @@ public sealed class MapExportServiceTests : IDisposable
         { McVersion.V1_18_2, Dimension.Overworld, 16 },
         { McVersion.V1_12_2, Dimension.Overworld, 16 },
         { McVersion.V1_12_2, Dimension.Overworld, 1 },
-        { McVersion.V1_16_5, Dimension.Nether, 4 },
-        { McVersion.V1_21_3, Dimension.End, 16 },
-        { McVersion.Beta1_7, Dimension.Overworld, 16 },
-        { McVersion.Beta1_7, Dimension.Overworld, 1 },
     };
+
+    public static TheoryData<McVersion, Dimension, LayerMode, int> FewBiomeLayers() => new()
+    {
+        { McVersion.V1_16_5, Dimension.Nether, LayerMode.Biomes, 4 },
+        { McVersion.V1_21_3, Dimension.End, LayerMode.Biomes, 16 },
+        { McVersion.Beta1_7, Dimension.Overworld, LayerMode.Biomes, 16 },
+        { McVersion.Beta1_7, Dimension.Overworld, LayerMode.Biomes, 1 },
+        { McVersion.V1_16_5, Dimension.Overworld, LayerMode.Rivers, 4 },
+        { McVersion.V1_16_5, Dimension.Overworld, LayerMode.OceanTemperature, 16 },
+    };
+
+    [Theory]
+    [MemberData(nameof(FewBiomeLayers))]
+    public async Task Biomes_OfALayerOfFewBiomes_ArePackedIntoAPaletteOfJustThose(McVersion version, Dimension dimension, LayerMode layer, int scale)
+    {
+        var world = World(262, version, dimension);
+        var samples = TileMetrics.For(world, layer).TileSamples;
+        var request = Request(world, layer, scale) with { Area = new BlockArea(0, 0, samples * scale, samples * scale) };
+        var biomes = _services.GetRequiredService<ILayerCatalog>().GetBiomes(layer, version, dimension);
+
+        var image = PngReader.Read(await ExportAsync(request));
+
+        Assert.Equal((PngColorType.Indexed, (biomes.Count + 1) * 3), (image.ColorType, image.Palette.Length));
+        Assert.Equal(biomes.Count + 1 <= 2 ? 1 : biomes.Count + 1 <= 4 ? 2 : 4, image.BitDepth);
+        Assert.Equal(0, image.Transparency[biomes.Count]);
+        var tile = GenerateTile(new TileJob(MapContent.For(world, layer, SampleHeight, 0).GetRequest(new TileKey(scale, 0, 0)), samples));
+        var colors = _services.GetRequiredService<ITileColorizer>().GetBiomeColors(default, version);
+        Assert.Equal(tile.Biomes.SelectMany(biome => new[] { colors[biome].Red, colors[biome].Green, colors[biome].Blue }), image.GetColors());
+        Assert.True(tile.Biomes.Distinct().Count() > 1, "The tile shows a single biome.");
+    }
+
+    [Theory]
+    [InlineData(LayerMode.Temperature, HeightStyle.Tinted)]
+    [InlineData(LayerMode.Height, HeightStyle.Tinted)]
+    [InlineData(LayerMode.Height, HeightStyle.Contours)]
+    public async Task LayerOfNumbers_IsAPaletteImageOfTheStepsTheMapPaints(LayerMode layer, HeightStyle height)
+    {
+        const int scale = 16;
+        var world = World(262, McVersion.V1_21_3, Dimension.Overworld);
+        var samples = TileMetrics.For(world, layer).TileSamples;
+        var style = new TileStyle(height);
+        var request = Request(world, layer, scale) with { Style = style, Area = new BlockArea(0, 0, samples * scale, samples * scale) };
+
+        var image = PngReader.Read(await ExportAsync(request));
+
+        Assert.Equal((PngColorType.Indexed, 8, 256 * 3), (image.ColorType, image.BitDepth, image.Palette.Length));
+        Assert.Empty(image.Transparency);
+        var painted = Paint(new TileJob(MapContent.For(world, layer, SampleHeight, 0).GetRequest(new TileKey(scale, 0, 0)), samples), style);
+        Assert.Equal(painted.Chunk(TileColorizer.BytesPerPixel).SelectMany(pixel => new[] { pixel[2], pixel[1], pixel[0] }), image.GetColors());
+    }
+
+    [Fact]
+    public void FindWarnings_LayerOfFewBiomes_SaysThePaletteIndexIsNotTheBiomeId()
+    {
+        var request = Request(World(262, McVersion.V1_16_5, Dimension.Nether), LayerMode.Biomes, 4);
+
+        Assert.Contains("a palette index is not the biome id", Assert.Single(_export.FindWarnings(request)), StringComparison.Ordinal);
+    }
 
     [Theory]
     [MemberData(nameof(BiomeWorlds))]
@@ -77,14 +132,14 @@ public sealed class MapExportServiceTests : IDisposable
     {
         { "biomes 1.21.3", McVersion.V1_21_3, Dimension.Overworld, LayerMode.Biomes, 4, HeightStyle.Shaded, null, "39ac7531f4224dc63464589d7c5e380372f506eaf69456d5dc98245bb34d24ae" },
         { "biomes 1.12.2", McVersion.V1_12_2, Dimension.Overworld, LayerMode.Biomes, 16, HeightStyle.Shaded, null, "7d2c102daf2ae68d29ea5b365aa4b09b29d3e179e2dd3383e2e79a672b86c563" },
-        { "biomes Beta 1.7", McVersion.Beta1_7, Dimension.Overworld, LayerMode.Biomes, 16, HeightStyle.Shaded, null, "9f4f1673ef22a6b5a7bbc61de11f556305f3b3c65db6afe04c371b00505ad116" },
-        { "nether 1.16.5", McVersion.V1_16_5, Dimension.Nether, LayerMode.Biomes, 4, HeightStyle.Shaded, null, "7bb4f3edf84f0e300a1785ff595b827275782ea3e0b32e8682975fa87064fb1b" },
-        { "end 1.21.3", McVersion.V1_21_3, Dimension.End, LayerMode.Biomes, 16, HeightStyle.Shaded, null, "1d55b799be5cc4ad9054332fe9934ee6e02a5e37b27ba64c22c8949fe21901e2" },
+        { "biomes Beta 1.7", McVersion.Beta1_7, Dimension.Overworld, LayerMode.Biomes, 16, HeightStyle.Shaded, null, "b8def5f7048a285ec627169a31d599fd533d7cdb9b9ea2501aba6cf3e640f30d" },
+        { "nether 1.16.5", McVersion.V1_16_5, Dimension.Nether, LayerMode.Biomes, 4, HeightStyle.Shaded, null, "bb10d17aa07a9bff03da7dbbd1c9abc923016ffb963b2cba64bb90224f32b98a" },
+        { "end 1.21.3", McVersion.V1_21_3, Dimension.End, LayerMode.Biomes, 16, HeightStyle.Shaded, null, "786212517e729f92f18ed60c6ec6f4ed1dec1580e7e3f5bc1594a40670f9b965" },
         { "village potential 1.20.6", McVersion.V1_20_6, Dimension.Overworld, LayerMode.StructurePotential, 16, HeightStyle.Shaded, StructureType.Village, "21dc46a1aa2034d64528fe6d651b2ea3ca158df835c40aff4466860f2f891a3a" },
-        { "ocean temperature 1.16.5", McVersion.V1_16_5, Dimension.Overworld, LayerMode.OceanTemperature, 16, HeightStyle.Shaded, null, "968c8c0d70e88a5d3c86b189a37e8886121483f457e43cafc9397928891ad30e" },
-        { "temperature 1.18.2", McVersion.V1_18_2, Dimension.Overworld, LayerMode.Temperature, 16, HeightStyle.Shaded, null, "5a6c409acfa175fec86c9d9733e90e020de3338661f839dc3883960367c25978" },
-        { "height shaded 1.21.3", McVersion.V1_21_3, Dimension.Overworld, LayerMode.Height, 16, HeightStyle.Shaded, null, "4e127b30ebd273fb62b88f13b0f28bb234285bd3fd4ad8507777bd089e4d5f29" },
-        { "height contours 1.12.2", McVersion.V1_12_2, Dimension.Overworld, LayerMode.Height, 16, HeightStyle.Contours, null, "edb97f0414abab05126f0500a078248eb9a6495b334f379f72d16148337d421b" },
+        { "ocean temperature 1.16.5", McVersion.V1_16_5, Dimension.Overworld, LayerMode.OceanTemperature, 16, HeightStyle.Shaded, null, "581fb5969189e8bd0fee5834bcba838d7fe0a5b4adc00a253a8c99260e26cc28" },
+        { "temperature 1.18.2", McVersion.V1_18_2, Dimension.Overworld, LayerMode.Temperature, 16, HeightStyle.Shaded, null, "bd1f86bb8d4666a2f3a20be94e804efdd9c955fa1169b757ab01f9766ea49b17" },
+        { "height shaded 1.21.3", McVersion.V1_21_3, Dimension.Overworld, LayerMode.Height, 16, HeightStyle.Shaded, null, "273cb4e237ea7c100de98c8291fa115b19eef67d39b4d07330b1370c1fb38d35" },
+        { "height contours 1.12.2", McVersion.V1_12_2, Dimension.Overworld, LayerMode.Height, 16, HeightStyle.Contours, null, "5609cc92741448a1785f13fc2928720a4c0b1e4d8d8b15e5fa19a1543bd4d2ad" },
     };
 
     [Theory]
@@ -109,7 +164,7 @@ public sealed class MapExportServiceTests : IDisposable
     public static TheoryData<string, Dimension, int, int, int, byte, string> FixedNewestExports() => new()
     {
         { "dappled forest 26.3", Dimension.Overworld, 4, -1200, 500, DappledForestBiomeId, "d103ec612448185aeba8b2d3b469c60d6f6bf08176de9ce97bcb42947eeb3ac6" },
-        { "end ring 26.3", Dimension.End, 16, -372_000, -1000, EndHighlandsBiomeId, "fa3255d44b27128c088c4517fa9c1b86d95551d744f04c96d2df1aa6949439ff" },
+        { "end ring 26.3", Dimension.End, 16, -372_000, -1000, EndHighlandsBiomeId, "943424a7df4ad34843b63b04f4f1b31407063878c58d7200936a9feed93bcb73" },
     };
 
     [Theory]
@@ -120,7 +175,8 @@ public sealed class MapExportServiceTests : IDisposable
 
         var image = PngReader.Read(await ExportAsync(request));
 
-        Assert.Contains(shownBiome, image.Pixels);
+        var shown = _services.GetRequiredService<ITileColorizer>().GetBiomeColors(default, McVersion.V26_3)[shownBiome];
+        Assert.Contains(image.GetColors().Chunk(3), pixel => pixel[0] == shown.Red && pixel[1] == shown.Green && pixel[2] == shown.Blue);
         Assert.True(expectedHash == image.ContentHash, $"{name}: {image.ContentHash}");
     }
 
@@ -151,15 +207,16 @@ public sealed class MapExportServiceTests : IDisposable
     [Theory]
     [InlineData(McVersion.V1_12_2, Dimension.Overworld, 256)]
     [InlineData(McVersion.V1_16_5, Dimension.Nether, 4)]
-    public async Task Biomes_ShadedWhereNoHeightsReach_StayPalettePixelsOfTheGeneratedBiomes(McVersion version, Dimension dimension, int scale)
+    public async Task Biomes_ShadedWhereNoHeightsReach_StayPaletteImagesOfTheGeneratedBiomes(McVersion version, Dimension dimension, int scale)
     {
         var request = Request(World(262, version, dimension), LayerMode.Biomes, scale) with { Style = _relief };
 
         var image = PngReader.Read(await ExportAsync(request));
 
         Assert.Equal(PngColorType.Indexed, image.ColorType);
-        Assert.Equal(GenerateBiomes(request.Worlds[0], request.GetLayout(), scale), image.Pixels);
-        Assert.Empty(_export.FindWarnings(request));
+        var colors = _services.GetRequiredService<ITileColorizer>().GetBiomeColors(_relief, version);
+        Assert.Equal(GenerateBiomes(request.Worlds[0], request.GetLayout(), scale).SelectMany(biome => new[] { colors[biome].Red, colors[biome].Green, colors[biome].Blue }), image.GetColors());
+        Assert.DoesNotContain(_export.FindWarnings(request), warning => warning.StartsWith("Shaded by terrain height", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -177,8 +234,9 @@ public sealed class MapExportServiceTests : IDisposable
         var image = PngReader.Read(await ExportAsync(request));
 
         Assert.Equal((samples, samples, PngColorType.Grayscale), (image.Width, image.Height, image.ColorType));
-        var shades = Paint(new TileJob(MapContent.For(request.Worlds[0], LayerMode.Height, SampleHeight, 0).GetRequest(new TileKey(scale, 0, 0)), samples), style);
-        Assert.Equal(shades, image.Pixels);
+        var pixels = Paint(new TileJob(MapContent.For(request.Worlds[0], LayerMode.Height, SampleHeight, 0).GetRequest(new TileKey(scale, 0, 0)), samples), style).Chunk(TileColorizer.BytesPerPixel).ToArray();
+        Assert.All(pixels, pixel => Assert.True(pixel[0] == pixel[1] && pixel[1] == pixel[2], "The map paints a colour that is not grey."));
+        Assert.Equal(pixels.Select(pixel => pixel[0]), image.Pixels);
         Assert.True(image.Pixels.Distinct().Count() > 1, "The export shows no terrain.");
     }
 
@@ -208,7 +266,8 @@ public sealed class MapExportServiceTests : IDisposable
             {
                 var tile = tiles[TiledImageSink.GetEntryName("-77_", column, z / 100)];
                 Assert.Equal((Math.Min(100, layout.Width - column * 100), Math.Min(100, layout.Height - z / 100 * 100)), (tile.Width, tile.Height));
-                Assert.True(image.GetRow(z).Slice(column * 100 * 3, tile.Width * 3).SequenceEqual(tile.GetRow(z % 100)));
+                Assert.True(image.GetRow(z).Slice(column * 100 * image.BytesPerPixel, tile.Width * image.BytesPerPixel).SequenceEqual(tile.GetRow(z % 100)));
+                Assert.Equal(image.Palette, tile.Palette);
             }
         }
     }
@@ -355,17 +414,18 @@ public sealed class MapExportServiceTests : IDisposable
         });
     }
 
-    /// <summary>The grey the map paints each sample of a generated tile in, as the red, green and blue it gives alike.</summary>
+    /// <summary>The colours the map paints the samples of a generated tile in: blue, green, red and alpha.</summary>
     private byte[] Paint(TileJob job, TileStyle style)
     {
-        using var context = new WorkerContext(new CubiomesWorldGeneratorFactory());
-        var tile = new TileJobHandler().Handle(job, context, CancellationToken.None);
         var bgra = new byte[job.Samples * job.Samples * TileColorizer.BytesPerPixel];
-        _services.GetRequiredService<ITileColorizer>().Colorize(tile, style, bgra);
+        _services.GetRequiredService<ITileColorizer>().Colorize(GenerateTile(job), style, bgra);
+        return bgra;
+    }
 
-        var pixels = bgra.Chunk(TileColorizer.BytesPerPixel).ToArray();
-        Assert.All(pixels, pixel => Assert.True(pixel[0] == pixel[1] && pixel[1] == pixel[2], "The map paints a colour that is not grey."));
-        return [.. pixels.Select(pixel => pixel[0])];
+    private static TileData GenerateTile(TileJob job)
+    {
+        using var context = new WorkerContext(new CubiomesWorldGeneratorFactory());
+        return new TileJobHandler().Handle(job, context, CancellationToken.None);
     }
 
     private static byte[] GenerateBiomes(WorldKey world, MapImageLayout layout, int scale)

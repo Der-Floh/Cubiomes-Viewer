@@ -13,4 +13,10 @@ public interface ILayerCatalog
 
     /// <summary>Describes a layer as the generator of a version shows it in a dimension, whether it is available there or not.</summary>
     LayerInfo GetInfo(LayerMode mode, McVersion version, Dimension dimension);
+
+    /// <summary>
+    /// The biome ids the samples of a layer of biomes can hold in a version and dimension, in ascending order, besides the
+    /// value of no biome; empty for a layer of numbers.
+    /// </summary>
+    IReadOnlyList<int> GetBiomes(LayerMode mode, McVersion version, Dimension dimension);
 }

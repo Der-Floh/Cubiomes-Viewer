@@ -19,7 +19,7 @@ internal sealed class ThreadPoolPngBandCompressor : IPngBandCompressor
         {
             try
             {
-                return PngBandCompressor.Compress(band.Span, band.RowBytes, band.BytesPerPixel, band.PreviousRow, band.ColorType, band.IsLast, cancellationToken);
+                return PngBandCompressor.Compress(band.Span, band.RowBytes, band.BytesPerPixel, band.PreviousRow, band.TriesFilters, band.IsLast, cancellationToken);
             }
             finally
             {

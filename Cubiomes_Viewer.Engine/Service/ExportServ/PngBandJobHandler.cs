@@ -11,6 +11,6 @@ public sealed class PngBandJobHandler : IJobHandler<PngBandJob, PngBand>
     {
         ArgumentNullException.ThrowIfNull(job);
 
-        return PngBandCompressor.Compress(job.Rows, job.RowBytes, job.BytesPerPixel, job.PreviousRow, job.ColorType, job.IsLast, cancellationToken);
+        return PngBandCompressor.Compress(job.Rows, job.RowBytes, job.BytesPerPixel, job.PreviousRow, job.TriesFilters, job.IsLast, cancellationToken);
     }
 }

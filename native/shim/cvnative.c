@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../libdeflate/libdeflate.h"
 #include "cvnative.h"
 
 #include "cv_meta.inc"
@@ -32,5 +33,6 @@
 #include "cv_structures.inc"
 #include "cv_loot.inc"
 #include "cv_landmarks.inc"
+#include "cv_deflate.inc"
 #include "cv_layers.inc"
 #include "cv_quad.inc"

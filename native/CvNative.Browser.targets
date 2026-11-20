@@ -9,12 +9,15 @@
     <EmccLinkOptimizationFlag>-O2</EmccLinkOptimizationFlag>
   </PropertyGroup>
 
-  <!-- noise.c is compiled through shim\cv_noise.c; tests.c and tests\ are cubiomes' own test programs. -->
+  <!-- noise.c is compiled through shim\cv_noise.c; tests.c and tests\ are cubiomes' own test programs. Only libdeflate's
+       compressor is used. -->
   <ItemGroup>
     <NativeFileReference Include="$(MSBuildThisFileDirectory)shim\cvnative.c;$(MSBuildThisFileDirectory)shim\cv_noise.c" />
     <NativeFileReference Include="$(MSBuildThisFileDirectory)cubiomes\**\*.c" Exclude="$(MSBuildThisFileDirectory)cubiomes\noise.c;$(MSBuildThisFileDirectory)cubiomes\tests.c;$(MSBuildThisFileDirectory)cubiomes\tests\**" />
+    <NativeFileReference Include="$(MSBuildThisFileDirectory)libdeflate\lib\deflate_compress.c;$(MSBuildThisFileDirectory)libdeflate\lib\utils.c" />
     <CvNativeIncludedSource Include="$(MSBuildThisFileDirectory)shim\**\*" Exclude="$(MSBuildThisFileDirectory)shim\cvnative.c" />
     <CvNativeIncludedSource Include="$(MSBuildThisFileDirectory)cubiomes\**\*.c;$(MSBuildThisFileDirectory)cubiomes\**\*.h" />
+    <CvNativeIncludedSource Include="$(MSBuildThisFileDirectory)libdeflate\lib\**\*.c;$(MSBuildThisFileDirectory)libdeflate\lib\**\*.h;$(MSBuildThisFileDirectory)libdeflate\*.h" />
   </ItemGroup>
 
   <!-- The WASM SDK relinks only when cvnative.c itself is newer, so a change to a file it includes is passed on to it. -->
