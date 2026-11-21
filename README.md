@@ -170,6 +170,7 @@ dotnet build Cubiomes_Viewer.Android -t:Run
 - A worker that fails is replaced and its job given to another worker once; when no worker can start, the jobs run on the main thread instead.
 - Settings and the search session are kept in IndexedDB.
 - In development the Browser head serves the worker project under `/worker/`. On publish the worker is published separately into `wwwroot/worker/`, because the WebAssembly SDK would otherwise merge its assemblies into the main app's boot manifest. Always publish with `dotnet publish Cubiomes_Viewer.Browser -c Release`.
+- A publish trims the page and compiles it ahead of time to WebAssembly, which takes several minutes. Assemblies the page seldom runs, such as JSON, HTTP, CSV and ZIP support, stay interpreted to keep the download small, and so does the worker, whose work happens in the natively compiled generator.
 
 ### Tests
 

@@ -3,7 +3,9 @@
     <TargetFramework>net10.0-browser</TargetFramework>
     <OutputType>Exe</OutputType>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PublishTrimmed>false</PublishTrimmed>
+    <PublishTrimmed>true</PublishTrimmed>
+    <RunAOTCompilation>true</RunAOTCompilation>
+    <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -12,6 +14,29 @@
   </PropertyGroup>
 
   <Import Project="..\native\CvNative.Browser.targets" />
+
+  <!-- Assemblies the page seldom runs stay interpreted, which keeps their code out of the compiled dotnet.native.wasm.
+       The item is internal to the WebAssembly SDK. -->
+  <ItemGroup>
+    <_AOT_InternalForceInterpretAssemblies Include="Avalonia.Controls.ColorPicker.dll" />
+    <_AOT_InternalForceInterpretAssemblies Include="Avalonia.Dialogs.dll" />
+    <_AOT_InternalForceInterpretAssemblies Include="Avalonia.Metal.dll" />
+    <_AOT_InternalForceInterpretAssemblies Include="Avalonia.OpenGL.dll" />
+    <_AOT_InternalForceInterpretAssemblies Include="Avalonia.Vulkan.dll" />
+    <_AOT_InternalForceInterpretAssemblies Include="CsvHelper.dll" />
+    <_AOT_InternalForceInterpretAssemblies Include="System.Console.dll" />
+    <_AOT_InternalForceInterpretAssemblies Include="System.Diagnostics.TraceSource.dll" />
+    <_AOT_InternalForceInterpretAssemblies Include="System.IO.Compression.dll" />
+    <_AOT_InternalForceInterpretAssemblies Include="System.IO.Pipelines.dll" />
+    <_AOT_InternalForceInterpretAssemblies Include="System.Linq.Expressions.dll" />
+    <_AOT_InternalForceInterpretAssemblies Include="System.Net.Http.dll" />
+    <_AOT_InternalForceInterpretAssemblies Include="System.Net.Primitives.dll" />
+    <_AOT_InternalForceInterpretAssemblies Include="System.Net.Requests.dll" />
+    <_AOT_InternalForceInterpretAssemblies Include="System.Security.Cryptography.dll" />
+    <_AOT_InternalForceInterpretAssemblies Include="System.Text.Encodings.Web.dll" />
+    <_AOT_InternalForceInterpretAssemblies Include="System.Text.Json.dll" />
+    <_AOT_InternalForceInterpretAssemblies Include="System.Text.RegularExpressions.dll" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Avalonia.Browser" />
