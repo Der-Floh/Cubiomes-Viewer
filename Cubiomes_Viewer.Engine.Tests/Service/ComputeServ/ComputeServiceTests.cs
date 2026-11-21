@@ -59,9 +59,13 @@ public sealed class ComputeServiceTests
     {
         using var service = new InlineComputeService(_handlers, _generatorFactory);
         using var cancellation = new CancellationTokenSource();
+        var gate = service.RunAsync(new GateJob(), new JobPriority(JobPriorityClass.Interactive), TestContext.Current.CancellationToken);
+        Assert.True(_gate.Entered.Wait(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
 
         var task = service.RunAsync(new EchoJob(7), new JobPriority(JobPriorityClass.Visible), cancellation.Token);
         cancellation.Cancel();
+        _gate.Released.Set();
+        await gate;
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => task);
         await service.RunAsync(new EchoJob(8), new JobPriority(JobPriorityClass.Visible), TestContext.Current.CancellationToken);
