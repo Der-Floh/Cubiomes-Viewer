@@ -1,0 +1,91 @@
+/* HTML styles for the splash screen */
+.avalonia-splash {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    background: white;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    pointer-events: none;
+}
+
+.avalonia-splash h2 {
+    font-weight: 600;
+    font-size: 2rem;
+    margin: 0;
+}
+
+.avalonia-splash p {
+    font-size: 1rem;
+    margin: 0.5rem 0 0 0;
+}
+
+/* The app icon's biome tiles pulse in a wave from corner to corner while the app loads. Only opacity and transform
+   change, which browsers animate off the main thread, so the wave keeps moving while .NET starts up. */
+.splash-tiles {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    width: 72px;
+    height: 72px;
+    margin-bottom: 1.5rem;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.splash-tiles span {
+    background: var(--color);
+    animation: splash-wave 1.4s ease-in-out infinite;
+    animation-delay: calc(var(--step) * 0.12s);
+}
+
+@keyframes splash-wave {
+    0%, 60%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    30% {
+        opacity: 0.45;
+        transform: scale(0.8);
+    }
+}
+
+@keyframes splash-fade {
+    0%, 100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .splash-tiles span {
+        animation-name: splash-fade;
+        animation-duration: 2.4s;
+    }
+}
+
+@media (prefers-color-scheme: light) {
+    .avalonia-splash {
+        background: #f3f3f3;
+        color: #1f2123;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    .avalonia-splash {
+        background: #1f2123;
+        color: white;
+    }
+}
+
+.avalonia-splash.splash-close {
+    transition: opacity 200ms, display 200ms;
+    display: none;
+    opacity: 0;
+}
