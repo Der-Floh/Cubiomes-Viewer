@@ -24,7 +24,7 @@ public sealed class UpdateNoticeViewTests : IDisposable
         _window.Show();
         var notice = new UpdateNoticeViewModel(_release, "5.1.0", _browser, () => _isTurnedOff = true, new RecordingNotificationService());
         _manager.Show(notice, NotificationType.Information, TimeSpan.Zero);
-        HeadlessInput.Render();
+        WaitUntilShown();
     }
 
     public void Dispose() => _window.Close();
@@ -67,6 +67,18 @@ public sealed class UpdateNoticeViewTests : IDisposable
         Assert.True(_isTurnedOff);
         Assert.Empty(_browser.Pages);
         Assert.True(card.IsClosing || card.IsClosed, "The notice stayed open.");
+    }
+
+    /// <summary>Lets the card finish sliding in, since a click while it moves can miss its button on a slow machine.</summary>
+    private void WaitUntilShown()
+    {
+        HeadlessInput.Render();
+        var card = FindCard();
+        Assert.True(SpinWait.SpinUntil(() =>
+        {
+            HeadlessInput.Render();
+            return card.Opacity >= 1;
+        }, TimeSpan.FromSeconds(5)), "The notice did not finish appearing.");
     }
 
     private NotificationCard FindCard() => _window.GetVisualDescendants().OfType<NotificationCard>().Single();
