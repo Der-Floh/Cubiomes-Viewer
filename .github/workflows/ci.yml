@@ -1,8 +1,10 @@
 name: CI
 
+# Pushes run only for main, so a pull request runs once; pull requests leave out the macOS jobs, which the push
+# to main after the merge runs.
 on:
   push:
-    branches: ['**']
+    branches: [main]
   pull_request:
 
 concurrency:
@@ -27,7 +29,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
+        os: ${{ fromJSON(github.event_name == 'pull_request' && '["windows-latest", "ubuntu-latest"]' || '["windows-latest", "ubuntu-latest", "macos-latest"]') }}
 
     steps:
       - name: Checkout
@@ -121,24 +123,12 @@ jobs:
 
   aot:
     name: AOT ${{ matrix.runtime }}
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ startsWith(matrix.runtime, 'osx-') && 'macos-latest' || startsWith(matrix.runtime, 'win-') && 'windows-latest' || 'ubuntu-latest' }}
 
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - runtime: linux-x64
-            os: ubuntu-latest
-            self-test: true
-          - runtime: win-arm64
-            os: windows-latest
-            self-test: false
-          - runtime: osx-arm64
-            os: macos-latest
-            self-test: true
-          - runtime: osx-x64
-            os: macos-latest
-            self-test: false
+        runtime: ${{ fromJSON(github.event_name == 'pull_request' && '["linux-x64", "win-arm64"]' || '["linux-x64", "win-arm64", "osx-arm64", "osx-x64"]') }}
 
     env:
       CLI_PROJECT: Cubiomes_Viewer.Cli/Cubiomes_Viewer.Cli.csproj
@@ -176,7 +166,7 @@ jobs:
           }
 
       - name: Self-test the CLI
-        if: matrix.self-test
+        if: matrix.runtime == 'linux-x64' || matrix.runtime == 'osx-arm64'
         run: '"$RUNNER_TEMP/aot/cli/cubiomes-viewer-cli" --selftest'
 
   android:
